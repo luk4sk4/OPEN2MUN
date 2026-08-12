@@ -1,0 +1,26 @@
+{
+  "theme": {
+    "backgroundColor": "#000000",
+    "panelColor": "#0d0d0d",
+    "textColor": "#ffffff",
+    "primaryColor": "#ffffff",
+    "fontFamily": "Inter, system-ui, -apple-system, sans-serif",
+    "borderRadius": "6px"
+  },
+  "accessibility": {
+    "dyslexiaMode": false,
+    "fontSizeScale": 1,
+    "colorblindMode": "none",
+    "themeMode": "dark"
+  },
+  "layouts": {
+    "GSL": [],
+    "DEBATE": [],
+    "VOTING": [],
+    "INFO": [],
+    "LAB": [
+      { "i": "widget_prueba_1", "col": 0, "row": 0, "colSpan": 4, "rowSpan": 2 },
+      { "i": "widget_prueba_2", "col": 5, "row": 0, "colSpan": 4, "rowSpan": 2 }
+    ]
+  }
+}
