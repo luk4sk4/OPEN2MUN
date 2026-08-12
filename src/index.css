@@ -46,3 +46,41 @@ body {
   z-index: 2;
   user-select: none;
 }
+
+/* Animaciones para alertas de temporizadores */
+@keyframes blinkRed {
+  0% {
+    background-color: #450a0a;
+    border-color: #ef4444;
+    color: #ef4444;
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    background-color: #050505;
+    border-color: #7f1d1d;
+    color: #f87171;
+    box-shadow: none;
+  }
+  100% {
+    background-color: #450a0a;
+    border-color: #ef4444;
+    color: #ef4444;
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+  }
+}
+
+.timer-blink-red {
+  animation: blinkRed 0.6s infinite ease-in-out !important;
+}
+
+.timer-orange {
+  background-color: #431407 !important;
+  border-color: #f97316 !important;
+  color: #f97316 !important;
+}
+
+.timer-negative {
+  background-color: #3f0c0c !important;
+  border-color: #ef4444 !important;
+  color: #ef4444 !important;
+}

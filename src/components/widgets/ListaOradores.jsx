@@ -1,0 +1,360 @@
+import React, { useState } from 'react';
+import { Search, ChevronUp, ChevronDown, Trash2, ArrowRightLeft, UserCheck, Plus, HelpCircle, Shield } from 'lucide-react';
+import { useSession } from '../../context/SessionContext';
+
+const ListaOradores = () => {
+  const { paises, oradoresCola, agregarOrador, removerOrador, moverOrador, cederTiempo } = useSession();
+
+  const [busqueda, setBusqueda] = useState('');
+  const [modalYieldOpen, setModalYieldOpen] = useState(false);
+  const [yieldSeleccionado, setYieldSeleccionado] = useState(null);
+
+  // Filtrar lista de países disponibles que no estén en la cola
+  const paisesDisponibles = paises.filter(p => 
+    p.nombre.toLowerCase().includes(busqueda.toLowerCase()) &&
+    !oradoresCola.some(o => o.nombre === p.nombre)
+  );
+
+  const handleSeleccionarPaisAñadir = (paisObj) => {
+    agregarOrador(paisObj);
+    setBusqueda('');
+  };
+
+  const handleEjecutarYield = (tipo, destino = '') => {
+    cederTiempo(tipo, destino);
+    setModalYieldOpen(false);
+    setYieldSeleccionado(null);
+  };
+
+  return (
+    <div style={{
+      padding: '1rem',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      boxSizing: 'border-box',
+      backgroundColor: 'var(--panel-color)',
+      color: 'var(--text-color)',
+      gap: '0.8rem'
+    }}>
+      {/* Header y Acción Principal */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '700', letterSpacing: '0.03em' }}>
+          📋 Lista de Oradores ({oradoresCola.length})
+        </h3>
+        
+        <button
+          onClick={() => setModalYieldOpen(true)}
+          disabled={oradoresCola.length === 0}
+          style={{
+            padding: '0.35rem 0.75rem',
+            fontSize: '0.75rem',
+            fontWeight: '600',
+            backgroundColor: oradoresCola.length > 0 ? '#3b82f6' : '#333333',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: oradoresCola.length > 0 ? 'pointer' : 'not-allowed',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.3rem'
+          }}
+        >
+          <ArrowRightLeft size={13} /> Ceder Tiempo (Yield)
+        </button>
+      </div>
+
+      {/* Buscador / Añadir País */}
+      <div style={{ position: 'relative' }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          backgroundColor: '#050505',
+          border: '1px solid var(--border-color)',
+          borderRadius: '6px',
+          padding: '0.35rem 0.6rem',
+          gap: '0.4rem'
+        }}>
+          <Search size={15} style={{ opacity: 0.5 }} />
+          <input
+            type="text"
+            placeholder="Añadir país a la cola..."
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-color)',
+              outline: 'none',
+              fontSize: '0.85rem',
+              width: '100%'
+            }}
+          />
+        </div>
+
+        {/* Dropdown de sugerencias de búsqueda */}
+        {busqueda.trim().length > 0 && (
+          <div style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            backgroundColor: '#141414',
+            border: '1px solid var(--border-color)',
+            borderRadius: '6px',
+            marginTop: '4px',
+            maxHeight: '160px',
+            overflowY: 'auto',
+            zIndex: 10,
+            boxShadow: '0 8px 20px rgba(0,0,0,0.6)'
+          }}>
+            {paisesDisponibles.length === 0 ? (
+              <div style={{ padding: '0.5rem', fontSize: '0.8rem', opacity: 0.5, textAlign: 'center' }}>
+                Sin resultados coincidentes
+              </div>
+            ) : (
+              paisesDisponibles.map(p => (
+                <div
+                  key={p.id}
+                  onClick={() => handleSeleccionarPaisAñadir(p)}
+                  style={{
+                    padding: '0.45rem 0.75rem',
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    borderBottom: '1px solid var(--subborder-color)'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#222222'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span>{p.bandera}</span> {p.nombre}
+                  </span>
+                  <Plus size={14} style={{ opacity: 0.7 }} />
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Lista Vertical de Oradores */}
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+        {oradoresCola.length === 0 ? (
+          <div style={{ opacity: 0.4, textAlign: 'center', margin: 'auto', fontSize: '0.85rem' }}>
+            La lista de oradores está vacía. Usa el buscador para añadir delegados.
+          </div>
+        ) : (
+          oradoresCola.map((orador, index) => (
+            <div
+              key={orador.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0.5rem 0.75rem',
+                backgroundColor: index === 0 ? 'rgba(34, 197, 94, 0.1)' : '#0d0d0d',
+                border: `1px solid ${index === 0 ? '#15803d' : 'var(--border-color)'}`,
+                borderRadius: '6px',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <span style={{
+                  fontSize: '0.75rem',
+                  fontWeight: '700',
+                  color: index === 0 ? '#22c55e' : 'var(--muted-text)',
+                  width: '18px'
+                }}>
+                  #{index + 1}
+                </span>
+                <span style={{ fontSize: '1.1rem' }}>{orador.bandera}</span>
+                <span style={{ fontWeight: index === 0 ? '700' : '500', fontSize: '0.85rem' }}>
+                  {orador.nombre}
+                </span>
+                {index === 0 && (
+                  <span style={{
+                    fontSize: '0.65rem',
+                    backgroundColor: '#15803d',
+                    color: '#ffffff',
+                    padding: '0.1rem 0.35rem',
+                    borderRadius: '3px',
+                    fontWeight: '700'
+                  }}>
+                    EN USO
+                  </span>
+                )}
+              </div>
+
+              {/* Botones de acción / Reordenar */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                <button
+                  onClick={() => moverOrador(index, -1)}
+                  disabled={index === 0}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-color)',
+                    opacity: index === 0 ? 0.2 : 0.7,
+                    cursor: index === 0 ? 'default' : 'pointer',
+                    padding: '2px'
+                  }}
+                  title="Subir en la lista"
+                >
+                  <ChevronUp size={16} />
+                </button>
+
+                <button
+                  onClick={() => moverOrador(index, 1)}
+                  disabled={index === oradoresCola.length - 1}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-color)',
+                    opacity: index === oradoresCola.length - 1 ? 0.2 : 0.7,
+                    cursor: index === oradoresCola.length - 1 ? 'default' : 'pointer',
+                    padding: '2px'
+                  }}
+                  title="Bajar en la lista"
+                >
+                  <ChevronDown size={16} />
+                </button>
+
+                <button
+                  onClick={() => removerOrador(orador.id)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#ef4444',
+                    opacity: 0.7,
+                    cursor: 'pointer',
+                    padding: '2px',
+                    marginLeft: '4px'
+                  }}
+                  title="Quitar de la lista"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Modal / Menú rápido de Yield */}
+      {modalYieldOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          backdropFilter: 'blur(3px)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div style={{
+            backgroundColor: '#0a0a0a',
+            border: '1px solid var(--border-color)',
+            borderRadius: '8px',
+            padding: '1.25rem',
+            width: '320px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem',
+            color: '#ffffff'
+          }}>
+            <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: '700' }}>
+              Ceder el tiempo restante (Yield)
+            </h4>
+            <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.7 }}>
+              El orador actual ({oradoresCola[0]?.nombre}) cede su tiempo sobrante a:
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <button
+                onClick={() => handleEjecutarYield('mesa')}
+                style={{
+                  padding: '0.6rem 0.8rem',
+                  backgroundColor: '#1f1f1f',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                  color: '#ffffff',
+                  fontWeight: '600',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.6rem'
+                }}
+              >
+                <Shield size={16} color="#eab308" /> A la Mesa (Chair)
+              </button>
+
+              <button
+                onClick={() => handleEjecutarYield('preguntas')}
+                style={{
+                  padding: '0.6rem 0.8rem',
+                  backgroundColor: '#1f1f1f',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                  color: '#ffffff',
+                  fontWeight: '600',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.6rem'
+                }}
+              >
+                <HelpCircle size={16} color="#3b82f6" /> A Preguntas del Pleno
+              </button>
+
+              <div style={{ borderTop: '1px solid var(--subborder-color)', paddingTop: '0.5rem' }}>
+                <div style={{ fontSize: '0.75rem', opacity: 0.6, marginBottom: '0.4rem' }}>A otro Delegado:</div>
+                <select
+                  onChange={e => e.target.value && handleEjecutarYield('delegado', e.target.value)}
+                  defaultValue=""
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem',
+                    backgroundColor: '#141414',
+                    border: '1px solid var(--border-color)',
+                    color: '#ffffff',
+                    borderRadius: '6px',
+                    fontSize: '0.85rem'
+                  }}
+                >
+                  <option value="" disabled>Seleccionar delegado...</option>
+                  {paises.filter(p => p.nombre !== oradoresCola[0]?.nombre).map(p => (
+                    <option key={p.id} value={p.nombre}>{p.bandera} {p.nombre}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setModalYieldOpen(false)}
+              style={{
+                marginTop: '0.5rem',
+                padding: '0.4rem',
+                backgroundColor: 'transparent',
+                border: '1px solid var(--border-color)',
+                color: '#ffffff',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '0.8rem'
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ListaOradores;

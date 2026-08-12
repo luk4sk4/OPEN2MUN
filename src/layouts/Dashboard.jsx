@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Settings, Eye, Menu, LogIn, X, GripVertical } from 'lucide-react';
+import { Settings, Eye, Menu, LogIn, X, GripVertical, Download, Upload } from 'lucide-react';
 import configMaster from '../config/config_master.json';
 import WidgetRegistry from '../components/widgets/WidgetRegistry';
 import SettingsModal from '../components/modals/SettingsModal';
 import AccessibilityModal from '../components/modals/AccessibilityModal';
 import WidgetSidebar from '../components/panels/WidgetSidebar';
+import { useSession } from '../context/SessionContext';
 
 // ─── Grid constants ────────────────────────────────────────────────────────────
 const COLS = 12;
@@ -49,6 +50,8 @@ function widgetPixelRect(w, containerWidth) {
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 const Dashboard = () => {
+  const { descargarSesionJSON, cargarSesionJSON } = useSession();
+
   const [activeTab, setActiveTab] = useState('LAB');
   const [config, setConfig]       = useState(configMaster);
   const [isSettingsOpen, setIsSettingsOpen]   = useState(false);
@@ -56,6 +59,7 @@ const Dashboard = () => {
   const [isSidebarOpen,  setIsSidebarOpen]    = useState(false);
 
   const boardRef   = useRef(null);
+  const fileInputRef = useRef(null);
   const [boardW, setBoardW] = useState(0);
 
   useEffect(() => {
@@ -65,9 +69,28 @@ const Dashboard = () => {
     return () => window.removeEventListener('resize', update);
   }, []);
 
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const parsed = JSON.parse(event.target.result);
+        const ok = cargarSesionJSON(parsed);
+        if (ok) {
+          alert('¡Sesión activa cargada exitosamente desde sesion_activa.json!');
+        }
+      } catch (err) {
+        alert('Error al leer el archivo JSON: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
   const tabs = ['GSL', 'DEBATE', 'VOTING', 'INFO', 'LAB'];
 
-  // widgets is an array of { id, col, row, colSpan, rowSpan }
   const widgets = config.layouts[activeTab] || [];
 
   const setWidgets = (fn) => {
@@ -80,8 +103,7 @@ const Dashboard = () => {
     }));
   };
 
-  // ─── Drag state ─────────────────────────────────────────────────────────────
-  const drag = useRef(null); // { widgetId, startMouseX, startMouseY, startCol, startRow }
+  const drag = useRef(null);
 
   const onDragStart = useCallback((e, widgetId) => {
     e.preventDefault();
@@ -100,8 +122,6 @@ const Dashboard = () => {
     const activeDrag = drag.current;
     if (!activeDrag || !boardRef.current || boardW === 0) return;
     const board  = boardRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - board.left;
-    const mouseY = e.clientY - board.top;
 
     const dx = e.clientX - activeDrag.startMouseX;
     const dy = e.clientY - activeDrag.startMouseY;
@@ -115,7 +135,6 @@ const Dashboard = () => {
 
     setWidgets(prev => prev.map(w => {
       if (w.i !== activeDrag.widgetId) return w;
-      // clamp so widget doesn't overflow right/bottom
       const clampedCol = Math.min(newCol, COLS - w.colSpan);
       const clampedRow = Math.min(newRow, ROWS - w.rowSpan);
       return { ...w, col: clampedCol, row: clampedRow };
@@ -126,7 +145,6 @@ const Dashboard = () => {
     drag.current = null;
   }, []);
 
-  // Attach global mouse events while dragging
   useEffect(() => {
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
@@ -136,8 +154,7 @@ const Dashboard = () => {
     };
   }, [onMouseMove, onMouseUp]);
 
-  // ─── Resize state ───────────────────────────────────────────────────────────
-  const resz = useRef(null); // { widgetId, startMouseX, startMouseY, startColSpan, startRowSpan }
+  const resz = useRef(null);
 
   const onResizeStart = useCallback((e, widgetId) => {
     e.preventDefault();
@@ -183,14 +200,12 @@ const Dashboard = () => {
     };
   }, [onResizeMove, onResizeUp]);
 
-  // ─── Add / Remove ────────────────────────────────────────────────────────────
   const removeWidget = (id) => setWidgets(prev => prev.filter(w => w.i !== id));
   const addWidget    = (id) => {
     setWidgets(prev => [...prev, { i: id, col: 0, row: 0, colSpan: 4, rowSpan: 2 }]);
     setIsSidebarOpen(false);
   };
 
-  // ─── Accessibility ──────────────────────────────────────────────────────────
   const acc = config.accessibility || { dyslexiaMode: false, fontSizeScale: 1, colorblindMode: 'none' };
   let filterString = 'none';
   if (acc.colorblindMode === 'protanopia')    filterString = 'contrast(90%) hue-rotate(15deg)';
@@ -227,12 +242,20 @@ const Dashboard = () => {
     transition:          'filter 0.3s ease, font-size 0.3s ease, background-color 0.3s ease, color 0.3s ease',
   };
 
-  // ─── Board pixel dimensions ─────────────────────────────────────────────────
   const { cellW, cellH } = boardW ? getCellSize(boardW) : { cellW: 0, cellH: 0 };
   const boardHeight = GAP + ROWS * (ROW_HEIGHT + GAP);
 
   return (
     <div style={themeStyles}>
+      {/* File Input Oculto para Cargar Sesión */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept=".json"
+        onChange={handleFileUpload}
+        style={{ display: 'none' }}
+      />
+
       <SettingsModal    isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} config={config} setConfig={setConfig} />
       <AccessibilityModal isOpen={isAccessOpen} onClose={() => setIsAccessOpen(false)} config={config} setConfig={setConfig} />
       <WidgetSidebar
@@ -249,6 +272,7 @@ const Dashboard = () => {
           <div style={{ fontWeight:'700', fontSize:'1.2rem', letterSpacing: '0.05em', color: 'var(--text-color)' }}>🏛️ OPENMUN</div>
         </div>
 
+        {/* Pestañas */}
         <div style={{ display:'flex', gap:'0.35rem', backgroundColor: 'var(--subnav-bg)', padding: '4px', borderRadius: '8px', border: '1px solid var(--subborder-color)', transition: 'background-color 0.3s ease' }}>
           {tabs.map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} style={{
@@ -264,13 +288,50 @@ const Dashboard = () => {
           ))}
         </div>
 
-        <div style={{ display:'flex', alignItems:'center', gap:'0.75rem', width:'250px', justifyContent:'flex-end' }}>
+        {/* Acciones de Sesión JSON (Cargar / Exportar) */}
+        <div style={{ display:'flex', alignItems:'center', gap:'0.6rem', width:'350px', justifyContent:'flex-end' }}>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              backgroundColor: 'transparent',
+              border: '1px solid var(--subborder-color)',
+              borderRadius: '6px',
+              color: 'var(--text-color)',
+              padding: '0.4rem 0.65rem',
+              fontSize: '0.78rem',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}
+            title="Cargar archivo sesion_activa.json"
+          >
+            <Upload size={14} color="#3b82f6" /> Cargar Sesión
+          </button>
+
+          <button
+            onClick={descargarSesionJSON}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              backgroundColor: 'transparent',
+              border: '1px solid var(--subborder-color)',
+              borderRadius: '6px',
+              color: 'var(--text-color)',
+              padding: '0.4rem 0.65rem',
+              fontSize: '0.78rem',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}
+            title="Exportar archivo sesion_activa.json"
+          >
+            <Download size={14} color="#22c55e" /> Exportar JSON
+          </button>
+
           <button onClick={() => setIsAccessOpen(true)}  style={{ background:'transparent', border:'1px solid var(--subborder-color)', borderRadius: '6px', color:'var(--text-color)', cursor:'pointer', display:'flex', padding: '6px' }} title="Accesibilidad"><Eye size={18} /></button>
           <button onClick={() => setIsSettingsOpen(true)} style={{ background:'transparent', border:'1px solid var(--subborder-color)', borderRadius: '6px', color:'var(--text-color)', cursor:'pointer', display:'flex', padding: '6px' }} title="Ajustes"><Settings size={18} /></button>
-          <div style={{ width:'1px', height:'20px', backgroundColor:'var(--subborder-color)' }} />
-          <button style={{ display:'flex', alignItems:'center', gap:'0.5rem', background:'var(--btn-bg)', border:'none', color:'var(--btn-text)', fontWeight: '600', padding:'0.45rem 1rem', borderRadius:'6px', cursor:'pointer', fontSize: '0.85rem', transition: 'all 0.2s ease' }}>
-            <LogIn size={15} /> Iniciar Sesión
-          </button>
         </div>
       </nav>
 
@@ -284,7 +345,6 @@ const Dashboard = () => {
             height: `${boardHeight}px`,
           }}
         >
-          {/* Background grid cells */}
           {boardW > 0 && Array.from({ length: ROWS }, (_, row) =>
             Array.from({ length: COLS }, (_, col) => {
               const x = GAP + col * (cellW + GAP);
@@ -307,7 +367,6 @@ const Dashboard = () => {
             })
           )}
 
-          {/* Widgets */}
           {boardW > 0 && widgets.map(w => {
             const x = GAP + w.col * (cellW + GAP);
             const y = GAP + w.row * (cellH + GAP);

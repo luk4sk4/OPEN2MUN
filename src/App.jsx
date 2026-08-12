@@ -1,5 +1,6 @@
 import React from 'react'
 import Dashboard from './layouts/Dashboard'
+import { SessionProvider } from './context/SessionContext'
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -38,9 +39,12 @@ class ErrorBoundary extends React.Component {
 function App() {
   return (
     <ErrorBoundary>
-      <Dashboard />
+      <SessionProvider>
+        <Dashboard />
+      </SessionProvider>
     </ErrorBoundary>
   )
 }
 
 export default App
+

@@ -1,8 +1,22 @@
 import { DummyWidget1, DummyWidget2 } from './DummyWidget';
+import CronometroPrincipal from './CronometroPrincipal';
+import ListaOradores from './ListaOradores';
+import PizarraMociones from './PizarraMociones';
+import CronometroDual from './CronometroDual';
+import CronometroOnlyTime from './CronometroOnlyTime';
+import MatrizPaises from './MatrizPaises';
 
 const WidgetRegistry = {
+  "cronometro_principal": CronometroPrincipal,
+  "lista_oradores": ListaOradores,
+  "pizarra_mociones": PizarraMociones,
+  "cronometro_dual": CronometroDual,
+  "cronometro_only_time": CronometroOnlyTime,
+  "matriz_paises": MatrizPaises,
   "widget_prueba_1": DummyWidget1,
   "widget_prueba_2": DummyWidget2,
 };
 
 export default WidgetRegistry;
+
+
