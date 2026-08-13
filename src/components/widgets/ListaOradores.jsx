@@ -28,6 +28,7 @@ const ListaOradores = () => {
 
   return (
     <div style={{
+      position: 'relative',
       padding: '1rem',
       height: '100%',
       display: 'flex',
@@ -243,28 +244,33 @@ const ListaOradores = () => {
         )}
       </div>
 
-      {/* Modal / Menú rápido de Yield */}
+      {/* Menú/Modal de Yield (exclusivo dentro de Lista de Oradores) */}
       {modalYieldOpen && (
         <div style={{
-          position: 'fixed',
+          position: 'absolute',
           top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.7)',
-          backdropFilter: 'blur(3px)',
-          zIndex: 1000,
+          backgroundColor: 'rgba(5, 5, 8, 0.95)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 50,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          padding: '0.8rem',
+          boxSizing: 'border-box',
+          borderRadius: 'var(--border-radius)'
         }}>
           <div style={{
-            backgroundColor: '#0a0a0a',
+            backgroundColor: 'rgba(14, 14, 20, 0.98)',
             border: '1px solid var(--border-color)',
-            borderRadius: '8px',
-            padding: '1.25rem',
-            width: '320px',
+            borderRadius: 'var(--border-radius)',
+            padding: '1rem',
+            width: '100%',
+            maxWidth: '300px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '1rem',
-            color: '#ffffff'
+            gap: '0.8rem',
+            color: 'var(--text-color)',
+            boxShadow: '0 12px 30px rgba(0,0,0,0.9)'
           }}>
             <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: '700' }}>
               Ceder el tiempo restante (Yield)

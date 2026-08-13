@@ -3,9 +3,10 @@ import { Play, Pause, RotateCcw, Plus, Square, Download, Clock, CheckCircle2 } f
 import { useSession } from '../../context/SessionContext';
 
 const CronometroPrincipal = () => {
-  const { oradoresCola, registrarIntervencion, descargarSesionJSON } = useSession();
-  
+  const { oradoresCola, registrarIntervencion, descargarSesionJSON, actualizarRelojGSL, yieldEvento } = useSession();
+
   const [tiempoInicial, setTiempoInicial] = useState(60);
+  const [inputSegundos, setInputSegundos] = useState(60);
   const [segundosRestantes, setSegundosRestantes] = useState(60);
   const [corriendo, setCorriendo] = useState(false);
   const [mensajeGuardado, setMensajeGuardado] = useState(false);
@@ -13,6 +14,25 @@ const CronometroPrincipal = () => {
   const oradorActual = oradoresCola.length > 0 ? oradoresCola[0] : { nombre: 'Delegación en uso', bandera: '🇺🇳' };
 
   const timerRef = useRef(null);
+
+  // Sincronizar estado del reloj con SessionContext
+  useEffect(() => {
+    actualizarRelojGSL(segundosRestantes, tiempoInicial, corriendo);
+  }, [segundosRestantes, tiempoInicial, corriendo]);
+
+  // Reaccionar a eventos de Yield
+  useEffect(() => {
+    if (!yieldEvento) return;
+    if (yieldEvento.tipo === 'mesa') {
+      setCorriendo(false);
+      setSegundosRestantes(tiempoInicial);
+    } else if (yieldEvento.tipo === 'delegado') {
+      if (typeof yieldEvento.segundosRestantes === 'number') {
+        setSegundosRestantes(yieldEvento.segundosRestantes);
+      }
+      setCorriendo(true); // Comienza inmediatamente
+    }
+  }, [yieldEvento, tiempoInicial]);
 
   useEffect(() => {
     if (corriendo) {
@@ -111,15 +131,18 @@ const CronometroPrincipal = () => {
           </div>
         </div>
 
-        {/* Presets */}
-        <div style={{ display: 'flex', gap: '0.3rem' }}>
+        {/* Presets & Tiempo Exacto Personalizado */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           {[45, 60, 90, 120].map(s => (
             <button
               key={s}
-              onClick={() => handleCambiarPreset(s)}
+              onClick={() => {
+                setInputSegundos(s);
+                handleCambiarPreset(s);
+              }}
               style={{
-                padding: '0.2rem 0.5rem',
-                fontSize: '0.75rem',
+                padding: '0.2rem 0.45rem',
+                fontSize: '0.72rem',
                 borderRadius: '4px',
                 border: '1px solid var(--border-color)',
                 backgroundColor: tiempoInicial === s ? 'var(--btn-bg)' : 'transparent',
@@ -131,6 +154,36 @@ const CronometroPrincipal = () => {
               {s}s
             </button>
           ))}
+
+          {/* Selector de Tiempo Exacto */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', backgroundColor: '#111111', padding: '0.15rem 0.4rem', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
+            <span style={{ fontSize: '0.68rem', opacity: 0.75, fontWeight: '600' }}>Exacto:</span>
+            <input
+              type="number"
+              min="1"
+              max="3600"
+              value={inputSegundos}
+              onChange={(e) => {
+                const val = Math.max(1, parseInt(e.target.value) || 0);
+                setInputSegundos(val);
+                handleCambiarPreset(val);
+              }}
+              style={{
+                width: '46px',
+                padding: '0.15rem 0.25rem',
+                backgroundColor: '#000000',
+                border: '1px solid var(--border-color)',
+                color: '#22c55e',
+                borderRadius: '3px',
+                fontSize: '0.75rem',
+                fontWeight: '700',
+                textAlign: 'center',
+                outline: 'none'
+              }}
+              title="Ingresar cantidad exacta de segundos para el cronómetro"
+            />
+            <span style={{ fontSize: '0.68rem', opacity: 0.75 }}>s</span>
+          </div>
         </div>
       </div>
 
@@ -138,25 +191,27 @@ const CronometroPrincipal = () => {
       <div
         className={displayState.className}
         style={{
-          margin: '1rem 0',
-          padding: '1rem',
-          borderRadius: '8px',
+          margin: '0.75rem 0',
+          padding: '1.4rem 1rem',
+          borderRadius: '10px',
           textAlign: 'center',
           transition: 'all 0.3s ease',
           position: 'relative',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
           ...displayState.style
         }}
       >
         <div>
           <div style={{
-            fontWeight: '800',
-            fontSize: '3.2rem',
+            fontWeight: '900',
+            fontSize: '5.2rem',
             fontFamily: 'monospace',
-            letterSpacing: '0.05em',
+            letterSpacing: '0.04em',
+            lineHeight: 1
           }}>
             {formatTimeWithNegative(segundosRestantes)}
           </div>
-          <div style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '0.2rem' }}>
+          <div style={{ fontSize: '0.8rem', opacity: 0.75, marginTop: '0.5rem', fontWeight: '600' }}>
             {segundosRestantes < 0 ? '⚠️ TIEMPO EXCEDIDO (OVERTIME)' : `Asignado: ${tiempoInicial} seg`}
           </div>
         </div>
@@ -278,31 +333,6 @@ const CronometroPrincipal = () => {
           }}
         >
           <Square size={16} /> Terminar
-        </button>
-      </div>
-
-      {/* Footer */}
-      <div style={{ marginTop: '0.8rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.6rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontSize: '0.75rem', opacity: 0.6, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-          <Clock size={13} /> Sincronizado con sesion_activa.json
-        </div>
-        <button
-          onClick={descargarSesionJSON}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: 'var(--text-color)',
-            opacity: 0.8,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.3rem',
-            fontSize: '0.75rem',
-            fontWeight: '600'
-          }}
-          title="Descargar sesion_activa.json"
-        >
-          <Download size={14} /> Exportar JSON
         </button>
       </div>
     </div>

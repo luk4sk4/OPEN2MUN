@@ -76,24 +76,26 @@ const CronometroOnlyTime = () => {
 
       {/* Reloj Display Gigante */}
       <div style={{
-        margin: '1.2rem 0',
-        padding: '1.5rem',
-        borderRadius: '10px',
+        margin: '0.8rem 0',
+        padding: '1.4rem 1rem',
+        borderRadius: '12px',
         textAlign: 'center',
         backgroundColor: tiempoTotalSeg === 0 ? '#3f0c0c' : '#050505',
         border: `2px solid ${tiempoTotalSeg === 0 ? '#ef4444' : 'var(--border-color)'}`,
+        boxShadow: '0 6px 25px rgba(0,0,0,0.6)',
         transition: 'all 0.3s ease'
       }}>
         <div style={{
           fontWeight: '900',
-          fontSize: '3.8rem',
+          fontSize: '5.5rem',
           fontFamily: 'monospace',
-          letterSpacing: '0.05em',
+          letterSpacing: '0.04em',
+          lineHeight: 1,
           color: tiempoTotalSeg === 0 ? '#ef4444' : (corriendo ? '#eab308' : 'var(--text-color)')
         }}>
           {formatTime(tiempoTotalSeg)}
         </div>
-        <div style={{ fontSize: '0.75rem', opacity: 0.6, marginTop: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600' }}>
           ⏱️ Tiempo Total de Libres Negociaciones
         </div>
       </div>

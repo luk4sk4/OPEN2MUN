@@ -69,6 +69,23 @@ export const SessionProvider = ({ children }) => {
     ];
   });
 
+  const [historicoMociones, setHistoricoMociones] = useState(() => {
+    const saved = localStorage.getItem('openmun_historico_mociones');
+    return saved ? JSON.parse(saved) : [
+      {
+        id: 'm1',
+        proponente: 'México',
+        posicionProponente: 'Primero',
+        tipo: 'Caucus Moderado',
+        varianteConsulta: '',
+        tema: 'Estrategias de Financiamiento Verde',
+        tiempoTotal: 600,
+        tiempoOrador: 45,
+        estado: 'Pendiente'
+      }
+    ];
+  });
+
   const [caucusActivo, setCaucusActivo] = useState(() => {
     const saved = localStorage.getItem('openmun_caucus');
     return saved ? JSON.parse(saved) : {
@@ -83,6 +100,29 @@ export const SessionProvider = ({ children }) => {
     };
   });
 
+  const [votacionSesion, setVotacionSesion] = useState(() => {
+    const saved = localStorage.getItem('openmun_votacion');
+    return saved ? JSON.parse(saved) : {
+      asunto: 'Proyecto de Resolución / Moción',
+      tipoVotacion: 'procedural',
+      tipoMayoria: 'simple',
+      aplicarVeto: true,
+      votos: {}
+    };
+  });
+
+  const [agendaSesion, setAgendaSesion] = useState(() => {
+    const saved = localStorage.getItem('openmun_agenda');
+    return saved ? JSON.parse(saved) : {
+      establecida: true,
+      temaActual: 'Estrategias de Financiamiento Verde y Sostenibilidad Global',
+      temasPropuestos: [
+        { id: 't1', titulo: 'Estrategias de Financiamiento Verde y Sostenibilidad Global', estado: 'En Discusión' },
+        { id: 't2', titulo: 'Seguridad Cibernética e Inteligencia Artificial en Defensas', estado: 'Pendiente' }
+      ]
+    };
+  });
+
   // SINCRONIZACIÓN MAJESTUOSA Y COMPLETA EN sesion_activa.json Y LOCALSTORAGE
   useEffect(() => {
     localStorage.setItem('openmun_paises', JSON.stringify(paises));
@@ -90,7 +130,10 @@ export const SessionProvider = ({ children }) => {
     localStorage.setItem('openmun_oradores_caucus', JSON.stringify(oradoresCaucus));
     localStorage.setItem('openmun_intervenciones', JSON.stringify(registroIntervenciones));
     localStorage.setItem('openmun_mociones', JSON.stringify(mociones));
+    localStorage.setItem('openmun_historico_mociones', JSON.stringify(historicoMociones));
     localStorage.setItem('openmun_caucus', JSON.stringify(caucusActivo));
+    localStorage.setItem('openmun_votacion', JSON.stringify(votacionSesion));
+    localStorage.setItem('openmun_agenda', JSON.stringify(agendaSesion));
 
     const sesionDataCompleta = {
       version: '1.0',
@@ -101,11 +144,60 @@ export const SessionProvider = ({ children }) => {
       oradoresCaucus,
       registroIntervenciones,
       mociones,
-      caucusActivo
+      historicoMociones,
+      caucusActivo,
+      votacionSesion,
+      agendaSesion
     };
 
     localStorage.setItem('sesion_activa.json', JSON.stringify(sesionDataCompleta, null, 2));
-  }, [paises, oradoresCola, oradoresCaucus, registroIntervenciones, mociones, caucusActivo]);
+  }, [paises, oradoresCola, oradoresCaucus, registroIntervenciones, mociones, historicoMociones, caucusActivo, votacionSesion, agendaSesion]);
+
+  const establecerAgenda = (temaActual, temasPropuestos = []) => {
+    setAgendaSesion({
+      establecida: true,
+      temaActual,
+      temasPropuestos: temasPropuestos.length > 0 ? temasPropuestos : [
+        { id: 't1', titulo: temaActual, estado: 'En Discusión' }
+      ]
+    });
+  };
+
+  const cambiarTemaActual = (nuevoTema) => {
+    setAgendaSesion(prev => ({
+      ...prev,
+      temaActual: nuevoTema,
+      temasPropuestos: prev.temasPropuestos.map(t => 
+        t.titulo === nuevoTema ? { ...t, estado: 'En Discusión' } : { ...t, estado: 'Pendiente' }
+      )
+    }));
+  };
+
+  const registrarVotoPais = (countryId, voto) => {
+    setVotacionSesion(prev => {
+      const copyVotos = { ...prev.votos };
+      if (voto === null || voto === undefined) {
+        delete copyVotos[countryId];
+      } else {
+        copyVotos[countryId] = voto;
+      }
+      return { ...prev, votos: copyVotos };
+    });
+  };
+
+  const configurarVotacion = (ajustes) => {
+    setVotacionSesion(prev => ({
+      ...prev,
+      ...ajustes
+    }));
+  };
+
+  const resetearVotacion = () => {
+    setVotacionSesion(prev => ({
+      ...prev,
+      votos: {}
+    }));
+  };
 
   // Funciones de Paises
   const cambiarEstatusPais = (id, nuevoEstatus) => {
@@ -136,9 +228,55 @@ export const SessionProvider = ({ children }) => {
     setOradoresCola(clone);
   };
 
-  const cederTiempo = (tipo, destinoPaisName) => {
-    if (oradoresCola.length > 0) {
+  const [relojGSLState, setRelojGSLState] = useState({ segundosRestantes: 60, tiempoInicial: 60, corriendo: false });
+  const [yieldEvento, setYieldEvento] = useState(null);
+
+  const actualizarRelojGSL = (segundosRestantes, tiempoInicial, corriendo) => {
+    setRelojGSLState({ segundosRestantes, tiempoInicial, corriendo });
+  };
+
+  const cederTiempo = (tipo, destinoPaisName = '') => {
+    if (oradoresCola.length === 0) return;
+
+    const oradorActual = oradoresCola[0];
+    const { segundosRestantes, tiempoInicial } = relojGSLState;
+
+    if (tipo === 'mesa') {
+      // 1. Ceder a la mesa: termina el turno de ese orador y pasa al siguiente (volviendo al tiempo original el cronómetro)
+      const tiempoHablado = Math.max(1, tiempoInicial - segundosRestantes);
+      const overtime = segundosRestantes < 0 ? Math.abs(segundosRestantes) : 0;
+      registrarIntervencion(oradorActual.nombre, tiempoInicial, tiempoHablado, overtime);
+
       setOradoresCola(prev => prev.slice(1));
+      setYieldEvento({ tipo: 'mesa', timestamp: Date.now() });
+    }
+    else if (tipo === 'preguntas') {
+      // 2. Ceder a preguntas: nada, continua el tiempo normalmente
+      setYieldEvento({ tipo: 'preguntas', timestamp: Date.now() });
+    }
+    else if (tipo === 'delegado' && destinoPaisName) {
+      // 3. Ceder a otra delegación: dispondrá del tiempo restante, comenzando inmediatamente
+      const tiempoHablado = Math.max(1, tiempoInicial - segundosRestantes);
+      registrarIntervencion(oradorActual.nombre, tiempoInicial, tiempoHablado, 0);
+
+      const paisObj = paises.find(p => p.nombre === destinoPaisName) || { nombre: destinoPaisName, bandera: '🇺🇳' };
+      const nuevoOradorCedido = {
+        id: Date.now().toString(),
+        nombre: paisObj.nombre,
+        bandera: paisObj.bandera || '🇺🇳'
+      };
+
+      setOradoresCola(prev => [
+        nuevoOradorCedido,
+        ...prev.slice(1).filter(o => o.nombre !== paisObj.nombre)
+      ]);
+
+      setYieldEvento({
+        tipo: 'delegado',
+        destino: destinoPaisName,
+        segundosRestantes,
+        timestamp: Date.now()
+      });
     }
   };
 
@@ -231,6 +369,9 @@ export const SessionProvider = ({ children }) => {
       if (Array.isArray(sesionData.mociones)) {
         setMociones(sesionData.mociones);
       }
+      if (Array.isArray(sesionData.historicoMociones)) {
+        setHistoricoMociones(sesionData.historicoMociones);
+      }
       if (sesionData.caucusActivo) {
         setCaucusActivo(sesionData.caucusActivo);
       }
@@ -254,6 +395,7 @@ export const SessionProvider = ({ children }) => {
       votosContra: 0
     };
     setMociones(prev => [nueva, ...prev]);
+    setHistoricoMociones(prev => [nueva, ...prev]);
   };
 
   const activarMocion = (mocion) => {
@@ -286,6 +428,12 @@ export const SessionProvider = ({ children }) => {
       setOradoresCaucus([]);
     }
 
+    // Al activar / aprobar una moción, se marca como Aprobada en el histórico
+    setHistoricoMociones(prev => prev.map(m => (m.id === mocion.id || m.tema === mocion.tema) ? { ...m, estado: 'Aprobada' } : m));
+    
+    // Y se remueve de la pizarra activa de mociones pendientes
+    setMociones(prev => prev.filter(m => m.id !== mocion.id));
+
     setCaucusActivo({
       activo: true,
       proponente: mocion.proponente,
@@ -302,9 +450,12 @@ export const SessionProvider = ({ children }) => {
   const votarMocion = (id, nuevoEstado) => {
     if (nuevoEstado === 'Fallida') {
       setMociones(prev => prev.filter(m => m.id !== id));
+      setHistoricoMociones(prev => prev.map(m => m.id === id ? { ...m, estado: 'Fallida' } : m));
     } else if (nuevoEstado === 'Aprobada') {
       const mocionTarget = mociones.find(m => m.id === id);
-      setMociones(prev => prev.map(m => m.id === id ? { ...m, estado: 'Aprobada' } : m));
+      setHistoricoMociones(prev => prev.map(m => m.id === id ? { ...m, estado: 'Aprobada' } : m));
+      // Remover de la pizarra activa
+      setMociones(prev => prev.filter(m => m.id !== id));
       if (mocionTarget) {
         activarMocion(mocionTarget);
       }
@@ -312,6 +463,7 @@ export const SessionProvider = ({ children }) => {
   };
 
   const eliminarMocion = (id) => {
+    // Se borra únicamente de la pizarra de pendientes activa; se mantiene en historicoMociones
     setMociones(prev => prev.filter(m => m.id !== id));
   };
 
@@ -334,12 +486,23 @@ export const SessionProvider = ({ children }) => {
       descargarSesionJSON,
       cargarSesionJSON,
       mociones,
+      historicoMociones,
       agregarMocion,
       votarMocion,
       eliminarMocion,
       activarMocion,
       caucusActivo,
-      setCaucusActivo
+      setCaucusActivo,
+      relojGSLState,
+      actualizarRelojGSL,
+      yieldEvento,
+      votacionSesion,
+      registrarVotoPais,
+      configurarVotacion,
+      resetearVotacion,
+      agendaSesion,
+      establecerAgenda,
+      cambiarTemaActual
     }}>
       {children}
     </SessionContext.Provider>

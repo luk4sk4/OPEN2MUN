@@ -5,14 +5,20 @@ import PizarraMociones from './PizarraMociones';
 import CronometroDual from './CronometroDual';
 import CronometroOnlyTime from './CronometroOnlyTime';
 import MatrizPaises from './MatrizPaises';
+import HistoricoDelegaciones from './HistoricoDelegaciones';
+import VotacionOficial from './VotacionOficial';
+import EstablecerAgenda from './EstablecerAgenda';
 
 const WidgetRegistry = {
+  "establecer_agenda": EstablecerAgenda,
   "cronometro_principal": CronometroPrincipal,
   "lista_oradores": ListaOradores,
   "pizarra_mociones": PizarraMociones,
   "cronometro_dual": CronometroDual,
   "cronometro_only_time": CronometroOnlyTime,
   "matriz_paises": MatrizPaises,
+  "historico_delegaciones": HistoricoDelegaciones,
+  "votacion_oficial": VotacionOficial,
   "widget_prueba_1": DummyWidget1,
   "widget_prueba_2": DummyWidget2,
 };

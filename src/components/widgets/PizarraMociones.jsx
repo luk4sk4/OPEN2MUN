@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
-import { Plus, Zap, Check, X, Clock, Vote, MessageSquare } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Plus, Check, X, Clock, MessageSquare, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 
 const PizarraMociones = () => {
-  const { paises, mociones, agregarMocion, votarMocion, activarMocion, caucusActivo } = useSession();
+  const { paises, mociones, agregarMocion, votarMocion } = useSession();
 
   const [mostrarForm, setMostrarForm] = useState(false);
   const [proponente, setProponente] = useState('');
   const [posicionProponente, setPosicionProponente] = useState('Primero');
-  const [tipo, setTipo] = useState('Caucus Moderado');
+  const [tipo, setTipo] = useState('Caucus No Moderado');
   const [varianteConsulta, setVarianteConsulta] = useState('Estándar');
   const [tema, setTema] = useState('');
   const [tiempoTotalMin, setTiempoTotalMin] = useState(10);
@@ -21,7 +21,6 @@ const PizarraMociones = () => {
     let totalSeg = Number(tiempoTotalMin) * 60;
     let oradorSeg = Number(tiempoOradorSeg);
 
-    // Consulta General y Caucus No Moderado SOLO tienen tiempo total
     if (tipo === 'Caucus No Moderado' || tipo === 'Consulta General') {
       oradorSeg = 0;
     } else if (tipo === 'Tour de Table') {
@@ -50,6 +49,39 @@ const PizarraMociones = () => {
 
   const esModerado = tipo === 'Caucus Moderado';
   const esConsulta = tipo === 'Consulta General';
+
+  // ── Ordenamiento Estricto de Mociones según Reglas Solicitadas ──
+  // 1. Caucus No Moderados
+  // 2. Consulta General
+  // 3. Tour de Table
+  // 4. Caucus Moderados
+  // Misma categoría -> Más largo más arriba -> Mismo tiempo -> Más antiguo primero
+  const mocionesOrdenadas = useMemo(() => {
+    const getPrioridadTipo = (tipoStr = '') => {
+      if (tipoStr.includes('Caucus No Moderado')) return 1;
+      if (tipoStr.includes('Consulta General')) return 2;
+      if (tipoStr.includes('Tour de Table')) return 3;
+      if (tipoStr.includes('Caucus Moderado')) return 4;
+      return 5;
+    };
+
+    return [...mociones].sort((a, b) => {
+      const prioA = getPrioridadTipo(a.tipo);
+      const prioB = getPrioridadTipo(b.tipo);
+
+      if (prioA !== prioB) return prioA - prioB;
+
+      // Misma categoría: el más largo más arriba (tiempoTotal descendente)
+      const durA = a.tiempoTotal || 0;
+      const durB = b.tiempoTotal || 0;
+      if (durA !== durB) return durB - durA;
+
+      // Misma duración: el más antiguo primero (id / timestamp ascendente)
+      const tA = Number(a.id) || 0;
+      const tB = Number(b.id) || 0;
+      return tA - tB;
+    });
+  }, [mociones]);
 
   return (
     <div style={{
@@ -93,7 +125,7 @@ const PizarraMociones = () => {
         <form
           onSubmit={handleSubmitMocion}
           style={{
-            backgroundColor: '#0c0c0c',
+            backgroundColor: 'var(--card-header-bg)',
             border: '1px solid var(--border-color)',
             borderRadius: '6px',
             padding: '0.8rem',
@@ -112,7 +144,7 @@ const PizarraMociones = () => {
                 style={{
                   width: '100%',
                   padding: '0.35rem',
-                  backgroundColor: '#161616',
+                  backgroundColor: 'var(--panel-color)',
                   border: '1px solid var(--border-color)',
                   color: 'var(--text-color)',
                   borderRadius: '4px',
@@ -134,27 +166,25 @@ const PizarraMociones = () => {
                 style={{
                   width: '100%',
                   padding: '0.35rem',
-                  backgroundColor: '#161616',
+                  backgroundColor: 'var(--panel-color)',
                   border: '1px solid var(--border-color)',
                   color: 'var(--text-color)',
                   borderRadius: '4px',
                   fontSize: '0.8rem'
                 }}
               >
-                <option value="Caucus Moderado">Caucus Moderado</option>
                 <option value="Caucus No Moderado">Caucus No Moderado</option>
-                <option value="Tour de Table">Tour de Table (Orden Alfabético)</option>
-                <option value="Consulta General">Consulta General (Solo tiempo total)</option>
-                <option value="Cierre de Lista">Cierre de Lista</option>
-                <option value="Moción de Procedimiento">Moción de Procedimiento</option>
+                <option value="Consulta General">Consulta General</option>
+                <option value="Tour de Table">Tour de Table</option>
+                <option value="Caucus Moderado">Caucus Moderado</option>
               </select>
             </div>
           </div>
 
           {/* Opciones Específicas para Consulta General */}
           {esConsulta && (
-            <div style={{ backgroundColor: '#141414', padding: '0.5rem', borderRadius: '4px', border: '1px solid #333' }}>
-              <label style={{ fontSize: '0.7rem', opacity: 0.8, fontWeight: '600', display: 'block', marginBottom: '4px', color: '#eab308' }}>
+            <div style={{ backgroundColor: 'var(--panel-color)', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--subborder-color)' }}>
+              <label style={{ fontSize: '0.7rem', opacity: 0.8, fontWeight: '600', display: 'block', marginBottom: '4px' }}>
                 Formato de Consulta General:
               </label>
               <select
@@ -163,7 +193,7 @@ const PizarraMociones = () => {
                 style={{
                   width: '100%',
                   padding: '0.35rem',
-                  backgroundColor: '#0a0a0a',
+                  backgroundColor: 'var(--card-header-bg)',
                   border: '1px solid var(--border-color)',
                   color: 'var(--text-color)',
                   borderRadius: '4px',
@@ -219,7 +249,7 @@ const PizarraMociones = () => {
               style={{
                 width: '100%',
                 padding: '0.35rem',
-                backgroundColor: '#161616',
+                backgroundColor: 'var(--panel-color)',
                 border: '1px solid var(--border-color)',
                 color: 'var(--text-color)',
                 borderRadius: '4px',
@@ -242,7 +272,7 @@ const PizarraMociones = () => {
                   style={{
                     width: '100%',
                     padding: '0.35rem',
-                    backgroundColor: '#161616',
+                    backgroundColor: 'var(--panel-color)',
                     border: '1px solid var(--border-color)',
                     color: 'var(--text-color)',
                     borderRadius: '4px',
@@ -253,7 +283,6 @@ const PizarraMociones = () => {
               </div>
             )}
 
-            {/* SOLO pedir tiempo por orador si NO es No Moderado y NO es Consulta General */}
             {tipo !== 'Caucus No Moderado' && !esConsulta && (
               <div>
                 <label style={{ fontSize: '0.7rem', opacity: 0.6, display: 'block', marginBottom: '2px' }}>Tiempo / Orador (segundos)</label>
@@ -266,7 +295,7 @@ const PizarraMociones = () => {
                   style={{
                     width: '100%',
                     padding: '0.35rem',
-                    backgroundColor: '#161616',
+                    backgroundColor: 'var(--panel-color)',
                     border: '1px solid var(--border-color)',
                     color: 'var(--text-color)',
                     borderRadius: '4px',
@@ -282,8 +311,8 @@ const PizarraMociones = () => {
             type="submit"
             style={{
               padding: '0.45rem',
-              backgroundColor: '#22c55e',
-              color: '#000000',
+              backgroundColor: 'var(--btn-bg)',
+              color: 'var(--btn-text)',
               fontWeight: '700',
               border: 'none',
               borderRadius: '4px',
@@ -297,11 +326,11 @@ const PizarraMociones = () => {
         </form>
       )}
 
-      {/* Tabla de Mociones */}
+      {/* Tabla de Mociones Ordenadas por Prioridad Estricta */}
       <div style={{ flex: 1, overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '6px' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
           <thead>
-            <tr style={{ backgroundColor: '#090909', borderBottom: '1px solid var(--border-color)', textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: '0.04em', opacity: 0.7 }}>
+            <tr style={{ backgroundColor: 'var(--card-header-bg)', borderBottom: '1px solid var(--border-color)', textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: '0.04em', opacity: 0.7 }}>
               <th style={{ padding: '0.5rem', textAlign: 'left' }}>Proponente</th>
               <th style={{ padding: '0.5rem', textAlign: 'left' }}>Tipo / Formato</th>
               <th style={{ padding: '0.5rem', textAlign: 'left' }}>Tema</th>
@@ -312,103 +341,90 @@ const PizarraMociones = () => {
             </tr>
           </thead>
           <tbody>
-            {mociones.length === 0 ? (
+            {mocionesOrdenadas.length === 0 ? (
               <tr>
                 <td colSpan="7" style={{ padding: '1.5rem', textAlign: 'center', opacity: 0.4 }}>
                   No hay mociones registradas en la pizarra.
                 </td>
               </tr>
             ) : (
-              mociones.map(m => {
-                const esActiva = caucusActivo.activo && caucusActivo.tema === m.tema;
-                return (
-                  <tr
-                    key={m.id}
-                    style={{
-                      borderBottom: '1px solid var(--subborder-color)',
-                      backgroundColor: esActiva ? 'rgba(234, 179, 8, 0.08)' : 'transparent'
-                    }}
-                  >
-                    <td style={{ padding: '0.5rem', fontWeight: '600' }}>
-                      {m.proponente}
-                      {m.posicionProponente === 'Ultimo' && <span style={{ opacity: 0.5, fontSize: '0.65rem', display: 'block' }}>(Habla al final)</span>}
-                    </td>
-                    <td style={{ padding: '0.5rem', opacity: 0.8, fontSize: '0.75rem' }}>{m.tipo}</td>
-                    <td style={{ padding: '0.5rem', maxWidth: '130px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={m.tema}>
-                      {m.tema}
-                    </td>
-                    <td style={{ padding: '0.5rem', textAlign: 'center', fontFamily: 'monospace' }}>{formatMinutos(m.tiempoTotal)}</td>
-                    <td style={{ padding: '0.5rem', textAlign: 'center', fontFamily: 'monospace' }}>{m.tiempoOrador ? `${m.tiempoOrador}s` : 'N/A'}</td>
-                    <td style={{ padding: '0.5rem', textAlign: 'center' }}>
-                      <span style={{
-                        fontSize: '0.65rem',
-                        fontWeight: '700',
-                        padding: '0.15rem 0.4rem',
-                        borderRadius: '3px',
-                        backgroundColor:
-                          m.estado === 'Aprobada' ? '#15803d' :
-                          m.estado === 'Fallida' ? '#b91c1c' : '#333333',
-                        color: '#ffffff'
-                      }}>
-                        {m.estado}
-                      </span>
-                    </td>
-                    <td style={{ padding: '0.5rem', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: '0.2rem', justifyContent: 'flex-end' }}>
-                        <button
-                          onClick={() => votarMocion(m.id, 'Aprobada')}
-                          style={{
-                            background: m.estado === 'Aprobada' ? '#22c55e' : 'transparent',
-                            border: '1px solid #22c55e',
-                            color: m.estado === 'Aprobada' ? '#000000' : '#22c55e',
-                            borderRadius: '3px',
-                            cursor: 'pointer',
-                            padding: '2px 4px'
-                          }}
-                          title="Aprobar Moción (Activa directamente)"
-                        >
-                          <Check size={12} />
-                        </button>
+              mocionesOrdenadas.map(m => (
+                <tr
+                  key={m.id}
+                  style={{
+                    borderBottom: '1px solid var(--subborder-color)',
+                  }}
+                >
+                  <td style={{ padding: '0.5rem', fontWeight: '600' }}>
+                    {m.proponente}
+                    {m.posicionProponente === 'Ultimo' && <span style={{ opacity: 0.5, fontSize: '0.65rem', display: 'block' }}>(Habla al final)</span>}
+                  </td>
+                  <td style={{ padding: '0.5rem', opacity: 0.8, fontSize: '0.75rem' }}>{m.tipo}</td>
+                  <td style={{ padding: '0.5rem', maxWidth: '130px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={m.tema}>
+                    {m.tema}
+                  </td>
+                  <td style={{ padding: '0.5rem', textAlign: 'center', fontFamily: 'monospace' }}>{formatMinutos(m.tiempoTotal)}</td>
+                  <td style={{ padding: '0.5rem', textAlign: 'center', fontFamily: 'monospace' }}>{m.tiempoOrador ? `${m.tiempoOrador}s` : 'N/A'}</td>
+                  <td style={{ padding: '0.5rem', textAlign: 'center' }}>
+                    <span style={{
+                      fontSize: '0.65rem',
+                      fontWeight: '700',
+                      padding: '0.15rem 0.4rem',
+                      borderRadius: '3px',
+                      backgroundColor:
+                        m.estado === 'Aprobada' ? '#15803d' :
+                        m.estado === 'Fallida' ? '#b91c1c' : 'var(--card-header-bg)',
+                      color: m.estado === 'Pendiente' ? 'var(--text-color)' : '#ffffff'
+                    }}>
+                      {m.estado}
+                    </span>
+                  </td>
+                  <td style={{ padding: '0.5rem', textAlign: 'right' }}>
+                    <div style={{ display: 'flex', gap: '0.3rem', justifyContent: 'flex-end' }}>
+                      {/* Únicamente Opción de Aprobar (Verde) o Reprobar/Fallida (Rojo) - SIN 'Activar' */}
+                      <button
+                        onClick={() => votarMocion(m.id, 'Aprobada')}
+                        style={{
+                          background: m.estado === 'Aprobada' ? '#22c55e' : 'transparent',
+                          border: '1px solid #22c55e',
+                          color: m.estado === 'Aprobada' ? '#000000' : '#22c55e',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          padding: '3px 8px',
+                          fontSize: '0.72rem',
+                          fontWeight: '700',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '3px'
+                        }}
+                        title="Aprobar Moción"
+                      >
+                        <Check size={12} /> Aprobar
+                      </button>
 
-                        <button
-                          onClick={() => votarMocion(m.id, 'Fallida')}
-                          style={{
-                            background: 'transparent',
-                            border: '1px solid #ef4444',
-                            color: '#ef4444',
-                            borderRadius: '3px',
-                            cursor: 'pointer',
-                            padding: '2px 4px'
-                          }}
-                          title="Reprobar Moción (Elimina de la lista)"
-                        >
-                          <X size={12} />
-                        </button>
-
-                        <button
-                          onClick={() => activarMocion(m)}
-                          style={{
-                            backgroundColor: '#eab308',
-                            color: '#000000',
-                            border: 'none',
-                            borderRadius: '3px',
-                            fontWeight: '700',
-                            fontSize: '0.7rem',
-                            cursor: 'pointer',
-                            padding: '2px 6px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '2px'
-                          }}
-                          title="Activar en Cronómetro Dual"
-                        >
-                          <Zap size={11} /> {esActiva ? 'Activa' : 'Activar'}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
+                      <button
+                        onClick={() => votarMocion(m.id, 'Fallida')}
+                        style={{
+                          background: m.estado === 'Fallida' ? '#ef4444' : 'transparent',
+                          border: '1px solid #ef4444',
+                          color: m.estado === 'Fallida' ? '#ffffff' : '#ef4444',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          padding: '3px 8px',
+                          fontSize: '0.72rem',
+                          fontWeight: '700',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '3px'
+                        }}
+                        title="Reprobar / Fallida"
+                      >
+                        <X size={12} /> Reprobar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>

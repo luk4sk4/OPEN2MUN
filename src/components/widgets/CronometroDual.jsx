@@ -1,16 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, SkipForward, Clock, Users, Search, Plus, Trash2, ArrowRight } from 'lucide-react';
+import { Play, Pause, RotateCcw, SkipForward, Clock, Users, Search, Plus, Trash2, ShieldAlert } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 
-const CronometroDual = () => {
+const CronometroDual = ({ modoInicial = null }) => {
   const {
     paises,
     caucusActivo,
     oradoresCaucus,
     agregarOradorCaucus,
     removerOradorCaucus,
-    avanzarOradorCaucus
+    avanzarOradorCaucus,
+    registrarIntervencion
   } = useSession();
+
+  const [modoSeleccionado, setModoSeleccionado] = useState(modoInicial);
+
+  const tipoMocion = modoSeleccionado || caucusActivo?.tipo || (modoInicial || 'Caucus Moderado');
+  const esTiempoSoloGeneral = tipoMocion === 'Caucus No Moderado' || tipoMocion.includes('Consulta General');
 
   const [tiempoTotalSeg, setTiempoTotalSeg] = useState(caucusActivo?.tiempoTotal || 600);
   const [tiempoOradorSeg, setTiempoOradorSeg] = useState(caucusActivo?.tiempoOrador || 45);
@@ -18,15 +24,12 @@ const CronometroDual = () => {
   const [corriendo, setCorriendo] = useState(false);
 
   const [busquedaPais, setBusquedaPais] = useState('');
-
   const timerRef = useRef(null);
 
-  const tipoMocion = caucusActivo?.tipo || 'Caucus Moderado';
-  const esTiempoSoloGeneral = tipoMocion === 'Caucus No Moderado' || tipoMocion.includes('Consulta General');
-
-  // Sincronizar al activar moción
+  // Sincronizar al activar moción desde la Pizarra de Mociones
   useEffect(() => {
     if (caucusActivo?.activo) {
+      setModoSeleccionado(caucusActivo.tipo);
       setTiempoTotalSeg(caucusActivo.tiempoTotal);
       setTiempoOradorSeg(caucusActivo.tiempoOrador);
       setLimiteOradorSeg(caucusActivo.tiempoOrador);
@@ -58,6 +61,14 @@ const CronometroDual = () => {
 
   const handleSiguienteOrador = () => {
     setCorriendo(false);
+    
+    // Registrar el tiempo hablado en el histórico
+    if (oradorActual && oradorActual.nombre && oradorActual.nombre !== 'Sin orador en cola') {
+      const tiempoHabladoExacto = Math.max(1, limiteOradorSeg - tiempoOradorSeg);
+      const overtime = tiempoOradorSeg < 0 ? Math.abs(tiempoOradorSeg) : 0;
+      registrarIntervencion(oradorActual.nombre, limiteOradorSeg, tiempoHabladoExacto, overtime);
+    }
+
     setTiempoOradorSeg(limiteOradorSeg);
     avanzarOradorCaucus();
   };
@@ -66,6 +77,10 @@ const CronometroDual = () => {
     setCorriendo(false);
     setTiempoTotalSeg(caucusActivo?.tiempoTotal || 600);
     setTiempoOradorSeg(limiteOradorSeg);
+  };
+
+  const handleAumentarSegundos = (seg) => {
+    setTiempoTotalSeg(prev => prev + seg);
   };
 
   const handleAumentar5MinCaucus = () => {
@@ -119,7 +134,7 @@ const CronometroDual = () => {
 
   return (
     <div style={{
-      padding: '1.2rem',
+      padding: '1rem',
       height: '100%',
       display: 'flex',
       flexDirection: 'column',
@@ -129,47 +144,76 @@ const CronometroDual = () => {
       color: 'var(--text-color)',
       gap: '0.6rem'
     }}>
-      {/* Header Tipo de Moción */}
+      {/* Header Tipo de Moción & Selector Dinámico de Modo */}
       <div style={{
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        flexDirection: 'column',
+        gap: '0.4rem',
         borderBottom: '1px solid var(--border-color)',
         paddingBottom: '0.5rem'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <Clock size={16} color="#eab308" />
-          <div>
-            <div style={{ fontSize: '0.68rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Moción Activa: <strong style={{ color: '#eab308' }}>{tipoMocion}</strong>
-            </div>
-            <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>
-              {caucusActivo?.tema || 'Sin Tema Asignado'}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            {esTiempoSoloGeneral ? <ShieldAlert size={16} color="#eab308" /> : <Clock size={16} color="#eab308" />}
+            <div>
+              <div style={{ fontSize: '0.65rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Moción Activa: <strong style={{ color: '#eab308' }}>{tipoMocion}</strong>
+              </div>
+              <div style={{ fontWeight: '700', fontSize: '0.88rem' }}>
+                {caucusActivo?.tema || 'Sin Tema Asignado'}
+              </div>
             </div>
           </div>
-        </div>
 
-        {tipoMocion !== 'Tour de Table' && (
-          <button
-            onClick={handleAumentar5MinCaucus}
-            style={{
-              padding: '0.25rem 0.6rem',
-              backgroundColor: 'rgba(234, 179, 8, 0.15)',
-              border: '1px solid #eab308',
-              color: '#eab308',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontWeight: '700',
-              fontSize: '0.72rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.2rem'
-            }}
-            title="Añadir 5 minutos al tiempo total del caucus"
-          >
-            <Plus size={12} /> 5 min Caucus
-          </button>
-        )}
+          {/* Selector de Modo Manual */}
+          <div style={{ display: 'flex', gap: '0.2rem', backgroundColor: '#111111', padding: '2px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
+            <button
+              onClick={() => setModoSeleccionado('Caucus Moderado')}
+              style={{
+                padding: '0.2rem 0.45rem',
+                fontSize: '0.65rem',
+                fontWeight: '700',
+                backgroundColor: tipoMocion === 'Caucus Moderado' ? '#eab308' : 'transparent',
+                color: tipoMocion === 'Caucus Moderado' ? '#000000' : 'var(--text-color)',
+                border: 'none',
+                borderRadius: '3px',
+                cursor: 'pointer'
+              }}
+            >
+              Moderado
+            </button>
+            <button
+              onClick={() => setModoSeleccionado('Caucus No Moderado')}
+              style={{
+                padding: '0.2rem 0.45rem',
+                fontSize: '0.65rem',
+                fontWeight: '700',
+                backgroundColor: tipoMocion === 'Caucus No Moderado' ? '#eab308' : 'transparent',
+                color: tipoMocion === 'Caucus No Moderado' ? '#000000' : 'var(--text-color)',
+                border: 'none',
+                borderRadius: '3px',
+                cursor: 'pointer'
+              }}
+            >
+              No Moderado
+            </button>
+            <button
+              onClick={() => setModoSeleccionado('Tour de Table')}
+              style={{
+                padding: '0.2rem 0.45rem',
+                fontSize: '0.65rem',
+                fontWeight: '700',
+                backgroundColor: tipoMocion === 'Tour de Table' ? '#eab308' : 'transparent',
+                color: tipoMocion === 'Tour de Table' ? '#000000' : 'var(--text-color)',
+                border: 'none',
+                borderRadius: '3px',
+                cursor: 'pointer'
+              }}
+            >
+              Tour de Table
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* VISTA 1: CAUCUS NO MODERADO O CONSULTA GENERAL */}
@@ -190,16 +234,17 @@ const CronometroDual = () => {
             </div>
             <div style={{
               fontWeight: '900',
-              fontSize: '3.6rem',
+              fontSize: '4.8rem',
               fontFamily: 'monospace',
-              letterSpacing: '0.05em',
+              letterSpacing: '0.04em',
+              lineHeight: 1
             }}>
               {formatTimeWithNegative(tiempoTotalSeg)}
             </div>
           </div>
 
-          {/* BOTONES DE CONTROL ENCIMA */}
-          <div style={{ display: 'flex', gap: '0.4rem' }}>
+          {/* BOTONES DE CONTROL Y TIEMPO RÁPIDO */}
+          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
             <button
               onClick={handleStartPause}
               style={{
@@ -241,6 +286,40 @@ const CronometroDual = () => {
               title="Reiniciar"
             >
               <RotateCcw size={15} /> Reiniciar
+            </button>
+
+            <button
+              onClick={() => handleAumentarSegundos(60)}
+              style={{
+                flex: 1,
+                padding: '0.6rem',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-color)',
+                fontWeight: '600',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '0.8rem'
+              }}
+            >
+              +1 min
+            </button>
+
+            <button
+              onClick={() => handleAumentarSegundos(300)}
+              style={{
+                flex: 1,
+                padding: '0.6rem',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-color)',
+                fontWeight: '600',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '0.8rem'
+              }}
+            >
+              +5 min
             </button>
           </div>
         </div>
