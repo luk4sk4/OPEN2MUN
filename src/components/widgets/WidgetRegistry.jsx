@@ -8,6 +8,8 @@ import MatrizPaises from './MatrizPaises';
 import HistoricoDelegaciones from './HistoricoDelegaciones';
 import VotacionOficial from './VotacionOficial';
 import EstablecerAgenda from './EstablecerAgenda';
+import ImportarPaises from './ImportarPaises';
+import ConfigurarComite from './ConfigurarComite';
 
 const WidgetRegistry = {
   "establecer_agenda": EstablecerAgenda,
@@ -19,6 +21,8 @@ const WidgetRegistry = {
   "matriz_paises": MatrizPaises,
   "historico_delegaciones": HistoricoDelegaciones,
   "votacion_oficial": VotacionOficial,
+  "importar_paises": ImportarPaises,
+  "configurar_comite": ConfigurarComite,
   "widget_prueba_1": DummyWidget1,
   "widget_prueba_2": DummyWidget2,
 };

@@ -1,51 +1,19 @@
 import React, { useState } from 'react';
 import { 
   FileCheck2, 
-  Plus, 
-  Check, 
-  Sparkles, 
-  Layers, 
+  Plus,
   ArrowUp, 
   ArrowDown, 
-  Trash2, 
-  Bookmark, 
-  Flag,
-  CheckCircle2,
-  ListOrdered
+  Trash2
 } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 
-const PLANTILLAS_AGENDA = [
-  {
-    comision: 'Asamblea General (GA1)',
-    temas: [
-      'Estrategias de Financiamiento Verde y Sostenibilidad Global',
-      'Desarme Nuclear y Prevención de la Proliferación en Zonas de Conflicto'
-    ]
-  },
-  {
-    comision: 'Consejo de Seguridad (UNSC)',
-    temas: [
-      'Seguridad Cibernética e Inteligencia Artificial en Sistemas de Defensa',
-      'Protección de Infraestructuras Críticas Civiles en Zonas Hostiles'
-    ]
-  },
-  {
-    comision: 'ECOSOC',
-    temas: [
-      'Mitigación del Impacto Económico Post-Pandémico en Países en Desarrollo',
-      'Acceso Universal a la Educación Digital y Tecnologías Emergentes'
-    ]
-  }
-];
 
 const EstablecerAgenda = () => {
   const { agendaSesion, establecerAgenda, cambiarTemaActual } = useSession();
 
   const [nuevoTemaInput, setNuevoTemaInput] = useState('');
-  const [listaTemas, setListaTemas] = useState(agendaSesion.temasPropuestos || [
-    { id: 't1', titulo: agendaSesion.temaActual || 'Estrategias de Financiamiento Verde y Sostenibilidad Global', estado: 'En Discusión' }
-  ]);
+  const [listaTemas, setListaTemas] = useState(agendaSesion.temasPropuestos || []);
 
   const handleAgregarTema = () => {
     if (!nuevoTemaInput.trim()) return;
@@ -83,15 +51,6 @@ const EstablecerAgenda = () => {
     setListaTemas(temasFormateados);
   };
 
-  const handleCargarPlantilla = (plantilla) => {
-    const nuevosTemas = plantilla.temas.map((titulo, idx) => ({
-      id: `t_${idx}_${Date.now()}`,
-      titulo,
-      estado: idx === 0 ? 'En Discusión' : 'Pendiente'
-    }));
-    setListaTemas(nuevosTemas);
-    establecerAgenda(nuevosTemas[0].titulo, nuevosTemas);
-  };
 
   return (
     <div style={{
@@ -107,11 +66,11 @@ const EstablecerAgenda = () => {
     }}>
       {/* ── Banner de Agenda Oficial Establecida ── */}
       <div style={{
-        backgroundColor: '#16081a',
-        border: '1px solid #d946ef',
+        backgroundColor: '#0d0b00',
+        border: '1px solid #eab308',
         borderRadius: '8px',
         padding: '0.85rem 1rem',
-        boxShadow: '0 0 18px rgba(217, 70, 239, 0.2)',
+        boxShadow: '0 0 18px rgba(234, 179, 8, 0.15)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -122,21 +81,21 @@ const EstablecerAgenda = () => {
             width: '38px',
             height: '38px',
             borderRadius: '8px',
-            backgroundColor: 'rgba(217, 70, 239, 0.2)',
+            backgroundColor: 'rgba(234, 179, 8, 0.15)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             flexShrink: 0
           }}>
-            <FileCheck2 size={22} color="#d946ef" />
+            <FileCheck2 size={22} color="#eab308" />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <span style={{ 
                 fontSize: '0.68rem', 
                 fontWeight: '800', 
-                color: '#d946ef', 
-                backgroundColor: 'rgba(217, 70, 239, 0.15)', 
+                color: '#eab308', 
+                backgroundColor: 'rgba(234, 179, 8, 0.12)', 
                 padding: '0.1rem 0.45rem', 
                 borderRadius: '4px',
                 letterSpacing: '0.05em',
@@ -145,7 +104,7 @@ const EstablecerAgenda = () => {
                 📜 AGENDA OFICIAL REGISTRADA
               </span>
             </div>
-            <div style={{ fontWeight: '800', fontSize: '1rem', marginTop: '0.2rem', color: '#ffffff' }}>
+            <div style={{ fontWeight: '800', fontSize: '1rem', marginTop: '0.2rem', color: 'var(--text-color)' }}>
               {agendaSesion.temaActual || 'Tema de Discusión Sin Establecer'}
             </div>
           </div>
@@ -163,7 +122,7 @@ const EstablecerAgenda = () => {
           style={{
             flex: 1,
             padding: '0.5rem 0.75rem',
-            backgroundColor: '#0a0a0d',
+            backgroundColor: '#0a0a0a',
             border: '1px solid var(--border-color)',
             borderRadius: '6px',
             color: 'var(--text-color)',
@@ -175,8 +134,8 @@ const EstablecerAgenda = () => {
           onClick={handleAgregarTema}
           style={{
             padding: '0.5rem 0.85rem',
-            backgroundColor: '#d946ef',
-            color: '#ffffff',
+            backgroundColor: '#eab308',
+            color: '#000000',
             fontWeight: '700',
             border: 'none',
             borderRadius: '6px',
@@ -191,30 +150,7 @@ const EstablecerAgenda = () => {
         </button>
       </div>
 
-      {/* Plantillas Rápidas MUN */}
-      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
-        <span style={{ fontSize: '0.72rem', opacity: 0.65, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-          <Sparkles size={12} color="#d946ef" /> Plantillas:
-        </span>
-        {PLANTILLAS_AGENDA.map((p, idx) => (
-          <button
-            key={idx}
-            onClick={() => handleCargarPlantilla(p)}
-            style={{
-              padding: '0.2rem 0.5rem',
-              fontSize: '0.7rem',
-              fontWeight: '600',
-              backgroundColor: '#18181b',
-              border: '1px solid var(--border-color)',
-              color: '#d946ef',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            {p.comision}
-          </button>
-        ))}
-      </div>
+
 
       {/* ── Lista Ordenada de Temas para la Agenda ── */}
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
@@ -230,8 +166,8 @@ const EstablecerAgenda = () => {
               key={item.id || index}
               style={{
                 padding: '0.65rem 0.85rem',
-                backgroundColor: esActual ? '#1c0822' : '#0a0a0d',
-                border: `1px solid ${esActual ? '#d946ef' : 'var(--border-color)'}`,
+                backgroundColor: esActual ? 'rgba(234, 179, 8, 0.07)' : 'var(--card-header-bg)',
+                border: `1px solid ${esActual ? '#eab308' : 'var(--border-color)'}`,
                 borderRadius: '6px',
                 display: 'flex',
                 alignItems: 'center',
@@ -245,8 +181,8 @@ const EstablecerAgenda = () => {
                   width: '22px',
                   height: '22px',
                   borderRadius: '50%',
-                  backgroundColor: esActual ? '#d946ef' : '#27272a',
-                  color: esActual ? '#ffffff' : '#a1a1aa',
+                  backgroundColor: esActual ? '#eab308' : 'var(--border-color)',
+                  color: esActual ? '#000000' : 'var(--muted-text)',
                   fontWeight: '800',
                   fontSize: '0.75rem',
                   display: 'flex',
@@ -261,7 +197,7 @@ const EstablecerAgenda = () => {
                   <div style={{ 
                     fontWeight: '700', 
                     fontSize: '0.85rem', 
-                    color: esActual ? '#f5d0fe' : 'var(--text-color)',
+                    color: esActual ? '#eab308' : 'var(--text-color)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
@@ -284,9 +220,9 @@ const EstablecerAgenda = () => {
                       fontSize: '0.7rem',
                       fontWeight: '700',
                       borderRadius: '4px',
-                      border: '1px solid #d946ef',
-                      backgroundColor: 'rgba(217, 70, 239, 0.15)',
-                      color: '#d946ef',
+                      border: '1px solid #eab308',
+                      backgroundColor: 'rgba(234, 179, 8, 0.12)',
+                      color: '#eab308',
                       cursor: 'pointer'
                     }}
                     title="Pasar a discutir este tema"
@@ -351,8 +287,8 @@ const EstablecerAgenda = () => {
         style={{
           width: '100%',
           padding: '0.65rem',
-          backgroundColor: '#d946ef',
-          color: '#ffffff',
+          backgroundColor: '#eab308',
+          color: '#000000',
           fontWeight: '800',
           border: 'none',
           borderRadius: '6px',
@@ -362,7 +298,7 @@ const EstablecerAgenda = () => {
           justifyContent: 'center',
           gap: '0.5rem',
           fontSize: '0.88rem',
-          boxShadow: '0 4px 15px rgba(217, 70, 239, 0.3)',
+          boxShadow: '0 4px 15px rgba(234, 179, 8, 0.25)',
           transition: 'all 0.2s ease'
         }}
       >

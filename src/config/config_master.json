@@ -15,19 +15,18 @@
   },
   "layouts": {
     "COMIENZO": [
-      { "i": "matriz_paises", "col": 0, "row": 0, "colSpan": 6, "rowSpan": 4 },
-      { "i": "establecer_agenda", "col": 6, "row": 0, "colSpan": 6, "rowSpan": 4 }
+      { "i": "configurar_comite", "col": 0, "row": 0, "colSpan": 4, "rowSpan": 3 },
+      { "i": "establecer_agenda", "col": 4, "row": 0, "colSpan": 8, "rowSpan": 4 },
+      { "i": "importar_paises", "col": 0, "row": 3, "colSpan": 6, "rowSpan": 5 },
+      { "i": "matriz_paises", "col": 6, "row": 4, "colSpan": 6, "rowSpan": 4 }
     ],
     "GSL": [
-      { "i": "establecer_agenda", "col": 0, "row": 0, "colSpan": 6, "rowSpan": 4 },
       { "i": "cronometro_principal", "col": 6, "row": 0, "colSpan": 6, "rowSpan": 4 },
-      { "i": "lista_oradores", "col": 0, "row": 4, "colSpan": 6, "rowSpan": 4 },
-      { "i": "matriz_paises", "col": 6, "row": 4, "colSpan": 6, "rowSpan": 4 }
+      { "i": "lista_oradores", "col": 0, "row": 4, "colSpan": 6, "rowSpan": 4 }
     ],
     "DEBATE": [
       { "i": "cronometro_dual", "col": 0, "row": 0, "colSpan": 5, "rowSpan": 4 },
-      { "i": "pizarra_mociones", "col": 5, "row": 0, "colSpan": 7, "rowSpan": 4 },
-      { "i": "lista_oradores", "col": 0, "row": 4, "colSpan": 5, "rowSpan": 4 }
+      { "i": "pizarra_mociones", "col": 5, "row": 0, "colSpan": 7, "rowSpan": 4 }
     ],
     "VOTING": [
       { "i": "votacion_oficial", "col": 0, "row": 0, "colSpan": 7, "rowSpan": 5 },

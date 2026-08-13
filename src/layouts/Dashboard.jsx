@@ -13,7 +13,8 @@ import {
   Maximize,
   Sun,
   Moon,
-  Home
+  Home,
+  ChevronRight
 } from 'lucide-react';
 import configMaster from '../config/config_master.json';
 import WidgetRegistry from '../components/widgets/WidgetRegistry';
@@ -37,8 +38,177 @@ function getCellSize(containerWidth) {
   return { cellW, cellH };
 }
 
+// ─── Menú flotante para pantalla completa ─────────────────────────────────────
+const TAB_LABELS = {
+  HOME: '🏠 Inicio',
+  COMIENZO: '⚙️ Comienzo',
+  GSL: '🎙️ GSL',
+  DEBATE: '⏱️ Debate',
+  VOTING: '🗳️ Voting',
+  INFO: '📊 Info',
+  LAB: '🧪 Lab',
+};
+
+const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight, nombreComite }) => {
+  const [open, setOpen] = useState(false);
+  const closeTimer = useRef(null);
+
+  const startClose = () => {
+    closeTimer.current = setTimeout(() => setOpen(false), 180);
+  };
+
+  const cancelClose = () => {
+    clearTimeout(closeTimer.current);
+  };
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: '12px',
+        right: '16px',
+        zIndex: 9999,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-end',
+        gap: '0.4rem',
+        pointerEvents: 'none'  // el contenedor nunca intercepta eventos
+      }}
+    >
+      {/* Botón principal — único activador del hover */}
+      <div
+        onMouseEnter={() => { cancelClose(); setOpen(true); }}
+        onMouseLeave={startClose}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.4rem',
+          backgroundColor: isLight ? 'rgba(255,255,255,0.95)' : 'rgba(9,9,11,0.95)',
+          border: `1px solid ${open ? '#eab308' : (isLight ? '#e2e8f0' : '#27272a')}`,
+          borderRadius: '8px',
+          padding: '0.4rem 0.65rem',
+          boxShadow: '0 8px 25px rgba(0,0,0,0.45)',
+          cursor: 'default',
+          transition: 'border-color 0.2s ease',
+          backdropFilter: 'blur(8px)',
+          pointerEvents: 'auto'  // solo la pastilla captura eventos
+        }}>
+        <Minimize2 size={15} color={open ? '#eab308' : (isLight ? '#0f172a' : '#ffffff')} />
+        <span style={{
+          fontSize: '0.72rem',
+          fontWeight: '700',
+          color: open ? '#eab308' : (isLight ? '#0f172a' : '#ffffff'),
+          transition: 'color 0.2s ease'
+        }}>
+          {TAB_LABELS[activeTab] || activeTab}
+        </span>
+        <ChevronRight
+          size={13}
+          color={open ? '#eab308' : (isLight ? '#64748b' : '#71717a')}
+          style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}
+        />
+      </div>
+
+      {/* Panel desplegable */}
+      <div
+        onMouseEnter={cancelClose}
+        onMouseLeave={startClose}
+        style={{
+        backgroundColor: isLight ? 'rgba(255,255,255,0.97)' : 'rgba(9,9,11,0.97)',
+        border: '1px solid #eab308',
+        borderRadius: '10px',
+        boxShadow: '0 16px 40px rgba(0,0,0,0.6)',
+        backdropFilter: 'blur(12px)',
+        overflow: 'hidden',
+        minWidth: '180px',
+        opacity: open ? 1 : 0,
+        transform: open ? 'translateY(0) scale(1)' : 'translateY(-8px) scale(0.97)',
+        transition: 'opacity 0.18s ease, transform 0.18s ease',
+        pointerEvents: open ? 'auto' : 'none'
+      }}>
+        {/* Nombre del comité */}
+        {nombreComite && (
+          <div style={{
+            padding: '0.55rem 0.85rem',
+            borderBottom: '1px solid #eab308',
+            fontSize: '0.7rem',
+            fontWeight: '800',
+            color: '#eab308',
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase'
+          }}>
+            🏛️ {nombreComite}
+          </div>
+        )}
+
+        {/* Tabs */}
+        <div style={{ padding: '0.35rem' }}>
+          {tabs.map(tab => {
+            const isActive = activeTab === tab;
+            return (
+              <button
+                key={tab}
+                onClick={() => { setActiveTab(tab); setOpen(false); }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  width: '100%',
+                  padding: '0.45rem 0.65rem',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: isActive ? '#eab308' : 'transparent',
+                  color: isActive ? '#000000' : (isLight ? '#0f172a' : '#ffffff'),
+                  fontWeight: isActive ? '800' : '500',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'background-color 0.12s ease'
+                }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.backgroundColor = isLight ? '#f1f5f9' : '#18181b'; }}
+                onMouseLeave={e => { if (!isActive) e.currentTarget.style.backgroundColor = 'transparent'; }}
+              >
+                <span>{TAB_LABELS[tab] || tab}</span>
+                {isActive && <span style={{ marginLeft: 'auto', fontSize: '0.65rem', opacity: 0.7 }}>◀ actual</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Divider + Salir de pantalla completa */}
+        <div style={{ borderTop: `1px solid ${isLight ? '#e2e8f0' : '#27272a'}`, padding: '0.35rem' }}>
+          <button
+            onClick={() => { toggleMaximize(); setOpen(false); }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              width: '100%',
+              padding: '0.45rem 0.65rem',
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: 'transparent',
+              color: '#ef4444',
+              fontWeight: '700',
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              textAlign: 'left',
+              transition: 'background-color 0.12s ease'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.1)'; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+          >
+            <Minimize2 size={14} />
+            Salir de pantalla completa
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Dashboard = () => {
-  const { descargarSesionJSON, cargarSesionJSON, agendaSesion } = useSession();
+  const { descargarSesionJSON, cargarSesionJSON, agendaSesion, nombreComite } = useSession();
 
   // Cargar configuración desde localStorage si existe, o usar configMaster por defecto
   const [config, setConfig] = useState(() => {
@@ -73,9 +243,32 @@ const Dashboard = () => {
     }
   }, [config]);
 
-  const boardRef = useRef(null);
+  const boardResizeObserverRef = useRef(null);
+  const boardNodeRef = useRef(null); // referencia al nodo DOM del tablero
   const fileInputRef = useRef(null);
   const [boardW, setBoardW] = useState(0);
+
+  // Callback ref: se ejecuta cada vez que el div del tablero se monta o desmonta
+  const boardRef = useCallback((node) => {
+    // Desconectar el observer anterior si existe
+    if (boardResizeObserverRef.current) {
+      boardResizeObserverRef.current.disconnect();
+      boardResizeObserverRef.current = null;
+    }
+    boardNodeRef.current = node;
+    if (node) {
+      // Medir inmediatamente
+      setBoardW(node.offsetWidth);
+      // Observar cambios de tamaño
+      const observer = new ResizeObserver(() => {
+        setBoardW(node.offsetWidth);
+      });
+      observer.observe(node);
+      boardResizeObserverRef.current = observer;
+    } else {
+      setBoardW(0);
+    }
+  }, []);
 
   // Referencias para interacciones activas de Drag y Resize
   const activeInteractionRef = useRef(null);
@@ -118,22 +311,7 @@ const Dashboard = () => {
     };
   }, [toggleMaximize]);
 
-  // Medir ancho del contenedor del tablero
-  useEffect(() => {
-    const updateWidth = () => {
-      if (boardRef.current) {
-        setBoardW(boardRef.current.offsetWidth);
-      }
-    };
-    updateWidth();
-    const observer = new ResizeObserver(updateWidth);
-    if (boardRef.current) observer.observe(boardRef.current);
-    window.addEventListener('resize', updateWidth);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('resize', updateWidth);
-    };
-  }, []);
+  // El ancho del tablero se gestiona a través del callback ref (boardRef)
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -230,7 +408,7 @@ const Dashboard = () => {
 
   const handlePointerMove = useCallback((e) => {
     const active = activeInteractionRef.current;
-    if (!active || !boardRef.current || boardW === 0) return;
+    if (!active || !boardNodeRef.current || boardW === 0) return;
 
     const clientX = e.clientX || (e.touches && e.touches[0]?.clientX) || 0;
     const clientY = e.clientY || (e.touches && e.touches[0]?.clientY) || 0;
@@ -461,32 +639,16 @@ const Dashboard = () => {
         onDeactivateAll={handleDeactivateAll}
       />
 
-      {/* Botón flotante al estar maximizado */}
+      {/* Menú flotante en pantalla completa */}
       {isMaximized && (
-        <button
-          onClick={toggleMaximize}
-          style={{
-            position: 'fixed',
-            top: '12px',
-            right: '16px',
-            zIndex: 9999,
-            backgroundColor: 'var(--panel-color)',
-            border: '1px solid var(--border-color)',
-            color: 'var(--text-color)',
-            borderRadius: '50%',
-            width: '38px',
-            height: '38px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            boxShadow: '0 8px 25px rgba(0,0,0,0.4)',
-            transition: 'all 0.2s ease'
-          }}
-          title="Restaurar Interfaz (F11)"
-        >
-          <Minimize2 size={18} />
-        </button>
+        <FullscreenMenu
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          tabs={tabs}
+          toggleMaximize={toggleMaximize}
+          isLight={isLight}
+          nombreComite={nombreComite}
+        />
       )}
 
       {/* ── Navbar Principal ── */}
@@ -649,33 +811,67 @@ const Dashboard = () => {
             </div>
           </nav>
 
-          {/* Subheader Persistente de Agenda Oficial (Solo si hay tema registrado) */}
+          {/* Subheader Persistente de Comité + Agenda (Solo fuera de HOME) */}
           {activeTab !== 'HOME' && (
             <div style={{
               backgroundColor: 'var(--card-header-bg)',
               borderBottom: '1px solid var(--subborder-color)',
-              padding: '0.45rem 1.5rem',
+              padding: '0.4rem 1.5rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               fontSize: '0.8rem',
-              color: 'var(--text-color)'
+              color: 'var(--text-color)',
+              gap: '0.75rem'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
-                <span style={{
-                  fontSize: '0.68rem',
-                  fontWeight: '800',
-                  color: 'var(--btn-text)',
-                  backgroundColor: 'var(--btn-bg)',
-                  padding: '0.15rem 0.5rem',
-                  borderRadius: '4px',
-                  letterSpacing: '0.05em'
-                }}>
-                  📜 AGENDA REGISTRADA
-                </span>
-                <span style={{ fontWeight: '700', opacity: 0.9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {agendaSesion?.temaActual || 'Asamblea General - Tema de Discusión en Proceso'}
-                </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0, flex: 1, overflow: 'hidden' }}>
+                {/* Badge Comité */}
+                {nombreComite ? (
+                  <span style={{
+                    fontSize: '0.68rem',
+                    fontWeight: '800',
+                    color: 'var(--btn-text)',
+                    backgroundColor: 'var(--btn-bg)',
+                    padding: '0.15rem 0.5rem',
+                    borderRadius: '4px',
+                    letterSpacing: '0.04em',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
+                  }}>
+                    🏛️ {nombreComite}
+                  </span>
+                ) : (
+                  <span style={{
+                    fontSize: '0.68rem',
+                    fontWeight: '700',
+                    color: 'var(--muted-text)',
+                    backgroundColor: 'var(--subnav-bg)',
+                    border: '1px dashed var(--border-color)',
+                    padding: '0.15rem 0.5rem',
+                    borderRadius: '4px',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
+                  }}>
+                    🏛️ Sin comité
+                  </span>
+                )}
+
+                {/* Separador */}
+                <span style={{ opacity: 0.25, flexShrink: 0 }}>·</span>
+
+                {/* Tema de Agenda */}
+                {agendaSesion?.temaActual ? (
+                  <>
+                    <span style={{ fontSize: '0.65rem', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>📜</span>
+                    <span style={{ fontWeight: '600', opacity: 0.9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {agendaSesion.temaActual}
+                    </span>
+                  </>
+                ) : (
+                  <span style={{ fontWeight: '500', opacity: 0.4, fontStyle: 'italic', fontSize: '0.78rem' }}>
+                    Agenda no establecida
+                  </span>
+                )}
               </div>
             </div>
           )}

@@ -101,10 +101,16 @@ const VotacionOficial = () => {
   }
 
   // Dictamen de la Votación
-  let estadoVotacion = 'EN_PROCESO'; // 'APROBADA' | 'REPROBADA' | 'VETADA' | 'EN_PROCESO'
-  let mensajeDictamen = 'Votación en proceso...';
+  let estadoVotacion = 'SIN_VOTOS'; // 'SIN_VOTOS' | 'APROBADA' | 'REPROBADA' | 'VETADA' | 'EN_PROCESO'
+  let mensajeDictamen = 'Sin votaciones registradas aún.';
 
-  if (vetoEjercido) {
+  if (votosEmitidos === 0 && totalAsistentes === 0) {
+    estadoVotacion = 'SIN_VOTOS';
+    mensajeDictamen = 'Sin delegaciones registradas ni votaciones aún.';
+  } else if (votosEmitidos === 0) {
+    estadoVotacion = 'SIN_VOTOS';
+    mensajeDictamen = 'No se han registrado votos todavía. Inicia el Roll Call o vota manualmente.';
+  } else if (vetoEjercido) {
     estadoVotacion = 'VETADA';
     const nombresVeto = paisesConVetoEfectuado.map(p => p.nombre).join(', ');
     mensajeDictamen = `REPROBADA POR VETO 👑 (Veto ejercido por: ${nombresVeto})`;
@@ -116,6 +122,9 @@ const VotacionOficial = () => {
       estadoVotacion = 'REPROBADA';
       mensajeDictamen = `REPROBADA (${favor} A Favor vs ${contra} En Contra, requiere ${textoRequerido})`;
     }
+  } else {
+    estadoVotacion = 'EN_PROCESO';
+    mensajeDictamen = 'Votación en proceso...';
   }
 
   // Lista de Países para la Ronda de Roll Call Actual
@@ -346,11 +355,13 @@ const VotacionOficial = () => {
         justifyContent: 'space-between',
         backgroundColor: estadoVotacion === 'APROBADA' ? 'rgba(34, 197, 94, 0.15)' :
                          estadoVotacion === 'VETADA' ? 'rgba(239, 68, 68, 0.25)' :
-                         estadoVotacion === 'REPROBADA' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.1)',
+                         estadoVotacion === 'REPROBADA' ? 'rgba(239, 68, 68, 0.15)' :
+                         estadoVotacion === 'SIN_VOTOS' ? 'rgba(113, 113, 122, 0.1)' : 'rgba(59, 130, 246, 0.1)',
         border: `1px solid ${
           estadoVotacion === 'APROBADA' ? '#22c55e' :
           estadoVotacion === 'VETADA' ? '#ef4444' :
-          estadoVotacion === 'REPROBADA' ? '#ef4444' : '#3b82f6'
+          estadoVotacion === 'REPROBADA' ? '#ef4444' :
+          estadoVotacion === 'SIN_VOTOS' ? '#52525b' : '#3b82f6'
         }`,
         boxShadow: estadoVotacion === 'APROBADA' ? '0 0 15px rgba(34, 197, 94, 0.2)' :
                    estadoVotacion === 'VETADA' ? '0 0 20px rgba(239, 68, 68, 0.35)' : 'none',
@@ -361,6 +372,7 @@ const VotacionOficial = () => {
           {estadoVotacion === 'VETADA' && <ShieldAlert size={22} color="#ef4444" />}
           {estadoVotacion === 'REPROBADA' && <XCircle size={22} color="#ef4444" />}
           {estadoVotacion === 'EN_PROCESO' && <Info size={22} color="#3b82f6" />}
+          {estadoVotacion === 'SIN_VOTOS' && <HelpCircle size={22} color="#71717a" />}
 
           <div>
             <div style={{ fontWeight: '800', fontSize: '0.95rem' }}>

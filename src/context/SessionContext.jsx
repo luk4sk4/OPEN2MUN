@@ -2,28 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const SessionContext = createContext();
 
-const PAISES_INICIALES = [
-  { id: 'USA', nombre: 'Estados Unidos', veto: true, estatus: 'Presente y Votando', bandera: '🇺🇸' },
-  { id: 'GBR', nombre: 'Reino Unido', veto: true, estatus: 'Presente y Votando', bandera: '🇬🇧' },
-  { id: 'FRA', nombre: 'Francia', veto: true, estatus: 'Presente y Votando', bandera: '🇫🇷' },
-  { id: 'RUS', nombre: 'Rusia', veto: true, estatus: 'Presente y Votando', bandera: '🇷🇺' },
-  { id: 'CHN', nombre: 'China', veto: true, estatus: 'Presente y Votando', bandera: '🇨🇳' },
-  { id: 'DEU', nombre: 'Alemania', veto: false, estatus: 'Presente', bandera: '🇩🇪' },
-  { id: 'JPN', nombre: 'Japón', veto: false, estatus: 'Presente', bandera: '🇯🇵' },
-  { id: 'BRA', nombre: 'Brasil', veto: false, estatus: 'Presente', bandera: '🇧🇷' },
-  { id: 'IND', nombre: 'India', veto: false, estatus: 'Presente', bandera: '🇮🇳' },
-  { id: 'MEX', nombre: 'México', veto: false, estatus: 'Presente', bandera: '🇲🇽' },
-  { id: 'ESP', nombre: 'España', veto: false, estatus: 'Presente', bandera: '🇪🇸' },
-  { id: 'ARG', nombre: 'Argentina', veto: false, estatus: 'Presente', bandera: '🇦🇷' },
-  { id: 'COL', nombre: 'Colombia', veto: false, estatus: 'Presente', bandera: '🇨🇴' },
-  { id: 'ZAF', nombre: 'Sudáfrica', veto: false, estatus: 'Presente', bandera: '🇿🇦' },
-  { id: 'EGY', nombre: 'Egipto', veto: false, estatus: 'Presente', bandera: '🇪🇬' },
-  { id: 'CAN', nombre: 'Canadá', veto: false, estatus: 'Presente', bandera: '🇨🇦' },
-  { id: 'ITA', nombre: 'Italia', veto: false, estatus: 'Presente', bandera: '🇮🇹' },
-  { id: 'KOR', nombre: 'Corea del Sur', veto: false, estatus: 'Presente', bandera: '🇰🇷' },
-  { id: 'AUS', nombre: 'Australia', veto: false, estatus: 'Presente', bandera: '🇦🇺' },
-  { id: 'TUR', nombre: 'Turquía', veto: false, estatus: 'Ausente', bandera: '🇹🇷' }
-];
+const PAISES_INICIALES = [];
 
 export const SessionProvider = ({ children }) => {
   const [paises, setPaises] = useState(() => {
@@ -33,11 +12,7 @@ export const SessionProvider = ({ children }) => {
 
   const [oradoresCola, setOradoresCola] = useState(() => {
     const saved = localStorage.getItem('openmun_oradores');
-    return saved ? JSON.parse(saved) : [
-      { id: '1', nombre: 'México', bandera: '🇲🇽' },
-      { id: '2', nombre: 'Alemania', bandera: '🇩🇪' },
-      { id: '3', nombre: 'Japón', bandera: '🇯🇵' }
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [oradoresCaucus, setOradoresCaucus] = useState(() => {
@@ -52,38 +27,12 @@ export const SessionProvider = ({ children }) => {
 
   const [mociones, setMociones] = useState(() => {
     const saved = localStorage.getItem('openmun_mociones');
-    return saved ? JSON.parse(saved) : [
-      {
-        id: 'm1',
-        proponente: 'México',
-        posicionProponente: 'Primero',
-        tipo: 'Caucus Moderado',
-        varianteConsulta: '',
-        tema: 'Estrategias de Financiamiento Verde',
-        tiempoTotal: 600,
-        tiempoOrador: 45,
-        estado: 'Pendiente',
-        votosFavor: 0,
-        votosContra: 0
-      }
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [historicoMociones, setHistoricoMociones] = useState(() => {
     const saved = localStorage.getItem('openmun_historico_mociones');
-    return saved ? JSON.parse(saved) : [
-      {
-        id: 'm1',
-        proponente: 'México',
-        posicionProponente: 'Primero',
-        tipo: 'Caucus Moderado',
-        varianteConsulta: '',
-        tema: 'Estrategias de Financiamiento Verde',
-        tiempoTotal: 600,
-        tiempoOrador: 45,
-        estado: 'Pendiente'
-      }
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [caucusActivo, setCaucusActivo] = useState(() => {
@@ -114,13 +63,14 @@ export const SessionProvider = ({ children }) => {
   const [agendaSesion, setAgendaSesion] = useState(() => {
     const saved = localStorage.getItem('openmun_agenda');
     return saved ? JSON.parse(saved) : {
-      establecida: true,
-      temaActual: 'Estrategias de Financiamiento Verde y Sostenibilidad Global',
-      temasPropuestos: [
-        { id: 't1', titulo: 'Estrategias de Financiamiento Verde y Sostenibilidad Global', estado: 'En Discusión' },
-        { id: 't2', titulo: 'Seguridad Cibernética e Inteligencia Artificial en Defensas', estado: 'Pendiente' }
-      ]
+      establecida: false,
+      temaActual: '',
+      temasPropuestos: []
     };
+  });
+
+  const [nombreComite, setNombreComite] = useState(() => {
+    return localStorage.getItem('openmun_comite') || '';
   });
 
   // SINCRONIZACIÓN MAJESTUOSA Y COMPLETA EN sesion_activa.json Y LOCALSTORAGE
@@ -134,6 +84,7 @@ export const SessionProvider = ({ children }) => {
     localStorage.setItem('openmun_caucus', JSON.stringify(caucusActivo));
     localStorage.setItem('openmun_votacion', JSON.stringify(votacionSesion));
     localStorage.setItem('openmun_agenda', JSON.stringify(agendaSesion));
+    localStorage.setItem('openmun_comite', nombreComite);
 
     const sesionDataCompleta = {
       version: '1.0',
@@ -151,7 +102,7 @@ export const SessionProvider = ({ children }) => {
     };
 
     localStorage.setItem('sesion_activa.json', JSON.stringify(sesionDataCompleta, null, 2));
-  }, [paises, oradoresCola, oradoresCaucus, registroIntervenciones, mociones, historicoMociones, caucusActivo, votacionSesion, agendaSesion]);
+  }, [paises, oradoresCola, oradoresCaucus, registroIntervenciones, mociones, historicoMociones, caucusActivo, votacionSesion, agendaSesion, nombreComite]);
 
   const establecerAgenda = (temaActual, temasPropuestos = []) => {
     setAgendaSesion({
@@ -470,6 +421,7 @@ export const SessionProvider = ({ children }) => {
   return (
     <SessionContext.Provider value={{
       paises,
+      setPaises,
       cambiarEstatusPais,
       toggleVetoPais,
       oradoresCola,
@@ -502,7 +454,9 @@ export const SessionProvider = ({ children }) => {
       resetearVotacion,
       agendaSesion,
       establecerAgenda,
-      cambiarTemaActual
+      cambiarTemaActual,
+      nombreComite,
+      setNombreComite
     }}>
       {children}
     </SessionContext.Provider>

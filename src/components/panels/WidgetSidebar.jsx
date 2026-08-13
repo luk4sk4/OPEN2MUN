@@ -15,7 +15,9 @@ import {
   Zap,
   Sliders,
   Vote,
-  FileCheck2
+  FileCheck2,
+  Upload,
+  Building2
 } from 'lucide-react';
 import WidgetRegistry from '../widgets/WidgetRegistry';
 
@@ -110,6 +112,26 @@ export const WIDGET_METADATA = {
     iconColor: '#06b6d4',
     defaultColSpan: 6,
     defaultRowSpan: 4,
+  },
+  importar_paises: {
+    title: 'Importar Países',
+    category: 'Configuración',
+    description: 'Carga delegaciones desde archivo xlsx, csv o json, o añádelas manualmente.',
+    icon: Upload,
+    iconBg: 'rgba(234, 179, 8, 0.15)',
+    iconColor: '#eab308',
+    defaultColSpan: 6,
+    defaultRowSpan: 4,
+  },
+  configurar_comite: {
+    title: 'Nombre del Comité',
+    category: 'Configuración',
+    description: 'Asigna el nombre oficial del comité o asamblea para esta sesión.',
+    icon: Building2,
+    iconBg: 'rgba(234, 179, 8, 0.15)',
+    iconColor: '#eab308',
+    defaultColSpan: 6,
+    defaultRowSpan: 3,
   },
   widget_prueba_1: {
     title: 'Widget Prueba 1',
