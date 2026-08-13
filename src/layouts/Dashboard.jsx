@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { 
-  Settings, 
-  Eye, 
-  Menu, 
-  X, 
-  GripVertical, 
-  Download, 
-  Upload, 
-  Maximize2, 
+import {
+  Settings,
+  Eye,
+  Menu,
+  X,
+  GripVertical,
+  Download,
+  Upload,
+  Maximize2,
   Minimize2,
   Move,
   Maximize,
@@ -114,18 +114,18 @@ const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight
         onMouseEnter={cancelClose}
         onMouseLeave={startClose}
         style={{
-        backgroundColor: isLight ? 'rgba(255,255,255,0.97)' : 'rgba(9,9,11,0.97)',
-        border: '1px solid #eab308',
-        borderRadius: '10px',
-        boxShadow: '0 16px 40px rgba(0,0,0,0.6)',
-        backdropFilter: 'blur(12px)',
-        overflow: 'hidden',
-        minWidth: '180px',
-        opacity: open ? 1 : 0,
-        transform: open ? 'translateY(0) scale(1)' : 'translateY(-8px) scale(0.97)',
-        transition: 'opacity 0.18s ease, transform 0.18s ease',
-        pointerEvents: open ? 'auto' : 'none'
-      }}>
+          backgroundColor: isLight ? 'rgba(255,255,255,0.97)' : 'rgba(9,9,11,0.97)',
+          border: '1px solid #eab308',
+          borderRadius: '10px',
+          boxShadow: '0 16px 40px rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(12px)',
+          overflow: 'hidden',
+          minWidth: '180px',
+          opacity: open ? 1 : 0,
+          transform: open ? 'translateY(0) scale(1)' : 'translateY(-8px) scale(0.97)',
+          transition: 'opacity 0.18s ease, transform 0.18s ease',
+          pointerEvents: open ? 'auto' : 'none'
+        }}>
         {/* Nombre del comité */}
         {nombreComite && (
           <div style={{
@@ -280,11 +280,11 @@ const Dashboard = () => {
       const next = !prev;
       if (next) {
         if (document.documentElement.requestFullscreen) {
-          document.documentElement.requestFullscreen().catch(() => {});
+          document.documentElement.requestFullscreen().catch(() => { });
         }
       } else {
         if (document.fullscreenElement) {
-          document.exitFullscreen().catch(() => {});
+          document.exitFullscreen().catch(() => { });
         }
       }
       return next;
@@ -476,7 +476,7 @@ const Dashboard = () => {
       if (shouldBeActive && !exists) {
         const meta = WIDGET_METADATA[widgetId] || { defaultColSpan: 6, defaultRowSpan: 4 };
         const maxRow = currentWidgets.reduce((max, w) => Math.max(max, w.row + w.rowSpan), 0);
-        
+
         nextWidgets.push({
           i: widgetId,
           col: 0,
@@ -610,7 +610,7 @@ const Dashboard = () => {
   };
 
   const { cellW, cellH } = boardW ? getCellSize(boardW) : { cellW: 0, cellH: 0 };
-  
+
   const maxRowUsed = widgets.reduce((max, w) => Math.max(max, w.row + w.rowSpan), MIN_ROWS);
   const boardHeight = GAP + maxRowUsed * (ROW_HEIGHT + GAP);
 
@@ -627,7 +627,7 @@ const Dashboard = () => {
 
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} config={config} setConfig={setConfig} />
       <AccessibilityModal isOpen={isAccessOpen} onClose={() => setIsAccessOpen(false)} config={config} setConfig={setConfig} />
-      
+
       {/* Sidebar de Widgets */}
       <WidgetSidebar
         isOpen={isSidebarOpen}
@@ -654,39 +654,39 @@ const Dashboard = () => {
       {/* ── Navbar Principal ── */}
       {!isMaximized && (
         <>
-          <nav style={{ 
-            display: 'flex', 
-            padding: '0.75rem 1.5rem', 
-            backgroundColor: 'var(--header-bg)', 
-            borderBottom: '1px solid var(--subborder-color)', 
-            alignItems: 'center', 
-            justifyContent: 'space-between', 
-            transition: 'background-color 0.3s ease, border-color 0.3s ease' 
+          <nav style={{
+            display: 'flex',
+            padding: '0.75rem 1.5rem',
+            backgroundColor: 'var(--header-bg)',
+            borderBottom: '1px solid var(--subborder-color)',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            transition: 'background-color 0.3s ease, border-color 0.3s ease'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '280px' }}>
-              <button 
-                onClick={() => setIsSidebarOpen(true)} 
-                style={{ 
-                  background: 'transparent', 
-                  border: '1px solid var(--border-color)', 
-                  color: 'var(--text-color)', 
-                  cursor: 'pointer', 
-                  display: 'flex', 
-                  padding: '6px 10px', 
+              <button
+                onClick={() => setIsSidebarOpen(true)}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-color)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  padding: '6px 10px',
                   borderRadius: '6px',
                   alignItems: 'center',
                   gap: '0.4rem',
                   fontSize: '0.8rem',
                   fontWeight: '600'
-                }} 
+                }}
                 title="Abrir Gestor de Widgets"
               >
                 <Menu size={18} />
                 <span>Widgets</span>
               </button>
-              
+
               {/* Clic en Logo conmuta a Pestaña Principal (HOME) */}
-              <div 
+              <div
                 onClick={() => setActiveTab('HOME')}
                 style={{ cursor: 'pointer' }}
                 title="Ir a la Página Principal OPENMUN"
@@ -696,27 +696,27 @@ const Dashboard = () => {
             </div>
 
             {/* Pestañas de Navegación Neutras */}
-            <div style={{ 
-              display: 'flex', 
-              gap: '0.35rem', 
-              backgroundColor: 'var(--subnav-bg)', 
-              padding: '4px', 
-              borderRadius: '8px', 
-              border: '1px solid var(--subborder-color)', 
-              transition: 'background-color 0.3s ease' 
+            <div style={{
+              display: 'flex',
+              gap: '0.35rem',
+              backgroundColor: 'var(--subnav-bg)',
+              padding: '4px',
+              borderRadius: '8px',
+              border: '1px solid var(--subborder-color)',
+              transition: 'background-color 0.3s ease'
             }}>
               {tabs.map(tab => (
-                <button 
-                  key={tab} 
-                  onClick={() => setActiveTab(tab)} 
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
                   style={{
                     padding: '0.4rem 1.1rem',
                     backgroundColor: activeTab === tab ? 'var(--btn-bg)' : 'transparent',
                     color: activeTab === tab ? 'var(--btn-text)' : 'var(--muted-text)',
-                    border: 'none', 
-                    borderRadius: '6px', 
+                    border: 'none',
+                    borderRadius: '6px',
                     cursor: 'pointer',
-                    fontWeight: activeTab === tab ? '800' : '500', 
+                    fontWeight: activeTab === tab ? '800' : '500',
                     fontSize: '0.85rem',
                     letterSpacing: '0.03em',
                     transition: 'all 0.15s ease'
@@ -767,6 +767,39 @@ const Dashboard = () => {
                 title="Exportar archivo sesion_activa.json"
               >
                 <Download size={14} /> Exportar JSON
+              </button>
+
+
+              {/* Botón Placeholder Google Drive */}
+              <button
+                disabled
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  background: 'transparent',
+                  border: '1px solid var(--subborder-color)',
+                  borderRadius: '6px',
+                  color: 'var(--muted-text)',
+                  padding: '5px 0.65rem',
+                  fontSize: '0.78rem',
+                  fontWeight: '600',
+                  cursor: 'not-allowed',
+                  opacity: 0.6,
+                  position: 'relative'
+                }}
+                title="Conectar con Google Drive (próximamente)"
+              >
+                {/* Icono Google Drive simplificado */}
+                <svg width="15" height="15" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                  <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da" />
+                  <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47" />
+                  <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335" />
+                  <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d" />
+                  <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc" />
+                  <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 27h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00" />
+                </svg>
+                <span>Drive</span>
               </button>
 
               {/* Botón Directo para Conmutar Modo Claro / Oscuro */}
@@ -884,9 +917,9 @@ const Dashboard = () => {
           <HomePage onNavigateToComienzo={() => setActiveTab('COMIENZO')} isLight={isLight} />
         </main>
       ) : (
-        <main style={{ 
-          flex: 1, 
-          padding: '1rem', 
+        <main style={{
+          flex: 1,
+          padding: '1rem',
           userSelect: activeInteraction ? 'none' : 'auto',
           overflowX: 'hidden'
         }}>
@@ -967,8 +1000,8 @@ const Dashboard = () => {
                     onMouseDown={(e) => handleStartDrag(e, w.i)}
                     onTouchStart={(e) => handleStartDrag(e, w.i)}
                     style={{
-                      display: 'flex', 
-                      alignItems: 'center', 
+                      display: 'flex',
+                      alignItems: 'center',
                       justifyContent: 'space-between',
                       padding: '0.4rem 0.75rem',
                       backgroundColor: 'var(--card-header-bg)',
@@ -983,12 +1016,12 @@ const Dashboard = () => {
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flex: 1, minWidth: 0 }}>
                       <GripVertical size={15} style={{ opacity: 0.6, flexShrink: 0 }} />
-                      <span style={{ 
-                        fontSize: '0.78rem', 
-                        fontWeight: '600', 
-                        letterSpacing: '0.02em', 
-                        whiteSpace: 'nowrap', 
-                        overflow: 'hidden', 
+                      <span style={{
+                        fontSize: '0.78rem',
+                        fontWeight: '600',
+                        letterSpacing: '0.02em',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         color: 'var(--text-color)'
                       }}>
@@ -1015,13 +1048,13 @@ const Dashboard = () => {
                       onMouseDown={e => e.stopPropagation()}
                       onTouchStart={e => e.stopPropagation()}
                       onClick={() => removeWidget(w.i)}
-                      style={{ 
-                        background: 'transparent', 
-                        border: 'none', 
-                        color: 'var(--text-color)', 
-                        cursor: 'pointer', 
-                        display: 'flex', 
-                        opacity: 0.6, 
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-color)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        opacity: 0.6,
                         padding: '2px',
                         borderRadius: '4px',
                         transition: 'all 0.15s ease'
@@ -1033,10 +1066,10 @@ const Dashboard = () => {
                   </div>
 
                   {/* Contenido del Widget */}
-                  <div style={{ 
-                    flex: 1, 
-                    overflow: 'auto', 
-                    borderBottomLeftRadius: 'var(--border-radius)', 
+                  <div style={{
+                    flex: 1,
+                    overflow: 'auto',
+                    borderBottomLeftRadius: 'var(--border-radius)',
                     borderBottomRightRadius: 'var(--border-radius)',
                     pointerEvents: isInteracting ? 'none' : 'auto'
                   }}>
@@ -1053,14 +1086,14 @@ const Dashboard = () => {
                     onTouchStart={(e) => handleStartResize(e, w.i)}
                     style={{
                       position: 'absolute',
-                      bottom: 0, 
+                      bottom: 0,
                       right: 0,
-                      width: '18px', 
+                      width: '18px',
                       height: '18px',
                       cursor: 'nwse-resize',
                       opacity: isResizingThis ? 1 : 0.6,
-                      display: 'flex', 
-                      alignItems: 'flex-end', 
+                      display: 'flex',
+                      alignItems: 'flex-end',
                       justifyContent: 'flex-end',
                       padding: '3px',
                       borderBottomRightRadius: 'var(--border-radius)',
