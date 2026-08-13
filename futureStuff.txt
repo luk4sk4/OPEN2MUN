@@ -10,3 +10,6 @@ Gestor de Widgets: boton default y boton Load template
 en ajustes Tambien load template and select style 
 
 minimalist // art nuveau // OPENMUNBASIC // OLDSCHOOL
+
+
+add speaker by click

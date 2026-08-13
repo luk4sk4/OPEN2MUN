@@ -61,18 +61,6 @@ const CronometroOnlyTime = () => {
       backgroundColor: 'var(--panel-color)',
       color: 'var(--text-color)',
     }}>
-      {/* Header */}
-      <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.6rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <ShieldAlert size={18} color="#eab308" />
-          <div>
-            <div style={{ fontSize: '0.7rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Caucus No Moderado</div>
-            <div style={{ fontWeight: '700', fontSize: '0.95rem' }}>
-              {caucusActivo?.tema ? caucusActivo.tema : 'Tiempo General de Libre Debate'}
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Reloj Display Gigante */}
       <div style={{
@@ -94,9 +82,6 @@ const CronometroOnlyTime = () => {
           color: tiempoTotalSeg === 0 ? '#ef4444' : (corriendo ? '#eab308' : 'var(--text-color)')
         }}>
           {formatTime(tiempoTotalSeg)}
-        </div>
-        <div style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600' }}>
-          ⏱️ Tiempo Total de Libres Negociaciones
         </div>
       </div>
 
