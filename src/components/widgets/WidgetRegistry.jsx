@@ -24,6 +24,7 @@ const WidgetRegistry = {
   "votacion_oficial": VotacionOficial,
   "importar_paises": ImportarPaises,
   "configurar_comite": ConfigurarComite,
+  "comite_agenda": EstablecerAgenda,
   "anadir_paises": AnadirPaises,
   "agregar_paises": AnadirPaises,
   "widget_prueba_1": DummyWidget1,

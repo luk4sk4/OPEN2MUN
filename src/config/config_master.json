@@ -15,10 +15,9 @@
   },
   "layouts": {
     "COMIENZO": [
-      { "i": "configurar_comite", "col": 0, "row": 0, "colSpan": 4, "rowSpan": 3 },
-      { "i": "establecer_agenda", "col": 4, "row": 0, "colSpan": 8, "rowSpan": 4 },
-      { "i": "importar_paises", "col": 0, "row": 3, "colSpan": 6, "rowSpan": 5 },
-      { "i": "matriz_paises", "col": 6, "row": 4, "colSpan": 6, "rowSpan": 4 }
+      { "i": "establecer_agenda", "col": 0, "row": 0, "colSpan": 12, "rowSpan": 4 },
+      { "i": "importar_paises", "col": 0, "row": 4, "colSpan": 6, "rowSpan": 5 },
+      { "i": "matriz_paises", "col": 6, "row": 4, "colSpan": 6, "rowSpan": 5 }
     ],
     "GSL": [
       { "i": "lista_oradores", "col": 0, "row": 0, "colSpan": 4, "rowSpan": 5 },

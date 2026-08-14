@@ -1,305 +1,304 @@
-import React, { useState } from 'react';
-import { 
-  FileCheck2, 
-  Plus,
-  ArrowUp, 
-  ArrowDown, 
-  Trash2
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Building2, Plus, ArrowUp, ArrowDown, X, Check } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 
-
 const EstablecerAgenda = () => {
-  const { agendaSesion, establecerAgenda, cambiarTemaActual } = useSession();
+  const { 
+    nombreComite, 
+    setNombreComite, 
+    agendaSesion, 
+    establecerAgenda, 
+    cambiarTemaActual 
+  } = useSession();
 
-  const [nuevoTemaInput, setNuevoTemaInput] = useState('');
-  const [listaTemas, setListaTemas] = useState(agendaSesion.temasPropuestos || []);
+  const [comite, setComite] = useState(nombreComite || '');
+  const [nuevoTema, setNuevoTema] = useState('');
 
-  const handleAgregarTema = () => {
-    if (!nuevoTemaInput.trim()) return;
-    const nuevoObj = {
-      id: Date.now().toString(),
-      titulo: nuevoTemaInput.trim(),
-      estado: 'Pendiente'
-    };
-    const nuevaLista = [...listaTemas, nuevoObj];
-    setListaTemas(nuevaLista);
-    setNuevoTemaInput('');
+  useEffect(() => {
+    setComite(nombreComite || '');
+  }, [nombreComite]);
+
+  const handleComiteBlur = () => {
+    if (comite.trim() !== (nombreComite || '')) {
+      setNombreComite(comite.trim());
+    }
   };
 
-  const handleEliminarTema = (id) => {
-    setListaTemas(prev => prev.filter(t => t.id !== id));
+  const handleComiteKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      setNombreComite(comite.trim());
+      e.target.blur();
+    }
   };
 
-  const handleMoverTema = (index, direccion) => {
-    const targetIndex = index + direccion;
-    if (targetIndex < 0 || targetIndex >= listaTemas.length) return;
-    const clone = [...listaTemas];
+  const temas = agendaSesion.temasPropuestos || [];
+  const temaActual = agendaSesion.temaActual || (temas[0]?.titulo || '');
+
+  const handleAgregarTema = (e) => {
+    if (e) e.preventDefault();
+    const txt = nuevoTema.trim();
+    if (!txt) return;
+
+    const item = { id: Date.now().toString(), titulo: txt, estado: 'Pendiente' };
+    const nuevaLista = [...temas, item];
+
+    if (!agendaSesion.establecida || !agendaSesion.temaActual) {
+      establecerAgenda(txt, nuevaLista.map((t, idx) => ({ ...t, estado: idx === 0 ? 'En Discusión' : 'Pendiente' })));
+    } else {
+      establecerAgenda(agendaSesion.temaActual, nuevaLista);
+    }
+    setNuevoTema('');
+  };
+
+  const handleEliminarTema = (id, e) => {
+    e.stopPropagation();
+    const nuevaLista = temas.filter(t => t.id !== id);
+    const target = temas.find(t => t.id === id);
+    if (target && target.titulo === temaActual) {
+      const proximo = nuevaLista[0]?.titulo || '';
+      establecerAgenda(proximo, nuevaLista.map((t, idx) => ({ ...t, estado: idx === 0 ? 'En Discusión' : 'Pendiente' })));
+    } else {
+      establecerAgenda(temaActual, nuevaLista);
+    }
+  };
+
+  const handleMoverTema = (index, dir, e) => {
+    e.stopPropagation();
+    const target = index + dir;
+    if (target < 0 || target >= temas.length) return;
+    const clone = [...temas];
     const [moved] = clone.splice(index, 1);
-    clone.splice(targetIndex, 0, moved);
-    setListaTemas(clone);
+    clone.splice(target, 0, moved);
+    establecerAgenda(temaActual, clone);
   };
-
-  const handleFijarAgendaOficial = () => {
-    if (listaTemas.length === 0) return;
-    const primerTema = listaTemas[0].titulo;
-    const temasFormateados = listaTemas.map((t, idx) => ({
-      ...t,
-      estado: idx === 0 ? 'En Discusión' : 'Pendiente'
-    }));
-    establecerAgenda(primerTema, temasFormateados);
-    setListaTemas(temasFormateados);
-  };
-
 
   return (
     <div style={{
-      padding: '1.1rem',
+      padding: '0.65rem 0.75rem',
       height: '100%',
       display: 'flex',
       flexDirection: 'column',
       boxSizing: 'border-box',
       backgroundColor: 'var(--panel-color)',
       color: 'var(--text-color)',
-      gap: '0.85rem',
-      fontSize: '0.85rem'
+      gap: '0.45rem',
+      fontSize: '0.8rem',
+      fontFamily: 'Inter, system-ui, sans-serif'
     }}>
-      {/* ── Banner de Agenda Oficial Establecida ── */}
+      {/* ── Nombre del Comité ── */}
       <div style={{
-        backgroundColor: 'var(--card-header-bg)',
-        border: '1px solid var(--border-color)',
-        borderRadius: '8px',
-        padding: '0.75rem 1rem',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '0.75rem'
+        gap: '0.45rem',
+        backgroundColor: 'var(--card-header-bg)',
+        border: '1px solid var(--border-color)',
+        borderRadius: '5px',
+        padding: '0.3rem 0.55rem'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '7px',
-            backgroundColor: 'rgba(59, 130, 246, 0.15)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
-          }}>
-            <FileCheck2 size={20} color="#3b82f6" />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <span style={{ 
-                fontSize: '0.68rem', 
-                fontWeight: '800', 
-                color: '#60a5fa', 
-                backgroundColor: 'rgba(59, 130, 246, 0.12)', 
-                padding: '0.1rem 0.45rem', 
-                borderRadius: '4px',
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase'
-              }}>
-                📜 AGENDA OFICIAL
-              </span>
-            </div>
-            <div style={{ fontWeight: '800', fontSize: '1rem', marginTop: '0.2rem', color: 'var(--text-color)' }}>
-              {agendaSesion.temaActual || 'Tema de Discusión Sin Establecer'}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Añadir Nuevo Tema a la Agenda ── */}
-      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+        <Building2 size={14} style={{ color: '#71717a', flexShrink: 0 }} />
         <input
           type="text"
-          placeholder="Escribir título de tema o punto de agenda..."
-          value={nuevoTemaInput}
-          onChange={e => setNuevoTemaInput(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleAgregarTema()}
+          value={comite}
+          onChange={e => setComite(e.target.value)}
+          onBlur={handleComiteBlur}
+          onKeyDown={handleComiteKeyDown}
+          placeholder="Nombre del comité (ej: Consejo de Seguridad)..."
           style={{
             flex: 1,
-            padding: '0.45rem 0.75rem',
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--text-color)',
+            fontSize: '0.8rem',
+            outline: 'none'
+          }}
+        />
+        {comite.trim() === (nombreComite || '') && nombreComite && (
+          <Check size={13} color="#22c55e" style={{ flexShrink: 0 }} />
+        )}
+      </div>
+
+      {/* ── Añadir Punto a la Agenda ── */}
+      <form onSubmit={handleAgregarTema} style={{ display: 'flex', gap: '0.35rem' }}>
+        <input
+          type="text"
+          value={nuevoTema}
+          onChange={e => setNuevoTema(e.target.value)}
+          placeholder="Añadir punto de agenda..."
+          style={{
+            flex: 1,
+            padding: '0.35rem 0.55rem',
             backgroundColor: 'var(--card-header-bg)',
             border: '1px solid var(--border-color)',
-            borderRadius: '6px',
+            borderRadius: '5px',
             color: 'var(--text-color)',
-            fontSize: '0.82rem',
+            fontSize: '0.78rem',
             outline: 'none'
           }}
         />
         <button
-          onClick={handleAgregarTema}
+          type="submit"
+          disabled={!nuevoTema.trim()}
           style={{
-            padding: '0.45rem 0.85rem',
-            backgroundColor: 'var(--btn-bg)',
-            color: 'var(--btn-text)',
-            fontWeight: '700',
+            padding: '0.35rem 0.65rem',
+            backgroundColor: nuevoTema.trim() ? '#3b82f6' : '#27272a',
+            color: nuevoTema.trim() ? '#ffffff' : '#71717a',
             border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
+            borderRadius: '5px',
+            cursor: nuevoTema.trim() ? 'pointer' : 'default',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.35rem',
-            fontSize: '0.82rem'
+            gap: '0.2rem',
+            fontSize: '0.75rem',
+            fontWeight: '600'
           }}
         >
-          <Plus size={15} /> Añadir
+          <Plus size={13} /> Añadir
         </button>
-      </div>
+      </form>
 
-      {/* ── Lista Ordenada de Temas para la Agenda ── */}
-      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.35rem', paddingRight: '2px' }}>
-        <div style={{ fontSize: '0.72rem', opacity: 0.6, fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-          Orden de Prioridad de la Agenda:
-        </div>
+      {/* ── Lista Compacta de Temas ── */}
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.25rem',
+        paddingRight: '1px',
+        minHeight: 0
+      }}>
+        {temas.length === 0 ? (
+          <div style={{
+            margin: 'auto',
+            textAlign: 'center',
+            color: '#71717a',
+            fontSize: '0.74rem'
+          }}>
+            Sin puntos de agenda asignados
+          </div>
+        ) : (
+          temas.map((item, index) => {
+            const esActual = item.titulo === temaActual;
 
-        {listaTemas.map((item, index) => {
-          const esActual = item.titulo === agendaSesion.temaActual;
-
-          return (
-            <div
-              key={item.id || index}
-              style={{
-                padding: '0.55rem 0.8rem',
-                backgroundColor: esActual ? 'rgba(59, 130, 246, 0.1)' : 'var(--card-header-bg)',
-                border: `1px solid ${esActual ? '#2563eb' : 'var(--border-color)'}`,
-                borderRadius: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '0.75rem',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flex: 1, minWidth: 0 }}>
-                <span style={{
-                  width: '22px',
-                  height: '22px',
-                  borderRadius: '50%',
-                  backgroundColor: esActual ? '#2563eb' : 'var(--panel-color)',
-                  color: esActual ? '#ffffff' : 'var(--muted-text)',
-                  fontWeight: '800',
-                  fontSize: '0.75rem',
+            return (
+              <div
+                key={item.id || index}
+                onClick={() => cambiarTemaActual(item.titulo)}
+                style={{
+                  padding: '0.32rem 0.5rem',
+                  backgroundColor: esActual ? 'rgba(59, 130, 246, 0.12)' : 'var(--card-header-bg)',
+                  border: `1px solid ${esActual ? '#3b82f6' : 'var(--border-color)'}`,
+                  borderRadius: '4px',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  {index + 1}
-                </span>
-
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ 
-                    fontWeight: '700', 
-                    fontSize: '0.85rem', 
-                    color: 'var(--text-color)',
+                  justifyContent: 'space-between',
+                  gap: '0.4rem',
+                  cursor: 'pointer',
+                  userSelect: 'none'
+                }}
+                title={esActual ? 'Tema en debate actual' : 'Clic para activar este tema'}
+              >
+                {/* Índice y Título */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0, flex: 1 }}>
+                  <span style={{
+                    fontSize: '0.7rem',
+                    fontWeight: '700',
+                    color: esActual ? '#60a5fa' : '#71717a',
+                    width: '14px',
+                    textAlign: 'center',
+                    flexShrink: 0
+                  }}>
+                    {index + 1}.
+                  </span>
+                  <span style={{
+                    fontSize: '0.78rem',
+                    fontWeight: esActual ? '600' : '400',
+                    color: esActual ? '#ffffff' : 'var(--text-color)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
                   }}>
                     {item.titulo}
-                  </div>
-                  <div style={{ fontSize: '0.68rem', opacity: 0.6, marginTop: '1px' }}>
-                    {esActual ? '🔵 TEMA EN DISCUSIÓN ACTIVA' : '⚪ Tema en Agenda Pendiente'}
-                  </div>
+                  </span>
+                  {esActual && (
+                    <span style={{
+                      fontSize: '0.62rem',
+                      fontWeight: '700',
+                      backgroundColor: '#3b82f6',
+                      color: '#ffffff',
+                      padding: '0.05rem 0.35rem',
+                      borderRadius: '3px',
+                      flexShrink: 0
+                    }}>
+                      ACTIVO
+                    </span>
+                  )}
+                </div>
+
+                {/* Acciones */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.1rem', flexShrink: 0 }}>
+                  <button
+                    type="button"
+                    onClick={(e) => handleMoverTema(index, -1, e)}
+                    disabled={index === 0}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--text-color)',
+                      cursor: index === 0 ? 'default' : 'pointer',
+                      opacity: index === 0 ? 0.15 : 0.6,
+                      padding: '2px',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                    title="Subir"
+                  >
+                    <ArrowUp size={12} />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => handleMoverTema(index, 1, e)}
+                    disabled={index === temas.length - 1}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--text-color)',
+                      cursor: index === temas.length - 1 ? 'default' : 'pointer',
+                      opacity: index === temas.length - 1 ? 0.15 : 0.6,
+                      padding: '2px',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                    title="Bajar"
+                  >
+                    <ArrowDown size={12} />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => handleEliminarTema(item.id, e)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#71717a',
+                      cursor: 'pointer',
+                      padding: '2px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      marginLeft: '2px'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+                    onMouseLeave={e => e.currentTarget.style.color = '#71717a'}
+                    title="Eliminar"
+                  >
+                    <X size={12} />
+                  </button>
                 </div>
               </div>
-
-              {/* Botones de Acción */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                {!esActual && (
-                  <button
-                    onClick={() => cambiarTemaActual(item.titulo)}
-                    style={{
-                      padding: '0.22rem 0.5rem',
-                      fontSize: '0.7rem',
-                      fontWeight: '700',
-                      borderRadius: '4px',
-                      border: '1px solid #3b82f6',
-                      backgroundColor: 'rgba(59, 130, 246, 0.12)',
-                      color: '#60a5fa',
-                      cursor: 'pointer'
-                    }}
-                    title="Pasar a discutir este tema"
-                  >
-                    Discutir
-                  </button>
-                )}
-
-                <button
-                  onClick={() => handleMoverTema(index, -1)}
-                  disabled={index === 0}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--text-color)',
-                    cursor: index === 0 ? 'not-allowed' : 'pointer',
-                    opacity: index === 0 ? 0.2 : 0.7,
-                    padding: '2px'
-                  }}
-                >
-                  <ArrowUp size={15} />
-                </button>
-
-                <button
-                  onClick={() => handleMoverTema(index, 1)}
-                  disabled={index === listaTemas.length - 1}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--text-color)',
-                    cursor: index === listaTemas.length - 1 ? 'not-allowed' : 'pointer',
-                    opacity: index === listaTemas.length - 1 ? 0.2 : 0.7,
-                    padding: '2px'
-                  }}
-                >
-                  <ArrowDown size={15} />
-                </button>
-
-                <button
-                  onClick={() => handleEliminarTema(item.id)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#ef4444',
-                    cursor: 'pointer',
-                    opacity: 0.7,
-                    padding: '2px'
-                  }}
-                  title="Eliminar punto de agenda"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
-
-      {/* Botón Principal para Establecer Agenda Oficial */}
-      <button
-        onClick={handleFijarAgendaOficial}
-        style={{
-          width: '100%',
-          padding: '0.6rem',
-          backgroundColor: '#2563eb',
-          color: '#ffffff',
-          fontWeight: '800',
-          border: 'none',
-          borderRadius: '6px',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '0.5rem',
-          fontSize: '0.85rem',
-          transition: 'all 0.2s ease'
-        }}
-      >
-        <FileCheck2 size={17} /> REGISTRAR AGENDA OFICIAL DE LA SESIÓN
-      </button>
     </div>
   );
 };
