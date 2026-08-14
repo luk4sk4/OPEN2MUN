@@ -228,14 +228,17 @@ const CronometroPrincipal = () => {
         <div>
           <div style={{
             fontWeight: '900',
-            fontSize: '5.2rem',
+            fontSize: 'clamp(5.8rem, 11vw, 7.8rem)',
             fontFamily: 'monospace',
             letterSpacing: '0.04em',
-            lineHeight: 1
+            lineHeight: 0.95,
+            marginTop: '6px',
+            marginBottom: '6px',
+            textShadow: '0 4px 20px rgba(0,0,0,0.7)'
           }}>
             {formatTimeWithNegative(segundosRestantes)}
           </div>
-          <div style={{ fontSize: '0.75rem', opacity: 0.6, marginTop: '0.4rem', fontWeight: '600' }}>
+          <div style={{ fontSize: '0.82rem', opacity: 0.75, marginTop: '0.4rem', fontWeight: '700', letterSpacing: '0.02em' }}>
             {segundosRestantes < 0 ? '⚠️ TIEMPO EXCEDIDO (OVERTIME)' : `Tiempo Asignado: ${tiempoInicial}s`}
           </div>
         </div>

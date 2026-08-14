@@ -24,6 +24,26 @@ import WidgetRegistry from '../widgets/WidgetRegistry';
 
 // Metadata rica para cada widget disponible
 export const WIDGET_METADATA = {
+  anadir_paises_gsl: {
+    title: 'Añadir Países GSL',
+    category: 'Debate',
+    description: 'Búsqueda rápida y selección de países para la Lista General de Oradores (GSL).',
+    icon: UserPlus,
+    iconBg: 'rgba(168, 85, 247, 0.2)',
+    iconColor: '#c084fc',
+    defaultColSpan: 4,
+    defaultRowSpan: 5,
+  },
+  anadir_paises_debate: {
+    title: 'Añadir Países Debate',
+    category: 'Debate',
+    description: 'Búsqueda rápida y selección de países para Caucus Moderado y Debate.',
+    icon: Timer,
+    iconBg: 'rgba(249, 115, 22, 0.2)',
+    iconColor: '#fb923c',
+    defaultColSpan: 4,
+    defaultRowSpan: 5,
+  },
   anadir_paises: {
     title: 'Añadir Países',
     category: 'Debate',
@@ -31,8 +51,8 @@ export const WIDGET_METADATA = {
     icon: UserPlus,
     iconBg: 'rgba(168, 85, 247, 0.2)',
     iconColor: '#c084fc',
-    defaultColSpan: 6,
-    defaultRowSpan: 4,
+    defaultColSpan: 4,
+    defaultRowSpan: 5,
   },
   establecer_agenda: {
     title: 'Comité y Agenda',

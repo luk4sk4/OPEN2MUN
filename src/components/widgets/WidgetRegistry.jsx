@@ -11,6 +11,8 @@ import EstablecerAgenda from './EstablecerAgenda';
 import ImportarPaises from './ImportarPaises';
 import ConfigurarComite from './ConfigurarComite';
 import AnadirPaises from './AnadirPaises';
+import AnadirPaisesGSL from './AnadirPaisesGSL';
+import AnadirPaisesDebate from './AnadirPaisesDebate';
 
 const WidgetRegistry = {
   "establecer_agenda": EstablecerAgenda,
@@ -25,8 +27,10 @@ const WidgetRegistry = {
   "importar_paises": ImportarPaises,
   "configurar_comite": ConfigurarComite,
   "comite_agenda": EstablecerAgenda,
-  "anadir_paises": AnadirPaises,
-  "agregar_paises": AnadirPaises,
+  "anadir_paises_gsl": AnadirPaisesGSL,
+  "anadir_paises_debate": AnadirPaisesDebate,
+  "anadir_paises": AnadirPaisesGSL,
+  "agregar_paises": AnadirPaisesGSL,
   "widget_prueba_1": DummyWidget1,
   "widget_prueba_2": DummyWidget2,
 };

@@ -288,10 +288,13 @@ const CronometroOnlyTime = () => {
           <>
             <div style={{
               fontWeight: '900',
-              fontSize: '5.5rem',
+              fontSize: 'clamp(5.8rem, 11vw, 7.8rem)',
               fontFamily: 'monospace',
               letterSpacing: '0.04em',
-              lineHeight: 1,
+              lineHeight: 0.95,
+              marginTop: '4px',
+              marginBottom: '4px',
+              textShadow: '0 4px 20px rgba(0,0,0,0.7)',
               color: tiempoTotalSeg === 0 ? '#ef4444' : 'var(--text-color)'
             }}>
               {formatTime(tiempoTotalSeg)}

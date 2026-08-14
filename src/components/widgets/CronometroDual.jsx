@@ -248,15 +248,18 @@ const CronometroDual = ({ modoInicial = null }) => {
               ...displayTotalState.style
             }}
           >
-            <div style={{ fontSize: '0.75rem', opacity: 0.7, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <div style={{ fontSize: '0.85rem', opacity: 0.75, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '700' }}>
               {tipoMocion.includes('Consulta General') ? 'Tiempo Total de Consulta General' : 'Tiempo Total del Caucus No Moderado'}
             </div>
             <div style={{
               fontWeight: '900',
-              fontSize: '4.8rem',
+              fontSize: 'clamp(5.8rem, 11vw, 7.8rem)',
               fontFamily: 'monospace',
               letterSpacing: '0.04em',
-              lineHeight: 1
+              lineHeight: 0.95,
+              marginTop: '8px',
+              marginBottom: '8px',
+              textShadow: '0 4px 20px rgba(0,0,0,0.7)'
             }}>
               {formatTimeWithNegative(tiempoTotalSeg)}
             </div>
@@ -386,13 +389,19 @@ const CronometroDual = ({ modoInicial = null }) => {
               ...displayOradorState.style
             }}
           >
-            <div style={{ fontSize: '1.25rem', marginBottom: '0.2rem', fontWeight: '800' }}>
-              {oradorActual.bandera} {oradorActual.nombre}
+            <div style={{ fontSize: '1.35rem', marginBottom: '0.3rem', fontWeight: '800' }}>
+              <span style={{ fontSize: '1.65rem', marginRight: '0.4rem' }}>{oradorActual.bandera}</span>
+              <span>{oradorActual.nombre}</span>
             </div>
             <div style={{
               fontWeight: '900',
-              fontSize: '3rem',
+              fontSize: 'clamp(4.8rem, 8.5vw, 6.2rem)',
               fontFamily: 'monospace',
+              lineHeight: 0.95,
+              marginTop: '6px',
+              marginBottom: '6px',
+              letterSpacing: '0.04em',
+              textShadow: '0 4px 16px rgba(0,0,0,0.7)'
             }}>
               {formatTimeWithNegative(tiempoOradorSeg)}
             </div>
@@ -558,27 +567,27 @@ const CronometroDual = ({ modoInicial = null }) => {
           <div style={{
             backgroundColor: 'var(--card-header-bg)',
             border: '1px solid var(--border-color)',
-            borderRadius: '6px',
-            padding: '0.35rem 0.65rem',
+            borderRadius: '7px',
+            padding: '0.45rem 0.85rem',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between'
           }}>
-            <span style={{ fontSize: '0.72rem', opacity: 0.6, fontWeight: '600' }}>Tiempo Total del Caucus:</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontFamily: 'monospace', fontWeight: '800', fontSize: '1.15rem', color: tiempoTotalSeg < 0 ? '#ef4444' : 'var(--text-color)' }}>
+            <span style={{ fontSize: '0.85rem', opacity: 0.75, fontWeight: '700', letterSpacing: '0.02em' }}>Tiempo Total Caucus:</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '1.65rem', letterSpacing: '0.04em', color: tiempoTotalSeg < 0 ? '#ef4444' : 'var(--text-color)', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
                 {formatTimeWithNegative(tiempoTotalSeg)}
               </span>
               <button
                 onClick={handleAumentar5MinCaucus}
                 style={{
-                  padding: '0.15rem 0.4rem',
+                  padding: '0.25rem 0.55rem',
                   backgroundColor: 'var(--btn-bg)',
                   color: 'var(--btn-text)',
                   border: 'none',
-                  borderRadius: '3px',
-                  fontWeight: '700',
-                  fontSize: '0.68rem',
+                  borderRadius: '4px',
+                  fontWeight: '800',
+                  fontSize: '0.75rem',
                   cursor: 'pointer'
                 }}
               >
@@ -587,50 +596,53 @@ const CronometroDual = ({ modoInicial = null }) => {
             </div>
           </div>
 
-          {/* Display Principal Orador con Máxima Prominencia */}
+          {/* Display Principal Orador con Máxima Prominencia y Visibilidad para Proyección */}
           <div
             className={displayOradorState.className}
             style={{
               position: 'relative',
               overflow: 'hidden',
-              padding: '0.6rem 0.6rem 0.85rem 0.6rem',
-              borderRadius: '8px',
+              padding: '0.75rem 0.8rem 1rem 0.8rem',
+              borderRadius: '10px',
               textAlign: 'center',
               transition: 'all 0.3s ease',
               ...displayOradorState.style
             }}
           >
-            <div style={{ fontSize: '1.15rem', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', color: 'var(--text-color)' }}>
-              <span>{oradorActual.bandera}</span>
+            <div style={{ fontSize: '1.35rem', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: 'var(--text-color)' }}>
+              <span style={{ fontSize: '1.65rem' }}>{oradorActual.bandera}</span>
               <span>{oradorActual.nombre}</span>
               {oradorActual.esProponenteUltimo && (
-                <span style={{ fontSize: '0.65rem', backgroundColor: 'rgba(255,255,255,0.1)', color: 'var(--text-color)', padding: '0.1rem 0.35rem', borderRadius: '3px', fontWeight: '700' }}>
+                <span style={{ fontSize: '0.68rem', backgroundColor: 'rgba(255,255,255,0.12)', color: 'var(--text-color)', padding: '0.12rem 0.4rem', borderRadius: '4px', fontWeight: '700' }}>
                   PROPONENTE
                 </span>
               )}
             </div>
             <div style={{
               fontWeight: '900',
-              fontSize: '2.8rem',
+              fontSize: 'clamp(4.8rem, 8.5vw, 6.2rem)',
               fontFamily: 'monospace',
-              lineHeight: 1.1,
-              marginTop: '2px'
+              lineHeight: 0.95,
+              marginTop: '6px',
+              marginBottom: '6px',
+              letterSpacing: '0.04em',
+              textShadow: '0 4px 16px rgba(0,0,0,0.7)'
             }}>
               {formatTimeWithNegative(tiempoOradorSeg)}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', alignItems: 'center', marginTop: '0.2rem' }}>
-              <span style={{ fontSize: '0.68rem', opacity: 0.6 }}>Tiempo ({limiteOradorSeg}s)</span>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.6rem', alignItems: 'center', marginTop: '0.3rem' }}>
+              <span style={{ fontSize: '0.78rem', opacity: 0.75, fontWeight: '600' }}>Límite ({limiteOradorSeg}s)</span>
               <button
                 onClick={handleAumentar5SegOrador}
                 style={{
-                  padding: '0.12rem 0.4rem',
-                  backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                  padding: '0.15rem 0.5rem',
+                  backgroundColor: 'rgba(34, 197, 94, 0.18)',
                   border: '1px solid #22c55e',
                   color: '#22c55e',
-                  borderRadius: '3px',
+                  borderRadius: '4px',
                   cursor: 'pointer',
-                  fontSize: '0.68rem',
-                  fontWeight: '700'
+                  fontSize: '0.72rem',
+                  fontWeight: '800'
                 }}
               >
                 +5s

@@ -22,12 +22,12 @@
     "GSL": [
       { "i": "lista_oradores", "col": 0, "row": 0, "colSpan": 4, "rowSpan": 5 },
       { "i": "cronometro_principal", "col": 4, "row": 0, "colSpan": 4, "rowSpan": 5 },
-      { "i": "anadir_paises", "col": 8, "row": 0, "colSpan": 4, "rowSpan": 5 }
+      { "i": "anadir_paises_gsl", "col": 8, "row": 0, "colSpan": 4, "rowSpan": 5 }
     ],
     "DEBATE": [
       { "i": "cronometro_dual", "col": 0, "row": 0, "colSpan": 4, "rowSpan": 5 },
       { "i": "pizarra_mociones", "col": 4, "row": 0, "colSpan": 4, "rowSpan": 5 },
-      { "i": "anadir_paises", "col": 8, "row": 0, "colSpan": 4, "rowSpan": 5 }
+      { "i": "anadir_paises_debate", "col": 8, "row": 0, "colSpan": 4, "rowSpan": 5 }
     ],
     "VOTING": [
       { "i": "votacion_oficial", "col": 0, "row": 0, "colSpan": 7, "rowSpan": 5 },
@@ -42,7 +42,7 @@
       { "i": "lista_oradores", "col": 4, "row": 0, "colSpan": 4, "rowSpan": 4 },
       { "i": "cronometro_dual", "col": 8, "row": 0, "colSpan": 4, "rowSpan": 4 },
       { "i": "pizarra_mociones", "col": 0, "row": 3, "colSpan": 6, "rowSpan": 4 },
-      { "i": "anadir_paises", "col": 6, "row": 3, "colSpan": 6, "rowSpan": 4 }
+      { "i": "anadir_paises_gsl", "col": 6, "row": 3, "colSpan": 6, "rowSpan": 4 }
     ]
   }
 }
