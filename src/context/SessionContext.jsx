@@ -343,56 +343,184 @@ export const SessionProvider = ({ children }) => {
     setRegistroIntervenciones(prev => [nuevaEntrada, ...prev]);
   };
 
-  // 1. EXPORTAR sesion_activa.json
+  // 1. EXPORTAR sesion_activa.json con TODO el contenido de localStorage y estado completo
   const descargarSesionJSON = () => {
-    const sesionData = {
-      version: '1.0',
-      fechaExportacion: new Date().toISOString(),
-      comision: 'Asamblea General - openMUN',
-      paises,
-      oradoresCola,
-      oradoresCaucus,
-      registroIntervenciones,
-      mociones,
-      caucusActivo
-    };
-    const blob = new Blob([JSON.stringify(sesionData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'sesion_activa.json';
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      // 1. Recopilar absolutamente todo el contenido de localStorage
+      const localStorageSnapshot = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key) {
+          const rawVal = localStorage.getItem(key);
+          try {
+            localStorageSnapshot[key] = JSON.parse(rawVal);
+          } catch {
+            localStorageSnapshot[key] = rawVal;
+          }
+        }
+      }
+
+      // Asegurar que el estado actual más reciente esté reflejado en el snapshot
+      localStorageSnapshot['openmun_paises'] = paises;
+      localStorageSnapshot['openmun_oradores'] = oradoresCola;
+      localStorageSnapshot['openmun_oradores_caucus'] = oradoresCaucus;
+      localStorageSnapshot['openmun_intervenciones'] = registroIntervenciones;
+      localStorageSnapshot['openmun_mociones'] = mociones;
+      localStorageSnapshot['openmun_historico_mociones'] = historicoMociones;
+      localStorageSnapshot['openmun_caucus'] = caucusActivo;
+      localStorageSnapshot['openmun_votacion'] = votacionSesion;
+      localStorageSnapshot['openmun_agenda'] = agendaSesion;
+      localStorageSnapshot['openmun_comite'] = nombreComite;
+
+      // 2. Estructurar el objeto de exportación maestro
+      const sesionData = {
+        version: '2.0',
+        tipo: 'openmun_full_backup',
+        fechaExportacion: new Date().toISOString(),
+        comision: nombreComite || 'Asamblea General - openMUN',
+        
+        // Estado estructurado de la sesión
+        paises,
+        oradoresCola,
+        oradoresCaucus,
+        registroIntervenciones,
+        mociones,
+        historicoMociones,
+        caucusActivo,
+        votacionSesion,
+        agendaSesion,
+        nombreComite,
+
+        // Configuración de interfaz/layouts
+        config: localStorageSnapshot['openmun_config'] || undefined,
+
+        // Snapshot íntegro de TODO localStorage
+        localStorageSnapshot
+      };
+
+      const blob = new Blob([JSON.stringify(sesionData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'sesion_activa.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Error al exportar sesión completa:', err);
+      alert('Error al exportar sesión: ' + err.message);
+    }
   };
 
-  // 2. CARGAR / IMPORTAR sesion_activa.json
-  const cargarSesionJSON = (sesionData) => {
+  // 2. CARGAR / IMPORTAR sesion_activa.json restaurando TODO el localStorage
+  const cargarSesionJSON = (sesionData, onConfigLoaded) => {
     try {
       if (!sesionData || typeof sesionData !== 'object') {
         throw new Error('Formato de JSON inválido');
       }
 
-      if (Array.isArray(sesionData.paises)) {
-        setPaises(sesionData.paises);
+      // 1. Si viene un snapshot completo de localStorage, restaurar cada clave íntegramente
+      if (sesionData.localStorageSnapshot && typeof sesionData.localStorageSnapshot === 'object') {
+        Object.entries(sesionData.localStorageSnapshot).forEach(([key, val]) => {
+          if (val !== undefined && val !== null) {
+            const stringVal = typeof val === 'string' ? val : JSON.stringify(val);
+            localStorage.setItem(key, stringVal);
+          }
+        });
       }
-      if (Array.isArray(sesionData.oradoresCola || sesionData.oradoresGSL)) {
-        setOradoresCola(sesionData.oradoresCola || sesionData.oradoresGSL);
+
+      const snapshot = sesionData.localStorageSnapshot || {};
+
+      // 2. Países
+      const paisesData = sesionData.paises || snapshot.openmun_paises;
+      if (Array.isArray(paisesData)) {
+        setPaises(paisesData);
+        localStorage.setItem('openmun_paises', JSON.stringify(paisesData));
       }
-      if (Array.isArray(sesionData.oradoresCaucus)) {
-        setOradoresCaucus(sesionData.oradoresCaucus);
+
+      // 3. Oradores GSL / Cola
+      const oradoresColaData = sesionData.oradoresCola || sesionData.oradoresGSL || snapshot.openmun_oradores;
+      if (Array.isArray(oradoresColaData)) {
+        setOradoresCola(oradoresColaData);
+        localStorage.setItem('openmun_oradores', JSON.stringify(oradoresColaData));
       }
-      if (Array.isArray(sesionData.registroIntervenciones || sesionData.intervenciones)) {
-        setRegistroIntervenciones(sesionData.registroIntervenciones || sesionData.intervenciones);
+
+      // 4. Oradores Caucus
+      const oradoresCaucusData = sesionData.oradoresCaucus || snapshot.openmun_oradores_caucus;
+      if (Array.isArray(oradoresCaucusData)) {
+        setOradoresCaucus(oradoresCaucusData);
+        localStorage.setItem('openmun_oradores_caucus', JSON.stringify(oradoresCaucusData));
       }
-      if (Array.isArray(sesionData.mociones)) {
-        setMociones(sesionData.mociones);
+
+      // 5. Registro de Intervenciones
+      const intervencionesData = sesionData.registroIntervenciones || sesionData.intervenciones || snapshot.openmun_intervenciones;
+      if (Array.isArray(intervencionesData)) {
+        setRegistroIntervenciones(intervencionesData);
+        localStorage.setItem('openmun_intervenciones', JSON.stringify(intervencionesData));
       }
-      if (Array.isArray(sesionData.historicoMociones)) {
-        setHistoricoMociones(sesionData.historicoMociones);
+
+      // 6. Mociones
+      const mocionesData = sesionData.mociones || snapshot.openmun_mociones;
+      if (Array.isArray(mocionesData)) {
+        setMociones(mocionesData);
+        localStorage.setItem('openmun_mociones', JSON.stringify(mocionesData));
       }
-      if (sesionData.caucusActivo) {
-        setCaucusActivo(sesionData.caucusActivo);
+
+      // 7. Histórico de Mociones
+      const historicoMocionesData = sesionData.historicoMociones || snapshot.openmun_historico_mociones;
+      if (Array.isArray(historicoMocionesData)) {
+        setHistoricoMociones(historicoMocionesData);
+        localStorage.setItem('openmun_historico_mociones', JSON.stringify(historicoMocionesData));
       }
+
+      // 8. Caucus Activo
+      const caucusData = sesionData.caucusActivo || snapshot.openmun_caucus;
+      if (caucusData && typeof caucusData === 'object') {
+        setCaucusActivo(caucusData);
+        localStorage.setItem('openmun_caucus', JSON.stringify(caucusData));
+      }
+
+      // 9. Votación de Sesión
+      const votacionData = sesionData.votacionSesion || snapshot.openmun_votacion;
+      if (votacionData && typeof votacionData === 'object') {
+        setVotacionSesion(votacionData);
+        localStorage.setItem('openmun_votacion', JSON.stringify(votacionData));
+      }
+
+      // 10. Agenda de Sesión
+      const agendaData = sesionData.agendaSesion || snapshot.openmun_agenda;
+      if (agendaData && typeof agendaData === 'object') {
+        setAgendaSesion(agendaData);
+        localStorage.setItem('openmun_agenda', JSON.stringify(agendaData));
+      }
+
+      // 11. Nombre del Comité
+      const comiteData = sesionData.nombreComite || sesionData.comision || snapshot.openmun_comite;
+      if (typeof comiteData === 'string' && comiteData) {
+        setNombreComite(comiteData);
+        localStorage.setItem('openmun_comite', comiteData);
+      }
+
+      // 12. Configuración de Layout/Widgets
+      const configData = sesionData.config || sesionData.openmun_config || snapshot.openmun_config;
+      if (configData) {
+        const parsedConfig = typeof configData === 'string' ? JSON.parse(configData) : configData;
+        localStorage.setItem('openmun_config', JSON.stringify(parsedConfig));
+        if (typeof onConfigLoaded === 'function') {
+          onConfigLoaded(parsedConfig);
+        }
+      }
+
+      // 13. Claves directas de openmun_ en la raíz
+      Object.keys(sesionData).forEach(key => {
+        if (key.startsWith('openmun_')) {
+          const val = sesionData[key];
+          localStorage.setItem(key, typeof val === 'string' ? val : JSON.stringify(val));
+        }
+      });
+
+      // Disparar eventos para actualizar cualquier otro componente o contexto
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('openmun_session_imported', { detail: sesionData }));
 
       return true;
     } catch (err) {

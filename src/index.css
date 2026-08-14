@@ -31,50 +31,50 @@ body {
   box-sizing: border-box;
 }
 
-/* Custom Scrollbar for modern dark slate theme */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #10121a;
+  background: var(--card-header-bg, #10121a);
 }
 ::-webkit-scrollbar-thumb {
-  background: #2b3144;
+  background: var(--subborder-color, #2b3144);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3e465e;
+  background: var(--border-color, #3e465e);
 }
 
 /* React Grid Layout overrides for better visuals */
 .react-grid-item.react-grid-placeholder {
-  background: var(--primary-color) !important;
+  background: var(--btn-bg, #3b82f6) !important;
   opacity: 0.15;
   transition-duration: 100ms;
   z-index: 2;
   user-select: none;
 }
 
-/* Animaciones para alertas de temporizadores */
+/* Animaciones y Clases para Alertas de Temporizadores */
 @keyframes blinkRed {
   0% {
-    background-color: #450a0a;
-    border-color: #ef4444;
-    color: #ef4444;
-    box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+    background-color: var(--timer-negative-bg, #450a0a) !important;
+    border-color: var(--timer-negative-border, #ef4444) !important;
+    color: var(--timer-negative-color, #ef4444) !important;
+    box-shadow: 0 0 16px rgba(239, 68, 68, 0.45);
   }
   50% {
-    background-color: #050505;
-    border-color: #7f1d1d;
-    color: #f87171;
+    background-color: var(--card-header-bg, #050505) !important;
+    border-color: #7f1d1d !important;
+    color: var(--timer-negative-color, #f87171) !important;
     box-shadow: none;
   }
   100% {
-    background-color: #450a0a;
-    border-color: #ef4444;
-    color: #ef4444;
-    box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+    background-color: var(--timer-negative-bg, #450a0a) !important;
+    border-color: var(--timer-negative-border, #ef4444) !important;
+    color: var(--timer-negative-color, #ef4444) !important;
+    box-shadow: 0 0 16px rgba(239, 68, 68, 0.45);
   }
 }
 
@@ -83,13 +83,13 @@ body {
 }
 
 .timer-orange {
-  background-color: #431407 !important;
-  border-color: #f97316 !important;
-  color: #f97316 !important;
+  background-color: var(--timer-orange-bg, #431407) !important;
+  border-color: var(--timer-orange-border, #f97316) !important;
+  color: var(--timer-orange-color, #f97316) !important;
 }
 
 .timer-negative {
-  background-color: #3f0c0c !important;
-  border-color: #ef4444 !important;
-  color: #ef4444 !important;
+  background-color: var(--timer-negative-bg, #3f0c0c) !important;
+  border-color: var(--timer-negative-border, #ef4444) !important;
+  color: var(--timer-negative-color, #ef4444) !important;
 }

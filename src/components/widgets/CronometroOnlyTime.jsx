@@ -128,9 +128,9 @@ const CronometroOnlyTime = () => {
         borderRadius: '12px',
         textAlign: 'center',
         overflow: 'hidden',
-        backgroundColor: tiempoTotalSeg === 0 ? '#3f0c0c' : '#050505',
-        border: `2px solid ${tiempoTotalSeg === 0 ? '#ef4444' : 'var(--border-color)'}`,
-        boxShadow: '0 6px 25px rgba(0,0,0,0.6)',
+        backgroundColor: tiempoTotalSeg === 0 ? 'var(--timer-negative-bg, #3f0c0c)' : 'var(--timer-display-bg, var(--card-header-bg))',
+        border: `2px solid ${tiempoTotalSeg === 0 ? '#ef4444' : 'var(--timer-display-border, var(--border-color))'}`,
+        boxShadow: 'var(--timer-display-shadow, 0 6px 25px rgba(0,0,0,0.15))',
         transition: 'all 0.3s ease',
         display: 'flex',
         flexDirection: 'column',
@@ -176,13 +176,13 @@ const CronometroOnlyTime = () => {
                     fontWeight: '900',
                     fontFamily: 'monospace',
                     textAlign: 'center',
-                    backgroundColor: '#151515',
-                    color: '#3b82f6',
-                    border: '1px solid #334155',
+                    backgroundColor: 'var(--panel-color)',
+                    color: 'var(--btn-bg, #3b82f6)',
+                    border: '1px solid var(--border-color)',
                     borderRadius: '8px',
                     padding: '0.1rem',
                     outline: 'none',
-                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)'
+                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)'
                   }}
                 />
                 <button
@@ -194,10 +194,10 @@ const CronometroOnlyTime = () => {
                 >
                   <ChevronDown size={24} />
                 </button>
-                <span style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.1rem', fontWeight: '600', letterSpacing: '0.05em' }}>MINUTOS</span>
+                <span style={{ fontSize: '0.7rem', color: 'var(--muted-text)', marginTop: '0.1rem', fontWeight: '600', letterSpacing: '0.05em' }}>MINUTOS</span>
               </div>
 
-              <span style={{ fontSize: '2.5rem', fontWeight: '900', color: '#64748b', alignSelf: 'center', marginTop: '-15px' }}>:</span>
+              <span style={{ fontSize: '2.5rem', fontWeight: '900', color: 'var(--muted-text)', alignSelf: 'center', marginTop: '-15px' }}>:</span>
 
               {/* Contenedor Segundos */}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -223,13 +223,13 @@ const CronometroOnlyTime = () => {
                     fontWeight: '900',
                     fontFamily: 'monospace',
                     textAlign: 'center',
-                    backgroundColor: '#151515',
-                    color: '#3b82f6',
-                    border: '1px solid #334155',
+                    backgroundColor: 'var(--panel-color)',
+                    color: 'var(--btn-bg, #3b82f6)',
+                    border: '1px solid var(--border-color)',
                     borderRadius: '8px',
                     padding: '0.1rem',
                     outline: 'none',
-                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)'
+                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)'
                   }}
                 />
                 <button
@@ -241,7 +241,7 @@ const CronometroOnlyTime = () => {
                 >
                   <ChevronDown size={24} />
                 </button>
-                <span style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.1rem', fontWeight: '600', letterSpacing: '0.05em' }}>SEGUNDOS</span>
+                <span style={{ fontSize: '0.7rem', color: 'var(--muted-text)', marginTop: '0.1rem', fontWeight: '600', letterSpacing: '0.05em' }}>SEGUNDOS</span>
               </div>
             </div>
 
@@ -294,7 +294,7 @@ const CronometroOnlyTime = () => {
               lineHeight: 0.95,
               marginTop: '4px',
               marginBottom: '4px',
-              textShadow: '0 4px 20px rgba(0,0,0,0.7)',
+              textShadow: 'var(--timer-digits-shadow, none)',
               color: tiempoTotalSeg === 0 ? '#ef4444' : 'var(--text-color)'
             }}>
               {formatTime(tiempoTotalSeg)}

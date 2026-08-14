@@ -37,10 +37,10 @@ const AccessibilityModal = ({ isOpen, onClose, config, setConfig }) => {
   const handleThemeModeChange = (mode) => {
     const isLight = mode === 'light';
     const newTheme = isLight ? {
-      backgroundColor: "#ffffff",
-      panelColor: "#f4f4f5",
-      textColor: "#09090b",
-      primaryColor: "#000000",
+      backgroundColor: "#f1f5f9",
+      panelColor: "#ffffff",
+      textColor: "#0f172a",
+      primaryColor: "#0f172a",
       fontFamily: "Inter, system-ui, -apple-system, sans-serif",
       borderRadius: "6px"
     } : {

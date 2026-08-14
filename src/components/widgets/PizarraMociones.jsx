@@ -239,19 +239,19 @@ const PizarraMociones = () => {
         <form
           onSubmit={handleSubmitMocion}
           style={{
-            background: 'linear-gradient(170deg, var(--card-header-bg, #18181b) 0%, rgba(20, 20, 24, 0.98) 100%)',
-            border: '1px solid var(--border-color, rgba(255, 255, 255, 0.14))',
+            background: 'var(--panel-color)',
+            border: '1px solid var(--border-color)',
             borderRadius: '10px',
             padding: '0.85rem 0.95rem',
             display: 'flex',
             flexDirection: 'column',
             gap: '0.75rem',
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
             position: 'relative'
           }}
         >
           {/* Cabecera del Formulario */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '0.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <Sparkles size={15} style={{ color: '#38bdf8' }} />
               <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: '800', letterSpacing: '0.01em' }}>
@@ -263,13 +263,13 @@ const PizarraMociones = () => {
               type="button"
               onClick={() => setMostrarForm(false)}
               style={{
-                background: 'rgba(255, 255, 255, 0.06)',
-                border: 'none',
+                background: 'var(--card-header-bg)',
+                border: '1px solid var(--border-color)',
                 color: 'var(--text-color)',
                 borderRadius: '5px',
                 padding: '0.25rem',
                 cursor: 'pointer',
-                opacity: 0.7,
+                opacity: 0.8,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -298,11 +298,21 @@ const PizarraMociones = () => {
                   <button
                     key={t.id}
                     type="button"
-                    onClick={() => setTipo(t.id)}
+                    onClick={() => {
+                      setTipo(t.id);
+                      if (t.id === 'Caucus Moderado') {
+                        setTiempoTotalMin(10);
+                        setTiempoOradorSeg(60);
+                      } else if (t.id === 'Caucus No Moderado') {
+                        setTiempoTotalMin(15);
+                      } else if (t.id === 'Consulta General') {
+                        setTiempoTotalMin(10);
+                        setVarianteConsulta('No Moderada');
+                      } else if (t.id === 'Tour de Table') {
+                        setTiempoOradorSeg(45);
+                      }
+                    }}
                     style={{
-                      backgroundColor: isSelected ? t.activeBg : 'rgba(255, 255, 255, 0.03)',
-                      border: `1.5px solid ${isSelected ? t.activeBorder : 'rgba(255, 255, 255, 0.08)'}`,
-                      borderRadius: '7px',
                       padding: '0.45rem 0.55rem',
                       display: 'flex',
                       alignItems: 'center',
@@ -367,8 +377,8 @@ const PizarraMociones = () => {
                   style={{
                     width: '100%',
                     padding: '0.45rem 0.65rem',
-                    backgroundColor: 'rgba(0, 0, 0, 0.35)',
-                    border: '1px solid var(--border-color, rgba(255, 255, 255, 0.15))',
+                    backgroundColor: 'var(--card-header-bg)',
+                    border: '1px solid var(--border-color)',
                     color: 'var(--text-color)',
                     borderRadius: '6px',
                     fontSize: '0.82rem',
@@ -378,11 +388,11 @@ const PizarraMociones = () => {
                     cursor: 'pointer'
                   }}
                 >
-                  <option value="" disabled style={{ backgroundColor: '#18181b', color: '#888' }}>
+                  <option value="" disabled style={{ backgroundColor: 'var(--panel-color)', color: 'var(--muted-text)' }}>
                     Selecciona el país proponente...
                   </option>
                   {paises.map(p => (
-                    <option key={p.id} value={p.nombre} style={{ backgroundColor: '#18181b', color: '#fff' }}>
+                    <option key={p.id} value={p.nombre} style={{ backgroundColor: 'var(--panel-color)', color: 'var(--text-color)' }}>
                       {p.bandera} {p.nombre} {p.estatus !== 'Presente' && p.estatus !== 'Presente y Votando' ? `(${p.estatus})` : ''}
                     </option>
                   ))}
@@ -404,8 +414,8 @@ const PizarraMociones = () => {
                 style={{
                   width: '100%',
                   padding: '0.45rem 0.65rem',
-                  backgroundColor: 'rgba(0, 0, 0, 0.35)',
-                  border: '1px solid var(--border-color, rgba(255, 255, 255, 0.15))',
+                  backgroundColor: 'var(--card-header-bg)',
+                  border: '1px solid var(--border-color)',
                   color: 'var(--text-color)',
                   borderRadius: '6px',
                   fontSize: '0.82rem',

@@ -380,9 +380,22 @@ const Dashboard = () => {
     reader.onload = (event) => {
       try {
         const parsed = JSON.parse(event.target.result);
-        const ok = cargarSesionJSON(parsed);
+        const ok = cargarSesionJSON(parsed, (newConfig) => {
+          if (newConfig) {
+            setConfig(newConfig);
+          }
+        });
         if (ok) {
-          alert('¡Sesión activa cargada exitosamente desde sesion_activa.json!');
+          const cfg = parsed.config || parsed.openmun_config || (parsed.localStorageSnapshot && parsed.localStorageSnapshot.openmun_config);
+          if (cfg) {
+            try {
+              const parsedCfg = typeof cfg === 'string' ? JSON.parse(cfg) : cfg;
+              setConfig(parsedCfg);
+            } catch (err) {
+              console.error('Error parseando config importada:', err);
+            }
+          }
+          alert('¡Sesión activa y todos los datos importados exitosamente!');
         }
       } catch (err) {
         alert('Error al leer el archivo JSON: ' + err.message);
@@ -600,6 +613,29 @@ const Dashboard = () => {
     }));
   }, []);
 
+  const handleResetDefault = useCallback((targetTab) => {
+    const tabToReset = targetTab || activeTabRef.current;
+    const defaultWidgets = configMaster.layouts[tabToReset] || [];
+    setConfig(prev => ({
+      ...prev,
+      layouts: {
+        ...prev.layouts,
+        [tabToReset]: JSON.parse(JSON.stringify(defaultWidgets))
+      }
+    }));
+  }, []);
+
+  const handleApplyTemplate = useCallback((templateWidgets, targetTab) => {
+    const tabToApply = targetTab || activeTabRef.current;
+    setConfig(prev => ({
+      ...prev,
+      layouts: {
+        ...prev.layouts,
+        [tabToApply]: JSON.parse(JSON.stringify(templateWidgets))
+      }
+    }));
+  }, []);
+
   const removeWidget = (id) => {
     handleToggleWidget(id, false);
   };
@@ -617,7 +653,7 @@ const Dashboard = () => {
   const toggleThemeMode = () => {
     const nextMode = isLight ? 'dark' : 'light';
     const newTheme = nextMode === 'light' ? {
-      backgroundColor: "#f8fafc",
+      backgroundColor: "#f1f5f9",
       panelColor: "#ffffff",
       textColor: "#0f172a",
       primaryColor: "#0f172a",
@@ -643,18 +679,28 @@ const Dashboard = () => {
   };
 
   const themeStyles = {
-    '--bg-color': isLight ? '#f8fafc' : '#0c0e14',
+    '--bg-color': isLight ? '#f1f5f9' : '#0c0e14',
     '--panel-color': isLight ? '#ffffff' : '#161922',
-    '--card-header-bg': isLight ? '#f1f5f9' : '#1e222f',
+    '--card-header-bg': isLight ? '#f8fafc' : '#1e222f',
     '--header-bg': isLight ? '#ffffff' : '#10121a',
     '--subnav-bg': isLight ? '#f1f5f9' : '#141720',
     '--text-color': isLight ? '#0f172a' : '#f1f5f9',
     '--muted-text': isLight ? '#64748b' : '#94a3b8',
     '--border-color': isLight ? '#e2e8f0' : '#2b3042',
     '--subborder-color': isLight ? '#cbd5e1' : '#222636',
-    '--btn-bg': isLight ? '#0f172a' : '#3b82f6',
-    '--btn-text': isLight ? '#ffffff' : '#ffffff',
-    '--grid-line': isLight ? '#e2e8f0' : '#1c202d',
+    '--btn-bg': isLight ? '#2563eb' : '#3b82f6',
+    '--btn-text': '#ffffff',
+    '--grid-line': isLight ? '#cbd5e1' : '#1c202d',
+    '--timer-display-bg': isLight ? '#f8fafc' : '#08090d',
+    '--timer-display-border': isLight ? '#cbd5e1' : '#2b3042',
+    '--timer-display-shadow': isLight ? '0 4px 16px rgba(0,0,0,0.06)' : '0 4px 20px rgba(0,0,0,0.5)',
+    '--timer-digits-shadow': isLight ? 'none' : '0 4px 20px rgba(0,0,0,0.7)',
+    '--timer-orange-bg': isLight ? '#fff7ed' : '#431407',
+    '--timer-orange-color': isLight ? '#ea580c' : '#f97316',
+    '--timer-orange-border': '#f97316',
+    '--timer-negative-bg': isLight ? '#fef2f2' : '#3f0c0c',
+    '--timer-negative-color': isLight ? '#dc2626' : '#ef4444',
+    '--timer-negative-border': '#ef4444',
     '--font-family': acc.dyslexiaMode ? '"OpenDyslexic","Comic Sans MS",sans-serif' : config.theme.fontFamily,
     '--border-radius': config.theme.borderRadius,
     backgroundColor: 'var(--bg-color)',
@@ -697,6 +743,8 @@ const Dashboard = () => {
         onToggleWidget={handleToggleWidget}
         onActivateAll={handleActivateAll}
         onDeactivateAll={handleDeactivateAll}
+        onResetDefault={handleResetDefault}
+        onApplyTemplate={handleApplyTemplate}
       />
 
       {/* Menú flotante en pantalla completa */}

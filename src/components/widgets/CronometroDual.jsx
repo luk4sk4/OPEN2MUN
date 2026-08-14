@@ -115,15 +115,22 @@ const CronometroDual = ({ modoInicial = null }) => {
   // Clase dinámica para alertas visuales (naranja a 10s, parpadeo rojo a 5s, negativo en < 0)
   const getTimerStyle = (seg) => {
     if (seg < 0) {
-      return { className: 'timer-negative', style: { color: '#ef4444', backgroundColor: '#3f0c0c', borderColor: '#ef4444' } };
+      return { className: 'timer-negative', style: {} };
     }
     if (seg <= 5 && seg >= 0) {
       return { className: 'timer-blink-red', style: {} };
     }
     if (seg <= 10 && seg > 5) {
-      return { className: 'timer-orange', style: { color: '#f97316', backgroundColor: '#431407', borderColor: '#f97316' } };
+      return { className: 'timer-orange', style: {} };
     }
-    return { className: '', style: { backgroundColor: '#050505', border: '2px solid var(--border-color)' } };
+    return {
+      className: '',
+      style: {
+        backgroundColor: 'var(--timer-display-bg, var(--card-header-bg))',
+        border: '2px solid var(--timer-display-border, var(--border-color))',
+        color: 'var(--text-color)'
+      }
+    };
   };
 
   const oradorActual = oradoresCaucus.length > 0
@@ -264,7 +271,7 @@ const CronometroDual = ({ modoInicial = null }) => {
               lineHeight: 0.95,
               marginTop: '8px',
               marginBottom: '8px',
-              textShadow: '0 4px 20px rgba(0,0,0,0.7)'
+              textShadow: 'var(--timer-digits-shadow, none)'
             }}>
               {formatTimeWithNegative(tiempoTotalSeg)}
             </div>
@@ -406,7 +413,7 @@ const CronometroDual = ({ modoInicial = null }) => {
               marginTop: '6px',
               marginBottom: '6px',
               letterSpacing: '0.04em',
-              textShadow: '0 4px 16px rgba(0,0,0,0.7)'
+              textShadow: 'var(--timer-digits-shadow, none)'
             }}>
               {formatTimeWithNegative(tiempoOradorSeg)}
             </div>
@@ -752,7 +759,7 @@ const CronometroDual = ({ modoInicial = null }) => {
               marginTop: '6px',
               marginBottom: '6px',
               letterSpacing: '0.04em',
-              textShadow: '0 4px 16px rgba(0,0,0,0.7)'
+              textShadow: 'var(--timer-digits-shadow, none)'
             }}>
               {formatTimeWithNegative(tiempoOradorSeg)}
             </div>

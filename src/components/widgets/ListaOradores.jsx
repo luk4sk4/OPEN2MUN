@@ -110,7 +110,7 @@ const ListaOradores = () => {
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          backgroundColor: '#050505',
+          backgroundColor: 'var(--card-header-bg)',
           border: '1px solid var(--border-color)',
           borderRadius: '6px',
           padding: '0.35rem 0.6rem',
@@ -140,14 +140,14 @@ const ListaOradores = () => {
             top: '100%',
             left: 0,
             right: 0,
-            backgroundColor: '#141414',
+            backgroundColor: 'var(--panel-color)',
             border: '1px solid var(--border-color)',
             borderRadius: '6px',
             marginTop: '4px',
             maxHeight: '160px',
             overflowY: 'auto',
             zIndex: 10,
-            boxShadow: '0 8px 20px rgba(0,0,0,0.6)'
+            boxShadow: '0 8px 20px rgba(0,0,0,0.35)'
           }}>
             {paisesDisponibles.length === 0 ? (
               <div style={{ padding: '0.5rem', fontSize: '0.8rem', opacity: 0.5, textAlign: 'center' }}>
@@ -165,9 +165,10 @@ const ListaOradores = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    borderBottom: '1px solid var(--subborder-color)'
+                    borderBottom: '1px solid var(--subborder-color)',
+                    color: 'var(--text-color)'
                   }}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#222222'}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--card-header-bg)'}
                   onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

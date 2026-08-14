@@ -106,15 +106,22 @@ const CronometroPrincipal = () => {
 
   const getTimerStyle = (seg) => {
     if (seg < 0) {
-      return { className: 'timer-negative', style: { color: '#ef4444', backgroundColor: '#3f0c0c', borderColor: '#ef4444' } };
+      return { className: 'timer-negative', style: {} };
     }
     if (seg <= 5 && seg >= 0) {
       return { className: 'timer-blink-red', style: {} };
     }
     if (seg <= 10 && seg > 5) {
-      return { className: 'timer-orange', style: { color: '#f97316', backgroundColor: '#431407', borderColor: '#f97316' } };
+      return { className: 'timer-orange', style: {} };
     }
-    return { className: '', style: { backgroundColor: '#050505', border: '2px solid var(--border-color)' } };
+    return {
+      className: '',
+      style: {
+        backgroundColor: 'var(--timer-display-bg, var(--card-header-bg))',
+        border: '2px solid var(--timer-display-border, var(--border-color))',
+        color: 'var(--text-color)'
+      }
+    };
   };
 
   const displayState = getTimerStyle(segundosRestantes);
@@ -221,7 +228,7 @@ const CronometroPrincipal = () => {
           transition: 'all 0.3s ease',
           position: 'relative',
           overflow: 'hidden',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+          boxShadow: 'var(--timer-display-shadow, 0 4px 20px rgba(0,0,0,0.15))',
           ...displayState.style
         }}
       >
@@ -234,7 +241,7 @@ const CronometroPrincipal = () => {
             lineHeight: 0.95,
             marginTop: '6px',
             marginBottom: '6px',
-            textShadow: '0 4px 20px rgba(0,0,0,0.7)'
+            textShadow: 'var(--timer-digits-shadow, none)'
           }}>
             {formatTimeWithNegative(segundosRestantes)}
           </div>
@@ -250,7 +257,7 @@ const CronometroPrincipal = () => {
           left: 0,
           right: 0,
           height: '4px',
-          backgroundColor: 'rgba(255, 255, 255, 0.08)'
+          backgroundColor: 'rgba(128, 128, 128, 0.15)'
         }}>
           <div style={{
             height: '100%',
@@ -373,8 +380,8 @@ const CronometroPrincipal = () => {
           style={{
             flex: '1 1 110px',
             padding: '0.6rem 0.7rem',
-            backgroundColor: oradoresCola.length > 0 ? '#2563eb' : '#222222',
-            color: '#ffffff',
+            backgroundColor: oradoresCola.length > 0 ? '#2563eb' : 'var(--card-header-bg)',
+            color: oradoresCola.length > 0 ? '#ffffff' : 'var(--muted-text)',
             fontWeight: '700',
             border: 'none',
             borderRadius: '6px',
@@ -419,7 +426,7 @@ const CronometroPrincipal = () => {
         <div style={{
           position: 'absolute',
           top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(5, 5, 8, 0.95)',
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
           backdropFilter: 'blur(8px)',
           zIndex: 50,
           display: 'flex',
@@ -430,7 +437,7 @@ const CronometroPrincipal = () => {
           borderRadius: 'var(--border-radius)'
         }}>
           <div style={{
-            backgroundColor: 'rgba(14, 14, 20, 0.98)',
+            backgroundColor: 'var(--panel-color)',
             border: '1px solid var(--border-color)',
             borderRadius: 'var(--border-radius)',
             padding: '1rem',
@@ -440,7 +447,7 @@ const CronometroPrincipal = () => {
             flexDirection: 'column',
             gap: '0.75rem',
             color: 'var(--text-color)',
-            boxShadow: '0 12px 30px rgba(0,0,0,0.9)'
+            boxShadow: '0 12px 30px rgba(0,0,0,0.5)'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <ArrowRightLeft size={18} color="#3b82f6" />
@@ -458,10 +465,10 @@ const CronometroPrincipal = () => {
                 onClick={() => handleEjecutarYield('mesa')}
                 style={{
                   padding: '0.55rem 0.75rem',
-                  backgroundColor: '#1a1a1a',
+                  backgroundColor: 'var(--card-header-bg)',
                   border: '1px solid var(--border-color)',
                   borderRadius: '6px',
-                  color: '#ffffff',
+                  color: 'var(--text-color)',
                   fontWeight: '600',
                   fontSize: '0.83rem',
                   cursor: 'pointer',
@@ -478,10 +485,10 @@ const CronometroPrincipal = () => {
                 onClick={() => handleEjecutarYield('preguntas')}
                 style={{
                   padding: '0.55rem 0.75rem',
-                  backgroundColor: '#1a1a1a',
+                  backgroundColor: 'var(--card-header-bg)',
                   border: '1px solid var(--border-color)',
                   borderRadius: '6px',
-                  color: '#ffffff',
+                  color: 'var(--text-color)',
                   fontWeight: '600',
                   fontSize: '0.83rem',
                   cursor: 'pointer',
@@ -502,9 +509,9 @@ const CronometroPrincipal = () => {
                   style={{
                     width: '100%',
                     padding: '0.45rem',
-                    backgroundColor: '#121212',
+                    backgroundColor: 'var(--card-header-bg)',
                     border: '1px solid var(--border-color)',
-                    color: '#ffffff',
+                    color: 'var(--text-color)',
                     borderRadius: '6px',
                     fontSize: '0.82rem',
                     cursor: 'pointer'

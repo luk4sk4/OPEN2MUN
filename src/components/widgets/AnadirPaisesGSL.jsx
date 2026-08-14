@@ -235,14 +235,13 @@ const AnadirPaisesGSL = () => {
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          backgroundColor: '#09090b',
+          backgroundColor: 'var(--card-header-bg)',
           border: '1px solid var(--border-color)',
           borderRadius: '6px',
           padding: '0.35rem 0.65rem',
-          gap: '0.45rem',
-          boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)'
+          gap: '0.45rem'
         }}>
-          <Search size={14} style={{ color: '#71717a', flexShrink: 0 }} />
+          <Search size={14} style={{ color: 'var(--muted-text)', flexShrink: 0 }} />
           <input
             type="text"
             placeholder="Buscar país para añadir a GSL..."
@@ -265,7 +264,7 @@ const AnadirPaisesGSL = () => {
               style={{
                 background: 'transparent',
                 border: 'none',
-                color: '#71717a',
+                color: 'var(--muted-text)',
                 cursor: 'pointer',
                 padding: '2px',
                 display: 'flex',
@@ -288,11 +287,11 @@ const AnadirPaisesGSL = () => {
                   padding: '0.15rem 0.5rem',
                   fontSize: '0.7rem',
                   borderRadius: '4px',
-                  border: filtroVista === 'TODOS' ? '1px solid #3f3f46' : '1px solid transparent',
-                  backgroundColor: filtroVista === 'TODOS' ? '#18181b' : 'transparent',
-                  color: filtroVista === 'TODOS' ? '#ffffff' : '#71717a',
+                  border: filtroVista === 'TODOS' ? '1px solid var(--border-color)' : '1px solid transparent',
+                  backgroundColor: filtroVista === 'TODOS' ? 'var(--card-header-bg)' : 'transparent',
+                  color: filtroVista === 'TODOS' ? 'var(--text-color)' : 'var(--muted-text)',
                   cursor: 'pointer',
-                  fontWeight: filtroVista === 'TODOS' ? '600' : '400'
+                  fontWeight: filtroVista === 'TODOS' ? '700' : '500'
                 }}
               >
                 Todos ({paises.length})
@@ -306,9 +305,9 @@ const AnadirPaisesGSL = () => {
                   borderRadius: '4px',
                   border: filtroVista === 'DISPONIBLES' ? '1px solid #22c55e44' : '1px solid transparent',
                   backgroundColor: filtroVista === 'DISPONIBLES' ? 'rgba(34, 197, 94, 0.15)' : 'transparent',
-                  color: filtroVista === 'DISPONIBLES' ? '#4ade80' : '#71717a',
+                  color: filtroVista === 'DISPONIBLES' ? '#22c55e' : 'var(--muted-text)',
                   cursor: 'pointer',
-                  fontWeight: filtroVista === 'DISPONIBLES' ? '600' : '400'
+                  fontWeight: filtroVista === 'DISPONIBLES' ? '700' : '500'
                 }}
               >
                 Disponibles ({cantDisponibles})
@@ -322,16 +321,16 @@ const AnadirPaisesGSL = () => {
                   borderRadius: '4px',
                   border: filtroVista === 'EN_GSL' ? '1px solid #a855f7' : '1px solid transparent',
                   backgroundColor: filtroVista === 'EN_GSL' ? 'rgba(168, 85, 247, 0.2)' : 'transparent',
-                  color: filtroVista === 'EN_GSL' ? '#c084fc' : '#71717a',
+                  color: filtroVista === 'EN_GSL' ? '#a855f7' : 'var(--muted-text)',
                   cursor: 'pointer',
-                  fontWeight: filtroVista === 'EN_GSL' ? '600' : '400'
+                  fontWeight: filtroVista === 'EN_GSL' ? '700' : '500'
                 }}
               >
                 En GSL ({cantEnLista})
               </button>
             </div>
 
-            <span style={{ fontSize: '0.68rem', color: '#71717a' }}>
+            <span style={{ fontSize: '0.68rem', color: 'var(--muted-text)' }}>
               Clic para añadir a GSL
             </span>
           </div>
@@ -353,27 +352,27 @@ const AnadirPaisesGSL = () => {
             margin: 'auto',
             textAlign: 'center',
             padding: '1.5rem 1rem',
-            backgroundColor: '#0c0c0e',
-            border: '1px dashed #27272a',
+            backgroundColor: 'var(--card-header-bg)',
+            border: '1px dashed var(--border-color)',
             borderRadius: '8px',
             maxWidth: '340px'
           }}>
             <Sparkles size={24} color="#a855f7" style={{ marginBottom: '0.5rem' }} />
-            <div style={{ fontSize: '0.86rem', fontWeight: '600', color: '#e4e4e7', marginBottom: '0.3rem' }}>
+            <div style={{ fontSize: '0.86rem', fontWeight: '700', color: 'var(--text-color)', marginBottom: '0.3rem' }}>
               No hay delegaciones cargadas
             </div>
-            <div style={{ fontSize: '0.74rem', color: '#71717a', marginBottom: '1rem', lineHeight: '1.35' }}>
+            <div style={{ fontSize: '0.74rem', color: 'var(--muted-text)', marginBottom: '1rem', lineHeight: '1.35' }}>
               Importa países desde el widget 'Importar Países' o carga una plantilla rápida:
             </div>
             <button
               type="button"
               onClick={() => setPaises(PRESETS_RAPIDOS[0].paises)}
               style={{
-                backgroundColor: '#18181b',
-                border: '1px solid #3f3f46',
-                color: '#ffffff',
+                backgroundColor: 'var(--btn-bg)',
+                border: 'none',
+                color: 'var(--btn-text)',
                 fontSize: '0.76rem',
-                fontWeight: '600',
+                fontWeight: '700',
                 padding: '0.45rem 0.8rem',
                 borderRadius: '6px',
                 cursor: 'pointer',
@@ -392,7 +391,7 @@ const AnadirPaisesGSL = () => {
             margin: 'auto',
             textAlign: 'center',
             padding: '2rem',
-            color: '#71717a',
+            color: 'var(--muted-text)',
             fontSize: '0.8rem'
           }}>
             No se encontraron países con "{busqueda}".
@@ -469,12 +468,12 @@ const AnadirPaisesGSL = () => {
                     transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
                     backgroundColor: isDragging
                       ? 'rgba(168, 85, 247, 0.2)'
-                      : (estaEnLista ? '#131316' : '#18181c'),
+                      : (estaEnLista ? 'var(--card-header-bg)' : 'var(--panel-color)'),
                     border: isDragOver
                       ? '2px dashed #a855f7'
-                      : (estaEnLista ? '1px solid #232328' : '1px solid #2e2e36'),
-                    opacity: isDragging ? 0.4 : (estaEnLista ? 0.48 : 1),
-                    filter: estaEnLista ? 'grayscale(75%)' : 'none',
+                      : (estaEnLista ? '1px solid var(--subborder-color)' : '1px solid var(--border-color)'),
+                    opacity: isDragging ? 0.4 : (estaEnLista ? 0.55 : 1),
+                    filter: estaEnLista ? 'grayscale(70%)' : 'none',
                     transform: 'translateZ(0)'
                   }}
                   onMouseEnter={e => {
@@ -483,18 +482,18 @@ const AnadirPaisesGSL = () => {
                       e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.12)';
                       e.currentTarget.style.transform = 'translateY(-1px)';
                     } else {
-                      e.currentTarget.style.opacity = '0.75';
+                      e.currentTarget.style.opacity = '0.85';
                       e.currentTarget.style.borderColor = '#ef444466';
                     }
                   }}
                   onMouseLeave={e => {
                     if (!estaEnLista) {
-                      e.currentTarget.style.borderColor = '#2e2e36';
-                      e.currentTarget.style.backgroundColor = '#18181c';
+                      e.currentTarget.style.borderColor = 'var(--border-color)';
+                      e.currentTarget.style.backgroundColor = 'var(--panel-color)';
                       e.currentTarget.style.transform = 'translateY(0px)';
                     } else {
-                      e.currentTarget.style.opacity = '0.48';
-                      e.currentTarget.style.borderColor = '#232328';
+                      e.currentTarget.style.opacity = '0.55';
+                      e.currentTarget.style.borderColor = 'var(--subborder-color)';
                     }
                   }}
                 >
@@ -505,8 +504,8 @@ const AnadirPaisesGSL = () => {
                     </span>
                     <span style={{
                       fontSize: '0.78rem',
-                      fontWeight: estaEnLista ? '500' : '600',
-                      color: estaEnLista ? '#a1a1aa' : '#ffffff',
+                      fontWeight: estaEnLista ? '500' : '700',
+                      color: estaEnLista ? 'var(--muted-text)' : 'var(--text-color)',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis'

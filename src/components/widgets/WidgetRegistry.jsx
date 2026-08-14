@@ -1,4 +1,3 @@
-import { DummyWidget1, DummyWidget2 } from './DummyWidget';
 import CronometroPrincipal from './CronometroPrincipal';
 import ListaOradores from './ListaOradores';
 import PizarraMociones from './PizarraMociones';
@@ -31,8 +30,6 @@ const WidgetRegistry = {
   "anadir_paises_debate": AnadirPaisesDebate,
   "anadir_paises": AnadirPaisesGSL,
   "agregar_paises": AnadirPaisesGSL,
-  "widget_prueba_1": DummyWidget1,
-  "widget_prueba_2": DummyWidget2,
 };
 
 export default WidgetRegistry;

@@ -60,6 +60,33 @@ export const P2PProvider = ({ children }) => {
   const [isLiveModalOpen, setIsLiveModalOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
+  // Sincronizar ajustes P2P si se importan datos a localStorage
+  useEffect(() => {
+    const handleSessionImported = () => {
+      try {
+        const savedSettings = localStorage.getItem('openmun_room_settings');
+        if (savedSettings) {
+          setRoomSettings(JSON.parse(savedSettings));
+        }
+        const savedSecret = localStorage.getItem('openmun_secret_pass');
+        if (savedSecret) setSecretPassword(savedSecret);
+        const savedBackroom = localStorage.getItem('openmun_backroom_pass');
+        if (savedBackroom) setBackroomPassword(savedBackroom);
+        const savedCountry = localStorage.getItem('openmun_last_country');
+        if (savedCountry) setClientCountry(savedCountry);
+      } catch (e) {
+        console.error('Error sincronizando P2PContext tras importación:', e);
+      }
+    };
+
+    window.addEventListener('openmun_session_imported', handleSessionImported);
+    window.addEventListener('storage', handleSessionImported);
+    return () => {
+      window.removeEventListener('openmun_session_imported', handleSessionImported);
+      window.removeEventListener('storage', handleSessionImported);
+    };
+  }, []);
+
   // Callback ref para manipulación de SessionContext desde Host al procesar solicitudes automáticas o remotas
   const sessionActionHandlersRef = useRef({
     onAddSpeakerGSL: null,
