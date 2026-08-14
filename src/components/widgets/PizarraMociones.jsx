@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Check, X, Clock, MessageSquare, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Plus, Check, X, Clock, MessageSquare, ThumbsUp, ThumbsDown, Users } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 
 const PizarraMociones = () => {
@@ -13,6 +13,15 @@ const PizarraMociones = () => {
   const [tema, setTema] = useState('');
   const [tiempoTotalMin, setTiempoTotalMin] = useState(10);
   const [tiempoOradorSeg, setTiempoOradorSeg] = useState(45);
+
+  // Quórum y Cálculo de Mayorías en tiempo real
+  const totalPaises = paises.length;
+  const presentes = useMemo(() => paises.filter(p => p.estatus === 'Presente').length, [paises]);
+  const presentesYVotando = useMemo(() => paises.filter(p => p.estatus === 'Presente y Votando').length, [paises]);
+  const totalAsistentes = presentes + presentesYVotando;
+
+  const mayoriaSimple = totalAsistentes > 0 ? Math.floor(totalAsistentes / 2) + 1 : 0;
+  const mayoriaCalificada = totalAsistentes > 0 ? Math.ceil((totalAsistentes * 2) / 3) : 0;
 
   const handleSubmitMocion = (e) => {
     e.preventDefault();
@@ -118,6 +127,58 @@ const PizarraMociones = () => {
         >
           <Plus size={14} /> {mostrarForm ? 'Cancelar' : 'Nueva Moción'}
         </button>
+      </div>
+
+      {/* ── Barra Informativa de Quórum y Mayorías Requeridas para Mociones ── */}
+      <div style={{
+        backgroundColor: '#0a0a0f',
+        border: '1px solid var(--border-color)',
+        borderRadius: '6px',
+        padding: '0.45rem 0.75rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '0.4rem',
+        fontSize: '0.75rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <Users size={14} color="#3b82f6" />
+          <span style={{ fontWeight: '700', color: '#93c5fd' }}>
+            Quórum: {totalAsistentes} en sala
+          </span>
+          <span style={{ fontSize: '0.68rem', opacity: 0.6 }}>
+            ({presentes} P + {presentesYVotando} PyV de {totalPaises})
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.3rem',
+            backgroundColor: 'rgba(59, 130, 246, 0.12)',
+            border: '1px solid rgba(59, 130, 246, 0.3)',
+            borderRadius: '4px',
+            padding: '2px 7px'
+          }}>
+            <span style={{ color: '#93c5fd', fontWeight: '600', fontSize: '0.72rem' }}>May. Simple (50%+1):</span>
+            <strong style={{ color: '#60a5fa', fontSize: '0.82rem' }}>{mayoriaSimple} {mayoriaSimple === 1 ? 'voto' : 'votos'}</strong>
+          </div>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.3rem',
+            backgroundColor: 'rgba(168, 85, 247, 0.12)',
+            border: '1px solid rgba(168, 85, 247, 0.3)',
+            borderRadius: '4px',
+            padding: '2px 7px'
+          }}>
+            <span style={{ color: '#e9d5ff', fontWeight: '600', fontSize: '0.72rem' }}>Calificada (2/3):</span>
+            <strong style={{ color: '#c084fc', fontSize: '0.82rem' }}>{mayoriaCalificada} {mayoriaCalificada === 1 ? 'voto' : 'votos'}</strong>
+          </div>
+        </div>
       </div>
 
       {/* Formulario Inline */}

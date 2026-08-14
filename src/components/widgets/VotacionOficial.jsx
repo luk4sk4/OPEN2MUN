@@ -11,11 +11,12 @@ import {
   ShieldAlert, 
   Check, 
   X, 
-  Info,
-  ChevronRight,
-  Sparkles,
-  Layers,
-  HelpCircle
+  Info, 
+  Sparkles, 
+  HelpCircle, 
+  Users, 
+  Scale, 
+  Target 
 } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 
@@ -39,12 +40,23 @@ const VotacionOficial = () => {
 
   const { asunto, tipoVotacion, tipoMayoria, aplicarVeto, votos = {} } = votacionSesion;
 
+  // Conteo de Quórum y Asistencia
+  const totalPaises = paises.length;
+  const presentes = useMemo(() => paises.filter(p => p.estatus === 'Presente').length, [paises]);
+  const presentesYVotando = useMemo(() => paises.filter(p => p.estatus === 'Presente y Votando').length, [paises]);
+  const ausentes = useMemo(() => paises.filter(p => p.estatus === 'Ausente').length, [paises]);
+
   // Filtrado de países asistentes (excluyendo ausentes)
   const paisesAsistentes = useMemo(() => {
     return paises.filter(p => p.estatus === 'Presente' || p.estatus === 'Presente y Votando');
   }, [paises]);
 
   const totalAsistentes = paisesAsistentes.length;
+
+  // Umbrales de Mayorías calculados con el número de gente presente/votando en ese momento
+  const reqSimpleQuorum = totalAsistentes > 0 ? Math.floor(totalAsistentes / 2) + 1 : 0;
+  const reqDosTerciosQuorum = totalAsistentes > 0 ? Math.ceil((totalAsistentes * 2) / 3) : 0;
+  const reqAbsolutaTotal = totalPaises > 0 ? Math.floor(totalPaises / 2) + 1 : 0;
 
   // Conteo de Votos
   const { favor, contra, abstencion, vetoEjercido, paisesConVetoEfectuado } = useMemo(() => {
@@ -83,21 +95,29 @@ const VotacionOficial = () => {
   let textoRequerido = '';
 
   if (tipoMayoria === 'simple') {
-    requeridos = Math.floor(votosValidosSinAbstencion / 2) + 1;
-    if (votosValidosSinAbstencion === 0) {
-      requeridos = Math.floor(totalAsistentes / 2) + 1;
+    if (tipoVotacion === 'substantive' && votosEmitidos > 0 && votosValidosSinAbstencion > 0) {
+      requeridos = Math.floor(votosValidosSinAbstencion / 2) + 1;
+      pasaSuperaMayoria = favor > contra && favor >= requeridos;
+      textoRequerido = `${requeridos} voto(s) A Favor (50%+1 de ${votosValidosSinAbstencion} votos válidos emitidos | Base quórum: ${reqSimpleQuorum})`;
+    } else {
+      requeridos = reqSimpleQuorum;
+      pasaSuperaMayoria = favor > contra && favor >= requeridos;
+      textoRequerido = `${requeridos} voto(s) A Favor (50% + 1 de ${totalAsistentes} delegaciones en sala)`;
     }
-    pasaSuperaMayoria = favor > contra && favor >= requeridos;
-    textoRequerido = `${requeridos} voto(s) (50% + 1 de afirmativos/negativos)`;
   } else if (tipoMayoria === '2/3') {
-    const base = votosValidosSinAbstencion > 0 ? votosValidosSinAbstencion : totalAsistentes;
-    requeridos = Math.ceil((base * 2) / 3);
-    pasaSuperaMayoria = favor >= requeridos && favor > 0;
-    textoRequerido = `${requeridos} voto(s) (2/3 de afirmativos/negativos)`;
+    if (tipoVotacion === 'substantive' && votosEmitidos > 0 && votosValidosSinAbstencion > 0) {
+      requeridos = Math.ceil((votosValidosSinAbstencion * 2) / 3);
+      pasaSuperaMayoria = favor >= requeridos && favor > 0;
+      textoRequerido = `${requeridos} voto(s) A Favor (2/3 de ${votosValidosSinAbstencion} votos válidos emitidos | Base quórum: ${reqDosTerciosQuorum})`;
+    } else {
+      requeridos = reqDosTerciosQuorum;
+      pasaSuperaMayoria = favor >= requeridos && favor > 0;
+      textoRequerido = `${requeridos} voto(s) A Favor (2/3 de ${totalAsistentes} delegaciones en sala)`;
+    }
   } else if (tipoMayoria === 'consensus') {
     requeridos = 0; // 0 votos en contra
     pasaSuperaMayoria = contra === 0 && favor > 0 && votosPendientes === 0;
-    textoRequerido = `0 votos En Contra (100% Sin oposición)`;
+    textoRequerido = `0 votos En Contra (100% Consenso de ${totalAsistentes} delegaciones en sala)`;
   }
 
   // Dictamen de la Votación
@@ -109,7 +129,7 @@ const VotacionOficial = () => {
     mensajeDictamen = 'Sin delegaciones registradas ni votaciones aún.';
   } else if (votosEmitidos === 0) {
     estadoVotacion = 'SIN_VOTOS';
-    mensajeDictamen = 'No se han registrado votos todavía. Inicia el Roll Call o vota manualmente.';
+    mensajeDictamen = `No se han registrado votos todavía. Requiere ${requeridos} voto(s) para aprobar. Inicia el Roll Call o vota manualmente.`;
   } else if (vetoEjercido) {
     estadoVotacion = 'VETADA';
     const nombresVeto = paisesConVetoEfectuado.map(p => p.nombre).join(', ');
@@ -120,11 +140,12 @@ const VotacionOficial = () => {
       mensajeDictamen = `¡APROBADA! (${favor} A Favor vs ${contra} En Contra${tipoVotacion === 'substantive' ? `, ${abstencion} Abstenciones` : ''})`;
     } else {
       estadoVotacion = 'REPROBADA';
-      mensajeDictamen = `REPROBADA (${favor} A Favor vs ${contra} En Contra, requiere ${textoRequerido})`;
+      mensajeDictamen = `REPROBADA (${favor} A Favor vs ${contra} En Contra — Requiere: ${textoRequerido})`;
     }
   } else {
     estadoVotacion = 'EN_PROCESO';
-    mensajeDictamen = 'Votación en proceso...';
+    const votosFaltantes = Math.max(0, requeridos - favor);
+    mensajeDictamen = `Votación en proceso... (${favor}/${requeridos} necesarios, faltan ${votosFaltantes} a favor)`;
   }
 
   // Lista de Países para la Ronda de Roll Call Actual
@@ -172,7 +193,7 @@ const VotacionOficial = () => {
       if (rondaRollCall === 1) {
         // Verificar si hay países que pasaron en Ronda 1
         const pasadosSinVoto = paisesAsistentes.filter(p => 
-          (paisesPasados.includes(p.id) || voto === 'pasar' && p.id === paisActualRollCall.id) && !votos[p.id]
+          (paisesPasados.includes(p.id) || (voto === 'pasar' && p.id === paisActualRollCall.id)) && !votos[p.id]
         );
         if (pasadosSinVoto.length > 0) {
           setRondaRollCall(2);
@@ -225,7 +246,7 @@ const VotacionOficial = () => {
       boxSizing: 'border-box',
       backgroundColor: 'var(--panel-color)',
       color: 'var(--text-color)',
-      gap: '0.85rem',
+      gap: '0.75rem',
       fontSize: '0.85rem'
     }}>
       {/* ── Header: Asunto y Selectores de Configuración ── */}
@@ -300,24 +321,30 @@ const VotacionOficial = () => {
 
           {/* Selector de Mayoría */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            <span style={{ fontSize: '0.73rem', opacity: 0.6 }}>Mayoría:</span>
+            <span style={{ fontSize: '0.73rem', opacity: 0.7, fontWeight: '600' }}>Mayoría:</span>
             <select
               value={tipoMayoria}
               onChange={e => configurarVotacion({ tipoMayoria: e.target.value })}
               style={{
-                padding: '0.3rem 0.5rem',
+                padding: '0.35rem 0.6rem',
                 backgroundColor: '#141417',
                 border: '1px solid var(--border-color)',
                 color: 'var(--text-color)',
                 borderRadius: '6px',
                 fontSize: '0.75rem',
-                fontWeight: '600',
+                fontWeight: '700',
                 outline: 'none'
               }}
             >
-              <option value="simple">Mayoría Simple (50% + 1)</option>
-              <option value="2/3">Calificada (2/3 de votos)</option>
-              <option value="consensus">Consenso (0 Votos En Contra)</option>
+              <option value="simple">
+                Mayoría Simple (50% + 1) — Requiere {reqSimpleQuorum} {reqSimpleQuorum === 1 ? 'voto' : 'votos'}
+              </option>
+              <option value="2/3">
+                Mayoría Calificada (2/3) — Requiere {reqDosTerciosQuorum} {reqDosTerciosQuorum === 1 ? 'voto' : 'votos'}
+              </option>
+              <option value="consensus">
+                Consenso (100%) — Requiere 0 Votos En Contra
+              </option>
             </select>
           </div>
 
@@ -343,6 +370,217 @@ const VotacionOficial = () => {
             <Crown size={14} color={aplicarVeto ? '#eab308' : '#888888'} />
             <span>Veto P5: {aplicarVeto ? 'ON' : 'OFF'}</span>
           </button>
+        </div>
+      </div>
+
+      {/* ── PANEL DE QUÓRUM Y REQUISITOS DE CADA MAYORÍA EN TIEMPO REAL ── */}
+      <div style={{
+        backgroundColor: '#0c0d12',
+        border: '1px solid #27273a',
+        borderRadius: '8px',
+        padding: '0.65rem 0.85rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.5rem'
+      }}>
+        {/* Cabecera de Quórum en Sala */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.4rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+            <Users size={15} color="#3b82f6" />
+            <span style={{ fontSize: '0.78rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#93c5fd' }}>
+              Quórum y Mayorías Requeridas en Sala
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.73rem' }}>
+            <span style={{ color: '#22c55e', fontWeight: '700' }}>
+              ● {totalAsistentes} en sala ({presentes} Presentes + {presentesYVotando} Presentes y Votando)
+            </span>
+            <span style={{ color: '#71717a' }}>|</span>
+            <span style={{ color: '#ef4444', fontWeight: '600' }}>
+              {ausentes} Ausentes
+            </span>
+            <span style={{ color: '#71717a' }}>|</span>
+            <span style={{ color: '#a1a1aa' }}>
+              Total: {totalPaises} delegaciones
+            </span>
+          </div>
+        </div>
+
+        {/* Tarjetas Dinámicas de Mayoría */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: '0.5rem'
+        }}>
+          {/* Card: Mayoría Simple */}
+          <div 
+            onClick={() => configurarVotacion({ tipoMayoria: 'simple' })}
+            style={{
+              backgroundColor: tipoMayoria === 'simple' ? 'rgba(59, 130, 246, 0.12)' : '#121218',
+              border: `1.5px solid ${tipoMayoria === 'simple' ? '#3b82f6' : '#232330'}`,
+              borderRadius: '7px',
+              padding: '0.55rem 0.75rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.2rem'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.7rem', fontWeight: '800', color: tipoMayoria === 'simple' ? '#60a5fa' : '#9ca3af' }}>
+                MAYORÍA SIMPLE (50% + 1)
+              </span>
+              {tipoMayoria === 'simple' && (
+                <span style={{ fontSize: '0.6rem', backgroundColor: '#1e3a8a', color: '#93c5fd', padding: '1px 5px', borderRadius: '3px', fontWeight: '800' }}>
+                  ACTIVA
+                </span>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
+              <span style={{ fontSize: '1.25rem', fontWeight: '900', color: '#60a5fa' }}>
+                {reqSimpleQuorum}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#9ca3af', fontWeight: '600' }}>
+                {reqSimpleQuorum === 1 ? 'voto A Favor requerido' : 'votos A Favor requeridos'}
+              </span>
+            </div>
+
+            <div style={{ fontSize: '0.65rem', opacity: 0.7, marginTop: '2px' }}>
+              {favor >= reqSimpleQuorum && reqSimpleQuorum > 0 ? (
+                <span style={{ color: '#4ade80', fontWeight: '700' }}>✓ Alcanzada actualmente ({favor} votos)</span>
+              ) : (
+                <span>Faltan {Math.max(0, reqSimpleQuorum - favor)} votos (Progreso: {favor}/{reqSimpleQuorum})</span>
+              )}
+            </div>
+          </div>
+
+          {/* Card: Mayoría Calificada 2/3 */}
+          <div 
+            onClick={() => configurarVotacion({ tipoMayoria: '2/3' })}
+            style={{
+              backgroundColor: tipoMayoria === '2/3' ? 'rgba(168, 85, 247, 0.12)' : '#121218',
+              border: `1.5px solid ${tipoMayoria === '2/3' ? '#a855f7' : '#232330'}`,
+              borderRadius: '7px',
+              padding: '0.55rem 0.75rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.2rem'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.7rem', fontWeight: '800', color: tipoMayoria === '2/3' ? '#c084fc' : '#9ca3af' }}>
+                CALIFICADA (2/3)
+              </span>
+              {tipoMayoria === '2/3' && (
+                <span style={{ fontSize: '0.6rem', backgroundColor: '#581c87', color: '#e9d5ff', padding: '1px 5px', borderRadius: '3px', fontWeight: '800' }}>
+                  ACTIVA
+                </span>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
+              <span style={{ fontSize: '1.25rem', fontWeight: '900', color: '#c084fc' }}>
+                {reqDosTerciosQuorum}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#9ca3af', fontWeight: '600' }}>
+                {reqDosTerciosQuorum === 1 ? 'voto A Favor requerido' : 'votos A Favor requeridos'}
+              </span>
+            </div>
+
+            <div style={{ fontSize: '0.65rem', opacity: 0.7, marginTop: '2px' }}>
+              {favor >= reqDosTerciosQuorum && reqDosTerciosQuorum > 0 ? (
+                <span style={{ color: '#4ade80', fontWeight: '700' }}>✓ Alcanzada actualmente ({favor} votos)</span>
+              ) : (
+                <span>Faltan {Math.max(0, reqDosTerciosQuorum - favor)} votos (Progreso: {favor}/{reqDosTerciosQuorum})</span>
+              )}
+            </div>
+          </div>
+
+          {/* Card: Consenso */}
+          <div 
+            onClick={() => configurarVotacion({ tipoMayoria: 'consensus' })}
+            style={{
+              backgroundColor: tipoMayoria === 'consensus' ? 'rgba(234, 179, 8, 0.12)' : '#121218',
+              border: `1.5px solid ${tipoMayoria === 'consensus' ? '#eab308' : '#232330'}`,
+              borderRadius: '7px',
+              padding: '0.55rem 0.75rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.2rem'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.7rem', fontWeight: '800', color: tipoMayoria === 'consensus' ? '#facc15' : '#9ca3af' }}>
+                CONSENSO / UNANIMIDAD
+              </span>
+              {tipoMayoria === 'consensus' && (
+                <span style={{ fontSize: '0.6rem', backgroundColor: '#713f12', color: '#fef08a', padding: '1px 5px', borderRadius: '3px', fontWeight: '800' }}>
+                  ACTIVA
+                </span>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
+              <span style={{ fontSize: '1.25rem', fontWeight: '900', color: '#facc15' }}>
+                0
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#9ca3af', fontWeight: '600' }}>
+                votos En Contra (100% apoyo)
+              </span>
+            </div>
+
+            <div style={{ fontSize: '0.65rem', opacity: 0.7, marginTop: '2px' }}>
+              {contra > 0 ? (
+                <span style={{ color: '#f87171', fontWeight: '700' }}>✕ Consenso roto ({contra} en contra)</span>
+              ) : (
+                <span style={{ color: favor > 0 ? '#4ade80' : '#a1a1aa' }}>
+                  {favor > 0 ? `✓ Sin votos en contra (${favor} a favor)` : 'Sin votos emitidos'}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Card: Mayoría Absoluta (Total Padrón) */}
+          <div 
+            style={{
+              backgroundColor: '#121218',
+              border: '1.5px solid #232330',
+              borderRadius: '7px',
+              padding: '0.55rem 0.75rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.2rem'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.7rem', fontWeight: '800', color: '#9ca3af' }}>
+                MAY. ABSOLUTA (PADRÓN)
+              </span>
+              <span style={{ fontSize: '0.6rem', color: '#71717a', fontWeight: '700' }}>
+                {totalPaises} TOTAL
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
+              <span style={{ fontSize: '1.25rem', fontWeight: '900', color: '#e2e8f0' }}>
+                {reqAbsolutaTotal}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#9ca3af', fontWeight: '600' }}>
+                votos (50% + 1 del total)
+              </span>
+            </div>
+
+            <div style={{ fontSize: '0.65rem', opacity: 0.6, marginTop: '2px' }}>
+              Progreso: {favor}/{reqAbsolutaTotal} sobre las {totalPaises} delegaciones
+            </div>
+          </div>
         </div>
       </div>
 
@@ -378,10 +616,10 @@ const VotacionOficial = () => {
             <div style={{ fontWeight: '800', fontSize: '0.95rem' }}>
               {mensajeDictamen}
             </div>
-            <div style={{ fontSize: '0.7rem', opacity: 0.75, marginTop: '2px' }}>
+            <div style={{ fontSize: '0.7rem', opacity: 0.8, marginTop: '2px' }}>
               Modalidad: {tipoVotacion === 'procedural' ? 'Procedimental (Obligatorio Votar)' : 'Sustantiva'} | 
-              Requisito: {textoRequerido} | 
-              Votos: {votosEmitidos}/{totalAsistentes}
+              Meta: <strong style={{ color: '#ffffff' }}>{textoRequerido}</strong> | 
+              Votos Emitidos: {votosEmitidos}/{totalAsistentes}
             </div>
           </div>
         </div>
