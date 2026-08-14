@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, Plus, Clock, ShieldAlert } from 'lucide-react';
+import { Play, Pause, RotateCcw, Plus, Clock, ShieldAlert, Edit, Check, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 
 const CronometroOnlyTime = () => {
@@ -8,6 +8,10 @@ const CronometroOnlyTime = () => {
   const [tiempoTotalSeg, setTiempoTotalSeg] = useState(caucusActivo?.tiempoTotal || 600); // 10 min
   const [tiempoTotalInicial, setTiempoTotalInicial] = useState(caucusActivo?.tiempoTotal || 600);
   const [corriendo, setCorriendo] = useState(false);
+  const [editando, setEditando] = useState(false);
+
+  const [inputMin, setInputMin] = useState(10);
+  const [inputSeg, setInputSeg] = useState(0);
 
   const timerRef = useRef(null);
 
@@ -36,9 +40,22 @@ const CronometroOnlyTime = () => {
     return () => clearInterval(timerRef.current);
   }, [corriendo]);
 
-  const handleStartPause = () => setCorriendo(!corriendo);
+  // Sincronizar inputs cuando cambia el tiempo y no se está editando
+  useEffect(() => {
+    if (!editando) {
+      setInputMin(Math.floor(tiempoTotalSeg / 60));
+      setInputSeg(tiempoTotalSeg % 60);
+    }
+  }, [tiempoTotalSeg, editando]);
+
+  const handleStartPause = () => {
+    if (editando) handleSaveTime();
+    setCorriendo(!corriendo);
+  };
+
   const handleReset = () => {
     setCorriendo(false);
+    setEditando(false);
     const init = caucusActivo?.tiempoTotal || 600;
     setTiempoTotalSeg(init);
     setTiempoTotalInicial(init);
@@ -48,6 +65,13 @@ const CronometroOnlyTime = () => {
     const extra = mins * 60;
     setTiempoTotalSeg(prev => prev + extra);
     setTiempoTotalInicial(prev => prev + extra);
+  };
+
+  const handleSaveTime = () => {
+    const totalSegundos = (inputMin * 60) + inputSeg;
+    setTiempoTotalSeg(totalSegundos);
+    setTiempoTotalInicial(totalSegundos);
+    setEditando(false);
   };
 
   const formatTime = (seg) => {
@@ -60,6 +84,19 @@ const CronometroOnlyTime = () => {
     ? Math.min(100, Math.max(0, ((tiempoTotalInicial - tiempoTotalSeg) / tiempoTotalInicial) * 100))
     : 0;
 
+  const arrowButtonStyle = {
+    background: 'none',
+    border: 'none',
+    color: '#3b82f6',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '2px',
+    borderRadius: '4px',
+    transition: 'background-color 0.2s, color 0.2s',
+  };
+
   return (
     <div style={{
       padding: '1.2rem',
@@ -71,6 +108,17 @@ const CronometroOnlyTime = () => {
       backgroundColor: 'var(--panel-color)',
       color: 'var(--text-color)',
     }}>
+      {/* Estilo para ocultar controles nativos de number input */}
+      <style>{`
+        .no-spin::-webkit-outer-spin-button,
+        .no-spin::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        .no-spin {
+          -moz-appearance: textfield;
+        }
+      `}</style>
 
       {/* Reloj Display Gigante */}
       <div style={{
@@ -83,18 +131,212 @@ const CronometroOnlyTime = () => {
         backgroundColor: tiempoTotalSeg === 0 ? '#3f0c0c' : '#050505',
         border: `2px solid ${tiempoTotalSeg === 0 ? '#ef4444' : 'var(--border-color)'}`,
         boxShadow: '0 6px 25px rgba(0,0,0,0.6)',
-        transition: 'all 0.3s ease'
+        transition: 'all 0.3s ease',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '150px'
       }}>
-        <div style={{
-          fontWeight: '900',
-          fontSize: '5.5rem',
-          fontFamily: 'monospace',
-          letterSpacing: '0.04em',
-          lineHeight: 1,
-          color: tiempoTotalSeg === 0 ? '#ef4444' : 'var(--text-color)'
-        }}>
-          {formatTime(tiempoTotalSeg)}
-        </div>
+        {editando ? (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '0.4rem',
+            width: '100%'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.8rem'
+            }}>
+              {/* Contenedor Minutos */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => setInputMin(m => m + 1)}
+                  style={arrowButtonStyle}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.15)'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <ChevronUp size={24} />
+                </button>
+                <input
+                  type="number"
+                  min="0"
+                  max="999"
+                  className="no-spin"
+                  value={inputMin}
+                  onChange={e => setInputMin(Math.max(0, parseInt(e.target.value) || 0))}
+                  style={{
+                    width: '85px',
+                    fontSize: '3rem',
+                    fontWeight: '900',
+                    fontFamily: 'monospace',
+                    textAlign: 'center',
+                    backgroundColor: '#151515',
+                    color: '#3b82f6',
+                    border: '1px solid #334155',
+                    borderRadius: '8px',
+                    padding: '0.1rem',
+                    outline: 'none',
+                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setInputMin(m => Math.max(0, m - 1))}
+                  style={arrowButtonStyle}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.15)'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <ChevronDown size={24} />
+                </button>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.1rem', fontWeight: '600', letterSpacing: '0.05em' }}>MINUTOS</span>
+              </div>
+
+              <span style={{ fontSize: '2.5rem', fontWeight: '900', color: '#64748b', alignSelf: 'center', marginTop: '-15px' }}>:</span>
+
+              {/* Contenedor Segundos */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => setInputSeg(s => (s + 1) % 60)}
+                  style={arrowButtonStyle}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.15)'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <ChevronUp size={24} />
+                </button>
+                <input
+                  type="number"
+                  min="0"
+                  max="59"
+                  className="no-spin"
+                  value={inputSeg}
+                  onChange={e => setInputSeg(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
+                  style={{
+                    width: '85px',
+                    fontSize: '3rem',
+                    fontWeight: '900',
+                    fontFamily: 'monospace',
+                    textAlign: 'center',
+                    backgroundColor: '#151515',
+                    color: '#3b82f6',
+                    border: '1px solid #334155',
+                    borderRadius: '8px',
+                    padding: '0.1rem',
+                    outline: 'none',
+                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setInputSeg(s => Math.max(0, s - 1))}
+                  style={arrowButtonStyle}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.15)'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <ChevronDown size={24} />
+                </button>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.1rem', fontWeight: '600', letterSpacing: '0.05em' }}>SEGUNDOS</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.8rem', marginTop: '0.4rem' }}>
+              <button
+                onClick={handleSaveTime}
+                style={{
+                  padding: '0.4rem 1rem',
+                  backgroundColor: '#22c55e',
+                  color: '#000000',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: '700',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                  fontSize: '0.85rem'
+                }}
+              >
+                <Check size={16} /> Aceptar
+              </button>
+              <button
+                onClick={() => setEditando(false)}
+                style={{
+                  padding: '0.4rem 1rem',
+                  backgroundColor: '#ef4444',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: '700',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                  fontSize: '0.85rem'
+                }}
+              >
+                <X size={16} /> Cancelar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div style={{
+              fontWeight: '900',
+              fontSize: '5.5rem',
+              fontFamily: 'monospace',
+              letterSpacing: '0.04em',
+              lineHeight: 1,
+              color: tiempoTotalSeg === 0 ? '#ef4444' : 'var(--text-color)'
+            }}>
+              {formatTime(tiempoTotalSeg)}
+            </div>
+
+            {/* Botón flotante para editar el tiempo mucho más visible */}
+            {!corriendo && (
+              <button
+                onClick={() => setEditando(true)}
+                title="Ajustar tiempo"
+                style={{
+                  position: 'absolute',
+                  top: '12px',
+                  right: '12px',
+                  backgroundColor: 'var(--primary-color, #3b82f6)',
+                  border: 'none',
+                  borderRadius: '20px',
+                  padding: '5px 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  fontSize: '0.75rem',
+                  fontWeight: '700',
+                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.backgroundColor = '#2563eb';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.4)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.backgroundColor = '#3b82f6';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
+                }}
+              >
+                <Edit size={12} />
+                <span>Ajustar</span>
+              </button>
+            )}
+          </>
+        )}
 
         {/* Barra de progreso inferior */}
         <div style={{
