@@ -5,7 +5,7 @@
 [![React](https://img.shields.io/badge/React-19.x-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-6.x-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![PeerJS](https://img.shields.io/badge/P2P-PeerJS-crimson)](https://peerjs.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: GNU AGPLv3]
 
 *A full-featured, zero-latency desktop and projection platform designed for MUN chairs, delegates, and secretariats.*
 
@@ -144,7 +144,7 @@ openMUN/
 
 ## 📄 Licencia
 
-Este proyecto está distribuido bajo la licencia **MIT**. Consulta el archivo `LICENSE` para más detalles.
+Este proyecto está distribuido bajo la licencia **GNU AGPLv3**. Consulta el archivo `LICENSE` para más detalles.
 
 ---
 ```
