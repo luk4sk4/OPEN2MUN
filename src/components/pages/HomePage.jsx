@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Coffee, Play, Heart, Code2, Sparkles, ExternalLink, Edit3, ShieldCheck } from 'lucide-react';
+import { Coffee, Play, Heart, Code2, Sparkles, ExternalLink, Edit3, ShieldCheck, Mail, Send, Copy, Check, MessageSquareHeart } from 'lucide-react';
 import OpenMunLogo from '../common/OpenMunLogo';
 
 const HomePage = ({ onNavigateToComienzo, isLight }) => {
@@ -7,6 +7,14 @@ const HomePage = ({ onNavigateToComienzo, isLight }) => {
     return localStorage.getItem('openmun_home_notes') || 'Añade aquí tus notas personalizadas o agenda del evento...';
   });
   const [editandoNotas, setEditandoNotas] = useState(false);
+  const [copiado, setCopiado] = useState(false);
+  const emailPlaceholder = 'sugerencias@openmun.org';
+
+  const handleCopyEmail = () => {
+    navigator.clipboard.writeText(emailPlaceholder);
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 2000);
+  };
 
   const handleGuardarNotas = (texto) => {
     setNotasUsuario(texto);
@@ -149,7 +157,134 @@ const HomePage = ({ onNavigateToComienzo, isLight }) => {
         </div>
       </div>
 
+      {/* ── SECCIÓN: POR FAVOR, FORMA PARTE DE ESTO, ENVIANOS SUGERENCIAS ── */}
+      <div style={{
+        backgroundColor: 'var(--card-header-bg)',
+        border: '1px solid var(--subborder-color)',
+        borderRadius: '16px',
+        padding: '2rem 2.25rem',
+        maxWidth: '820px',
+        width: '100%',
+        boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center',
+        gap: '1.25rem',
+        marginTop: '0.5rem',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '52px',
+          height: '52px',
+          borderRadius: '50%',
+          backgroundColor: isLight ? '#eff6ff' : 'rgba(59, 130, 246, 0.15)',
+          color: '#3b82f6',
+          boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)'
+        }}>
+          <MessageSquareHeart size={28} />
+        </div>
 
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'center' }}>
+          <h3 style={{
+            fontSize: '1.25rem',
+            fontWeight: '800',
+            margin: 0,
+            color: 'var(--text-color)',
+            letterSpacing: '-0.01em',
+            textTransform: 'uppercase'
+          }}>
+            POR FAVOR, FORMA PARTE DE ESTO, ENVÍANOS SUGERENCIAS
+          </h3>
+          <p style={{
+            fontSize: '0.98rem',
+            lineHeight: '1.6',
+            margin: 0,
+            color: 'var(--muted-text)',
+            maxWidth: '650px',
+            opacity: 0.9
+          }}>
+            OpenMUN se construye con el aporte continuo de toda la comunidad. Si tienes comentarios, encuentras un error o quieres proponer una nueva funcionalidad, escríbenos directamente.
+          </p>
+        </div>
+
+        {/* Caja del mail placeholder y acciones */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.85rem',
+          backgroundColor: isLight ? '#f8fafc' : 'rgba(0, 0, 0, 0.3)',
+          border: '1px dashed var(--border-color)',
+          borderRadius: '12px',
+          padding: '0.65rem 1.25rem',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          width: '100%',
+          maxWidth: '560px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Mail size={20} style={{ color: '#3b82f6' }} />
+            <span style={{
+              fontSize: '1.05rem',
+              fontWeight: '700',
+              fontFamily: 'monospace',
+              letterSpacing: '0.02em',
+              color: 'var(--text-color)'
+            }}>
+              {emailPlaceholder}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <button
+              onClick={handleCopyEmail}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                padding: '0.45rem 0.85rem',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: copiado ? '#22c55e' : 'var(--btn-bg)',
+                color: 'var(--btn-text)',
+                fontSize: '0.85rem',
+                fontWeight: '700',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+              }}
+              title="Copiar mail al portapapeles"
+            >
+              {copiado ? <Check size={15} /> : <Copy size={15} />}
+              {copiado ? '¡Copiado!' : 'Copiar'}
+            </button>
+
+            <a
+              href={`mailto:${emailPlaceholder}`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                padding: '0.45rem 0.85rem',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color)',
+                backgroundColor: 'transparent',
+                color: 'var(--text-color)',
+                fontSize: '0.85rem',
+                fontWeight: '600',
+                textDecoration: 'none',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <Send size={15} /> Enviar mail
+            </a>
+          </div>
+        </div>
+      </div>
 
       {/* ── FOOTER DE CRÉDITOS ── */}
       <footer style={{

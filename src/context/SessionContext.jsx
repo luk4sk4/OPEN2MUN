@@ -183,6 +183,25 @@ export const SessionProvider = ({ children }) => {
     setOradoresCola(clone);
   };
 
+  const vaciarOradoresGSL = () => {
+    setOradoresCola([]);
+  };
+
+  const ordenarOradoresGSLAlfabetico = () => {
+    setOradoresCola(prev => [...prev].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })));
+  };
+
+  const reordenarOradoresGSL = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return;
+    setOradoresCola(prev => {
+      if (fromIndex >= prev.length || toIndex >= prev.length) return prev;
+      const clone = [...prev];
+      const [moved] = clone.splice(fromIndex, 1);
+      clone.splice(toIndex, 0, moved);
+      return clone;
+    });
+  };
+
   const [relojGSLState, setRelojGSLState] = useState({ segundosRestantes: 60, tiempoInicial: 60, corriendo: false });
   const [yieldEvento, setYieldEvento] = useState(null);
 
@@ -235,7 +254,7 @@ export const SessionProvider = ({ children }) => {
     }
   };
 
-  // Funciones de Oradores Caucus
+  // Funciones de Oradores Caucus / Debate
   const agregarOradorCaucus = (paisObj) => {
     if (oradoresCaucus.some(o => o.nombre === paisObj.nombre)) return;
 
@@ -264,6 +283,50 @@ export const SessionProvider = ({ children }) => {
     if (oradoresCaucus.length > 0) {
       setOradoresCaucus(prev => prev.slice(1));
     }
+  };
+
+  const vaciarOradoresDebate = () => {
+    setOradoresCaucus([]);
+  };
+
+  const ordenarOradoresDebateAlfabetico = () => {
+    setOradoresCaucus(prev => [...prev].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })));
+  };
+
+  const reordenarOradoresDebate = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return;
+    setOradoresCaucus(prev => {
+      if (fromIndex >= prev.length || toIndex >= prev.length) return prev;
+      const clone = [...prev];
+      const [moved] = clone.splice(fromIndex, 1);
+      clone.splice(toIndex, 0, moved);
+      return clone;
+    });
+  };
+
+  const moverOradorCaucus = (index, direccion) => {
+    const newIndex = index + direccion;
+    if (newIndex < 0 || newIndex >= oradoresCaucus.length) return;
+    const clone = [...oradoresCaucus];
+    const [moved] = clone.splice(index, 1);
+    clone.splice(newIndex, 0, moved);
+    setOradoresCaucus(clone);
+  };
+
+  // Reordenar y Ordenar lista maestra de países
+  const ordenarPaisesAlfabetico = () => {
+    setPaises(prev => [...prev].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })));
+  };
+
+  const reordenarPaises = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return;
+    setPaises(prev => {
+      if (fromIndex >= prev.length || toIndex >= prev.length) return prev;
+      const clone = [...prev];
+      const [moved] = clone.splice(fromIndex, 1);
+      clone.splice(toIndex, 0, moved);
+      return clone;
+    });
   };
 
   // Registro de intervenciones
@@ -339,6 +402,45 @@ export const SessionProvider = ({ children }) => {
     }
   };
 
+  // Reordenar y Ordenar Mociones
+  const compararMocionesDisruptividad = (a, b) => {
+    const getPrioridadTipo = (tipoStr = '') => {
+      if (tipoStr.includes('Caucus No Moderado')) return 1;
+      if (tipoStr.includes('Consulta General')) return 2;
+      if (tipoStr.includes('Tour de Table')) return 3;
+      if (tipoStr.includes('Caucus Moderado')) return 4;
+      return 5;
+    };
+
+    const prioA = getPrioridadTipo(a.tipo);
+    const prioB = getPrioridadTipo(b.tipo);
+
+    if (prioA !== prioB) return prioA - prioB;
+
+    const durA = a.tiempoTotal || 0;
+    const durB = b.tiempoTotal || 0;
+    if (durA !== durB) return durB - durA;
+
+    const tA = Number(a.id) || 0;
+    const tB = Number(b.id) || 0;
+    return tA - tB;
+  };
+
+  const ordenarMocionesDisruptividad = () => {
+    setMociones(prev => [...prev].sort(compararMocionesDisruptividad));
+  };
+
+  const reordenarMociones = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return;
+    setMociones(prev => {
+      if (fromIndex >= prev.length || toIndex >= prev.length) return prev;
+      const clone = [...prev];
+      const [moved] = clone.splice(fromIndex, 1);
+      clone.splice(toIndex, 0, moved);
+      return clone;
+    });
+  };
+
   const agregarMocion = (mocionData) => {
     const nueva = {
       id: Date.now().toString(),
@@ -349,7 +451,7 @@ export const SessionProvider = ({ children }) => {
       votosFavor: 0,
       votosContra: 0
     };
-    setMociones(prev => [nueva, ...prev]);
+    setMociones(prev => [...prev, nueva].sort(compararMocionesDisruptividad));
     setHistoricoMociones(prev => [nueva, ...prev]);
   };
 
@@ -429,15 +531,24 @@ export const SessionProvider = ({ children }) => {
       cambiarEstatusPais,
       resetearAsistencia,
       toggleVetoPais,
+      ordenarPaisesAlfabetico,
+      reordenarPaises,
       oradoresCola,
       agregarOrador,
       removerOrador,
       moverOrador,
+      vaciarOradoresGSL,
+      ordenarOradoresGSLAlfabetico,
+      reordenarOradoresGSL,
       cederTiempo,
       oradoresCaucus,
       agregarOradorCaucus,
       removerOradorCaucus,
       avanzarOradorCaucus,
+      vaciarOradoresDebate,
+      ordenarOradoresDebateAlfabetico,
+      reordenarOradoresDebate,
+      moverOradorCaucus,
       registroIntervenciones,
       registrarIntervencion,
       descargarSesionJSON,
@@ -448,6 +559,8 @@ export const SessionProvider = ({ children }) => {
       votarMocion,
       eliminarMocion,
       activarMocion,
+      reordenarMociones,
+      ordenarMocionesDisruptividad,
       caucusActivo,
       setCaucusActivo,
       relojGSLState,

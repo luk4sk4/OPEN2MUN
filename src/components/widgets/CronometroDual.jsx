@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, SkipForward, Clock, Users, Search, Plus, Trash2, ShieldAlert } from 'lucide-react';
+import { Play, Pause, RotateCcw, SkipForward, Clock, Trash2, ArrowUpDown, GripVertical } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 
 const CronometroDual = ({ modoInicial = null }) => {
@@ -10,6 +10,9 @@ const CronometroDual = ({ modoInicial = null }) => {
     agregarOradorCaucus,
     removerOradorCaucus,
     avanzarOradorCaucus,
+    vaciarOradoresDebate,
+    ordenarOradoresDebateAlfabetico,
+    reordenarOradoresDebate,
     registrarIntervencion
   } = useSession();
 
@@ -25,6 +28,8 @@ const CronometroDual = ({ modoInicial = null }) => {
   const [corriendo, setCorriendo] = useState(false);
 
   const [busquedaPais, setBusquedaPais] = useState('');
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
   const timerRef = useRef(null);
 
   // Sincronizar al activar moción desde la Pizarra de Mociones
@@ -516,45 +521,166 @@ const CronometroDual = ({ modoInicial = null }) => {
 
           {/* LISTA DE SIGUIENTES ORADORES (TOUR DE TABLE) */}
           <div style={{ flex: 1, overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '0.45rem', backgroundColor: 'var(--card-header-bg)' }}>
-            <div style={{ fontSize: '0.72rem', opacity: 0.6, marginBottom: '0.4rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Siguientes en Tour de Table ({oradoresCaucus.length}):
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-              {oradoresCaucus.map((o, idx) => (
-                <div key={o.id} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0.45rem 0.65rem',
-                  fontSize: '0.92rem',
-                  backgroundColor: idx === 0 ? 'rgba(34,197,94,0.12)' : (idx === 1 ? 'rgba(59,130,246,0.08)' : 'var(--panel-color)'),
-                  border: `1px solid ${idx === 0 ? '#166534' : (idx === 1 ? 'rgba(59,130,246,0.3)' : 'var(--subborder-color)')}`,
-                  borderRadius: '5px'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
-                    <span style={{ fontSize: '0.78rem', fontWeight: '800', color: idx === 0 ? '#4ade80' : (idx === 1 ? '#60a5fa' : 'var(--muted-text)'), width: '22px' }}>
-                      #{idx + 1}
-                    </span>
-                    <span style={{ fontSize: '1.3rem' }}>{o.bandera}</span>
-                    <span style={{ fontWeight: idx === 0 ? '800' : '600', color: 'var(--text-color)', fontSize: '0.92rem' }}>
-                      {o.nombre}
-                    </span>
-                  </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem', flexWrap: 'wrap', gap: '0.3rem' }}>
+              <div style={{ fontSize: '0.72rem', opacity: 0.75, fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Tour de Table ({oradoresCaucus.length}):
+              </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    {idx === 0 && (
-                      <span style={{ backgroundColor: '#15803d', color: '#ffffff', fontWeight: '800', fontSize: '0.65rem', padding: '0.1rem 0.4rem', borderRadius: '3px' }}>
-                        HABLANDO
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <button
+                  type="button"
+                  onClick={ordenarOradoresDebateAlfabetico}
+                  disabled={oradoresCaucus.length <= 1}
+                  title="Ordenar Tour de Table alfabéticamente (A-Z)"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.2rem',
+                    padding: '0.15rem 0.45rem',
+                    fontSize: '0.68rem',
+                    fontWeight: '600',
+                    borderRadius: '4px',
+                    border: '1px solid var(--border-color)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    color: 'var(--text-color)',
+                    cursor: oradoresCaucus.length <= 1 ? 'not-allowed' : 'pointer',
+                    opacity: oradoresCaucus.length <= 1 ? 0.4 : 1
+                  }}
+                >
+                  <ArrowUpDown size={11} />
+                  <span>A-Z</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (oradoresCaucus.length > 0) {
+                      vaciarOradoresDebate();
+                    }
+                  }}
+                  disabled={oradoresCaucus.length === 0}
+                  title="Eliminar todos los oradores de Tour de Table"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.2rem',
+                    padding: '0.15rem 0.45rem',
+                    fontSize: '0.68rem',
+                    fontWeight: '600',
+                    borderRadius: '4px',
+                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                    color: '#f87171',
+                    cursor: oradoresCaucus.length === 0 ? 'not-allowed' : 'pointer',
+                    opacity: oradoresCaucus.length === 0 ? 0.4 : 1
+                  }}
+                >
+                  <Trash2 size={11} />
+                  <span>Eliminar todos</span>
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+              {oradoresCaucus.map((o, idx) => {
+                const isDragging = draggedIndex === idx;
+                const isDragOver = dragOverIndex === idx;
+
+                return (
+                  <div
+                    key={o.id}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('text/plain', idx.toString());
+                      e.dataTransfer.effectAllowed = 'move';
+                      setDraggedIndex(idx);
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                    }}
+                    onDragEnter={(e) => {
+                      e.preventDefault();
+                      if (draggedIndex !== idx) setDragOverIndex(idx);
+                    }}
+                    onDragLeave={() => {
+                      if (dragOverIndex === idx) setDragOverIndex(null);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const fromIndexStr = e.dataTransfer.getData('text/plain');
+                      const fromIndex = parseInt(fromIndexStr, 10);
+                      if (!isNaN(fromIndex) && fromIndex !== idx) {
+                        reordenarOradoresDebate(fromIndex, idx);
+                      }
+                      setDraggedIndex(null);
+                      setDragOverIndex(null);
+                    }}
+                    onDragEnd={() => {
+                      setDraggedIndex(null);
+                      setDragOverIndex(null);
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.45rem 0.65rem',
+                      fontSize: '0.92rem',
+                      backgroundColor: isDragging
+                        ? 'rgba(245, 158, 11, 0.15)'
+                        : (idx === 0 ? 'rgba(34,197,94,0.12)' : (idx === 1 ? 'rgba(59,130,246,0.08)' : 'var(--panel-color)')),
+                      border: isDragOver
+                        ? '2px dashed #f59e0b'
+                        : `1px solid ${isDragging ? '#f59e0b' : (idx === 0 ? '#166534' : (idx === 1 ? 'rgba(59,130,246,0.3)' : 'var(--subborder-color)'))}`,
+                      borderRadius: '5px',
+                      opacity: isDragging ? 0.5 : 1,
+                      cursor: 'grab',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+                      <GripVertical size={13} style={{ color: '#71717a', cursor: 'grab', flexShrink: 0 }} title="Arrastrar para reordenar" />
+                      <span style={{ fontSize: '0.78rem', fontWeight: '800', color: idx === 0 ? '#4ade80' : (idx === 1 ? '#60a5fa' : 'var(--muted-text)'), width: '22px' }}>
+                        #{idx + 1}
                       </span>
-                    )}
-                    {idx === 1 && (
-                      <span style={{ backgroundColor: 'rgba(59,130,246,0.2)', color: '#93c5fd', fontWeight: '700', fontSize: '0.65rem', padding: '0.1rem 0.4rem', borderRadius: '3px' }}>
-                        SIGUIENTE
+                      <span style={{ fontSize: '1.3rem' }}>{o.bandera}</span>
+                      <span style={{ fontWeight: idx === 0 ? '800' : '600', color: 'var(--text-color)', fontSize: '0.92rem' }}>
+                        {o.nombre}
                       </span>
-                    )}
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      {idx === 0 && (
+                        <span style={{ backgroundColor: '#15803d', color: '#ffffff', fontWeight: '800', fontSize: '0.65rem', padding: '0.1rem 0.4rem', borderRadius: '3px' }}>
+                          HABLANDO
+                        </span>
+                      )}
+                      {idx === 1 && (
+                        <span style={{ backgroundColor: 'rgba(59,130,246,0.2)', color: '#93c5fd', fontWeight: '700', fontSize: '0.65rem', padding: '0.1rem 0.4rem', borderRadius: '3px' }}>
+                          SIGUIENTE
+                        </span>
+                      )}
+                      <button
+                        onClick={() => removerOradorCaucus(o.id)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#ef4444',
+                          opacity: 0.7,
+                          cursor: 'pointer',
+                          padding: '2px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          borderRadius: '3px'
+                        }}
+                        title="Quitar de Tour de Table"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -741,10 +867,65 @@ const CronometroDual = ({ modoInicial = null }) => {
 
           {/* LISTA DE SIGUIENTES ORADORES DEL CAUCUS */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '0.45rem', backgroundColor: 'var(--card-header-bg)', gap: '0.35rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.35rem' }}>
               <span style={{ fontSize: '0.72rem', fontWeight: '700', opacity: 0.8 }}>
-                🎤 Siguientes Oradores ({oradoresCaucus.length})
+                🎤 Oradores Debate ({oradoresCaucus.length})
               </span>
+              
+              {/* Botones de orden alfabético y eliminar todos de debate */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <button
+                  type="button"
+                  onClick={ordenarOradoresDebateAlfabetico}
+                  disabled={oradoresCaucus.length <= 1}
+                  title="Ordenar debate alfabéticamente (A-Z)"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.2rem',
+                    padding: '0.15rem 0.45rem',
+                    fontSize: '0.68rem',
+                    fontWeight: '600',
+                    borderRadius: '4px',
+                    border: '1px solid var(--border-color)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    color: 'var(--text-color)',
+                    cursor: oradoresCaucus.length <= 1 ? 'not-allowed' : 'pointer',
+                    opacity: oradoresCaucus.length <= 1 ? 0.4 : 1
+                  }}
+                >
+                  <ArrowUpDown size={11} />
+                  <span>A-Z</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (oradoresCaucus.length > 0) {
+                      vaciarOradoresDebate();
+                    }
+                  }}
+                  disabled={oradoresCaucus.length === 0}
+                  title="Eliminar todos los oradores de Debate"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.2rem',
+                    padding: '0.15rem 0.45rem',
+                    fontSize: '0.68rem',
+                    fontWeight: '600',
+                    borderRadius: '4px',
+                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                    color: '#f87171',
+                    cursor: oradoresCaucus.length === 0 ? 'not-allowed' : 'pointer',
+                    opacity: oradoresCaucus.length === 0 ? 0.4 : 1
+                  }}
+                >
+                  <Trash2 size={11} />
+                  <span>Eliminar todos</span>
+                </button>
+              </div>
             </div>
 
             {/* Mini Buscador */}
@@ -800,62 +981,114 @@ const CronometroDual = ({ modoInicial = null }) => {
                   Sin oradores en la cola del caucus.
                 </div>
               ) : (
-                oradoresCaucus.map((o, idx) => (
-                  <div key={o.id} style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '0.45rem 0.65rem',
-                    backgroundColor: idx === 0 ? 'rgba(34,197,94,0.12)' : (idx === 1 ? 'rgba(59,130,246,0.08)' : 'var(--panel-color)'),
-                    border: `1px solid ${idx === 0 ? '#166534' : (idx === 1 ? 'rgba(59,130,246,0.3)' : 'var(--subborder-color)')}`,
-                    borderRadius: '5px',
-                    transition: 'all 0.15s ease'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
-                      <span style={{ fontSize: '0.78rem', fontWeight: '800', color: idx === 0 ? '#4ade80' : (idx === 1 ? '#60a5fa' : 'var(--muted-text)'), width: '22px' }}>
-                        #{idx + 1}
-                      </span>
-                      <span style={{ fontSize: '1.3rem' }}>{o.bandera}</span>
-                      <span style={{ fontWeight: idx === 0 ? '800' : '600', fontSize: '0.92rem', color: 'var(--text-color)' }}>
-                        {o.nombre}
-                      </span>
-                      {o.esProponenteUltimo && (
-                        <span style={{ fontSize: '0.62rem', backgroundColor: 'rgba(255,255,255,0.08)', padding: '1px 5px', borderRadius: '3px', opacity: 0.7 }}>
-                          (Último)
-                        </span>
-                      )}
-                    </div>
+                oradoresCaucus.map((o, idx) => {
+                  const isDragging = draggedIndex === idx;
+                  const isDragOver = dragOverIndex === idx;
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      {idx === 0 && (
-                        <span style={{ backgroundColor: '#15803d', color: '#ffffff', fontWeight: '800', fontSize: '0.65rem', padding: '0.1rem 0.4rem', borderRadius: '3px' }}>
-                          HABLANDO
+                  return (
+                    <div
+                      key={o.id}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/plain', idx.toString());
+                        e.dataTransfer.effectAllowed = 'move';
+                        setDraggedIndex(idx);
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                      }}
+                      onDragEnter={(e) => {
+                        e.preventDefault();
+                        if (draggedIndex !== idx) {
+                          setDragOverIndex(idx);
+                        }
+                      }}
+                      onDragLeave={() => {
+                        if (dragOverIndex === idx) {
+                          setDragOverIndex(null);
+                        }
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const fromIndexStr = e.dataTransfer.getData('text/plain');
+                        const fromIndex = parseInt(fromIndexStr, 10);
+                        if (!isNaN(fromIndex) && fromIndex !== idx) {
+                          reordenarOradoresDebate(fromIndex, idx);
+                        }
+                        setDraggedIndex(null);
+                        setDragOverIndex(null);
+                      }}
+                      onDragEnd={() => {
+                        setDraggedIndex(null);
+                        setDragOverIndex(null);
+                      }}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '0.45rem 0.65rem',
+                        backgroundColor: isDragging 
+                          ? 'rgba(249, 115, 22, 0.15)' 
+                          : (idx === 0 ? 'rgba(34,197,94,0.12)' : (idx === 1 ? 'rgba(59,130,246,0.08)' : 'var(--panel-color)')),
+                        border: isDragOver
+                          ? '2px dashed #f97316'
+                          : `1px solid ${isDragging ? '#f97316' : (idx === 0 ? '#166534' : (idx === 1 ? 'rgba(59,130,246,0.3)' : 'var(--subborder-color)'))}`,
+                        borderRadius: '5px',
+                        opacity: isDragging ? 0.5 : 1,
+                        cursor: 'grab',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
+                        <GripVertical size={13} style={{ color: '#71717a', cursor: 'grab', flexShrink: 0 }} title="Arrastrar para reordenar" />
+                        <span style={{ fontSize: '0.78rem', fontWeight: '800', color: idx === 0 ? '#4ade80' : (idx === 1 ? '#60a5fa' : 'var(--muted-text)'), width: '22px' }}>
+                          #{idx + 1}
                         </span>
-                      )}
-                      {idx === 1 && (
-                        <span style={{ backgroundColor: 'rgba(59,130,246,0.2)', color: '#93c5fd', fontWeight: '700', fontSize: '0.65rem', padding: '0.1rem 0.4rem', borderRadius: '3px' }}>
-                          SIGUIENTE
+                        <span style={{ fontSize: '1.3rem' }}>{o.bandera}</span>
+                        <span style={{ fontWeight: idx === 0 ? '800' : '600', fontSize: '0.92rem', color: 'var(--text-color)' }}>
+                          {o.nombre}
                         </span>
-                      )}
-                      <button
-                        onClick={() => removerOradorCaucus(o.id)}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: '#ef4444',
-                          opacity: 0.7,
-                          cursor: 'pointer',
-                          padding: '2px',
-                          display: 'flex',
-                          alignItems: 'center'
-                        }}
-                        title="Quitar de la lista"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                        {o.esProponenteUltimo && (
+                          <span style={{ fontSize: '0.62rem', backgroundColor: 'rgba(255,255,255,0.08)', padding: '1px 5px', borderRadius: '3px', opacity: 0.7 }}>
+                            (Último)
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                        {idx === 0 && (
+                          <span style={{ backgroundColor: '#15803d', color: '#ffffff', fontWeight: '800', fontSize: '0.65rem', padding: '0.1rem 0.4rem', borderRadius: '3px', marginRight: '4px' }}>
+                            HABLANDO
+                          </span>
+                        )}
+                        {idx === 1 && (
+                          <span style={{ backgroundColor: 'rgba(59,130,246,0.2)', color: '#93c5fd', fontWeight: '700', fontSize: '0.65rem', padding: '0.1rem 0.4rem', borderRadius: '3px', marginRight: '4px' }}>
+                            SIGUIENTE
+                          </span>
+                        )}
+
+                        <button
+                          onClick={() => removerOradorCaucus(o.id)}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#ef4444',
+                            opacity: 0.7,
+                            cursor: 'pointer',
+                            padding: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            borderRadius: '3px'
+                          }}
+                          title="Quitar de la lista"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>

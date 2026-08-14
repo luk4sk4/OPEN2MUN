@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Check, X, Clock, MessageSquare, Users, Mic, Sparkles, RotateCcw, AlertCircle } from 'lucide-react';
+import { Plus, Check, X, Clock, MessageSquare, Users, Mic, Sparkles, RotateCcw, AlertCircle, ArrowUpDown, GripVertical } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 
 const PizarraMociones = () => {
-  const { paises, mociones, agregarMocion, votarMocion } = useSession();
+  const { paises, mociones, agregarMocion, votarMocion, reordenarMociones, ordenarMocionesDisruptividad } = useSession();
 
   const [mostrarForm, setMostrarForm] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
   const [proponente, setProponente] = useState('');
   const [posicionProponente, setPosicionProponente] = useState('Primero');
   const [tipo, setTipo] = useState('Caucus Moderado');
@@ -115,34 +117,6 @@ const PizarraMociones = () => {
   const presetsTotalMin = [5, 10, 12, 15, 20];
   const presetsOradorSeg = [30, 45, 60, 90, 120];
 
-  // ── Ordenamiento Estricto de Mociones según Reglas Solicitadas ──
-  const mocionesOrdenadas = useMemo(() => {
-    const getPrioridadTipo = (tipoStr = '') => {
-      if (tipoStr.includes('Caucus No Moderado')) return 1;
-      if (tipoStr.includes('Consulta General')) return 2;
-      if (tipoStr.includes('Tour de Table')) return 3;
-      if (tipoStr.includes('Caucus Moderado')) return 4;
-      return 5;
-    };
-
-    return [...mociones].sort((a, b) => {
-      const prioA = getPrioridadTipo(a.tipo);
-      const prioB = getPrioridadTipo(b.tipo);
-
-      if (prioA !== prioB) return prioA - prioB;
-
-      // Misma categoría: el más largo más arriba (tiempoTotal descendente)
-      const durA = a.tiempoTotal || 0;
-      const durB = b.tiempoTotal || 0;
-      if (durA !== durB) return durB - durA;
-
-      // Misma duración: el más antiguo primero (id / timestamp ascendente)
-      const tA = Number(a.id) || 0;
-      const tB = Number(b.id) || 0;
-      return tA - tB;
-    });
-  }, [mociones]);
-
   return (
     <div style={{
       padding: '0.85rem',
@@ -156,7 +130,7 @@ const PizarraMociones = () => {
       overflowY: 'auto'
     }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
           <span style={{ fontSize: '1.15rem' }}>📌</span>
           <div>
@@ -169,34 +143,61 @@ const PizarraMociones = () => {
           </div>
         </div>
 
-        <button
-          onClick={() => setMostrarForm(!mostrarForm)}
-          style={{
-            padding: '0.45rem 0.8rem',
-            fontSize: '0.78rem',
-            fontWeight: '700',
-            backgroundColor: mostrarForm ? 'rgba(239, 68, 68, 0.15)' : 'var(--btn-bg, #3b82f6)',
-            color: mostrarForm ? '#f87171' : 'var(--btn-text, #ffffff)',
-            border: mostrarForm ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255, 255, 255, 0.15)',
-            borderRadius: '7px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.35rem',
-            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-            boxShadow: mostrarForm ? 'none' : '0 2px 8px rgba(0, 0, 0, 0.25)'
-          }}
-        >
-          {mostrarForm ? (
-            <>
-              <X size={14} /> Cerrar
-            </>
-          ) : (
-            <>
-              <Plus size={14} /> Añadir Moción
-            </>
-          )}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <button
+            type="button"
+            onClick={ordenarMocionesDisruptividad}
+            disabled={mociones.length <= 1}
+            style={{
+              padding: '0.45rem 0.65rem',
+              fontSize: '0.75rem',
+              fontWeight: '600',
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              color: 'var(--text-color)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '7px',
+              cursor: mociones.length <= 1 ? 'not-allowed' : 'pointer',
+              opacity: mociones.length <= 1 ? 0.4 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.3rem',
+              transition: 'all 0.15s ease'
+            }}
+            title="Ordenar mociones por prioridad de disruptividad (No Moderado > Consulta > Tour > Moderado)"
+          >
+            <ArrowUpDown size={12} />
+            <span>Disruptividad</span>
+          </button>
+
+          <button
+            onClick={() => setMostrarForm(!mostrarForm)}
+            style={{
+              padding: '0.45rem 0.8rem',
+              fontSize: '0.78rem',
+              fontWeight: '700',
+              backgroundColor: mostrarForm ? 'rgba(239, 68, 68, 0.15)' : 'var(--btn-bg, #3b82f6)',
+              color: mostrarForm ? '#f87171' : 'var(--btn-text, #ffffff)',
+              border: mostrarForm ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '7px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              boxShadow: mostrarForm ? 'none' : '0 2px 8px rgba(0, 0, 0, 0.25)'
+            }}
+          >
+            {mostrarForm ? (
+              <>
+                <X size={14} /> Cerrar
+              </>
+            ) : (
+              <>
+                <Plus size={14} /> Añadir Moción
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* ── Barra Informativa de Quórum y Mayorías ── */}
@@ -830,16 +831,18 @@ const PizarraMociones = () => {
         </form>
       )}
 
-      {/* Lista / Tarjetas de Mociones con Máxima Visibilidad en País y Moción */}
+      {/* Lista / Tarjetas de Mociones con Drag & Drop y Máxima Visibilidad */}
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingRight: '2px' }}>
-        {mocionesOrdenadas.length === 0 ? (
+        {mociones.length === 0 ? (
           <div style={{ padding: '2rem 1rem', textAlign: 'center', opacity: 0.4, border: '1px dashed var(--border-color)', borderRadius: '6px' }}>
             No hay mociones registradas en la pizarra.
           </div>
         ) : (
-          mocionesOrdenadas.map((m, idx) => {
+          mociones.map((m, idx) => {
             const esAprobada = m.estado === 'Aprobada';
             const esFallida = m.estado === 'Fallida';
+            const isDragging = draggedIndex === idx;
+            const isDragOver = dragOverIndex === idx;
 
             const getTipoBadgeStyle = (tipoMocion) => {
               if (tipoMocion === 'Caucus Moderado') {
@@ -862,15 +865,52 @@ const PizarraMociones = () => {
             return (
               <div
                 key={m.id}
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('text/plain', idx.toString());
+                  e.dataTransfer.effectAllowed = 'move';
+                  setDraggedIndex(idx);
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = 'move';
+                }}
+                onDragEnter={(e) => {
+                  e.preventDefault();
+                  if (draggedIndex !== idx) setDragOverIndex(idx);
+                }}
+                onDragLeave={() => {
+                  if (dragOverIndex === idx) setDragOverIndex(null);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const fromIndexStr = e.dataTransfer.getData('text/plain');
+                  const fromIndex = parseInt(fromIndexStr, 10);
+                  if (!isNaN(fromIndex) && fromIndex !== idx) {
+                    reordenarMociones(fromIndex, idx);
+                  }
+                  setDraggedIndex(null);
+                  setDragOverIndex(null);
+                }}
+                onDragEnd={() => {
+                  setDraggedIndex(null);
+                  setDragOverIndex(null);
+                }}
                 style={{
-                  backgroundColor: esAprobada ? 'rgba(34, 197, 94, 0.08)' : (esFallida ? 'rgba(239, 68, 68, 0.08)' : 'var(--card-header-bg)'),
-                  border: `1px solid ${esAprobada ? '#166534' : (esFallida ? '#991b1b' : 'var(--border-color)')}`,
+                  backgroundColor: isDragging
+                    ? 'rgba(59, 130, 246, 0.15)'
+                    : (esAprobada ? 'rgba(34, 197, 94, 0.08)' : (esFallida ? 'rgba(239, 68, 68, 0.08)' : 'var(--card-header-bg)')),
+                  border: isDragOver
+                    ? `2px dashed ${tipoBadge.border || '#3b82f6'}`
+                    : `1px solid ${isDragging ? '#3b82f6' : (esAprobada ? '#166534' : (esFallida ? '#991b1b' : 'var(--border-color)'))}`,
                   borderRadius: '8px',
                   padding: '0.75rem 0.95rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   gap: '0.85rem',
+                  opacity: isDragging ? 0.45 : 1,
+                  cursor: 'grab',
                   transition: 'all 0.15s ease'
                 }}
               >
@@ -878,6 +918,7 @@ const PizarraMociones = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1, minWidth: 0 }}>
                   {/* Fila 1: TIPO DE MOCIÓN DESTACADO + País Proponente */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                    <GripVertical size={15} style={{ color: '#71717a', cursor: 'grab', flexShrink: 0 }} title="Arrastrar para reordenar moción" />
                     <span style={{ fontSize: '0.72rem', fontWeight: '800', opacity: 0.5 }}>#{idx + 1}</span>
                     
                     {/* Badge de TIPO DE MOCIÓN Destacado */}
@@ -917,13 +958,14 @@ const PizarraMociones = () => {
                     fontWeight: '700',
                     color: 'var(--text-color)',
                     opacity: 0.95,
-                    lineHeight: 1.3
+                    lineHeight: 1.3,
+                    paddingLeft: '1.55rem'
                   }}>
                     «{m.tema}»
                   </div>
 
                   {/* Fila 3: Tiempos (Sutiles y limpios) */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', fontSize: '0.73rem', opacity: 0.65, marginTop: '2px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', fontSize: '0.73rem', opacity: 0.65, marginTop: '2px', paddingLeft: '1.55rem' }}>
                     <span>⏱ Total: <strong style={{ fontFamily: 'monospace', opacity: 1, color: 'var(--text-color)' }}>{formatMinutos(m.tiempoTotal)}</strong></span>
                     {m.tiempoOrador > 0 && (
                       <span>🎙 Por orador: <strong style={{ fontFamily: 'monospace', opacity: 1, color: 'var(--text-color)' }}>{m.tiempoOrador}s</strong></span>

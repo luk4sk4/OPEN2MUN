@@ -1,11 +1,21 @@
 import React, { useState } from 'react';
-import { Search, ChevronUp, ChevronDown, Trash2, Plus } from 'lucide-react';
+import { Search, Trash2, Plus, ArrowUpDown, GripVertical } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 
 const ListaOradores = () => {
-  const { paises, oradoresCola, agregarOrador, removerOrador, moverOrador } = useSession();
+  const {
+    paises,
+    oradoresCola,
+    agregarOrador,
+    removerOrador,
+    vaciarOradoresGSL,
+    ordenarOradoresGSLAlfabetico,
+    reordenarOradoresGSL
+  } = useSession();
 
   const [busqueda, setBusqueda] = useState('');
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   // Filtrar lista de países disponibles que no estén en la cola
   const paisesDisponibles = paises.filter(p => 
@@ -16,6 +26,11 @@ const ListaOradores = () => {
   const handleSeleccionarPaisAñadir = (paisObj) => {
     agregarOrador(paisObj);
     setBusqueda('');
+  };
+
+  const handleVaciarLista = () => {
+    if (oradoresCola.length === 0) return;
+    vaciarOradoresGSL();
   };
 
   return (
@@ -31,10 +46,63 @@ const ListaOradores = () => {
       gap: '0.8rem'
     }}>
       {/* Header y Acción Principal */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
         <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '700', letterSpacing: '0.03em' }}>
-          📋 Lista de Oradores ({oradoresCola.length})
+          📋 Lista de Oradores GSL ({oradoresCola.length})
         </h3>
+        
+        {/* Botones de acción masiva */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <button
+            type="button"
+            onClick={ordenarOradoresGSLAlfabetico}
+            disabled={oradoresCola.length <= 1}
+            title="Ordenar lista alfabéticamente (A-Z)"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.3rem',
+              padding: '0.25rem 0.55rem',
+              fontSize: '0.72rem',
+              fontWeight: '600',
+              borderRadius: '5px',
+              border: '1px solid var(--border-color)',
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              color: 'var(--text-color)',
+              cursor: oradoresCola.length <= 1 ? 'not-allowed' : 'pointer',
+              opacity: oradoresCola.length <= 1 ? 0.4 : 1,
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <ArrowUpDown size={12} />
+            <span>A-Z</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleVaciarLista}
+            disabled={oradoresCola.length === 0}
+            title="Eliminar todos los oradores de la lista GSL"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.3rem',
+              padding: '0.25rem 0.55rem',
+              fontSize: '0.72rem',
+              fontWeight: '600',
+              borderRadius: '5px',
+              border: '1px solid rgba(239, 68, 68, 0.4)',
+              backgroundColor: 'rgba(239, 68, 68, 0.12)',
+              color: '#f87171',
+              cursor: oradoresCola.length === 0 ? 'not-allowed' : 'pointer',
+              opacity: oradoresCola.length === 0 ? 0.4 : 1,
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <Trash2 size={12} />
+            <span>Eliminar todos</span>
+          </button>
+        </div>
       </div>
 
       {/* Buscador / Añadir País */}
@@ -123,22 +191,66 @@ const ListaOradores = () => {
           oradoresCola.map((orador, index) => {
             const esActual = index === 0;
             const esSiguiente = index === 1;
+            const isDragging = draggedIndex === index;
+            const isDragOver = dragOverIndex === index;
 
             return (
               <div
                 key={orador.id}
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('text/plain', index.toString());
+                  e.dataTransfer.effectAllowed = 'move';
+                  setDraggedIndex(index);
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = 'move';
+                }}
+                onDragEnter={(e) => {
+                  e.preventDefault();
+                  if (draggedIndex !== index) {
+                    setDragOverIndex(index);
+                  }
+                }}
+                onDragLeave={() => {
+                  if (dragOverIndex === index) {
+                    setDragOverIndex(null);
+                  }
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const fromIndexStr = e.dataTransfer.getData('text/plain');
+                  const fromIndex = parseInt(fromIndexStr, 10);
+                  if (!isNaN(fromIndex) && fromIndex !== index) {
+                    reordenarOradoresGSL(fromIndex, index);
+                  }
+                  setDraggedIndex(null);
+                  setDragOverIndex(null);
+                }}
+                onDragEnd={() => {
+                  setDraggedIndex(null);
+                  setDragOverIndex(null);
+                }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '0.55rem 0.75rem',
-                  backgroundColor: esActual ? 'rgba(34, 197, 94, 0.12)' : (esSiguiente ? 'rgba(59, 130, 246, 0.07)' : 'var(--card-header-bg)'),
-                  border: `1px solid ${esActual ? '#166534' : (esSiguiente ? 'rgba(59, 130, 246, 0.3)' : 'var(--border-color)')}`,
+                  backgroundColor: isDragging 
+                    ? 'rgba(168, 85, 247, 0.15)' 
+                    : (esActual ? 'rgba(34, 197, 94, 0.12)' : (esSiguiente ? 'rgba(59, 130, 246, 0.07)' : 'var(--card-header-bg)')),
+                  border: isDragOver
+                    ? '2px dashed #a855f7'
+                    : `1px solid ${isDragging ? '#a855f7' : (esActual ? '#166534' : (esSiguiente ? 'rgba(59, 130, 246, 0.3)' : 'var(--border-color)'))}`,
                   borderRadius: '6px',
-                  transition: 'all 0.15s ease'
+                  opacity: isDragging ? 0.5 : 1,
+                  cursor: 'grab',
+                  transition: 'background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+                  <GripVertical size={14} style={{ color: '#71717a', cursor: 'grab', flexShrink: 0 }} title="Arrastrar para reordenar" />
                   <span style={{
                     fontSize: '0.75rem',
                     fontWeight: '800',
@@ -181,40 +293,8 @@ const ListaOradores = () => {
                   )}
                 </div>
 
-                {/* Botones de acción / Reordenar */}
+                {/* Botón de acción: Quitar de la lista */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', flexShrink: 0 }}>
-                  <button
-                    onClick={() => moverOrador(index, -1)}
-                    disabled={index === 0}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: 'var(--text-color)',
-                      opacity: index === 0 ? 0.15 : 0.7,
-                      cursor: index === 0 ? 'default' : 'pointer',
-                      padding: '2px'
-                    }}
-                    title="Subir en la lista"
-                  >
-                    <ChevronUp size={16} />
-                  </button>
-
-                  <button
-                    onClick={() => moverOrador(index, 1)}
-                    disabled={index === oradoresCola.length - 1}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: 'var(--text-color)',
-                      opacity: index === oradoresCola.length - 1 ? 0.15 : 0.7,
-                      cursor: index === oradoresCola.length - 1 ? 'default' : 'pointer',
-                      padding: '2px'
-                    }}
-                    title="Bajar en la lista"
-                  >
-                    <ChevronDown size={16} />
-                  </button>
-
                   <button
                     onClick={() => removerOrador(orador.id)}
                     style={{
@@ -223,12 +303,14 @@ const ListaOradores = () => {
                       color: '#ef4444',
                       opacity: 0.7,
                       cursor: 'pointer',
-                      padding: '2px',
-                      marginLeft: '4px'
+                      padding: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      borderRadius: '4px'
                     }}
                     title="Quitar de la lista"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={15} />
                   </button>
                 </div>
               </div>

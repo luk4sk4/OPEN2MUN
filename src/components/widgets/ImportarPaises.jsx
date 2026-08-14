@@ -404,11 +404,9 @@ const ImportarPaises = () => {
 
   const handleVaciarLista = () => {
     if (paises.length === 0) return;
-    if (window.confirm(`¿Eliminar las ${paises.length} delegaciones actuales?`)) {
-      setPaises([]);
-      setExito('Lista de delegaciones vaciada.');
-      setTimeout(() => setExito(''), 3000);
-    }
+    setPaises([]);
+    setExito('Lista de delegaciones vaciada.');
+    setTimeout(() => setExito(''), 3000);
   };
 
   return (

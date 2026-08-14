@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Users, Check, Plus, X, Crown, Sparkles, UserPlus } from 'lucide-react';
+import { Search, Users, Check, Plus, X, Crown, Sparkles, UserPlus, Trash2, ArrowUpDown, GripVertical } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 
 // Normalizar texto para búsqueda sin distinguir tildes ni mayúsculas
@@ -40,11 +40,18 @@ const AnadirPaisesGSL = () => {
     setPaises,
     oradoresCola,
     agregarOrador,
-    removerOrador
+    removerOrador,
+    vaciarOradoresGSL,
+    ordenarOradoresGSLAlfabetico,
+    reordenarOradoresGSL,
+    ordenarPaisesAlfabetico,
+    reordenarPaises
   } = useSession();
 
   const [busqueda, setBusqueda] = useState('');
   const [filtroVista, setFiltroVista] = useState('TODOS'); // 'TODOS' | 'DISPONIBLES' | 'EN_GSL'
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   // Mapa de oradores en GSL para búsqueda instantánea O(1)
   const mapaEnLista = useMemo(() => {
@@ -55,15 +62,10 @@ const AnadirPaisesGSL = () => {
     return map;
   }, [oradoresCola]);
 
-  // Lista de países ordenados alfabéticamente
-  const paisesOrdenados = useMemo(() => {
-    return [...paises].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }));
-  }, [paises]);
-
-  // Filtrado por búsqueda y vista
+  // Filtrado por búsqueda y vista sobre la lista de países
   const paisesFiltrados = useMemo(() => {
     const q = normalizar(busqueda);
-    return paisesOrdenados.filter(p => {
+    return paises.filter(p => {
       const coincideNombre = normalizar(p.nombre).includes(q);
       if (!coincideNombre) return false;
 
@@ -72,7 +74,7 @@ const AnadirPaisesGSL = () => {
       if (filtroVista === 'EN_GSL') return estaEnLista;
       return true;
     });
-  }, [paisesOrdenados, busqueda, filtroVista, mapaEnLista]);
+  }, [paises, busqueda, filtroVista, mapaEnLista]);
 
   // Alternar inclusión de país en GSL (Añadir si no está, Retirar si ya está)
   const handleTogglePais = (pais) => {
@@ -146,31 +148,84 @@ const AnadirPaisesGSL = () => {
           </div>
         </div>
 
-        {/* Badge Informativo de Cola GSL */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.35rem',
-          padding: '0.3rem 0.65rem',
-          fontSize: '0.74rem',
-          fontWeight: '700',
-          borderRadius: '6px',
-          backgroundColor: 'rgba(168, 85, 247, 0.15)',
-          border: '1px solid rgba(168, 85, 247, 0.3)',
-          color: '#c084fc'
-        }}>
-          <Users size={13} />
-          <span>En GSL:</span>
-          <span style={{
-            fontSize: '0.7rem',
-            backgroundColor: '#a855f7',
-            color: '#ffffff',
-            padding: '0.05rem 0.4rem',
-            borderRadius: '9999px',
-            fontWeight: '800'
+        {/* Botones de acción masiva y Badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={ordenarPaisesAlfabetico}
+            title="Ordenar países alfabéticamente (A-Z)"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.3rem',
+              padding: '0.25rem 0.55rem',
+              fontSize: '0.72rem',
+              fontWeight: '600',
+              borderRadius: '6px',
+              border: '1px solid var(--border-color)',
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              color: 'var(--text-color)',
+              cursor: 'pointer'
+            }}
+          >
+            <ArrowUpDown size={12} />
+            <span>A-Z</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (oradoresCola.length > 0) {
+                vaciarOradoresGSL();
+              }
+            }}
+            disabled={oradoresCola.length === 0}
+            title="Eliminar todos de GSL"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.3rem',
+              padding: '0.25rem 0.55rem',
+              fontSize: '0.72rem',
+              fontWeight: '600',
+              borderRadius: '6px',
+              border: '1px solid rgba(239, 68, 68, 0.4)',
+              backgroundColor: 'rgba(239, 68, 68, 0.12)',
+              color: '#f87171',
+              cursor: oradoresCola.length === 0 ? 'not-allowed' : 'pointer',
+              opacity: oradoresCola.length === 0 ? 0.4 : 1
+            }}
+          >
+            <Trash2 size={12} />
+            <span>Eliminar todos</span>
+          </button>
+
+          {/* Badge Informativo de Cola GSL */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.35rem',
+            padding: '0.3rem 0.65rem',
+            fontSize: '0.74rem',
+            fontWeight: '700',
+            borderRadius: '6px',
+            backgroundColor: 'rgba(168, 85, 247, 0.15)',
+            border: '1px solid rgba(168, 85, 247, 0.3)',
+            color: '#c084fc'
           }}>
-            {oradoresCola.length}
-          </span>
+            <Users size={13} />
+            <span>En GSL:</span>
+            <span style={{
+              fontSize: '0.7rem',
+              backgroundColor: '#a855f7',
+              color: '#ffffff',
+              padding: '0.05rem 0.4rem',
+              borderRadius: '9999px',
+              fontWeight: '800'
+            }}>
+              {oradoresCola.length}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -350,30 +405,75 @@ const AnadirPaisesGSL = () => {
             gap: '0.45rem',
             alignContent: 'start'
           }}>
-            {paisesFiltrados.map((pais) => {
+            {paisesFiltrados.map((pais, idx) => {
               const infoEnLista = mapaEnLista.get(pais.nombre);
               const estaEnLista = !!infoEnLista;
               const posEnLista = infoEnLista?.index;
+              const isDragging = draggedIndex === idx;
+              const isDragOver = dragOverIndex === idx;
 
               return (
                 <div
                   key={pais.id || pais.nombre}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('text/plain', idx.toString());
+                    e.dataTransfer.effectAllowed = 'move';
+                    setDraggedIndex(idx);
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                  }}
+                  onDragEnter={(e) => {
+                    e.preventDefault();
+                    if (draggedIndex !== idx) setDragOverIndex(idx);
+                  }}
+                  onDragLeave={() => {
+                    if (dragOverIndex === idx) setDragOverIndex(null);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const fromFilteredIndexStr = e.dataTransfer.getData('text/plain');
+                    const fromFilteredIndex = parseInt(fromFilteredIndexStr, 10);
+                    if (!isNaN(fromFilteredIndex) && fromFilteredIndex !== idx) {
+                      const sourcePais = paisesFiltrados[fromFilteredIndex];
+                      const targetPais = paisesFiltrados[idx];
+                      if (sourcePais && targetPais) {
+                        const fromMasterIndex = paises.findIndex(p => p.nombre === sourcePais.nombre);
+                        const toMasterIndex = paises.findIndex(p => p.nombre === targetPais.nombre);
+                        if (fromMasterIndex !== -1 && toMasterIndex !== -1) {
+                          reordenarPaises(fromMasterIndex, toMasterIndex);
+                        }
+                      }
+                    }
+                    setDraggedIndex(null);
+                    setDragOverIndex(null);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedIndex(null);
+                    setDragOverIndex(null);
+                  }}
                   onClick={() => handleTogglePais(pais)}
-                  title={estaEnLista ? `${pais.nombre} (En GSL #${posEnLista}) - Clic para retirar` : `${pais.nombre} - Clic para añadir a GSL`}
+                  title={estaEnLista ? `${pais.nombre} (En GSL #${posEnLista}) - Clic para retirar` : `${pais.nombre} - Clic para añadir a GSL (Arrastra para reordenar)`}
                   style={{
                     position: 'relative',
                     padding: '0.5rem 0.6rem',
                     borderRadius: '7px',
-                    cursor: 'pointer',
+                    cursor: 'grab',
                     userSelect: 'none',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     gap: '0.4rem',
                     transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
-                    backgroundColor: estaEnLista ? '#131316' : '#18181c',
-                    border: estaEnLista ? '1px solid #232328' : '1px solid #2e2e36',
-                    opacity: estaEnLista ? 0.48 : 1,
+                    backgroundColor: isDragging
+                      ? 'rgba(168, 85, 247, 0.2)'
+                      : (estaEnLista ? '#131316' : '#18181c'),
+                    border: isDragOver
+                      ? '2px dashed #a855f7'
+                      : (estaEnLista ? '1px solid #232328' : '1px solid #2e2e36'),
+                    opacity: isDragging ? 0.4 : (estaEnLista ? 0.48 : 1),
                     filter: estaEnLista ? 'grayscale(75%)' : 'none',
                     transform: 'translateZ(0)'
                   }}
