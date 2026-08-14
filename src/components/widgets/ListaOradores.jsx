@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import { Search, ChevronUp, ChevronDown, Trash2, ArrowRightLeft, UserCheck, Plus, HelpCircle, Shield } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown, Trash2, Plus } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 
 const ListaOradores = () => {
-  const { paises, oradoresCola, agregarOrador, removerOrador, moverOrador, cederTiempo } = useSession();
+  const { paises, oradoresCola, agregarOrador, removerOrador, moverOrador } = useSession();
 
   const [busqueda, setBusqueda] = useState('');
-  const [modalYieldOpen, setModalYieldOpen] = useState(false);
-  const [yieldSeleccionado, setYieldSeleccionado] = useState(null);
 
   // Filtrar lista de países disponibles que no estén en la cola
   const paisesDisponibles = paises.filter(p => 
@@ -18,12 +16,6 @@ const ListaOradores = () => {
   const handleSeleccionarPaisAñadir = (paisObj) => {
     agregarOrador(paisObj);
     setBusqueda('');
-  };
-
-  const handleEjecutarYield = (tipo, destino = '') => {
-    cederTiempo(tipo, destino);
-    setModalYieldOpen(false);
-    setYieldSeleccionado(null);
   };
 
   return (
@@ -43,26 +35,6 @@ const ListaOradores = () => {
         <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '700', letterSpacing: '0.03em' }}>
           📋 Lista de Oradores ({oradoresCola.length})
         </h3>
-        
-        <button
-          onClick={() => setModalYieldOpen(true)}
-          disabled={oradoresCola.length === 0}
-          style={{
-            padding: '0.35rem 0.75rem',
-            fontSize: '0.75rem',
-            fontWeight: '600',
-            backgroundColor: oradoresCola.length > 0 ? '#3b82f6' : '#333333',
-            color: '#ffffff',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: oradoresCola.length > 0 ? 'pointer' : 'not-allowed',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.3rem'
-          }}
-        >
-          <ArrowRightLeft size={13} /> Ceder Tiempo (Yield)
-        </button>
       </div>
 
       {/* Buscador / Añadir País */}
@@ -244,123 +216,9 @@ const ListaOradores = () => {
         )}
       </div>
 
-      {/* Menú/Modal de Yield (exclusivo dentro de Lista de Oradores) */}
-      {modalYieldOpen && (
-        <div style={{
-          position: 'absolute',
-          top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(5, 5, 8, 0.95)',
-          backdropFilter: 'blur(8px)',
-          zIndex: 50,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '0.8rem',
-          boxSizing: 'border-box',
-          borderRadius: 'var(--border-radius)'
-        }}>
-          <div style={{
-            backgroundColor: 'rgba(14, 14, 20, 0.98)',
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--border-radius)',
-            padding: '1rem',
-            width: '100%',
-            maxWidth: '300px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.8rem',
-            color: 'var(--text-color)',
-            boxShadow: '0 12px 30px rgba(0,0,0,0.9)'
-          }}>
-            <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: '700' }}>
-              Ceder el tiempo restante (Yield)
-            </h4>
-            <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.7 }}>
-              El orador actual ({oradoresCola[0]?.nombre}) cede su tiempo sobrante a:
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <button
-                onClick={() => handleEjecutarYield('mesa')}
-                style={{
-                  padding: '0.6rem 0.8rem',
-                  backgroundColor: '#1f1f1f',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '6px',
-                  color: '#ffffff',
-                  fontWeight: '600',
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.6rem'
-                }}
-              >
-                <Shield size={16} color="#eab308" /> A la Mesa (Chair)
-              </button>
-
-              <button
-                onClick={() => handleEjecutarYield('preguntas')}
-                style={{
-                  padding: '0.6rem 0.8rem',
-                  backgroundColor: '#1f1f1f',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '6px',
-                  color: '#ffffff',
-                  fontWeight: '600',
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.6rem'
-                }}
-              >
-                <HelpCircle size={16} color="#3b82f6" /> A Preguntas del Pleno
-              </button>
-
-              <div style={{ borderTop: '1px solid var(--subborder-color)', paddingTop: '0.5rem' }}>
-                <div style={{ fontSize: '0.75rem', opacity: 0.6, marginBottom: '0.4rem' }}>A otro Delegado:</div>
-                <select
-                  onChange={e => e.target.value && handleEjecutarYield('delegado', e.target.value)}
-                  defaultValue=""
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    backgroundColor: '#141414',
-                    border: '1px solid var(--border-color)',
-                    color: '#ffffff',
-                    borderRadius: '6px',
-                    fontSize: '0.85rem'
-                  }}
-                >
-                  <option value="" disabled>Seleccionar delegado...</option>
-                  {paises.filter(p => p.nombre !== oradoresCola[0]?.nombre).map(p => (
-                    <option key={p.id} value={p.nombre}>{p.bandera} {p.nombre}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setModalYieldOpen(false)}
-              style={{
-                marginTop: '0.5rem',
-                padding: '0.4rem',
-                backgroundColor: 'transparent',
-                border: '1px solid var(--border-color)',
-                color: '#ffffff',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '0.8rem'
-              }}
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
 export default ListaOradores;
+

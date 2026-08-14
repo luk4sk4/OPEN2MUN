@@ -6,6 +6,7 @@ const CronometroOnlyTime = () => {
   const { caucusActivo } = useSession();
 
   const [tiempoTotalSeg, setTiempoTotalSeg] = useState(caucusActivo?.tiempoTotal || 600); // 10 min
+  const [tiempoTotalInicial, setTiempoTotalInicial] = useState(caucusActivo?.tiempoTotal || 600);
   const [corriendo, setCorriendo] = useState(false);
 
   const timerRef = useRef(null);
@@ -13,6 +14,7 @@ const CronometroOnlyTime = () => {
   useEffect(() => {
     if (caucusActivo?.tiempoTotal) {
       setTiempoTotalSeg(caucusActivo.tiempoTotal);
+      setTiempoTotalInicial(caucusActivo.tiempoTotal);
       setCorriendo(true);
     }
   }, [caucusActivo]);
@@ -37,11 +39,15 @@ const CronometroOnlyTime = () => {
   const handleStartPause = () => setCorriendo(!corriendo);
   const handleReset = () => {
     setCorriendo(false);
-    setTiempoTotalSeg(caucusActivo?.tiempoTotal || 600);
+    const init = caucusActivo?.tiempoTotal || 600;
+    setTiempoTotalSeg(init);
+    setTiempoTotalInicial(init);
   };
 
   const handleAddMinutes = (mins) => {
-    setTiempoTotalSeg(prev => prev + mins * 60);
+    const extra = mins * 60;
+    setTiempoTotalSeg(prev => prev + extra);
+    setTiempoTotalInicial(prev => prev + extra);
   };
 
   const formatTime = (seg) => {
@@ -49,6 +55,10 @@ const CronometroOnlyTime = () => {
     const secs = seg % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+
+  const progresoPorcentaje = tiempoTotalInicial > 0
+    ? Math.min(100, Math.max(0, ((tiempoTotalInicial - tiempoTotalSeg) / tiempoTotalInicial) * 100))
+    : 0;
 
   return (
     <div style={{
@@ -64,10 +74,12 @@ const CronometroOnlyTime = () => {
 
       {/* Reloj Display Gigante */}
       <div style={{
+        position: 'relative',
         margin: '0.8rem 0',
-        padding: '1.4rem 1rem',
+        padding: '1.4rem 1rem 1.6rem 1rem',
         borderRadius: '12px',
         textAlign: 'center',
+        overflow: 'hidden',
         backgroundColor: tiempoTotalSeg === 0 ? '#3f0c0c' : '#050505',
         border: `2px solid ${tiempoTotalSeg === 0 ? '#ef4444' : 'var(--border-color)'}`,
         boxShadow: '0 6px 25px rgba(0,0,0,0.6)',
@@ -82,6 +94,31 @@ const CronometroOnlyTime = () => {
           color: tiempoTotalSeg === 0 ? '#ef4444' : (corriendo ? '#eab308' : 'var(--text-color)')
         }}>
           {formatTime(tiempoTotalSeg)}
+        </div>
+
+        {/* Barra de progreso inferior con degradado y glow suave */}
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '5px',
+          backgroundColor: 'rgba(255, 255, 255, 0.08)'
+        }}>
+          <div style={{
+            height: '100%',
+            width: `${progresoPorcentaje}%`,
+            background: tiempoTotalSeg <= 30
+              ? 'linear-gradient(90deg, #ef4444, #dc2626)'
+              : tiempoTotalSeg <= 60
+                ? 'linear-gradient(90deg, #f97316, #ea580c)'
+                : 'linear-gradient(90deg, #3b82f6, #6366f1, #ec4899)',
+            boxShadow: tiempoTotalSeg <= 60
+              ? '0 0 12px rgba(239, 68, 68, 0.8)'
+              : '0 0 10px rgba(99, 102, 241, 0.6)',
+            transition: 'width 0.4s linear, background 0.3s ease',
+            borderRadius: '0 3px 3px 0'
+          }} />
         </div>
       </div>
 

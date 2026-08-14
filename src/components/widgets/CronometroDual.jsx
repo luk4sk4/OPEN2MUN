@@ -19,6 +19,7 @@ const CronometroDual = ({ modoInicial = null }) => {
   const esTiempoSoloGeneral = tipoMocion === 'Caucus No Moderado' || tipoMocion.includes('Consulta General');
 
   const [tiempoTotalSeg, setTiempoTotalSeg] = useState(caucusActivo?.tiempoTotal || 600);
+  const [tiempoTotalInicial, setTiempoTotalInicial] = useState(caucusActivo?.tiempoTotal || 600);
   const [tiempoOradorSeg, setTiempoOradorSeg] = useState(caucusActivo?.tiempoOrador || 45);
   const [limiteOradorSeg, setLimiteOradorSeg] = useState(caucusActivo?.tiempoOrador || 45);
   const [corriendo, setCorriendo] = useState(false);
@@ -31,6 +32,7 @@ const CronometroDual = ({ modoInicial = null }) => {
     if (caucusActivo?.activo) {
       setModoSeleccionado(caucusActivo.tipo);
       setTiempoTotalSeg(caucusActivo.tiempoTotal);
+      setTiempoTotalInicial(caucusActivo.tiempoTotal);
       setTiempoOradorSeg(caucusActivo.tiempoOrador);
       setLimiteOradorSeg(caucusActivo.tiempoOrador);
       setCorriendo(false);
@@ -75,16 +77,20 @@ const CronometroDual = ({ modoInicial = null }) => {
 
   const handleReset = () => {
     setCorriendo(false);
-    setTiempoTotalSeg(caucusActivo?.tiempoTotal || 600);
+    const initTotal = caucusActivo?.tiempoTotal || 600;
+    setTiempoTotalSeg(initTotal);
+    setTiempoTotalInicial(initTotal);
     setTiempoOradorSeg(limiteOradorSeg);
   };
 
   const handleAumentarSegundos = (seg) => {
     setTiempoTotalSeg(prev => prev + seg);
+    setTiempoTotalInicial(prev => prev + seg);
   };
 
   const handleAumentar5MinCaucus = () => {
     setTiempoTotalSeg(prev => prev + 300);
+    setTiempoTotalInicial(prev => prev + 300);
   };
 
   const handleAumentar5SegOrador = () => {
@@ -131,6 +137,14 @@ const CronometroDual = ({ modoInicial = null }) => {
 
   const displayOradorState = getTimerStyle(tiempoOradorSeg);
   const displayTotalState = getTimerStyle(tiempoTotalSeg);
+
+  const progresoTotalPorcentaje = tiempoTotalInicial > 0
+    ? Math.min(100, Math.max(0, ((tiempoTotalInicial - tiempoTotalSeg) / tiempoTotalInicial) * 100))
+    : 0;
+
+  const progresoOradorPorcentaje = limiteOradorSeg > 0
+    ? Math.min(100, Math.max(0, ((limiteOradorSeg - tiempoOradorSeg) / limiteOradorSeg) * 100))
+    : 0;
 
   return (
     <div style={{
@@ -222,7 +236,9 @@ const CronometroDual = ({ modoInicial = null }) => {
           <div
             className={displayTotalState.className}
             style={{
-              padding: '1.5rem',
+              position: 'relative',
+              overflow: 'hidden',
+              padding: '1.5rem 1.5rem 1.8rem 1.5rem',
               borderRadius: '8px',
               textAlign: 'center',
               transition: 'all 0.3s ease',
@@ -240,6 +256,31 @@ const CronometroDual = ({ modoInicial = null }) => {
               lineHeight: 1
             }}>
               {formatTimeWithNegative(tiempoTotalSeg)}
+            </div>
+
+            {/* Barra de progreso inferior con degradado y glow suave */}
+            <div style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              backgroundColor: 'rgba(255, 255, 255, 0.08)'
+            }}>
+              <div style={{
+                height: '100%',
+                width: `${progresoTotalPorcentaje}%`,
+                background: tiempoTotalSeg <= 30
+                  ? 'linear-gradient(90deg, #ef4444, #dc2626)'
+                  : tiempoTotalSeg <= 60
+                    ? 'linear-gradient(90deg, #f97316, #ea580c)'
+                    : 'linear-gradient(90deg, #3b82f6, #6366f1, #ec4899)',
+                boxShadow: tiempoTotalSeg <= 60
+                  ? '0 0 12px rgba(239, 68, 68, 0.8)'
+                  : '0 0 10px rgba(99, 102, 241, 0.6)',
+                transition: 'width 0.4s linear, background 0.3s ease',
+                borderRadius: '0 2px 2px 0'
+              }} />
             </div>
           </div>
 
@@ -332,7 +373,9 @@ const CronometroDual = ({ modoInicial = null }) => {
           <div
             className={displayOradorState.className}
             style={{
-              padding: '0.8rem',
+              position: 'relative',
+              overflow: 'hidden',
+              padding: '0.8rem 0.8rem 1.1rem 0.8rem',
               borderRadius: '8px',
               textAlign: 'center',
               transition: 'all 0.3s ease',
@@ -364,6 +407,31 @@ const CronometroDual = ({ modoInicial = null }) => {
               >
                 +5 seg
               </button>
+            </div>
+
+            {/* Barra de progreso inferior con degradado y glow suave */}
+            <div style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              backgroundColor: 'rgba(255, 255, 255, 0.08)'
+            }}>
+              <div style={{
+                height: '100%',
+                width: `${progresoOradorPorcentaje}%`,
+                background: tiempoOradorSeg <= 5
+                  ? 'linear-gradient(90deg, #ef4444, #dc2626)'
+                  : tiempoOradorSeg <= 10
+                    ? 'linear-gradient(90deg, #f97316, #ea580c)'
+                    : 'linear-gradient(90deg, #3b82f6, #6366f1, #ec4899)',
+                boxShadow: tiempoOradorSeg <= 10
+                  ? '0 0 12px rgba(239, 68, 68, 0.8)'
+                  : '0 0 10px rgba(99, 102, 241, 0.6)',
+                transition: 'width 0.4s linear, background 0.3s ease',
+                borderRadius: '0 2px 2px 0'
+              }} />
             </div>
           </div>
 
@@ -487,7 +555,9 @@ const CronometroDual = ({ modoInicial = null }) => {
           <div
             className={displayOradorState.className}
             style={{
-              padding: '0.6rem',
+              position: 'relative',
+              overflow: 'hidden',
+              padding: '0.6rem 0.6rem 0.9rem 0.6rem',
               borderRadius: '8px',
               textAlign: 'center',
               transition: 'all 0.3s ease',
@@ -521,12 +591,37 @@ const CronometroDual = ({ modoInicial = null }) => {
                   color: '#22c55e',
                   borderRadius: '3px',
                   cursor: 'pointer',
-                  fontSize: '0.7rem',
+                  fontSize: '0.68rem',
                   fontWeight: '700'
                 }}
               >
                 +5 seg
               </button>
+            </div>
+
+            {/* Barra de progreso inferior con degradado y glow suave */}
+            <div style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              backgroundColor: 'rgba(255, 255, 255, 0.08)'
+            }}>
+              <div style={{
+                height: '100%',
+                width: `${progresoOradorPorcentaje}%`,
+                background: tiempoOradorSeg <= 5
+                  ? 'linear-gradient(90deg, #ef4444, #dc2626)'
+                  : tiempoOradorSeg <= 10
+                    ? 'linear-gradient(90deg, #f97316, #ea580c)'
+                    : 'linear-gradient(90deg, #3b82f6, #6366f1, #ec4899)',
+                boxShadow: tiempoOradorSeg <= 10
+                  ? '0 0 12px rgba(239, 68, 68, 0.8)'
+                  : '0 0 10px rgba(99, 102, 241, 0.6)',
+                transition: 'width 0.4s linear, background 0.3s ease',
+                borderRadius: '0 2px 2px 0'
+              }} />
             </div>
           </div>
 

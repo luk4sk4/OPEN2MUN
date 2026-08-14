@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, Plus, Square, Download, Clock, CheckCircle2 } from 'lucide-react';
+import { Play, Pause, RotateCcw, Plus, Square, Download, Clock, CheckCircle2, ArrowRightLeft, Shield, HelpCircle, SkipForward } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 
 const CronometroPrincipal = () => {
-  const { oradoresCola, registrarIntervencion, descargarSesionJSON, actualizarRelojGSL, yieldEvento } = useSession();
+  const { paises, oradoresCola, removerOrador, registrarIntervencion, descargarSesionJSON, actualizarRelojGSL, yieldEvento, cederTiempo } = useSession();
 
   const [tiempoInicial, setTiempoInicial] = useState(60);
   const [inputSegundos, setInputSegundos] = useState(60);
   const [segundosRestantes, setSegundosRestantes] = useState(60);
   const [corriendo, setCorriendo] = useState(false);
   const [mensajeGuardado, setMensajeGuardado] = useState(false);
+  const [modalYieldOpen, setModalYieldOpen] = useState(false);
 
   const oradorActual = oradoresCola.length > 0 ? oradoresCola[0] : { nombre: 'Delegación en uso', bandera: '🇺🇳' };
 
@@ -66,7 +67,7 @@ const CronometroPrincipal = () => {
     setSegundosRestantes(nuevosSegundos);
   };
 
-  const handleTerminar = () => {
+  const handleSiguienteOrador = () => {
     setCorriendo(false);
 
     let tiempoHabladoExacto = 0;
@@ -78,12 +79,20 @@ const CronometroPrincipal = () => {
       tiempoHabladoExacto = tiempoInicial - segundosRestantes;
     }
 
-    registrarIntervencion(oradorActual.nombre, tiempoInicial, tiempoHabladoExacto, overtime);
+    if (oradoresCola.length > 0) {
+      registrarIntervencion(oradoresCola[0].nombre, tiempoInicial, tiempoHabladoExacto, overtime);
+      removerOrador(oradoresCola[0].id);
+    }
 
     setMensajeGuardado(true);
     setTimeout(() => setMensajeGuardado(false), 2500);
 
     setSegundosRestantes(tiempoInicial);
+  };
+
+  const handleEjecutarYield = (tipo, destino = '') => {
+    cederTiempo(tipo, destino);
+    setModalYieldOpen(false);
   };
 
   const formatTimeWithNegative = (seg) => {
@@ -110,8 +119,13 @@ const CronometroPrincipal = () => {
 
   const displayState = getTimerStyle(segundosRestantes);
 
+  const progresoPorcentaje = tiempoInicial > 0
+    ? Math.min(100, Math.max(0, ((tiempoInicial - segundosRestantes) / tiempoInicial) * 100))
+    : 0;
+
   return (
     <div style={{
+      position: 'relative',
       padding: '1.2rem',
       height: '100%',
       display: 'flex',
@@ -192,11 +206,12 @@ const CronometroPrincipal = () => {
         className={displayState.className}
         style={{
           margin: '0.75rem 0',
-          padding: '1.4rem 1rem',
+          padding: '1.4rem 1rem 1.6rem 1rem',
           borderRadius: '10px',
           textAlign: 'center',
           transition: 'all 0.3s ease',
           position: 'relative',
+          overflow: 'hidden',
           boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
           ...displayState.style
         }}
@@ -214,6 +229,31 @@ const CronometroPrincipal = () => {
           <div style={{ fontSize: '0.8rem', opacity: 0.75, marginTop: '0.5rem', fontWeight: '600' }}>
             {segundosRestantes < 0 ? '⚠️ TIEMPO EXCEDIDO (OVERTIME)' : `Asignado: ${tiempoInicial} seg`}
           </div>
+        </div>
+
+        {/* Barra de progreso inferior con degradado y glow suave */}
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '5px',
+          backgroundColor: 'rgba(255, 255, 255, 0.08)'
+        }}>
+          <div style={{
+            height: '100%',
+            width: `${progresoPorcentaje}%`,
+            background: segundosRestantes <= 5
+              ? 'linear-gradient(90deg, #ef4444, #dc2626)'
+              : segundosRestantes <= 10
+                ? 'linear-gradient(90deg, #f97316, #ea580c)'
+                : 'linear-gradient(90deg, #3b82f6, #6366f1, #ec4899)',
+            boxShadow: segundosRestantes <= 10
+              ? '0 0 12px rgba(239, 68, 68, 0.8)'
+              : '0 0 10px rgba(99, 102, 241, 0.6)',
+            transition: 'width 0.4s linear, background 0.3s ease',
+            borderRadius: '0 3px 3px 0'
+          }} />
         </div>
 
         {mensajeGuardado && (
@@ -240,7 +280,7 @@ const CronometroPrincipal = () => {
         <button
           onClick={handleStartPause}
           style={{
-            flex: 2,
+            flex: '1 1 120px',
             padding: '0.6rem 0.8rem',
             backgroundColor: corriendo ? '#eab308' : '#22c55e',
             color: '#000000',
@@ -262,7 +302,7 @@ const CronometroPrincipal = () => {
         <button
           onClick={handleReset}
           style={{
-            flex: 1,
+            flex: '0 1 45px',
             padding: '0.6rem',
             backgroundColor: 'transparent',
             border: '1px solid var(--border-color)',
@@ -283,8 +323,8 @@ const CronometroPrincipal = () => {
         <button
           onClick={handleAdd5Sec}
           style={{
-            flex: 1,
-            padding: '0.6rem 0.4rem',
+            flex: '0 1 42px',
+            padding: '0.6rem 0.3rem',
             backgroundColor: 'rgba(34,197,94,0.15)',
             border: '1px solid #22c55e',
             color: '#22c55e',
@@ -300,8 +340,8 @@ const CronometroPrincipal = () => {
         <button
           onClick={handleAdd15Sec}
           style={{
-            flex: 1,
-            padding: '0.6rem 0.4rem',
+            flex: '0 1 42px',
+            padding: '0.6rem 0.3rem',
             backgroundColor: 'transparent',
             border: '1px solid var(--border-color)',
             color: 'var(--text-color)',
@@ -315,9 +355,33 @@ const CronometroPrincipal = () => {
         </button>
 
         <button
-          onClick={handleTerminar}
+          onClick={() => setModalYieldOpen(true)}
+          disabled={oradoresCola.length === 0}
           style={{
-            flex: 2,
+            flex: '1 1 110px',
+            padding: '0.6rem 0.7rem',
+            backgroundColor: oradoresCola.length > 0 ? '#2563eb' : '#222222',
+            color: '#ffffff',
+            fontWeight: '700',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: oradoresCola.length > 0 ? 'pointer' : 'not-allowed',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.4rem',
+            fontSize: '0.82rem',
+            opacity: oradoresCola.length > 0 ? 1 : 0.5
+          }}
+          title="Ceder el tiempo restante (Yield)"
+        >
+          <ArrowRightLeft size={15} /> Ceder (Yield)
+        </button>
+
+        <button
+          onClick={handleSiguienteOrador}
+          style={{
+            flex: '1 1 135px',
             padding: '0.6rem 0.8rem',
             backgroundColor: '#ef4444',
             color: '#ffffff',
@@ -331,10 +395,135 @@ const CronometroPrincipal = () => {
             gap: '0.4rem',
             fontSize: '0.85rem'
           }}
+          title="Terminar intervención y pasar al siguiente orador"
         >
-          <Square size={16} /> Terminar
+          <SkipForward size={16} /> Siguiente Orador
         </button>
       </div>
+
+      {/* Menú/Modal de Yield dentro del Cronómetro */}
+      {modalYieldOpen && (
+        <div style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(5, 5, 8, 0.95)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 50,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '0.8rem',
+          boxSizing: 'border-box',
+          borderRadius: 'var(--border-radius)'
+        }}>
+          <div style={{
+            backgroundColor: 'rgba(14, 14, 20, 0.98)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--border-radius)',
+            padding: '1rem',
+            width: '100%',
+            maxWidth: '320px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem',
+            color: 'var(--text-color)',
+            boxShadow: '0 12px 30px rgba(0,0,0,0.9)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <ArrowRightLeft size={18} color="#3b82f6" />
+              <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: '700' }}>
+                Ceder el tiempo (Yield)
+              </h4>
+            </div>
+
+            <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.75, lineHeight: 1.35 }}>
+              El orador actual (<strong>{oradorActual.nombre}</strong>) cede su tiempo ({segundosRestantes}s) a:
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+              <button
+                onClick={() => handleEjecutarYield('mesa')}
+                style={{
+                  padding: '0.55rem 0.75rem',
+                  backgroundColor: '#1a1a1a',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                  color: '#ffffff',
+                  fontWeight: '600',
+                  fontSize: '0.83rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  textAlign: 'left'
+                }}
+              >
+                <Shield size={16} color="#eab308" /> A la Mesa (Chair)
+              </button>
+
+              <button
+                onClick={() => handleEjecutarYield('preguntas')}
+                style={{
+                  padding: '0.55rem 0.75rem',
+                  backgroundColor: '#1a1a1a',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                  color: '#ffffff',
+                  fontWeight: '600',
+                  fontSize: '0.83rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  textAlign: 'left'
+                }}
+              >
+                <HelpCircle size={16} color="#3b82f6" /> A Preguntas del Pleno
+              </button>
+
+              <div style={{ borderTop: '1px solid var(--subborder-color)', paddingTop: '0.45rem' }}>
+                <div style={{ fontSize: '0.73rem', opacity: 0.7, marginBottom: '0.35rem', fontWeight: '600' }}>A otra Delegación:</div>
+                <select
+                  onChange={e => e.target.value && handleEjecutarYield('delegado', e.target.value)}
+                  defaultValue=""
+                  style={{
+                    width: '100%',
+                    padding: '0.45rem',
+                    backgroundColor: '#121212',
+                    border: '1px solid var(--border-color)',
+                    color: '#ffffff',
+                    borderRadius: '6px',
+                    fontSize: '0.82rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="" disabled>Seleccionar delegación...</option>
+                  {paises.filter(p => p.nombre !== oradorActual.nombre).map(p => (
+                    <option key={p.id} value={p.nombre}>{p.bandera} {p.nombre}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setModalYieldOpen(false)}
+              style={{
+                marginTop: '0.2rem',
+                padding: '0.4rem',
+                backgroundColor: 'transparent',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-color)',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontSize: '0.78rem',
+                fontWeight: '600'
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
