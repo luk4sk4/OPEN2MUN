@@ -155,6 +155,10 @@ export const SessionProvider = ({ children }) => {
     setPaises(prev => prev.map(p => p.id === id ? { ...p, estatus: nuevoEstatus } : p));
   };
 
+  const resetearAsistencia = () => {
+    setPaises(prev => prev.map(p => ({ ...p, estatus: 'Ausente' })));
+  };
+
   const toggleVetoPais = (id) => {
     setPaises(prev => prev.map(p => p.id === id ? { ...p, veto: !p.veto } : p));
   };
@@ -423,6 +427,7 @@ export const SessionProvider = ({ children }) => {
       paises,
       setPaises,
       cambiarEstatusPais,
+      resetearAsistencia,
       toggleVetoPais,
       oradoresCola,
       agregarOrador,

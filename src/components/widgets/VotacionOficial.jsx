@@ -1,37 +1,37 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  Vote, 
-  Crown, 
-  CheckCircle2, 
-  XCircle, 
-  RotateCcw, 
-  ArrowUpDown, 
-  Search, 
-  Play, 
-  ShieldAlert, 
-  Check, 
-  X, 
-  Info, 
-  Sparkles, 
-  HelpCircle, 
-  Users, 
-  Scale, 
-  Target 
+import {
+  Vote,
+  Crown,
+  CheckCircle2,
+  XCircle,
+  RotateCcw,
+  ArrowUpDown,
+  Search,
+  Play,
+  ShieldAlert,
+  Check,
+  X,
+  Info,
+  Sparkles,
+  HelpCircle,
+  Users,
+  Scale,
+  Target
 } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 
 const VotacionOficial = () => {
-  const { 
-    paises, 
-    votacionSesion, 
-    registrarVotoPais, 
-    configurarVotacion, 
-    resetearVotacion 
+  const {
+    paises,
+    votacionSesion,
+    registrarVotoPais,
+    configurarVotacion,
+    resetearVotacion
   } = useSession();
 
   const [busqueda, setBusqueda] = useState('');
   const [criterioOrden, setCriterioOrden] = useState('alphabetical_asc'); // 'alphabetical_asc' | 'alphabetical_desc' | 'vote_status' | 'p5_veto' | 'roll_call'
-  
+
   // Estado para Roll Call Nominal de 2 Rondas
   const [modoRollCall, setModoRollCall] = useState(false);
   const [rondaRollCall, setRondaRollCall] = useState(1); // 1 = Primera Ronda, 2 = Segunda Ronda (Pasados)
@@ -154,10 +154,10 @@ const VotacionOficial = () => {
     if (rondaRollCall === 1) {
       return todosOrdenados;
     } else {
-      // Ronda 2: Únicamente países que pasaron en Ronda 1 y aún no han votado
-      return todosOrdenados.filter(p => paisesPasados.includes(p.id) && !votos[p.id]);
+      // Ronda 2: Únicamente países que pasaron en Ronda 1 (lista estable)
+      return todosOrdenados.filter(p => paisesPasados.includes(p.id));
     }
-  }, [paisesAsistentes, rondaRollCall, paisesPasados, votos]);
+  }, [paisesAsistentes, rondaRollCall, paisesPasados]);
 
   const paisActualRollCall = listaPaisesRondaRollCall[indiceRollCall] || null;
 
@@ -177,9 +177,11 @@ const VotacionOficial = () => {
   const registrarYAvanzarRollCall = (voto) => {
     if (!paisActualRollCall) return;
 
+    let nuevosPasados = paisesPasados;
     if (voto === 'pasar') {
       if (!paisesPasados.includes(paisActualRollCall.id)) {
-        setPaisesPasados(prev => [...prev, paisActualRollCall.id]);
+        nuevosPasados = [...paisesPasados, paisActualRollCall.id];
+        setPaisesPasados(nuevosPasados);
       }
     } else {
       registrarVotoPais(paisActualRollCall.id, voto);
@@ -191,11 +193,7 @@ const VotacionOficial = () => {
     } else {
       // Final de la ronda actual
       if (rondaRollCall === 1) {
-        // Verificar si hay países que pasaron en Ronda 1
-        const pasadosSinVoto = paisesAsistentes.filter(p => 
-          (paisesPasados.includes(p.id) || (voto === 'pasar' && p.id === paisActualRollCall.id)) && !votos[p.id]
-        );
-        if (pasadosSinVoto.length > 0) {
+        if (nuevosPasados.length > 0) {
           setRondaRollCall(2);
           setIndiceRollCall(0);
         } else {
@@ -430,37 +428,6 @@ const VotacionOficial = () => {
         </div>
       </div>
 
-      {/* ── BARRA COMPACTA DE QUÓRUM Y UMBRALES (Simple, no invasiva) ── */}
-      <div style={{
-        backgroundColor: 'var(--card-header-bg)',
-        border: '1px solid var(--border-color)',
-        borderRadius: '6px',
-        padding: '0.35rem 0.65rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '0.35rem',
-        fontSize: '0.72rem'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-          <Users size={13} style={{ opacity: 0.7 }} />
-          <span style={{ fontWeight: '600' }}>
-            Quórum: <strong>{totalAsistentes}</strong> en sala ({presentes} P + {presentesYVotando} PyV)
-          </span>
-          {ausentes > 0 && <span style={{ opacity: 0.5 }}>· {ausentes} Ausentes</span>}
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-          <span style={{ opacity: 0.4 }}>|</span>
-          <span>Req. Simple: <strong style={{ color: '#38bdf8' }}>{reqSimpleQuorum}</strong></span>
-          <span style={{ opacity: 0.4 }}>|</span>
-          <span>Req. 2/3: <strong style={{ color: '#c084fc' }}>{reqDosTerciosQuorum}</strong></span>
-          <span style={{ opacity: 0.4 }}>|</span>
-          <span>Padrón total: <strong style={{ opacity: 0.8 }}>{totalPaises}</strong></span>
-        </div>
-      </div>
-
       {/* ── Banner de Estado del Dictamen ── */}
       <div style={{
         padding: '0.65rem 0.85rem',
@@ -469,15 +436,14 @@ const VotacionOficial = () => {
         alignItems: 'center',
         justifyContent: 'space-between',
         backgroundColor: estadoVotacion === 'APROBADA' ? 'rgba(34, 197, 94, 0.15)' :
-                         estadoVotacion === 'VETADA' ? 'rgba(239, 68, 68, 0.22)' :
-                         estadoVotacion === 'REPROBADA' ? 'rgba(239, 68, 68, 0.15)' :
-                         estadoVotacion === 'SIN_VOTOS' ? 'var(--card-header-bg)' : 'rgba(59, 130, 246, 0.1)',
-        border: `1px solid ${
-          estadoVotacion === 'APROBADA' ? '#22c55e' :
-          estadoVotacion === 'VETADA' ? '#ef4444' :
-          estadoVotacion === 'REPROBADA' ? '#ef4444' :
-          estadoVotacion === 'SIN_VOTOS' ? 'var(--border-color)' : '#3b82f6'
-        }`,
+          estadoVotacion === 'VETADA' ? 'rgba(239, 68, 68, 0.22)' :
+            estadoVotacion === 'REPROBADA' ? 'rgba(239, 68, 68, 0.15)' :
+              estadoVotacion === 'SIN_VOTOS' ? 'var(--card-header-bg)' : 'rgba(59, 130, 246, 0.1)',
+        border: `1px solid ${estadoVotacion === 'APROBADA' ? '#22c55e' :
+            estadoVotacion === 'VETADA' ? '#ef4444' :
+              estadoVotacion === 'REPROBADA' ? '#ef4444' :
+                estadoVotacion === 'SIN_VOTOS' ? 'var(--border-color)' : '#3b82f6'
+          }`,
         transition: 'all 0.2s ease'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -492,7 +458,7 @@ const VotacionOficial = () => {
               {mensajeDictamen}
             </div>
             <div style={{ fontSize: '0.68rem', opacity: 0.7, marginTop: '1px' }}>
-              Meta: <strong style={{ color: 'var(--text-color)' }}>{textoRequerido}</strong> | 
+              Meta: <strong style={{ color: 'var(--text-color)' }}>{textoRequerido}</strong> |
               Emitidos: <strong>{votosEmitidos}/{totalAsistentes}</strong>
             </div>
           </div>
@@ -615,8 +581,8 @@ const VotacionOficial = () => {
                       fontSize: '0.82rem'
                     }}
                     title={
-                      rondaRollCall === 2 
-                        ? 'En segunda ronda no se puede abstener' 
+                      rondaRollCall === 2
+                        ? 'En segunda ronda no se puede abstener'
                         : (paisActualRollCall.estatus === 'Presente y Votando' ? 'P. y Votando no puede abstenerse' : 'Abstención')
                     }
                   >
@@ -692,10 +658,10 @@ const VotacionOficial = () => {
           </div>
         </div>
 
-        <div style={{ 
-          backgroundColor: tipoVotacion === 'procedural' ? 'var(--card-header-bg)' : 'rgba(217, 119, 6, 0.1)', 
-          border: `1px solid ${tipoVotacion === 'procedural' ? 'var(--border-color)' : '#92400e'}`, 
-          borderRadius: '7px', 
+        <div style={{
+          backgroundColor: tipoVotacion === 'procedural' ? 'var(--card-header-bg)' : 'rgba(217, 119, 6, 0.1)',
+          border: `1px solid ${tipoVotacion === 'procedural' ? 'var(--border-color)' : '#92400e'}`,
+          borderRadius: '7px',
           padding: '0.5rem',
           opacity: tipoVotacion === 'procedural' ? 0.35 : 1
         }}>
@@ -792,13 +758,13 @@ const VotacionOficial = () => {
       </div>
 
       {/* ── Lista de Países con VOTOS CLAROS Y DESTACADOS ── */}
-      <div style={{ 
-        flex: 1, 
-        overflowY: 'auto', 
-        display: 'flex', 
-        flexDirection: 'column', 
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
         gap: '0.3rem',
-        paddingRight: '2px' 
+        paddingRight: '2px'
       }}>
         {listaPaisesProcesada.map(p => {
           const votoActual = votos[p.id];
@@ -816,14 +782,13 @@ const VotacionOficial = () => {
                 padding: '0.45rem 0.75rem',
                 backgroundColor: esAusente ? 'transparent' : (
                   votoActual === 'favor' ? 'rgba(34, 197, 94, 0.08)' :
-                  votoActual === 'contra' ? 'rgba(239, 68, 68, 0.08)' :
-                  votoActual === 'abstencion' ? 'rgba(217, 119, 6, 0.08)' : 'var(--card-header-bg)'
+                    votoActual === 'contra' ? 'rgba(239, 68, 68, 0.08)' :
+                      votoActual === 'abstencion' ? 'rgba(217, 119, 6, 0.08)' : 'var(--card-header-bg)'
                 ),
-                border: `1px solid ${
-                  votoActual === 'favor' ? '#166534' :
-                  votoActual === 'contra' ? '#991b1b' :
-                  votoActual === 'abstencion' ? '#92400e' : 'var(--border-color)'
-                }`,
+                border: `1px solid ${votoActual === 'favor' ? '#166534' :
+                    votoActual === 'contra' ? '#991b1b' :
+                      votoActual === 'abstencion' ? '#92400e' : 'var(--border-color)'
+                  }`,
                 borderRadius: '6px',
                 opacity: esAusente ? 0.35 : 1,
                 transition: 'all 0.15s ease',
@@ -833,7 +798,7 @@ const VotacionOficial = () => {
               {/* Información de la Delegación */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0, flex: 1 }}>
                 <span style={{ fontSize: '1.25rem' }}>{p.bandera}</span>
-                
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, flexWrap: 'wrap' }}>
                   <span style={{ fontWeight: '800', fontSize: '0.9rem', color: 'var(--text-color)' }}>
                     {p.nombre}

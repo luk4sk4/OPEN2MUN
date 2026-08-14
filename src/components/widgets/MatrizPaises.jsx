@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
-import { Crown, Search, Users, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import { Crown, Search, Users, CheckCircle, AlertCircle, XCircle, Play, Sparkles, RotateCcw } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 
 const MatrizPaises = () => {
-  const { paises, cambiarEstatusPais, toggleVetoPais } = useSession();
+  const { paises, cambiarEstatusPais, resetearAsistencia, toggleVetoPais } = useSession();
 
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstatus, setFiltroEstatus] = useState('TODOS');
+
+  // Estado para Roll Call Nominal de Asistencia
+  const [modoRollCall, setModoRollCall] = useState(false);
+  const [rondaRollCall, setRondaRollCall] = useState(1); // 1 = Primera Ronda, 2 = Segunda Ronda (Pasados)
+  const [indiceRollCall, setIndiceRollCall] = useState(0);
+  const [paisesPasados, setPaisesPasados] = useState([]); // IDs de países que seleccionaron 'Pasar' en Ronda 1
 
   // Cálculo de Quórum
   const totalPaises = paises.length;
@@ -19,6 +25,64 @@ const MatrizPaises = () => {
 
   const mayoriaSimple = Math.floor(totalAsistentes / 2) + 1;
   const mayoriaCalificada = Math.ceil((totalAsistentes * 2) / 3);
+
+  // Lista de Países para la Ronda de Roll Call Actual
+  const listaPaisesRondaRollCall = React.useMemo(() => {
+    const todosOrdenados = [...paises].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    if (rondaRollCall === 1) {
+      return todosOrdenados;
+    } else {
+      // Ronda 2: Únicamente países que pasaron en Ronda 1 (lista estable)
+      return todosOrdenados.filter(p => paisesPasados.includes(p.id));
+    }
+  }, [paises, rondaRollCall, paisesPasados]);
+
+  const paisActualRollCall = listaPaisesRondaRollCall[indiceRollCall] || null;
+
+  // Iniciar / Resetear Modo Roll Call
+  const toggleModoRollCall = () => {
+    if (!modoRollCall) {
+      setModoRollCall(true);
+      setRondaRollCall(1);
+      setIndiceRollCall(0);
+      setPaisesPasados([]);
+    } else {
+      setModoRollCall(false);
+    }
+  };
+
+  // Estatus en Roll Call Nominal con avance de ronda
+  const registrarYAvanzarRollCall = (estatus) => {
+    if (!paisActualRollCall) return;
+
+    let nuevosPasados = paisesPasados;
+    if (estatus === 'pasar') {
+      if (!paisesPasados.includes(paisActualRollCall.id)) {
+        nuevosPasados = [...paisesPasados, paisActualRollCall.id];
+        setPaisesPasados(nuevosPasados);
+      }
+    } else {
+      cambiarEstatusPais(paisActualRollCall.id, estatus);
+    }
+
+    // Avanzar dentro de la lista actual
+    if (indiceRollCall < listaPaisesRondaRollCall.length - 1) {
+      setIndiceRollCall(prev => prev + 1);
+    } else {
+      // Final de la ronda actual
+      if (rondaRollCall === 1) {
+        if (nuevosPasados.length > 0) {
+          setRondaRollCall(2);
+          setIndiceRollCall(0);
+        } else {
+          setModoRollCall(false);
+        }
+      } else {
+        // Final de la Ronda 2
+        setModoRollCall(false);
+      }
+    }
+  };
 
   // Filtrado
   const paisesFiltrados = paises.filter(p => {
@@ -122,7 +186,171 @@ const MatrizPaises = () => {
           <option value="Ausente">Ausente</option>
           <option value="VETO">👑 Miembros Veto</option>
         </select>
+
+        {/* Botón para activar el Roll Call */}
+        <button
+          onClick={toggleModoRollCall}
+          style={{
+            padding: '0.3rem 0.65rem',
+            backgroundColor: modoRollCall ? '#2563eb' : 'transparent',
+            border: '1px solid #3b82f6',
+            color: modoRollCall ? '#ffffff' : '#3b82f6',
+            borderRadius: '5px',
+            fontWeight: '700',
+            fontSize: '0.75rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.3rem',
+            whiteSpace: 'nowrap'
+          }}
+          title={modoRollCall ? 'Salir del Modo Roll Call' : 'Iniciar Paso de Lista Nominal (Roll Call)'}
+        >
+          <Play size={12} fill={modoRollCall ? '#ffffff' : 'none'} />
+          <span>{modoRollCall ? 'Salir' : 'Roll Call'}</span>
+        </button>
+
+        {/* Botón para reiniciar todos a Ausente */}
+        <button
+          onClick={resetearAsistencia}
+          style={{
+            padding: '0.3rem 0.55rem',
+            backgroundColor: 'transparent',
+            border: '1px solid var(--border-color)',
+            color: 'var(--text-color)',
+            borderRadius: '5px',
+            fontSize: '0.75rem',
+            fontWeight: '600',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.3rem',
+            whiteSpace: 'nowrap'
+          }}
+          title="Reiniciar todos los países a Ausente"
+        >
+          <RotateCcw size={12} />
+          <span>Reiniciar</span>
+        </button>
       </div>
+
+      {/* Asistente Roll Call Nominal Interactivo */}
+      {modoRollCall && (
+        <div style={{
+          backgroundColor: 'var(--card-header-bg)',
+          border: `1px solid ${rondaRollCall === 2 ? '#d97706' : '#3b82f6'}`,
+          borderRadius: '8px',
+          padding: '0.75rem 1rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.6rem',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
+        }}>
+          {/* Banner de Ronda */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--subborder-color)', paddingBottom: '0.35rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Sparkles size={15} color={rondaRollCall === 2 ? '#f59e0b' : '#3b82f6'} />
+              <span style={{ fontWeight: '800', fontSize: '0.82rem', color: rondaRollCall === 2 ? '#f59e0b' : '#60a5fa' }}>
+                {rondaRollCall === 1 ? 'PRIMERA RONDA - PASO DE LISTA NOMINAL' : 'SEGUNDA RONDA - PASADOS / AUSENTES'}
+              </span>
+            </div>
+            <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>
+              {paisActualRollCall ? `Turno ${indiceRollCall + 1} de ${listaPaisesRondaRollCall.length}` : 'Paso de Lista Finalizado'}
+            </span>
+          </div>
+
+          {paisActualRollCall ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span style={{ fontSize: '2rem' }}>{paisActualRollCall.bandera}</span>
+                <div>
+                  <div style={{ fontSize: '0.68rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Estatus actual: {paisActualRollCall.estatus}
+                  </div>
+                  <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-color)' }}>
+                    {paisActualRollCall.nombre} {paisActualRollCall.veto && '👑'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Botones de Asistencia Roll Call */}
+              <div style={{ display: 'flex', gap: '0.35rem' }}>
+                <button
+                  onClick={() => registrarYAvanzarRollCall('Presente')}
+                  style={{
+                    padding: '0.5rem 0.85rem',
+                    backgroundColor: '#22c55e',
+                    color: '#000000',
+                    fontWeight: '800',
+                    border: 'none',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    fontSize: '0.82rem'
+                  }}
+                >
+                  Presente
+                </button>
+
+                <button
+                  onClick={() => registrarYAvanzarRollCall('Presente y Votando')}
+                  style={{
+                    padding: '0.5rem 0.85rem',
+                    backgroundColor: '#3b82f6',
+                    color: '#ffffff',
+                    fontWeight: '800',
+                    border: 'none',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    fontSize: '0.82rem'
+                  }}
+                >
+                  P. y Votando
+                </button>
+
+                <button
+                  onClick={() => registrarYAvanzarRollCall('Ausente')}
+                  style={{
+                    padding: '0.5rem 0.85rem',
+                    backgroundColor: '#ef4444',
+                    color: '#ffffff',
+                    fontWeight: '800',
+                    border: 'none',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    fontSize: '0.82rem'
+                  }}
+                >
+                  Ausente
+                </button>
+
+                {/* Botón Pasar / Omitir (Solo disponible en Ronda 1) */}
+                {rondaRollCall === 1 && (
+                  <button
+                    onClick={() => registrarYAvanzarRollCall('pasar')}
+                    style={{
+                      padding: '0.5rem 0.75rem',
+                      backgroundColor: '#3f3f46',
+                      color: '#ffffff',
+                      fontWeight: '700',
+                      border: 'none',
+                      borderRadius: '5px',
+                      cursor: 'pointer',
+                      fontSize: '0.78rem'
+                    }}
+                    title="Pasar / Omitir para responder en Segunda Ronda"
+                  >
+                    Pasar
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', opacity: 0.7, padding: '0.4rem', fontSize: '0.8rem' }}>
+              ¡Paso de Lista finalizado!
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Lista / Matriz de Países */}
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.3rem', paddingRight: '2px' }}>
