@@ -264,9 +264,10 @@ const Dashboard = () => {
       nombreComite,
       votacionSesion,
       relojGSLState,
-      roomSettings
+      roomSettings,
+      speakingRequests
     });
-  }, [broadcastCurrentState, paises, oradoresCola, oradoresCaucus, caucusActivo, agendaSesion, nombreComite, votacionSesion, relojGSLState, roomSettings]);
+  }, [broadcastCurrentState, paises, oradoresCola, oradoresCaucus, caucusActivo, agendaSesion, nombreComite, votacionSesion, relojGSLState, roomSettings, speakingRequests]);
 
   // Cargar configuración desde localStorage si existe, o usar configMaster por defecto
   const [config, setConfig] = useState(() => {
@@ -642,18 +643,18 @@ const Dashboard = () => {
   };
 
   const themeStyles = {
-    '--bg-color': isLight ? '#f8fafc' : '#000000',
-    '--panel-color': isLight ? '#ffffff' : '#09090b',
-    '--card-header-bg': isLight ? '#f1f5f9' : '#121215',
-    '--header-bg': isLight ? '#ffffff' : '#000000',
-    '--subnav-bg': isLight ? '#f1f5f9' : '#0d0d10',
-    '--text-color': isLight ? '#0f172a' : '#ffffff',
-    '--muted-text': isLight ? '#64748b' : '#a1a1aa',
-    '--border-color': isLight ? '#e2e8f0' : '#27272a',
-    '--subborder-color': isLight ? '#cbd5e1' : '#1f1f23',
-    '--btn-bg': isLight ? '#0f172a' : '#ffffff',
-    '--btn-text': isLight ? '#ffffff' : '#0f172a',
-    '--grid-line': isLight ? '#e2e8f0' : '#222225',
+    '--bg-color': isLight ? '#f8fafc' : '#0c0e14',
+    '--panel-color': isLight ? '#ffffff' : '#161922',
+    '--card-header-bg': isLight ? '#f1f5f9' : '#1e222f',
+    '--header-bg': isLight ? '#ffffff' : '#10121a',
+    '--subnav-bg': isLight ? '#f1f5f9' : '#141720',
+    '--text-color': isLight ? '#0f172a' : '#f1f5f9',
+    '--muted-text': isLight ? '#64748b' : '#94a3b8',
+    '--border-color': isLight ? '#e2e8f0' : '#2b3042',
+    '--subborder-color': isLight ? '#cbd5e1' : '#222636',
+    '--btn-bg': isLight ? '#0f172a' : '#3b82f6',
+    '--btn-text': isLight ? '#ffffff' : '#ffffff',
+    '--grid-line': isLight ? '#e2e8f0' : '#1c202d',
     '--font-family': acc.dyslexiaMode ? '"OpenDyslexic","Comic Sans MS",sans-serif' : config.theme.fontFamily,
     '--border-radius': config.theme.borderRadius,
     backgroundColor: 'var(--bg-color)',

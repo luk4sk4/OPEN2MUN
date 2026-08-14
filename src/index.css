@@ -2,8 +2,17 @@
 :root {
   /* These will be overridden by Dashboard's inline styles, 
      but provide fallback defaults */
-  --bg-color: #000000;
-  --text-color: #ffffff;
+  --bg-color: #0c0e14;
+  --panel-color: #161922;
+  --card-header-bg: #1e222f;
+  --header-bg: #10121a;
+  --subnav-bg: #141720;
+  --border-color: #2b3042;
+  --subborder-color: #222636;
+  --text-color: #f1f5f9;
+  --muted-text: #94a3b8;
+  --btn-bg: #3b82f6;
+  --btn-text: #ffffff;
   --font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
@@ -22,20 +31,20 @@ body {
   box-sizing: border-box;
 }
 
-/* Custom Scrollbar for minimalist theme */
+/* Custom Scrollbar for modern dark slate theme */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #000000;
+  background: #10121a;
 }
 ::-webkit-scrollbar-thumb {
-  background: #262626;
-  border-radius: 3px;
+  background: #2b3144;
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #404040;
+  background: #3e465e;
 }
 
 /* React Grid Layout overrides for better visuals */

@@ -26,6 +26,7 @@ export const MSG_TYPES = {
   REQUEST_SPEAKING: 'REQUEST_SPEAKING',
   SPEAKING_PROCESSED: 'SPEAKING_PROCESSED',
   PROCESS_SPEAKING_REQUEST: 'PROCESS_SPEAKING_REQUEST',
+  SPEAKING_REQUESTS_UPDATED: 'SPEAKING_REQUESTS_UPDATED',
   SEND_NOTE: 'SEND_NOTE',
   NOTE_RECEIVED: 'NOTE_RECEIVED',
   CRISIS_ALERT: 'CRISIS_ALERT',
@@ -56,6 +57,7 @@ class PeerService {
     this.secretPassword = 'secreto123';
     this.backroomPassword = 'crisis123';
     this.roomSettings = { ...DEFAULT_ROOM_SETTINGS };
+    this.latestSpeakingRequests = [];
     this.latestSessionState = null;
     this.hostConn = null;
   }
@@ -319,6 +321,7 @@ class PeerService {
               role,
               country: meta.country,
               roomSettings: this.roomSettings,
+              speakingRequests: this.latestSpeakingRequests || [],
               sessionState: this.latestSessionState || null
             }
           });
@@ -340,6 +343,7 @@ class PeerService {
             role: 'secretariat',
             country: 'Secretaría Local',
             roomSettings: this.roomSettings,
+            speakingRequests: this.latestSpeakingRequests || [],
             sessionState: this.latestSessionState || null
           }
         });
@@ -546,7 +550,8 @@ class PeerService {
       type: MSG_TYPES.SYNC_STATE,
       payload: {
         ...state,
-        roomSettings: this.roomSettings
+        roomSettings: this.roomSettings,
+        speakingRequests: this.latestSpeakingRequests || []
       }
     };
 
@@ -554,6 +559,23 @@ class PeerService {
       try {
         conn.send(msg);
       } catch (e) { }
+    });
+
+    this.broadcastLocal(msg);
+  }
+
+  broadcastSpeakingRequests(requests) {
+    this.latestSpeakingRequests = requests || [];
+    const msg = {
+      type: MSG_TYPES.SPEAKING_REQUESTS_UPDATED,
+      payload: this.latestSpeakingRequests
+    };
+
+    this.connections.forEach((conn, peerId) => {
+      const meta = this.peerMetadata.get(peerId);
+      if (meta && (meta.role === 'secretariat' || meta.role === 'chair')) {
+        try { conn.send(msg); } catch (e) { }
+      }
     });
 
     this.broadcastLocal(msg);

@@ -102,6 +102,7 @@ export const P2PProvider = ({ children }) => {
         if (data.country) setClientCountry(data.country);
         if (data.sessionState) setRemoteSessionState(data.sessionState);
         if (data.roomSettings) setRoomSettings(data.roomSettings);
+        if (data.speakingRequests) setSpeakingRequests(data.speakingRequests);
         addNotification(`✅ Conectado a la sala como ${data.country || data.role}`, 'success');
       }
 
@@ -155,7 +156,11 @@ export const P2PProvider = ({ children }) => {
       // Procesamiento de solicitud desde Secretaría (Host ejecuta)
       if (event === 'process_speaking_request') {
         const { requestId, action, requestData } = data;
-        setSpeakingRequests(prev => prev.filter(r => r.id !== requestId));
+        setSpeakingRequests(prev => {
+          const updated = prev.filter(r => r.id !== requestId);
+          peerService.broadcastSpeakingRequests(updated);
+          return updated;
+        });
         if (action === 'accept' && requestData) {
           if (requestData.speechType === 'GSL' && sessionActionHandlersRef.current.onAddSpeakerGSL) {
             sessionActionHandlersRef.current.onAddSpeakerGSL({ nombre: requestData.country, bandera: '🇺🇳' });
@@ -203,7 +208,11 @@ export const P2PProvider = ({ children }) => {
             details: message.payload.details,
             timestamp: Date.now()
           };
-          setSpeakingRequests(prev => [req, ...prev]);
+          setSpeakingRequests(prev => {
+            const next = [req, ...prev];
+            peerService.broadcastSpeakingRequests(next);
+            return next;
+          });
           addNotification(`🗣️ ${senderMeta.country} ha solicitado turno (${message.payload.speechType})`, 'info');
         }
       }
@@ -216,6 +225,11 @@ export const P2PProvider = ({ children }) => {
           if (message.payload?.roomSettings) {
             setRoomSettings(message.payload.roomSettings);
           }
+          if (message.payload?.speakingRequests) {
+            setSpeakingRequests(message.payload.speakingRequests);
+          }
+        } else if (message.type === MSG_TYPES.SPEAKING_REQUESTS_UPDATED) {
+          setSpeakingRequests(message.payload || []);
         } else if (message.type === MSG_TYPES.ROOM_SETTINGS_UPDATED) {
           setRoomSettings(message.payload);
           addNotification('⚙️ Ajustes de sala y permisos actualizados por la Mesa', 'info');
@@ -370,7 +384,11 @@ export const P2PProvider = ({ children }) => {
           tiempoOrador: req.details?.tiempoOrador || 0
         });
       }
-      setSpeakingRequests(prev => prev.filter(r => r.id !== req.id));
+      setSpeakingRequests(prev => {
+        const next = prev.filter(r => r.id !== req.id);
+        peerService.broadcastSpeakingRequests(next);
+        return next;
+      });
       addNotification(`✅ Aceptada solicitud de ${req.country}`, 'success');
     } else {
       // Si somos Secretaría (cliente remoto o local), enviamos el comando al host
@@ -382,7 +400,11 @@ export const P2PProvider = ({ children }) => {
 
   const rejectSpeakingRequest = useCallback((reqId) => {
     if (connectionStatus === 'host_active') {
-      setSpeakingRequests(prev => prev.filter(r => r.id !== reqId));
+      setSpeakingRequests(prev => {
+        const next = prev.filter(r => r.id !== reqId);
+        peerService.broadcastSpeakingRequests(next);
+        return next;
+      });
     } else {
       peerService.processSpeakingRequestAsClient(reqId, 'reject');
       setSpeakingRequests(prev => prev.filter(r => r.id !== reqId));

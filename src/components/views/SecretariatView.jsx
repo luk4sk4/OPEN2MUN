@@ -23,10 +23,18 @@ import {
   Zap,
   Vote,
   FileText,
-  AlertCircle
+  AlertCircle,
+  FileSpreadsheet,
+  BarChart3,
+  Calendar,
+  UserPlus
 } from 'lucide-react';
 import { useP2P } from '../../context/P2PContext';
 import OpenMunLogo from '../common/OpenMunLogo';
+import MatrizPaises from '../widgets/MatrizPaises';
+import HistoricoDelegaciones from '../widgets/HistoricoDelegaciones';
+import EstablecerAgenda from '../widgets/EstablecerAgenda';
+import ImportarPaises from '../widgets/ImportarPaises';
 
 const SecretariatView = ({ isLight, onExit }) => {
   const {
@@ -45,7 +53,8 @@ const SecretariatView = ({ isLight, onExit }) => {
     kickPeer
   } = useP2P();
 
-  const [activeTab, setActiveTab] = useState('NOTAS'); // 'NOTAS' | 'SOLICITUDES' | 'AJUSTES' | 'CONEXIONES' | 'DEBATE'
+  const [activeTab, setActiveTab] = useState('NOTAS'); // 'NOTAS' | 'SOLICITUDES' | 'INFO' | 'AJUSTES' | 'CONEXIONES' | 'DEBATE'
+  const [subTabInfo, setSubTabInfo] = useState('MATRIZ'); // 'MATRIZ' | 'HISTORICO' | 'AGENDA' | 'IMPORTAR'
   const [filtroTexto, setFiltroTexto] = useState('');
   const [filtroTipo, setFiltroTipo] = useState('TODOS'); // 'TODOS' | 'CHAIR' | 'BACKROOM' | 'DELEGADOS'
   const [notaMesaTexto, setNotaMesaTexto] = useState('');
@@ -83,16 +92,6 @@ const SecretariatView = ({ isLight, onExit }) => {
     setNotaMesaTexto('');
   };
 
-  const handleExportarNotasJSON = () => {
-    const blob = new Blob([JSON.stringify(notes, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `registro_notas_${roomId || 'openmun'}_${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
   const handleExportarNotasCSV = () => {
     let csv = 'ID,Fecha,De,Rol,Para,Tipo,Mensaje\n';
     notes.forEach(n => {
@@ -122,7 +121,7 @@ const SecretariatView = ({ isLight, onExit }) => {
       <header style={{
         padding: '0.85rem 1.5rem',
         backgroundColor: 'var(--header-bg)',
-        borderBottom: '1px solid var(--subborder-color)',
+        borderBottom: '1px solid var(--border-color)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -146,7 +145,8 @@ const SecretariatView = ({ isLight, onExit }) => {
                 borderRadius: '6px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px'
+                gap: '4px',
+                border: '1px solid rgba(59, 130, 246, 0.3)'
               }}>
                 <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#60a5fa' }} />
                 Sala: {roomId || 'Local'}
@@ -163,10 +163,10 @@ const SecretariatView = ({ isLight, onExit }) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           {/* Card de Orador en Curso */}
           <div style={{
-            backgroundColor: 'rgba(255,255,255,0.03)',
-            border: '1px solid var(--subborder-color)',
+            backgroundColor: 'var(--card-header-bg)',
+            border: '1px solid var(--border-color)',
             borderRadius: '8px',
-            padding: '0.35rem 0.75rem',
+            padding: '0.4rem 0.85rem',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem',
@@ -179,17 +179,18 @@ const SecretariatView = ({ isLight, onExit }) => {
           <button
             onClick={handleExportarNotasCSV}
             style={{
-              background: 'transparent',
-              border: '1px solid var(--subborder-color)',
+              backgroundColor: 'var(--card-header-bg)',
+              border: '1px solid var(--border-color)',
               borderRadius: '8px',
               color: 'var(--text-color)',
-              padding: '0.45rem 0.75rem',
+              padding: '0.45rem 0.8rem',
               fontSize: '0.75rem',
               fontWeight: '600',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.35rem'
+              gap: '0.35rem',
+              transition: 'all 0.15s ease'
             }}
             title="Exportar archivo de notas en CSV para Excel"
           >
@@ -198,19 +199,19 @@ const SecretariatView = ({ isLight, onExit }) => {
 
           <button
             onClick={() => {
-              if (confirm('¿Deseas salir del panel secreto de Secretaría?')) {
+              if (confirm('¿Deseas salir del panel de Secretaría?')) {
                 leaveRoom();
                 if (onExit) onExit();
               }
             }}
             style={{
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
+              background: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid rgba(239, 68, 68, 0.35)',
               borderRadius: '8px',
               color: '#ef4444',
-              padding: '0.45rem 0.75rem',
+              padding: '0.45rem 0.8rem',
               fontSize: '0.75rem',
-              fontWeight: '600',
+              fontWeight: '700',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -225,8 +226,8 @@ const SecretariatView = ({ isLight, onExit }) => {
       {/* ── Sub-navegación por Pestañas ── */}
       <div style={{
         backgroundColor: 'var(--subnav-bg)',
-        borderBottom: '1px solid var(--subborder-color)',
-        padding: '0.4rem 1.5rem',
+        borderBottom: '1px solid var(--border-color)',
+        padding: '0.45rem 1.5rem',
         display: 'flex',
         alignItems: 'center',
         gap: '0.5rem',
@@ -283,6 +284,26 @@ const SecretariatView = ({ isLight, onExit }) => {
         </button>
 
         <button
+          onClick={() => setActiveTab('INFO')}
+          style={{
+            padding: '0.5rem 0.95rem',
+            borderRadius: '8px',
+            border: 'none',
+            backgroundColor: activeTab === 'INFO' ? 'var(--btn-bg)' : 'transparent',
+            color: activeTab === 'INFO' ? 'var(--btn-text)' : 'var(--muted-text)',
+            fontWeight: '700',
+            fontSize: '0.82rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.45rem',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <BarChart3 size={15} /> Info y Gestión de Comité
+        </button>
+
+        <button
           onClick={() => setActiveTab('AJUSTES')}
           style={{
             padding: '0.5rem 0.95rem',
@@ -299,7 +320,7 @@ const SecretariatView = ({ isLight, onExit }) => {
             transition: 'all 0.15s ease'
           }}
         >
-          <Sliders size={15} /> Ajustes y Permisos de Sala
+          <Sliders size={15} /> Ajustes y Permisos
         </button>
 
         <button
@@ -346,7 +367,7 @@ const SecretariatView = ({ isLight, onExit }) => {
       {/* ── Contenido Principal de Secretaría ── */}
       <main style={{ padding: '1.5rem', flex: 1, overflowY: 'auto' }}>
         {/* ═══════════════════════════════════════════════════════ */}
-        {/* PESTAÑA: BANDEJA DE NOTAS / PAJES                       */}
+        {/* PESTAÑA 1: BANDEJA DE NOTAS / PAJES                     */}
         {/* ═══════════════════════════════════════════════════════ */}
         {activeTab === 'NOTAS' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '1.5rem', alignItems: 'start' }}>
@@ -388,11 +409,11 @@ const SecretariatView = ({ isLight, onExit }) => {
                       key={tipo}
                       onClick={() => setFiltroTipo(tipo)}
                       style={{
-                        backgroundColor: filtroTipo === tipo ? 'var(--btn-bg)' : 'rgba(255,255,255,0.03)',
+                        backgroundColor: filtroTipo === tipo ? 'var(--btn-bg)' : 'var(--card-header-bg)',
                         color: filtroTipo === tipo ? 'var(--btn-text)' : 'var(--muted-text)',
-                        border: '1px solid var(--subborder-color)',
+                        border: '1px solid var(--border-color)',
                         borderRadius: '6px',
-                        padding: '0.3rem 0.65rem',
+                        padding: '0.35rem 0.7rem',
                         fontSize: '0.74rem',
                         fontWeight: '700',
                         cursor: 'pointer'
@@ -411,7 +432,7 @@ const SecretariatView = ({ isLight, onExit }) => {
                   textAlign: 'center',
                   backgroundColor: 'var(--panel-color)',
                   borderRadius: '14px',
-                  border: '1px dashed var(--subborder-color)',
+                  border: '1px dashed var(--border-color)',
                   color: 'var(--muted-text)'
                 }}>
                   <MessageSquare size={36} style={{ opacity: 0.35, marginBottom: '0.6rem' }} />
@@ -450,8 +471,9 @@ const SecretariatView = ({ isLight, onExit }) => {
                             fontWeight: '700',
                             padding: '0.1rem 0.45rem',
                             borderRadius: '4px',
-                            backgroundColor: nota.type === 'urgente' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255,255,255,0.06)',
-                            color: nota.type === 'urgente' ? '#ef4444' : 'var(--muted-text)'
+                            backgroundColor: nota.type === 'urgente' ? 'rgba(239, 68, 68, 0.15)' : 'var(--card-header-bg)',
+                            color: nota.type === 'urgente' ? '#ef4444' : 'var(--muted-text)',
+                            border: `1px solid ${nota.type === 'urgente' ? 'rgba(239, 68, 68, 0.3)' : 'var(--border-color)'}`
                           }}>
                             {nota.type?.toUpperCase() || 'GENERAL'}
                           </span>
@@ -465,10 +487,10 @@ const SecretariatView = ({ isLight, onExit }) => {
                       <div style={{
                         fontSize: '0.88rem',
                         lineHeight: '1.45',
-                        backgroundColor: 'rgba(255,255,255,0.02)',
+                        backgroundColor: 'var(--card-header-bg)',
                         padding: '0.65rem 0.85rem',
                         borderRadius: '8px',
-                        border: '1px solid rgba(255,255,255,0.04)'
+                        border: '1px solid var(--border-color)'
                       }}>
                         {nota.text}
                       </div>
@@ -506,7 +528,7 @@ const SecretariatView = ({ isLight, onExit }) => {
                       width: '100%',
                       marginTop: '0.35rem',
                       backgroundColor: 'var(--card-header-bg)',
-                      border: '1px solid var(--subborder-color)',
+                      border: '1px solid var(--border-color)',
                       borderRadius: '8px',
                       padding: '0.6rem',
                       color: 'var(--text-color)',
@@ -536,7 +558,7 @@ const SecretariatView = ({ isLight, onExit }) => {
                       width: '100%',
                       marginTop: '0.35rem',
                       backgroundColor: 'var(--card-header-bg)',
-                      border: '1px solid var(--subborder-color)',
+                      border: '1px solid var(--border-color)',
                       borderRadius: '8px',
                       padding: '0.55rem',
                       color: 'var(--text-color)',
@@ -562,7 +584,7 @@ const SecretariatView = ({ isLight, onExit }) => {
                       width: '100%',
                       marginTop: '0.35rem',
                       backgroundColor: 'var(--card-header-bg)',
-                      border: '1px solid var(--subborder-color)',
+                      border: '1px solid var(--border-color)',
                       borderRadius: '8px',
                       padding: '0.65rem',
                       color: 'var(--text-color)',
@@ -600,36 +622,37 @@ const SecretariatView = ({ isLight, onExit }) => {
         )}
 
         {/* ═══════════════════════════════════════════════════════ */}
-        {/* PESTAÑA: SOLICITUDES DE ORADORES                        */}
+        {/* PESTAÑA 2: SOLICITUDES DE ORADORES                      */}
         {/* ═══════════════════════════════════════════════════════ */}
         {activeTab === 'SOLICITUDES' && (
-          <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ maxWidth: '850px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div style={{
               backgroundColor: 'var(--panel-color)',
               border: '1px solid var(--border-color)',
               borderRadius: '14px',
-              padding: '1.25rem',
+              padding: '1.25rem 1.5rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between'
             }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800' }}>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '800' }}>
                   Cola de Solicitudes de Oradores y Mociones
                 </h3>
-                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8rem', color: 'var(--muted-text)' }}>
-                  Como Secretaría, puedes aprobar o denegar turnos solicitados por las delegaciones en tiempo real.
+                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.82rem', color: 'var(--muted-text)' }}>
+                  Como Secretaría, puedes aprobar o denegar en vivo los turnos y mociones solicitados por las delegaciones.
                 </p>
               </div>
               <span style={{
-                fontSize: '0.8rem',
+                fontSize: '0.82rem',
                 fontWeight: '800',
-                padding: '0.25rem 0.65rem',
+                padding: '0.3rem 0.75rem',
                 borderRadius: '8px',
                 backgroundColor: speakingRequests.length > 0 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)',
-                color: speakingRequests.length > 0 ? '#ef4444' : '#22c55e'
+                color: speakingRequests.length > 0 ? '#ef4444' : '#22c55e',
+                border: `1px solid ${speakingRequests.length > 0 ? 'rgba(239, 68, 68, 0.3)' : 'rgba(34, 197, 94, 0.3)'}`
               }}>
-                {speakingRequests.length} Pendientes
+                {speakingRequests.length} Solicitudes Pendientes
               </span>
             </div>
 
@@ -639,13 +662,13 @@ const SecretariatView = ({ isLight, onExit }) => {
                 textAlign: 'center',
                 backgroundColor: 'var(--panel-color)',
                 borderRadius: '14px',
-                border: '1px dashed var(--subborder-color)',
+                border: '1px dashed var(--border-color)',
                 color: 'var(--muted-text)'
               }}>
                 <Zap size={36} style={{ opacity: 0.35, marginBottom: '0.6rem' }} />
                 <div style={{ fontWeight: '700', fontSize: '0.95rem' }}>No hay solicitudes de orador pendientes</div>
                 <div style={{ fontSize: '0.78rem', marginTop: '4px' }}>
-                  Las solicitudes de turno en modo con aprobación aparecerán aquí para ser validadas.
+                  Cuando un delegado solicite turno en modo con aprobación, aparecerá aquí instantáneamente.
                 </div>
               </div>
             ) : (
@@ -657,7 +680,7 @@ const SecretariatView = ({ isLight, onExit }) => {
                       backgroundColor: 'var(--panel-color)',
                       border: '1px solid var(--border-color)',
                       borderRadius: '12px',
-                      padding: '1.1rem 1.25rem',
+                      padding: '1.1rem 1.4rem',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
@@ -670,26 +693,27 @@ const SecretariatView = ({ isLight, onExit }) => {
                         <span style={{
                           fontSize: '0.72rem',
                           fontWeight: '800',
-                          padding: '0.15rem 0.55rem',
+                          padding: '0.2rem 0.6rem',
                           borderRadius: '6px',
-                          backgroundColor: req.speechType === 'GSL' ? 'rgba(59, 130, 246, 0.2)' : (req.speechType === 'CAUCUS' ? 'rgba(168, 85, 247, 0.2)' : 'rgba(234, 179, 8, 0.2)'),
-                          color: req.speechType === 'GSL' ? '#60a5fa' : (req.speechType === 'CAUCUS' ? '#c084fc' : '#facc15')
+                          backgroundColor: req.speechType === 'GSL' ? 'rgba(59, 130, 246, 0.18)' : (req.speechType === 'CAUCUS' ? 'rgba(168, 85, 247, 0.18)' : 'rgba(234, 179, 8, 0.18)'),
+                          color: req.speechType === 'GSL' ? '#60a5fa' : (req.speechType === 'CAUCUS' ? '#c084fc' : '#facc15'),
+                          border: `1px solid ${req.speechType === 'GSL' ? '#3b82f644' : (req.speechType === 'CAUCUS' ? '#a855f744' : '#eab30844')}`
                         }}>
                           {req.speechType === 'GSL' ? 'Lista GSL' : (req.speechType === 'CAUCUS' ? 'Caucus Moderado' : 'Moción')}
                         </span>
-                        <span style={{ fontWeight: '800', fontSize: '1rem' }}>
+                        <span style={{ fontWeight: '800', fontSize: '1.05rem' }}>
                           {req.country}
                         </span>
                       </div>
 
                       {req.details?.tipo && (
-                        <div style={{ fontSize: '0.8rem', color: 'var(--muted-text)', marginTop: '4px' }}>
-                          Tipo: <strong>{req.details.tipo}</strong> {req.details.tema ? `• Tema: ${req.details.tema}` : ''}
+                        <div style={{ fontSize: '0.82rem', color: 'var(--muted-text)', marginTop: '4px' }}>
+                          Tipo: <strong style={{ color: 'var(--text-color)' }}>{req.details.tipo}</strong> {req.details.tema ? `• Tema: ${req.details.tema}` : ''}
                         </div>
                       )}
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                       <button
                         onClick={() => approveSpeakingRequest(req)}
                         style={{
@@ -697,30 +721,32 @@ const SecretariatView = ({ isLight, onExit }) => {
                           color: '#ffffff',
                           border: 'none',
                           borderRadius: '8px',
-                          padding: '0.5rem 1.1rem',
-                          fontSize: '0.82rem',
-                          fontWeight: '700',
+                          padding: '0.55rem 1.2rem',
+                          fontSize: '0.85rem',
+                          fontWeight: '800',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
                           gap: '0.4rem',
-                          boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)'
+                          boxShadow: '0 2px 10px rgba(34, 197, 94, 0.35)',
+                          transition: 'all 0.15s ease'
                         }}
                       >
-                        <Check size={15} /> Aprobar
+                        <Check size={16} /> Aprobar
                       </button>
 
                       <button
                         onClick={() => rejectSpeakingRequest(req.id)}
                         style={{
-                          backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                          border: '1px solid rgba(239, 68, 68, 0.3)',
+                          backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                          border: '1px solid rgba(239, 68, 68, 0.35)',
                           color: '#ef4444',
                           borderRadius: '8px',
-                          padding: '0.5rem 0.95rem',
-                          fontSize: '0.82rem',
+                          padding: '0.55rem 1rem',
+                          fontSize: '0.85rem',
                           fontWeight: '700',
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
                         }}
                       >
                         Rechazar
@@ -734,25 +760,131 @@ const SecretariatView = ({ isLight, onExit }) => {
         )}
 
         {/* ═══════════════════════════════════════════════════════ */}
-        {/* PESTAÑA: AJUSTES Y PERMISOS DE SALA                     */}
+        {/* PESTAÑA 3: INFO Y WIDGETS DE COMITÉ (MATRIZ, HISTORICO) */}
+        {/* ═══════════════════════════════════════════════════════ */}
+        {activeTab === 'INFO' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            {/* Sub-selector de Widgets de Información */}
+            <div style={{
+              display: 'flex',
+              gap: '0.5rem',
+              borderBottom: '1px solid var(--border-color)',
+              paddingBottom: '0.75rem',
+              overflowX: 'auto'
+            }}>
+              <button
+                onClick={() => setSubTabInfo('MATRIZ')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: subTabInfo === 'MATRIZ' ? 'var(--btn-bg)' : 'var(--card-header-bg)',
+                  color: subTabInfo === 'MATRIZ' ? 'var(--btn-text)' : 'var(--muted-text)',
+                  fontWeight: '700',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem'
+                }}
+              >
+                <Users size={15} /> Matriz de Países y Asistencia
+              </button>
+
+              <button
+                onClick={() => setSubTabInfo('HISTORICO')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: subTabInfo === 'HISTORICO' ? 'var(--btn-bg)' : 'var(--card-header-bg)',
+                  color: subTabInfo === 'HISTORICO' ? 'var(--btn-text)' : 'var(--muted-text)',
+                  fontWeight: '700',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem'
+                }}
+              >
+                <BarChart3 size={15} /> Histórico de Delegaciones
+              </button>
+
+              <button
+                onClick={() => setSubTabInfo('AGENDA')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: subTabInfo === 'AGENDA' ? 'var(--btn-bg)' : 'var(--card-header-bg)',
+                  color: subTabInfo === 'AGENDA' ? 'var(--btn-text)' : 'var(--muted-text)',
+                  fontWeight: '700',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem'
+                }}
+              >
+                <Calendar size={15} /> Establecer Agenda y Temas
+              </button>
+
+              <button
+                onClick={() => setSubTabInfo('IMPORTAR')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: subTabInfo === 'IMPORTAR' ? 'var(--btn-bg)' : 'var(--card-header-bg)',
+                  color: subTabInfo === 'IMPORTAR' ? 'var(--btn-text)' : 'var(--muted-text)',
+                  fontWeight: '700',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem'
+                }}
+              >
+                <UserPlus size={15} /> Importar / Añadir Países
+              </button>
+            </div>
+
+            {/* Renderizado dinámico del Widget Activo */}
+            <div style={{
+              backgroundColor: 'var(--panel-color)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              minHeight: '520px'
+            }}>
+              {subTabInfo === 'MATRIZ' && <MatrizPaises />}
+              {subTabInfo === 'HISTORICO' && <HistoricoDelegaciones />}
+              {subTabInfo === 'AGENDA' && <EstablecerAgenda />}
+              {subTabInfo === 'IMPORTAR' && <ImportarPaises />}
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════ */}
+        {/* PESTAÑA 4: AJUSTES Y PERMISOS DE SALA                   */}
         {/* ═══════════════════════════════════════════════════════ */}
         {activeTab === 'AJUSTES' && (
-          <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.4rem' }}>
+          <div style={{ maxWidth: '850px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.4rem' }}>
             <div style={{
               backgroundColor: 'var(--panel-color)',
               border: '1px solid var(--border-color)',
               borderRadius: '14px',
-              padding: '1.25rem',
+              padding: '1.25rem 1.5rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between'
             }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800' }}>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '800' }}>
                   Ajustes de Sala y Permisos de Delegados
                 </h3>
-                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8rem', color: 'var(--muted-text)' }}>
-                  Los cambios que realices aquí se aplicarán y sincronizarán inmediatamente en el Chair y todas las delegaciones.
+                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.82rem', color: 'var(--muted-text)' }}>
+                  Las modificaciones efectuadas por Secretaría se sincronizan de inmediato con el Chair y todas las delegaciones.
                 </p>
               </div>
             </div>
@@ -782,8 +914,8 @@ const SecretariatView = ({ isLight, onExit }) => {
                 <div
                   onClick={() => updateRoomSettings({ speakerRequestMode: 'direct' })}
                   style={{
-                    border: `1.5px solid ${roomSettings.speakerRequestMode === 'direct' ? '#22c55e' : 'var(--subborder-color)'}`,
-                    backgroundColor: roomSettings.speakerRequestMode === 'direct' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(255,255,255,0.02)',
+                    border: `1.5px solid ${roomSettings.speakerRequestMode === 'direct' ? '#22c55e' : 'var(--border-color)'}`,
+                    backgroundColor: roomSettings.speakerRequestMode === 'direct' ? 'rgba(34, 197, 94, 0.12)' : 'var(--card-header-bg)',
                     borderRadius: '10px',
                     padding: '0.85rem',
                     cursor: 'pointer',
@@ -808,8 +940,8 @@ const SecretariatView = ({ isLight, onExit }) => {
                 <div
                   onClick={() => updateRoomSettings({ speakerRequestMode: 'approval' })}
                   style={{
-                    border: `1.5px solid ${roomSettings.speakerRequestMode === 'approval' ? '#eab308' : 'var(--subborder-color)'}`,
-                    backgroundColor: roomSettings.speakerRequestMode === 'approval' ? 'rgba(234, 179, 8, 0.12)' : 'rgba(255,255,255,0.02)',
+                    border: `1.5px solid ${roomSettings.speakerRequestMode === 'approval' ? '#eab308' : 'var(--border-color)'}`,
+                    backgroundColor: roomSettings.speakerRequestMode === 'approval' ? 'rgba(234, 179, 8, 0.12)' : 'var(--card-header-bg)',
                     borderRadius: '10px',
                     padding: '0.85rem',
                     cursor: 'pointer',
@@ -834,8 +966,8 @@ const SecretariatView = ({ isLight, onExit }) => {
                 <div
                   onClick={() => updateRoomSettings({ speakerRequestMode: 'disabled' })}
                   style={{
-                    border: `1.5px solid ${roomSettings.speakerRequestMode === 'disabled' ? '#ef4444' : 'var(--subborder-color)'}`,
-                    backgroundColor: roomSettings.speakerRequestMode === 'disabled' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(255,255,255,0.02)',
+                    border: `1.5px solid ${roomSettings.speakerRequestMode === 'disabled' ? '#ef4444' : 'var(--border-color)'}`,
+                    backgroundColor: roomSettings.speakerRequestMode === 'disabled' ? 'rgba(239, 68, 68, 0.12)' : 'var(--card-header-bg)',
                     borderRadius: '10px',
                     padding: '0.85rem',
                     cursor: 'pointer',
@@ -882,8 +1014,8 @@ const SecretariatView = ({ isLight, onExit }) => {
                 <div
                   onClick={() => updateRoomSettings({ caucusRequestMode: 'direct' })}
                   style={{
-                    border: `1.5px solid ${roomSettings.caucusRequestMode === 'direct' ? '#22c55e' : 'var(--subborder-color)'}`,
-                    backgroundColor: roomSettings.caucusRequestMode === 'direct' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(255,255,255,0.02)',
+                    border: `1.5px solid ${roomSettings.caucusRequestMode === 'direct' ? '#22c55e' : 'var(--border-color)'}`,
+                    backgroundColor: roomSettings.caucusRequestMode === 'direct' ? 'rgba(34, 197, 94, 0.12)' : 'var(--card-header-bg)',
                     borderRadius: '10px',
                     padding: '0.85rem',
                     cursor: 'pointer',
@@ -908,8 +1040,8 @@ const SecretariatView = ({ isLight, onExit }) => {
                 <div
                   onClick={() => updateRoomSettings({ caucusRequestMode: 'approval' })}
                   style={{
-                    border: `1.5px solid ${roomSettings.caucusRequestMode === 'approval' ? '#eab308' : 'var(--subborder-color)'}`,
-                    backgroundColor: roomSettings.caucusRequestMode === 'approval' ? 'rgba(234, 179, 8, 0.12)' : 'rgba(255,255,255,0.02)',
+                    border: `1.5px solid ${roomSettings.caucusRequestMode === 'approval' ? '#eab308' : 'var(--border-color)'}`,
+                    backgroundColor: roomSettings.caucusRequestMode === 'approval' ? 'rgba(234, 179, 8, 0.12)' : 'var(--card-header-bg)',
                     borderRadius: '10px',
                     padding: '0.85rem',
                     cursor: 'pointer',
@@ -934,8 +1066,8 @@ const SecretariatView = ({ isLight, onExit }) => {
                 <div
                   onClick={() => updateRoomSettings({ caucusRequestMode: 'disabled' })}
                   style={{
-                    border: `1.5px solid ${roomSettings.caucusRequestMode === 'disabled' ? '#ef4444' : 'var(--subborder-color)'}`,
-                    backgroundColor: roomSettings.caucusRequestMode === 'disabled' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(255,255,255,0.02)',
+                    border: `1.5px solid ${roomSettings.caucusRequestMode === 'disabled' ? '#ef4444' : 'var(--border-color)'}`,
+                    backgroundColor: roomSettings.caucusRequestMode === 'disabled' ? 'rgba(239, 68, 68, 0.12)' : 'var(--card-header-bg)',
                     borderRadius: '10px',
                     padding: '0.85rem',
                     cursor: 'pointer',
@@ -975,8 +1107,8 @@ const SecretariatView = ({ isLight, onExit }) => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
                 {/* Toggle Notas entre Delegados */}
                 <div style={{
-                  backgroundColor: 'rgba(255,255,255,0.03)',
-                  border: '1px solid var(--subborder-color)',
+                  backgroundColor: 'var(--card-header-bg)',
+                  border: '1px solid var(--border-color)',
                   borderRadius: '10px',
                   padding: '0.75rem 1rem',
                   display: 'flex',
@@ -997,8 +1129,8 @@ const SecretariatView = ({ isLight, onExit }) => {
 
                 {/* Toggle Notas a la Mesa */}
                 <div style={{
-                  backgroundColor: 'rgba(255,255,255,0.03)',
-                  border: '1px solid var(--subborder-color)',
+                  backgroundColor: 'var(--card-header-bg)',
+                  border: '1px solid var(--border-color)',
                   borderRadius: '10px',
                   padding: '0.75rem 1rem',
                   display: 'flex',
@@ -1019,8 +1151,8 @@ const SecretariatView = ({ isLight, onExit }) => {
 
                 {/* Toggle Proponer Mociones */}
                 <div style={{
-                  backgroundColor: 'rgba(255,255,255,0.03)',
-                  border: '1px solid var(--subborder-color)',
+                  backgroundColor: 'var(--card-header-bg)',
+                  border: '1px solid var(--border-color)',
                   borderRadius: '10px',
                   padding: '0.75rem 1rem',
                   display: 'flex',
@@ -1041,8 +1173,8 @@ const SecretariatView = ({ isLight, onExit }) => {
 
                 {/* Toggle Votación en Vivo */}
                 <div style={{
-                  backgroundColor: 'rgba(255,255,255,0.03)',
-                  border: '1px solid var(--subborder-color)',
+                  backgroundColor: 'var(--card-header-bg)',
+                  border: '1px solid var(--border-color)',
                   borderRadius: '10px',
                   padding: '0.75rem 1rem',
                   display: 'flex',
@@ -1066,24 +1198,24 @@ const SecretariatView = ({ isLight, onExit }) => {
         )}
 
         {/* ═══════════════════════════════════════════════════════ */}
-        {/* PESTAÑA: GESTIÓN DE CONEXIONES                          */}
+        {/* PESTAÑA 5: GESTIÓN DE CONEXIONES                        */}
         {/* ═══════════════════════════════════════════════════════ */}
         {activeTab === 'CONEXIONES' && (
-          <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ maxWidth: '850px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div style={{
               backgroundColor: 'var(--panel-color)',
               border: '1px solid var(--border-color)',
               borderRadius: '14px',
-              padding: '1.25rem',
+              padding: '1.25rem 1.5rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between'
             }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800' }}>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '800' }}>
                   Dispositivos y Delegaciones Conectadas ({connectedPeers.length})
                 </h3>
-                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8rem', color: 'var(--muted-text)' }}>
+                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.82rem', color: 'var(--muted-text)' }}>
                   Monitor de red P2P en tiempo real con capacidad de expulsión.
                 </p>
               </div>
@@ -1095,7 +1227,7 @@ const SecretariatView = ({ isLight, onExit }) => {
                 textAlign: 'center',
                 backgroundColor: 'var(--panel-color)',
                 borderRadius: '14px',
-                border: '1px dashed var(--subborder-color)',
+                border: '1px dashed var(--border-color)',
                 color: 'var(--muted-text)'
               }}>
                 <Users size={36} style={{ opacity: 0.35, marginBottom: '0.6rem' }} />
@@ -1153,8 +1285,8 @@ const SecretariatView = ({ isLight, onExit }) => {
                           }
                         }}
                         style={{
-                          backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                          border: '1px solid rgba(239, 68, 68, 0.3)',
+                          backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                          border: '1px solid rgba(239, 68, 68, 0.35)',
                           color: '#ef4444',
                           borderRadius: '6px',
                           padding: '0.35rem 0.75rem',
@@ -1177,10 +1309,10 @@ const SecretariatView = ({ isLight, onExit }) => {
         )}
 
         {/* ═══════════════════════════════════════════════════════ */}
-        {/* PESTAÑA: MONITOR DE DEBATE                              */}
+        {/* PESTAÑA 6: MONITOR DE DEBATE                            */}
         {/* ═══════════════════════════════════════════════════════ */}
         {activeTab === 'DEBATE' && (
-          <div style={{ maxWidth: '800px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+          <div style={{ maxWidth: '850px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
             {/* Tarjeta Lista General GSL */}
             <div style={{
               backgroundColor: 'var(--panel-color)',
@@ -1207,8 +1339,8 @@ const SecretariatView = ({ isLight, onExit }) => {
                     <div
                       key={o.id || idx}
                       style={{
-                        backgroundColor: idx === 0 ? 'rgba(34, 197, 94, 0.12)' : 'rgba(255,255,255,0.03)',
-                        border: `1px solid ${idx === 0 ? 'rgba(34, 197, 94, 0.3)' : 'var(--subborder-color)'}`,
+                        backgroundColor: idx === 0 ? 'rgba(34, 197, 94, 0.12)' : 'var(--card-header-bg)',
+                        border: `1px solid ${idx === 0 ? 'rgba(34, 197, 94, 0.35)' : 'var(--border-color)'}`,
                         borderRadius: '8px',
                         padding: '0.6rem 0.85rem',
                         display: 'flex',
@@ -1218,15 +1350,15 @@ const SecretariatView = ({ isLight, onExit }) => {
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span style={{
-                          width: '20px',
-                          height: '20px',
+                          width: '22px',
+                          height: '22px',
                           borderRadius: '50%',
-                          backgroundColor: idx === 0 ? '#22c55e' : 'rgba(255,255,255,0.1)',
+                          backgroundColor: idx === 0 ? '#22c55e' : 'rgba(255,255,255,0.08)',
                           color: idx === 0 ? '#ffffff' : 'var(--muted-text)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: '0.7rem',
+                          fontSize: '0.72rem',
                           fontWeight: '800'
                         }}>
                           {idx + 1}
@@ -1288,8 +1420,8 @@ const SecretariatView = ({ isLight, onExit }) => {
                     <div
                       key={o.id || idx}
                       style={{
-                        backgroundColor: idx === 0 ? 'rgba(168, 85, 247, 0.12)' : 'rgba(255,255,255,0.03)',
-                        border: `1px solid ${idx === 0 ? 'rgba(168, 85, 247, 0.3)' : 'var(--subborder-color)'}`,
+                        backgroundColor: idx === 0 ? 'rgba(168, 85, 247, 0.12)' : 'var(--card-header-bg)',
+                        border: `1px solid ${idx === 0 ? 'rgba(168, 85, 247, 0.35)' : 'var(--border-color)'}`,
                         borderRadius: '8px',
                         padding: '0.6rem 0.85rem',
                         display: 'flex',
@@ -1299,15 +1431,15 @@ const SecretariatView = ({ isLight, onExit }) => {
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span style={{
-                          width: '20px',
-                          height: '20px',
+                          width: '22px',
+                          height: '22px',
                           borderRadius: '50%',
-                          backgroundColor: idx === 0 ? '#a855f7' : 'rgba(255,255,255,0.1)',
+                          backgroundColor: idx === 0 ? '#a855f7' : 'rgba(255,255,255,0.08)',
                           color: idx === 0 ? '#ffffff' : 'var(--muted-text)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: '0.7rem',
+                          fontSize: '0.72rem',
                           fontWeight: '800'
                         }}>
                           {idx + 1}
