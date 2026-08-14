@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Check, X, Clock, MessageSquare, ThumbsUp, ThumbsDown, Users } from 'lucide-react';
+import { Plus, Check, X, Clock, MessageSquare, Users, Mic, Sparkles, RotateCcw, AlertCircle } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 
 const PizarraMociones = () => {
@@ -8,7 +8,7 @@ const PizarraMociones = () => {
   const [mostrarForm, setMostrarForm] = useState(false);
   const [proponente, setProponente] = useState('');
   const [posicionProponente, setPosicionProponente] = useState('Primero');
-  const [tipo, setTipo] = useState('Caucus No Moderado');
+  const [tipo, setTipo] = useState('Caucus Moderado');
   const [varianteConsulta, setVarianteConsulta] = useState('Estándar');
   const [tema, setTema] = useState('');
   const [tiempoTotalMin, setTiempoTotalMin] = useState(10);
@@ -25,7 +25,7 @@ const PizarraMociones = () => {
 
   const handleSubmitMocion = (e) => {
     e.preventDefault();
-    if (!proponente || !tema) return;
+    if (!proponente || !tema.trim()) return;
 
     let totalSeg = Number(tiempoTotalMin) * 60;
     let oradorSeg = Number(tiempoOradorSeg);
@@ -41,7 +41,7 @@ const PizarraMociones = () => {
       posicionProponente,
       tipo: tipo === 'Consulta General' ? `Consulta General (${varianteConsulta})` : tipo,
       varianteConsulta: tipo === 'Consulta General' ? varianteConsulta : '',
-      tema,
+      tema: tema.trim(),
       tiempoTotal: totalSeg,
       tiempoOrador: oradorSeg
     });
@@ -58,13 +58,64 @@ const PizarraMociones = () => {
 
   const esModerado = tipo === 'Caucus Moderado';
   const esConsulta = tipo === 'Consulta General';
+  const esNoModerado = tipo === 'Caucus No Moderado';
+  const esTour = tipo === 'Tour de Table';
+
+  // Estimación de intervenciones posibles
+  const intervencionesEstimadas = useMemo(() => {
+    if (!esModerado || !tiempoOradorSeg || tiempoOradorSeg <= 0) return 0;
+    return Math.floor((Number(tiempoTotalMin) * 60) / Number(tiempoOradorSeg));
+  }, [esModerado, tiempoTotalMin, tiempoOradorSeg]);
+
+  // ── Tipos de mociones con metadata visual ──
+  const tiposMocionConfig = [
+    {
+      id: 'Caucus Moderado',
+      nombre: 'Caucus Moderado',
+      subtitulo: 'Oradores cronometrados por turnos',
+      icon: Mic,
+      color: '#3b82f6',
+      activeBg: 'rgba(59, 130, 246, 0.15)',
+      activeBorder: '#3b82f6',
+      textColor: '#93c5fd'
+    },
+    {
+      id: 'Caucus No Moderado',
+      nombre: 'Caucus No Moderado',
+      subtitulo: 'Negociación y redacción libre',
+      icon: Users,
+      color: '#a855f7',
+      activeBg: 'rgba(168, 85, 247, 0.15)',
+      activeBorder: '#a855f7',
+      textColor: '#d8b4fe'
+    },
+    {
+      id: 'Consulta General',
+      nombre: 'Consulta General',
+      subtitulo: 'Diálogo abierto o ping-pong temático',
+      icon: MessageSquare,
+      color: '#10b981',
+      activeBg: 'rgba(16, 185, 129, 0.15)',
+      activeBorder: '#10b981',
+      textColor: '#6ee7b7'
+    },
+    {
+      id: 'Tour de Table',
+      nombre: 'Tour de Table',
+      subtitulo: 'Intervención de todas las delegaciones',
+      icon: RotateCcw,
+      color: '#f59e0b',
+      activeBg: 'rgba(245, 158, 11, 0.15)',
+      activeBorder: '#f59e0b',
+      textColor: '#fcd34d'
+    }
+  ];
+
+  // Presets de tiempo rápido
+  const presetsTotalMin = [5, 10, 12, 15, 20];
+  const presetsOradorSeg = [30, 45, 60, 90, 120];
 
   // ── Ordenamiento Estricto de Mociones según Reglas Solicitadas ──
-  // 1. Caucus No Moderados
-  // 2. Consulta General
-  // 3. Tour de Table
-  // 4. Caucus Moderados
-  // Misma categoría -> Más largo más arriba -> Mismo tiempo -> Más antiguo primero
   const mocionesOrdenadas = useMemo(() => {
     const getPrioridadTipo = (tipoStr = '') => {
       if (tipoStr.includes('Caucus No Moderado')) return 1;
@@ -94,275 +145,688 @@ const PizarraMociones = () => {
 
   return (
     <div style={{
-      padding: '1rem',
+      padding: '0.85rem',
       height: '100%',
       display: 'flex',
       flexDirection: 'column',
       boxSizing: 'border-box',
       backgroundColor: 'var(--panel-color)',
       color: 'var(--text-color)',
-      gap: '0.8rem'
+      gap: '0.65rem',
+      overflowY: 'auto'
     }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '700', letterSpacing: '0.03em' }}>
-          📌 Pizarra de Mociones del Suelo ({mociones.length})
-        </h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+          <span style={{ fontSize: '1.15rem' }}>📌</span>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '0.98rem', fontWeight: '800', letterSpacing: '-0.01em' }}>
+              Pizarra de Mociones
+            </h3>
+            <span style={{ fontSize: '0.7rem', opacity: 0.55, fontWeight: '500' }}>
+              {mociones.length} {mociones.length === 1 ? 'moción registrada' : 'mociones registradas'}
+            </span>
+          </div>
+        </div>
 
         <button
           onClick={() => setMostrarForm(!mostrarForm)}
           style={{
-            padding: '0.35rem 0.7rem',
-            fontSize: '0.75rem',
-            fontWeight: '600',
-            backgroundColor: 'var(--btn-bg)',
-            color: 'var(--btn-text)',
-            border: 'none',
-            borderRadius: '4px',
+            padding: '0.45rem 0.8rem',
+            fontSize: '0.78rem',
+            fontWeight: '700',
+            backgroundColor: mostrarForm ? 'rgba(239, 68, 68, 0.15)' : 'var(--btn-bg, #3b82f6)',
+            color: mostrarForm ? '#f87171' : 'var(--btn-text, #ffffff)',
+            border: mostrarForm ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255, 255, 255, 0.15)',
+            borderRadius: '7px',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.3rem'
+            gap: '0.35rem',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            boxShadow: mostrarForm ? 'none' : '0 2px 8px rgba(0, 0, 0, 0.25)'
           }}
         >
-          <Plus size={14} /> {mostrarForm ? 'Cancelar' : 'Nueva Moción'}
+          {mostrarForm ? (
+            <>
+              <X size={14} /> Cerrar
+            </>
+          ) : (
+            <>
+              <Plus size={14} /> Añadir Moción
+            </>
+          )}
         </button>
       </div>
 
-      {/* ── Barra Informativa de Quórum y Mayorías (Compacta y Neutra) ── */}
+      {/* ── Barra Informativa de Quórum y Mayorías ── */}
       <div style={{
-        backgroundColor: 'var(--card-header-bg)',
-        border: '1px solid var(--border-color)',
-        borderRadius: '6px',
-        padding: '0.4rem 0.65rem',
+        backgroundColor: 'var(--card-header-bg, rgba(255, 255, 255, 0.03))',
+        border: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
+        borderRadius: '7px',
+        padding: '0.45rem 0.75rem',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        gap: '0.4rem',
-        fontSize: '0.73rem'
+        gap: '0.45rem',
+        fontSize: '0.74rem'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-          <Users size={13} style={{ opacity: 0.7 }} />
+          <Users size={14} style={{ color: '#38bdf8' }} />
           <span style={{ fontWeight: '600', opacity: 0.9 }}>
-            Quórum: <strong>{totalAsistentes}</strong> en sala
+            Quórum: <strong>{totalAsistentes}</strong>
           </span>
-          <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>
-            ({presentes} P + {presentesYVotando} PyV de {totalPaises})
+          <span style={{ fontSize: '0.68rem', opacity: 0.5 }}>
+            ({presentes} P + {presentesYVotando} PyV)
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-          <span style={{ opacity: 0.5 }}>|</span>
-          <span style={{ opacity: 0.75 }}>Simple (50%+1): <strong style={{ color: '#38bdf8' }}>{mayoriaSimple} votos</strong></span>
-          <span style={{ opacity: 0.5 }}>|</span>
-          <span style={{ opacity: 0.75 }}>Calificada (2/3): <strong style={{ color: '#c084fc' }}>{mayoriaCalificada} votos</strong></span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+          <span style={{ opacity: 0.8 }}>
+            Simple: <strong style={{ color: '#38bdf8', fontWeight: '800' }}>{mayoriaSimple}</strong>
+          </span>
+          <span style={{ opacity: 0.3 }}>•</span>
+          <span style={{ opacity: 0.8 }}>
+            Calificada: <strong style={{ color: '#c084fc', fontWeight: '800' }}>{mayoriaCalificada}</strong>
+          </span>
         </div>
       </div>
 
-      {/* Formulario Inline */}
+      {/* ── Formulario Rehaul y Estilizado de Añadir Moción (Compacto y Optimizado) ── */}
       {mostrarForm && (
         <form
           onSubmit={handleSubmitMocion}
           style={{
-            backgroundColor: 'var(--card-header-bg)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '6px',
-            padding: '0.8rem',
+            background: 'linear-gradient(170deg, var(--card-header-bg, #18181b) 0%, rgba(20, 20, 24, 0.98) 100%)',
+            border: '1px solid var(--border-color, rgba(255, 255, 255, 0.14))',
+            borderRadius: '10px',
+            padding: '0.85rem 0.95rem',
             display: 'flex',
             flexDirection: 'column',
-            gap: '0.6rem'
+            gap: '0.75rem',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
+            position: 'relative'
           }}
         >
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
+          {/* Cabecera del Formulario */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Sparkles size={15} style={{ color: '#38bdf8' }} />
+              <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: '800', letterSpacing: '0.01em' }}>
+                Nueva Moción
+              </h4>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setMostrarForm(false)}
+              style={{
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: 'none',
+                color: 'var(--text-color)',
+                borderRadius: '5px',
+                padding: '0.25rem',
+                cursor: 'pointer',
+                opacity: 0.7,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'opacity 0.15s ease'
+              }}
+              title="Cerrar formulario"
+            >
+              <X size={15} />
+            </button>
+          </div>
+
+          {/* 1. Selector Visual de Tipo de Moción (Grid 2x2 compacto) */}
+          <div>
+            <label style={{ fontSize: '0.7rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.7, display: 'block', marginBottom: '0.35rem' }}>
+              1. Modalidad de Debate
+            </label>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: '0.4rem'
+            }}>
+              {tiposMocionConfig.map(t => {
+                const IconComponent = t.icon;
+                const isSelected = tipo === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setTipo(t.id)}
+                    style={{
+                      backgroundColor: isSelected ? t.activeBg : 'rgba(255, 255, 255, 0.03)',
+                      border: `1.5px solid ${isSelected ? t.activeBorder : 'rgba(255, 255, 255, 0.08)'}`,
+                      borderRadius: '7px',
+                      padding: '0.45rem 0.55rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.15s ease',
+                      boxShadow: isSelected ? `0 0 10px ${t.color}25` : 'none',
+                      color: 'var(--text-color)'
+                    }}
+                  >
+                    <div style={{
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '5px',
+                      backgroundColor: isSelected ? t.color : 'rgba(255, 255, 255, 0.08)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: isSelected ? '#000000' : 'inherit',
+                      flexShrink: 0
+                    }}>
+                      <IconComponent size={13} />
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{
+                        fontSize: '0.78rem',
+                        fontWeight: isSelected ? '800' : '600',
+                        color: isSelected ? t.textColor : 'inherit',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
+                        {t.nombre}
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: t.color, flexShrink: 0 }} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 2. País Proponente y Tema / Propósito */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+            {/* País Proponente */}
             <div>
-              <label style={{ fontSize: '0.7rem', opacity: 0.6, display: 'block', marginBottom: '2px' }}>País Proponente</label>
-              <select
-                value={proponente}
-                onChange={e => setProponente(e.target.value)}
+              <label style={{ fontSize: '0.7rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.7, display: 'flex', alignItems: 'center', gap: '0.3rem', marginBottom: '0.25rem' }}>
+                <span>2. País Proponente *</span>
+              </label>
+              {paises.length === 0 ? (
+                <div style={{ padding: '0.45rem 0.6rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '6px', fontSize: '0.73rem', color: '#fca5a5', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <AlertCircle size={13} /> Sin delegaciones en la sesión.
+                </div>
+              ) : (
+                <select
+                  value={proponente}
+                  onChange={e => setProponente(e.target.value)}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.45rem 0.65rem',
+                    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+                    border: '1px solid var(--border-color, rgba(255, 255, 255, 0.15))',
+                    color: 'var(--text-color)',
+                    borderRadius: '6px',
+                    fontSize: '0.82rem',
+                    fontWeight: '600',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="" disabled style={{ backgroundColor: '#18181b', color: '#888' }}>
+                    Selecciona el país proponente...
+                  </option>
+                  {paises.map(p => (
+                    <option key={p.id} value={p.nombre} style={{ backgroundColor: '#18181b', color: '#fff' }}>
+                      {p.bandera} {p.nombre} {p.estatus !== 'Presente' && p.estatus !== 'Presente y Votando' ? `(${p.estatus})` : ''}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* Tema / Propósito */}
+            <div>
+              <label style={{ fontSize: '0.7rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.7, display: 'block', marginBottom: '0.25rem' }}>
+                3. Tema / Propósito del Debate *
+              </label>
+              <input
+                type="text"
+                placeholder="Ej. Estrategias de cooperación económica..."
+                value={tema}
+                onChange={e => setTema(e.target.value)}
                 required
                 style={{
                   width: '100%',
-                  padding: '0.35rem',
-                  backgroundColor: 'var(--panel-color)',
-                  border: '1px solid var(--border-color)',
+                  padding: '0.45rem 0.65rem',
+                  backgroundColor: 'rgba(0, 0, 0, 0.35)',
+                  border: '1px solid var(--border-color, rgba(255, 255, 255, 0.15))',
                   color: 'var(--text-color)',
-                  borderRadius: '4px',
-                  fontSize: '0.8rem'
+                  borderRadius: '6px',
+                  fontSize: '0.82rem',
+                  outline: 'none',
+                  boxSizing: 'border-box'
                 }}
-              >
-                <option value="" disabled>Seleccionar país...</option>
-                {paises.map(p => (
-                  <option key={p.id} value={p.nombre}>{p.bandera} {p.nombre}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label style={{ fontSize: '0.7rem', opacity: 0.6, display: 'block', marginBottom: '2px' }}>Tipo de Moción</label>
-              <select
-                value={tipo}
-                onChange={e => setTipo(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.35rem',
-                  backgroundColor: 'var(--panel-color)',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-color)',
-                  borderRadius: '4px',
-                  fontSize: '0.8rem'
-                }}
-              >
-                <option value="Caucus No Moderado">Caucus No Moderado</option>
-                <option value="Consulta General">Consulta General</option>
-                <option value="Tour de Table">Tour de Table</option>
-                <option value="Caucus Moderado">Caucus Moderado</option>
-              </select>
+              />
             </div>
           </div>
 
-          {/* Opciones Específicas para Consulta General */}
-          {esConsulta && (
-            <div style={{ backgroundColor: 'var(--panel-color)', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--subborder-color)' }}>
-              <label style={{ fontSize: '0.7rem', opacity: 0.8, fontWeight: '600', display: 'block', marginBottom: '4px' }}>
-                Formato de Consulta General:
-              </label>
-              <select
-                value={varianteConsulta}
-                onChange={e => setVarianteConsulta(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.35rem',
-                  backgroundColor: 'var(--card-header-bg)',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-color)',
-                  borderRadius: '4px',
-                  fontSize: '0.8rem'
-                }}
-              >
-                <option value="Estándar">Estándar (Libre sin oradores cronometrados)</option>
-                <option value="Cadena / Ping-Pong">Cadena / Ping-Pong (Respuestas cruzadas)</option>
-                <option value="Moderada por el Proponente">Moderada por el Proponente ({proponente || 'Delegación'})</option>
-              </select>
-            </div>
-          )}
-
-          {/* Posición del Proponente en Caucus Moderado */}
+          {/* Opciones Específicas: Turno del Proponente en Caucus Moderado */}
           {esModerado && (
-            <div>
-              <label style={{ fontSize: '0.7rem', opacity: 0.7, fontWeight: '600', display: 'block', marginBottom: '4px' }}>
-                Turno del Proponente ({proponente || 'Delegación'}):
+            <div style={{
+              backgroundColor: 'rgba(59, 130, 246, 0.06)',
+              border: '1px solid rgba(59, 130, 246, 0.2)',
+              borderRadius: '7px',
+              padding: '0.5rem 0.65rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.35rem'
+            }}>
+              <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#93c5fd', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <Mic size={12} /> Turno de la delegación ({proponente || 'Proponente'}):
               </label>
-              <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer' }}>
-                  <input
-                    type="radio"
-                    name="posicionProp"
-                    value="Primero"
-                    checked={posicionProponente === 'Primero'}
-                    onChange={() => setPosicionProponente('Primero')}
-                  />
-                  Hablar de <strong>Primero</strong>
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer' }}>
-                  <input
-                    type="radio"
-                    name="posicionProp"
-                    value="Ultimo"
-                    checked={posicionProponente === 'Ultimo'}
-                    onChange={() => setPosicionProponente('Ultimo')}
-                  />
-                  Hablar de <strong>Último</strong>
-                </label>
+              <div style={{ display: 'flex', gap: '0.4rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setPosicionProponente('Primero')}
+                  style={{
+                    flex: 1,
+                    padding: '0.35rem 0.5rem',
+                    backgroundColor: posicionProponente === 'Primero' ? '#3b82f6' : 'rgba(255, 255, 255, 0.05)',
+                    color: posicionProponente === 'Primero' ? '#ffffff' : 'var(--text-color)',
+                    border: posicionProponente === 'Primero' ? '1px solid #3b82f6' : '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '5px',
+                    fontSize: '0.74rem',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.3rem',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  🎙️ Hablar <strong>Primero</strong>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPosicionProponente('Ultimo')}
+                  style={{
+                    flex: 1,
+                    padding: '0.35rem 0.5rem',
+                    backgroundColor: posicionProponente === 'Ultimo' ? '#3b82f6' : 'rgba(255, 255, 255, 0.05)',
+                    color: posicionProponente === 'Ultimo' ? '#ffffff' : 'var(--text-color)',
+                    border: posicionProponente === 'Ultimo' ? '1px solid #3b82f6' : '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '5px',
+                    fontSize: '0.74rem',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.3rem',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  ⏳ Hablar <strong>Al Final</strong>
+                </button>
               </div>
             </div>
           )}
 
-          <div>
-            <label style={{ fontSize: '0.7rem', opacity: 0.6, display: 'block', marginBottom: '2px' }}>Tema / Propósito</label>
-            <input
-              type="text"
-              placeholder="Ej. Estrategias de cooperación económica..."
-              value={tema}
-              onChange={e => setTema(e.target.value)}
-              required
-              style={{
-                width: '100%',
-                padding: '0.35rem',
-                backgroundColor: 'var(--panel-color)',
-                border: '1px solid var(--border-color)',
-                color: 'var(--text-color)',
-                borderRadius: '4px',
-                fontSize: '0.8rem',
-                boxSizing: 'border-box'
-              }}
-            />
-          </div>
+          {/* Opciones Específicas: Modalidad de Consulta General */}
+          {esConsulta && (
+            <div style={{
+              backgroundColor: 'rgba(16, 185, 129, 0.06)',
+              border: '1px solid rgba(16, 185, 129, 0.2)',
+              borderRadius: '7px',
+              padding: '0.5rem 0.65rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.35rem'
+            }}>
+              <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#6ee7b7', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <MessageSquare size={12} /> Modalidad de Consulta:
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.35rem' }}>
+                {[
+                  { id: 'Estándar', label: 'Estándar' },
+                  { id: 'Cadena / Ping-Pong', label: 'Ping-Pong' },
+                  { id: 'Moderada por el Proponente', label: 'Mod. País' }
+                ].map(v => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => setVarianteConsulta(v.id)}
+                    style={{
+                      padding: '0.35rem 0.4rem',
+                      backgroundColor: varianteConsulta === v.id ? '#10b981' : 'rgba(255, 255, 255, 0.05)',
+                      color: varianteConsulta === v.id ? '#000000' : 'var(--text-color)',
+                      border: varianteConsulta === v.id ? '1px solid #10b981' : '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '5px',
+                      fontSize: '0.72rem',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
+                  >
+                    {v.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
+          {/* 4. Configuración de Tiempos y Presets (Compacto y Elegante) */}
+          <div style={{ display: 'grid', gridTemplateColumns: (!esTour && esModerado) ? '1fr 1fr' : '1fr', gap: '0.5rem' }}>
+            {/* Tiempo Total (excepto Tour de Table) */}
             {tipo !== 'Tour de Table' && (
-              <div>
-                <label style={{ fontSize: '0.7rem', opacity: 0.6, display: 'block', marginBottom: '2px' }}>Tiempo Total (minutos)</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="60"
-                  value={tiempoTotalMin}
-                  onChange={e => setTiempoTotalMin(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.35rem',
-                    backgroundColor: 'var(--panel-color)',
-                    border: '1px solid var(--border-color)',
-                    color: 'var(--text-color)',
-                    borderRadius: '4px',
-                    fontSize: '0.8rem',
-                    boxSizing: 'border-box'
-                  }}
-                />
+              <div style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '7px',
+                padding: '0.5rem 0.65rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.35rem'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '0.7rem', fontWeight: '700', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Clock size={12} style={{ color: '#38bdf8' }} /> Total
+                  </label>
+                  <span style={{ fontSize: '0.85rem', fontWeight: '800', color: '#38bdf8', fontFamily: 'monospace' }}>
+                    {tiempoTotalMin}m
+                  </span>
+                </div>
+
+                {/* Controles de Stepper */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setTiempoTotalMin(prev => Math.max(1, Number(prev) - 1))}
+                    style={{
+                      width: '26px',
+                      height: '26px',
+                      borderRadius: '5px',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      color: 'var(--text-color)',
+                      fontSize: '0.9rem',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 0
+                    }}
+                  >
+                    -
+                  </button>
+
+                  <input
+                    type="number"
+                    min="1"
+                    max="90"
+                    value={tiempoTotalMin}
+                    onChange={e => setTiempoTotalMin(Math.max(1, Number(e.target.value)))}
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      textAlign: 'center',
+                      padding: '0.25rem 0.2rem',
+                      backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      color: 'var(--text-color)',
+                      borderRadius: '5px',
+                      fontSize: '0.82rem',
+                      fontWeight: '700',
+                      fontFamily: 'monospace'
+                    }}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setTiempoTotalMin(prev => Math.min(90, Number(prev) + 1))}
+                    style={{
+                      width: '26px',
+                      height: '26px',
+                      borderRadius: '5px',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      color: 'var(--text-color)',
+                      fontSize: '0.9rem',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 0
+                    }}
+                  >
+                    +
+                  </button>
+                </div>
+
+                {/* Presets Rápidos */}
+                <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'space-between' }}>
+                  {presetsTotalMin.map(p => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setTiempoTotalMin(p)}
+                      style={{
+                        flex: 1,
+                        padding: '0.15rem 0',
+                        fontSize: '0.67rem',
+                        borderRadius: '4px',
+                        border: Number(tiempoTotalMin) === p ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.08)',
+                        backgroundColor: Number(tiempoTotalMin) === p ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.03)',
+                        color: Number(tiempoTotalMin) === p ? '#38bdf8' : 'inherit',
+                        cursor: 'pointer',
+                        fontWeight: '600',
+                        textAlign: 'center'
+                      }}
+                    >
+                      {p}m
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
-            {tipo !== 'Caucus No Moderado' && !esConsulta && (
-              <div>
-                <label style={{ fontSize: '0.7rem', opacity: 0.6, display: 'block', marginBottom: '2px' }}>Tiempo / Orador (segundos)</label>
-                <input
-                  type="number"
-                  min="10"
-                  max="180"
-                  value={tiempoOradorSeg}
-                  onChange={e => setTiempoOradorSeg(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.35rem',
-                    backgroundColor: 'var(--panel-color)',
-                    border: '1px solid var(--border-color)',
-                    color: 'var(--text-color)',
-                    borderRadius: '4px',
-                    fontSize: '0.8rem',
-                    boxSizing: 'border-box'
-                  }}
-                />
+            {/* Tiempo por Orador (para Caucus Moderado o Tour de Table) */}
+            {(esModerado || esTour) && (
+              <div style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '7px',
+                padding: '0.5rem 0.65rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.35rem'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '0.7rem', fontWeight: '700', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Mic size={12} style={{ color: '#a855f7' }} /> Orador
+                  </label>
+                  <span style={{ fontSize: '0.85rem', fontWeight: '800', color: '#c084fc', fontFamily: 'monospace' }}>
+                    {tiempoOradorSeg}s
+                  </span>
+                </div>
+
+                {/* Controles de Stepper */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setTiempoOradorSeg(prev => Math.max(10, Number(prev) - 5))}
+                    style={{
+                      width: '26px',
+                      height: '26px',
+                      borderRadius: '5px',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      color: 'var(--text-color)',
+                      fontSize: '0.9rem',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 0
+                    }}
+                  >
+                    -
+                  </button>
+
+                  <input
+                    type="number"
+                    min="10"
+                    max="300"
+                    step="5"
+                    value={tiempoOradorSeg}
+                    onChange={e => setTiempoOradorSeg(Math.max(10, Number(e.target.value)))}
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      textAlign: 'center',
+                      padding: '0.25rem 0.2rem',
+                      backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      color: 'var(--text-color)',
+                      borderRadius: '5px',
+                      fontSize: '0.82rem',
+                      fontWeight: '700',
+                      fontFamily: 'monospace'
+                    }}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setTiempoOradorSeg(prev => Math.min(300, Number(prev) + 5))}
+                    style={{
+                      width: '26px',
+                      height: '26px',
+                      borderRadius: '5px',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      color: 'var(--text-color)',
+                      fontSize: '0.9rem',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 0
+                    }}
+                  >
+                    +
+                  </button>
+                </div>
+
+                {/* Presets Rápidos */}
+                <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'space-between' }}>
+                  {presetsOradorSeg.map(p => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setTiempoOradorSeg(p)}
+                      style={{
+                        flex: 1,
+                        padding: '0.15rem 0',
+                        fontSize: '0.67rem',
+                        borderRadius: '4px',
+                        border: Number(tiempoOradorSeg) === p ? '1px solid #c084fc' : '1px solid rgba(255, 255, 255, 0.08)',
+                        backgroundColor: Number(tiempoOradorSeg) === p ? 'rgba(192, 132, 252, 0.2)' : 'rgba(255, 255, 255, 0.03)',
+                        color: Number(tiempoOradorSeg) === p ? '#c084fc' : 'inherit',
+                        cursor: 'pointer',
+                        fontWeight: '600',
+                        textAlign: 'center'
+                      }}
+                    >
+                      {p}s
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
 
-          <button
-            type="submit"
-            style={{
-              padding: '0.45rem',
-              backgroundColor: 'var(--btn-bg)',
-              color: 'var(--btn-text)',
-              fontWeight: '700',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '0.8rem',
-              marginTop: '0.2rem'
-            }}
-          >
-            Guardar Moción
-          </button>
+          {/* Banner de cálculo inteligente para Caucus Moderado */}
+          {esModerado && intervencionesEstimadas > 0 && (
+            <div style={{
+              backgroundColor: 'rgba(56, 189, 248, 0.08)',
+              border: '1px dashed rgba(56, 189, 248, 0.3)',
+              borderRadius: '6px',
+              padding: '0.35rem 0.65rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontSize: '0.72rem',
+              color: '#bae6fd'
+            }}>
+              <span>📊 Capacidad estimada:</span>
+              <strong style={{ fontSize: '0.76rem', color: '#38bdf8' }}>
+                ~{intervencionesEstimadas} intervenciones
+              </strong>
+            </div>
+          )}
+
+          {/* Botones de Envío / Cancelar */}
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.2rem' }}>
+            <button
+              type="button"
+              onClick={() => setMostrarForm(false)}
+              style={{
+                flex: 1,
+                padding: '0.5rem 0.75rem',
+                backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                color: 'var(--text-color)',
+                borderRadius: '6px',
+                fontSize: '0.8rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'background 0.15s ease'
+              }}
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="submit"
+              disabled={!proponente || !tema.trim()}
+              style={{
+                flex: 2,
+                padding: '0.5rem 0.85rem',
+                background: (!proponente || !tema.trim())
+                  ? 'rgba(255, 255, 255, 0.1)'
+                  : 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '0.82rem',
+                fontWeight: '800',
+                letterSpacing: '0.02em',
+                cursor: (!proponente || !tema.trim()) ? 'not-allowed' : 'pointer',
+                opacity: (!proponente || !tema.trim()) ? 0.5 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.35rem',
+                boxShadow: (!proponente || !tema.trim()) ? 'none' : '0 3px 10px rgba(37, 99, 235, 0.35)',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <Plus size={14} /> Guardar Moción
+            </button>
+          </div>
         </form>
       )}
 
