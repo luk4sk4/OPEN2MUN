@@ -91,18 +91,18 @@ const CronometroOnlyTime = () => {
           fontFamily: 'monospace',
           letterSpacing: '0.04em',
           lineHeight: 1,
-          color: tiempoTotalSeg === 0 ? '#ef4444' : (corriendo ? '#eab308' : 'var(--text-color)')
+          color: tiempoTotalSeg === 0 ? '#ef4444' : 'var(--text-color)'
         }}>
           {formatTime(tiempoTotalSeg)}
         </div>
 
-        {/* Barra de progreso inferior con degradado y glow suave */}
+        {/* Barra de progreso inferior */}
         <div style={{
           position: 'absolute',
           bottom: 0,
           left: 0,
           right: 0,
-          height: '5px',
+          height: '4px',
           backgroundColor: 'rgba(255, 255, 255, 0.08)'
         }}>
           <div style={{
@@ -112,12 +112,12 @@ const CronometroOnlyTime = () => {
               ? 'linear-gradient(90deg, #ef4444, #dc2626)'
               : tiempoTotalSeg <= 60
                 ? 'linear-gradient(90deg, #f97316, #ea580c)'
-                : 'linear-gradient(90deg, #3b82f6, #6366f1, #ec4899)',
+                : 'linear-gradient(90deg, #3b82f6, #6366f1)',
             boxShadow: tiempoTotalSeg <= 60
               ? '0 0 12px rgba(239, 68, 68, 0.8)'
-              : '0 0 10px rgba(99, 102, 241, 0.6)',
+              : 'none',
             transition: 'width 0.4s linear, background 0.3s ease',
-            borderRadius: '0 3px 3px 0'
+            borderRadius: '0 2px 2px 0'
           }} />
         </div>
       </div>
@@ -129,8 +129,8 @@ const CronometroOnlyTime = () => {
           style={{
             flex: 2,
             padding: '0.6rem 1rem',
-            backgroundColor: corriendo ? '#eab308' : '#22c55e',
-            color: '#000000',
+            backgroundColor: corriendo ? '#334155' : '#22c55e',
+            color: corriendo ? '#ffffff' : '#000000',
             fontWeight: '700',
             border: 'none',
             borderRadius: '6px',
@@ -139,7 +139,8 @@ const CronometroOnlyTime = () => {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '0.4rem',
-            fontSize: '0.9rem'
+            fontSize: '0.9rem',
+            transition: 'all 0.15s ease'
           }}
         >
           {corriendo ? <Pause size={17} /> : <Play size={17} />}

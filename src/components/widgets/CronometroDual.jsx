@@ -166,32 +166,33 @@ const CronometroDual = ({ modoInicial = null }) => {
         borderBottom: '1px solid var(--border-color)',
         paddingBottom: '0.5rem'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            {esTiempoSoloGeneral ? <ShieldAlert size={16} color="#eab308" /> : <Clock size={16} color="#eab308" />}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.4rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+            <Clock size={16} style={{ opacity: 0.7 }} />
             <div>
-              <div style={{ fontSize: '0.65rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Moción Activa: <strong style={{ color: '#eab308' }}>{tipoMocion}</strong>
+              <div style={{ fontSize: '0.65rem', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: '700' }}>
+                Moción: <span style={{ color: 'var(--text-color)', opacity: 0.9 }}>{tipoMocion}</span>
               </div>
-              <div style={{ fontWeight: '700', fontSize: '0.88rem' }}>
+              <div style={{ fontWeight: '800', fontSize: '0.92rem', color: 'var(--text-color)' }}>
                 {caucusActivo?.tema || 'Sin Tema Asignado'}
               </div>
             </div>
           </div>
 
           {/* Selector de Modo Manual */}
-          <div style={{ display: 'flex', gap: '0.2rem', backgroundColor: '#111111', padding: '2px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'flex', gap: '0.2rem', backgroundColor: 'var(--card-header-bg)', padding: '2px', borderRadius: '5px', border: '1px solid var(--border-color)' }}>
             <button
               onClick={() => setModoSeleccionado('Caucus Moderado')}
               style={{
-                padding: '0.2rem 0.45rem',
-                fontSize: '0.65rem',
+                padding: '0.2rem 0.5rem',
+                fontSize: '0.68rem',
                 fontWeight: '700',
-                backgroundColor: tipoMocion === 'Caucus Moderado' ? '#eab308' : 'transparent',
-                color: tipoMocion === 'Caucus Moderado' ? '#000000' : 'var(--text-color)',
+                backgroundColor: tipoMocion === 'Caucus Moderado' ? 'var(--btn-bg)' : 'transparent',
+                color: tipoMocion === 'Caucus Moderado' ? 'var(--btn-text)' : 'var(--muted-text)',
                 border: 'none',
                 borderRadius: '3px',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
               }}
             >
               Moderado
@@ -199,14 +200,15 @@ const CronometroDual = ({ modoInicial = null }) => {
             <button
               onClick={() => setModoSeleccionado('Caucus No Moderado')}
               style={{
-                padding: '0.2rem 0.45rem',
-                fontSize: '0.65rem',
+                padding: '0.2rem 0.5rem',
+                fontSize: '0.68rem',
                 fontWeight: '700',
-                backgroundColor: tipoMocion === 'Caucus No Moderado' ? '#eab308' : 'transparent',
-                color: tipoMocion === 'Caucus No Moderado' ? '#000000' : 'var(--text-color)',
+                backgroundColor: tipoMocion === 'Caucus No Moderado' ? 'var(--btn-bg)' : 'transparent',
+                color: tipoMocion === 'Caucus No Moderado' ? 'var(--btn-text)' : 'var(--muted-text)',
                 border: 'none',
                 borderRadius: '3px',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
               }}
             >
               No Moderado
@@ -214,14 +216,15 @@ const CronometroDual = ({ modoInicial = null }) => {
             <button
               onClick={() => setModoSeleccionado('Tour de Table')}
               style={{
-                padding: '0.2rem 0.45rem',
-                fontSize: '0.65rem',
+                padding: '0.2rem 0.5rem',
+                fontSize: '0.68rem',
                 fontWeight: '700',
-                backgroundColor: tipoMocion === 'Tour de Table' ? '#eab308' : 'transparent',
-                color: tipoMocion === 'Tour de Table' ? '#000000' : 'var(--text-color)',
+                backgroundColor: tipoMocion === 'Tour de Table' ? 'var(--btn-bg)' : 'transparent',
+                color: tipoMocion === 'Tour de Table' ? 'var(--btn-text)' : 'var(--muted-text)',
                 border: 'none',
                 borderRadius: '3px',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
               }}
             >
               Tour de Table
@@ -291,8 +294,8 @@ const CronometroDual = ({ modoInicial = null }) => {
               style={{
                 flex: 2,
                 padding: '0.6rem',
-                backgroundColor: corriendo ? '#eab308' : '#22c55e',
-                color: '#000000',
+                backgroundColor: corriendo ? '#334155' : '#22c55e',
+                color: corriendo ? '#ffffff' : '#000000',
                 fontWeight: '700',
                 border: 'none',
                 borderRadius: '6px',
@@ -301,7 +304,8 @@ const CronometroDual = ({ modoInicial = null }) => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '0.3rem',
-                fontSize: '0.85rem'
+                fontSize: '0.85rem',
+                transition: 'all 0.15s ease'
               }}
             >
               {corriendo ? <Pause size={15} /> : <Play size={15} />}
@@ -334,7 +338,7 @@ const CronometroDual = ({ modoInicial = null }) => {
               style={{
                 flex: 1,
                 padding: '0.6rem',
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                backgroundColor: 'var(--card-header-bg)',
                 border: '1px solid var(--border-color)',
                 color: 'var(--text-color)',
                 fontWeight: '600',
@@ -351,7 +355,7 @@ const CronometroDual = ({ modoInicial = null }) => {
               style={{
                 flex: 1,
                 padding: '0.6rem',
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                backgroundColor: 'var(--card-header-bg)',
                 border: '1px solid var(--border-color)',
                 color: 'var(--text-color)',
                 fontWeight: '600',
@@ -382,16 +386,18 @@ const CronometroDual = ({ modoInicial = null }) => {
               ...displayOradorState.style
             }}
           >
-            <div style={{ fontSize: '1.2rem', marginBottom: '0.2rem' }}>{oradorActual.bandera} <strong style={{ fontSize: '1.1rem' }}>{oradorActual.nombre}</strong></div>
+            <div style={{ fontSize: '1.25rem', marginBottom: '0.2rem', fontWeight: '800' }}>
+              {oradorActual.bandera} {oradorActual.nombre}
+            </div>
             <div style={{
               fontWeight: '900',
-              fontSize: '2.8rem',
+              fontSize: '3rem',
               fontFamily: 'monospace',
             }}>
               {formatTimeWithNegative(tiempoOradorSeg)}
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', alignItems: 'center', marginTop: '0.2rem' }}>
-              <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>Tiempo ({limiteOradorSeg}s)</span>
+              <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>Asignado ({limiteOradorSeg}s)</span>
               <button
                 onClick={handleAumentar5SegOrador}
                 style={{
@@ -405,11 +411,11 @@ const CronometroDual = ({ modoInicial = null }) => {
                   fontWeight: '700'
                 }}
               >
-                +5 seg
+                +5s
               </button>
             </div>
 
-            {/* Barra de progreso inferior con degradado y glow suave */}
+            {/* Barra de progreso inferior */}
             <div style={{
               position: 'absolute',
               bottom: 0,
@@ -425,25 +431,22 @@ const CronometroDual = ({ modoInicial = null }) => {
                   ? 'linear-gradient(90deg, #ef4444, #dc2626)'
                   : tiempoOradorSeg <= 10
                     ? 'linear-gradient(90deg, #f97316, #ea580c)'
-                    : 'linear-gradient(90deg, #3b82f6, #6366f1, #ec4899)',
-                boxShadow: tiempoOradorSeg <= 10
-                  ? '0 0 12px rgba(239, 68, 68, 0.8)'
-                  : '0 0 10px rgba(99, 102, 241, 0.6)',
+                    : 'linear-gradient(90deg, #3b82f6, #6366f1)',
                 transition: 'width 0.4s linear, background 0.3s ease',
                 borderRadius: '0 2px 2px 0'
               }} />
             </div>
           </div>
 
-          {/* BOTONES DE CONTROL (ENCIMA) */}
+          {/* BOTONES DE CONTROL */}
           <div style={{ display: 'flex', gap: '0.4rem' }}>
             <button
               onClick={handleStartPause}
               style={{
                 flex: 2,
                 padding: '0.55rem',
-                backgroundColor: corriendo ? '#eab308' : '#22c55e',
-                color: '#000000',
+                backgroundColor: corriendo ? '#334155' : '#22c55e',
+                color: corriendo ? '#ffffff' : '#000000',
                 fontWeight: '700',
                 border: 'none',
                 borderRadius: '6px',
@@ -456,7 +459,7 @@ const CronometroDual = ({ modoInicial = null }) => {
               }}
             >
               {corriendo ? <Pause size={15} /> : <Play size={15} />}
-              {corriendo ? 'Pausar' : 'Play (Iniciar)'}
+              {corriendo ? 'Pausar' : 'Iniciar'}
             </button>
 
             <button
@@ -464,7 +467,7 @@ const CronometroDual = ({ modoInicial = null }) => {
               style={{
                 flex: 2,
                 padding: '0.55rem',
-                backgroundColor: '#3b82f6',
+                backgroundColor: '#2563eb',
                 color: '#ffffff',
                 fontWeight: '700',
                 border: 'none',
@@ -502,15 +505,48 @@ const CronometroDual = ({ modoInicial = null }) => {
             </button>
           </div>
 
-          {/* LISTA ALFABÉTICA DEBAJO */}
-          <div style={{ flex: 1, overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '0.4rem', backgroundColor: '#090909' }}>
-            <div style={{ fontSize: '0.7rem', opacity: 0.6, marginBottom: '0.4rem', fontWeight: '600' }}>🔤 Orden Alfabético Restante ({oradoresCaucus.length}):</div>
-            {oradoresCaucus.map((o, idx) => (
-              <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.25rem 0.5rem', fontSize: '0.78rem', backgroundColor: idx === 0 ? 'rgba(34,197,94,0.1)' : 'transparent', borderRadius: '4px' }}>
-                <span>{idx + 1}. {o.bandera} {o.nombre}</span>
-                {idx === 0 && <span style={{ color: '#22c55e', fontWeight: '700', fontSize: '0.7rem' }}>HABLANDO</span>}
-              </div>
-            ))}
+          {/* LISTA DE SIGUIENTES ORADORES (TOUR DE TABLE) */}
+          <div style={{ flex: 1, overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '0.45rem', backgroundColor: 'var(--card-header-bg)' }}>
+            <div style={{ fontSize: '0.72rem', opacity: 0.6, marginBottom: '0.4rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Siguientes en Tour de Table ({oradoresCaucus.length}):
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+              {oradoresCaucus.map((o, idx) => (
+                <div key={o.id} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.45rem 0.65rem',
+                  fontSize: '0.92rem',
+                  backgroundColor: idx === 0 ? 'rgba(34,197,94,0.12)' : (idx === 1 ? 'rgba(59,130,246,0.08)' : 'var(--panel-color)'),
+                  border: `1px solid ${idx === 0 ? '#166534' : (idx === 1 ? 'rgba(59,130,246,0.3)' : 'var(--subborder-color)')}`,
+                  borderRadius: '5px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+                    <span style={{ fontSize: '0.78rem', fontWeight: '800', color: idx === 0 ? '#4ade80' : (idx === 1 ? '#60a5fa' : 'var(--muted-text)'), width: '22px' }}>
+                      #{idx + 1}
+                    </span>
+                    <span style={{ fontSize: '1.3rem' }}>{o.bandera}</span>
+                    <span style={{ fontWeight: idx === 0 ? '800' : '600', color: 'var(--text-color)', fontSize: '0.92rem' }}>
+                      {o.nombre}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    {idx === 0 && (
+                      <span style={{ backgroundColor: '#15803d', color: '#ffffff', fontWeight: '800', fontSize: '0.65rem', padding: '0.1rem 0.4rem', borderRadius: '3px' }}>
+                        HABLANDO
+                      </span>
+                    )}
+                    {idx === 1 && (
+                      <span style={{ backgroundColor: 'rgba(59,130,246,0.2)', color: '#93c5fd', fontWeight: '700', fontSize: '0.65rem', padding: '0.1rem 0.4rem', borderRadius: '3px' }}>
+                        SIGUIENTE
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -520,25 +556,25 @@ const CronometroDual = ({ modoInicial = null }) => {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {/* Reloj Superior (Total Caucus) */}
           <div style={{
-            backgroundColor: '#070707',
+            backgroundColor: 'var(--card-header-bg)',
             border: '1px solid var(--border-color)',
             borderRadius: '6px',
-            padding: '0.4rem 0.7rem',
+            padding: '0.35rem 0.65rem',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between'
           }}>
-            <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>Tiempo Total Caucus</span>
+            <span style={{ fontSize: '0.72rem', opacity: 0.6, fontWeight: '600' }}>Tiempo Total del Caucus:</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontFamily: 'monospace', fontWeight: '800', fontSize: '1.2rem', color: tiempoTotalSeg < 0 ? '#ef4444' : '#eab308' }}>
+              <span style={{ fontFamily: 'monospace', fontWeight: '800', fontSize: '1.15rem', color: tiempoTotalSeg < 0 ? '#ef4444' : 'var(--text-color)' }}>
                 {formatTimeWithNegative(tiempoTotalSeg)}
               </span>
               <button
                 onClick={handleAumentar5MinCaucus}
                 style={{
                   padding: '0.15rem 0.4rem',
-                  backgroundColor: '#eab308',
-                  color: '#000000',
+                  backgroundColor: 'var(--btn-bg)',
+                  color: 'var(--btn-text)',
                   border: 'none',
                   borderRadius: '3px',
                   fontWeight: '700',
@@ -551,41 +587,43 @@ const CronometroDual = ({ modoInicial = null }) => {
             </div>
           </div>
 
-          {/* Display Principal Orador */}
+          {/* Display Principal Orador con Máxima Prominencia */}
           <div
             className={displayOradorState.className}
             style={{
               position: 'relative',
               overflow: 'hidden',
-              padding: '0.6rem 0.6rem 0.9rem 0.6rem',
+              padding: '0.6rem 0.6rem 0.85rem 0.6rem',
               borderRadius: '8px',
               textAlign: 'center',
               transition: 'all 0.3s ease',
               ...displayOradorState.style
             }}
           >
-            <div style={{ fontSize: '1.1rem', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+            <div style={{ fontSize: '1.15rem', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', color: 'var(--text-color)' }}>
               <span>{oradorActual.bandera}</span>
               <span>{oradorActual.nombre}</span>
               {oradorActual.esProponenteUltimo && (
-                <span style={{ fontSize: '0.65rem', backgroundColor: '#eab308', color: '#000000', padding: '0.1rem 0.35rem', borderRadius: '3px', fontWeight: '700' }}>
-                  PROPONENTE (ÚLTIMO)
+                <span style={{ fontSize: '0.65rem', backgroundColor: 'rgba(255,255,255,0.1)', color: 'var(--text-color)', padding: '0.1rem 0.35rem', borderRadius: '3px', fontWeight: '700' }}>
+                  PROPONENTE
                 </span>
               )}
             </div>
             <div style={{
               fontWeight: '900',
-              fontSize: '2.5rem',
+              fontSize: '2.8rem',
               fontFamily: 'monospace',
+              lineHeight: 1.1,
+              marginTop: '2px'
             }}>
               {formatTimeWithNegative(tiempoOradorSeg)}
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', alignItems: 'center', marginTop: '0.2rem' }}>
-              <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>Tiempo ({limiteOradorSeg}s)</span>
+              <span style={{ fontSize: '0.68rem', opacity: 0.6 }}>Tiempo ({limiteOradorSeg}s)</span>
               <button
                 onClick={handleAumentar5SegOrador}
                 style={{
-                  padding: '0.15rem 0.45rem',
+                  padding: '0.12rem 0.4rem',
                   backgroundColor: 'rgba(34, 197, 94, 0.15)',
                   border: '1px solid #22c55e',
                   color: '#22c55e',
@@ -595,11 +633,11 @@ const CronometroDual = ({ modoInicial = null }) => {
                   fontWeight: '700'
                 }}
               >
-                +5 seg
+                +5s
               </button>
             </div>
 
-            {/* Barra de progreso inferior con degradado y glow suave */}
+            {/* Barra de progreso inferior */}
             <div style={{
               position: 'absolute',
               bottom: 0,
@@ -615,25 +653,22 @@ const CronometroDual = ({ modoInicial = null }) => {
                   ? 'linear-gradient(90deg, #ef4444, #dc2626)'
                   : tiempoOradorSeg <= 10
                     ? 'linear-gradient(90deg, #f97316, #ea580c)'
-                    : 'linear-gradient(90deg, #3b82f6, #6366f1, #ec4899)',
-                boxShadow: tiempoOradorSeg <= 10
-                  ? '0 0 12px rgba(239, 68, 68, 0.8)'
-                  : '0 0 10px rgba(99, 102, 241, 0.6)',
+                    : 'linear-gradient(90deg, #3b82f6, #6366f1)',
                 transition: 'width 0.4s linear, background 0.3s ease',
                 borderRadius: '0 2px 2px 0'
               }} />
             </div>
           </div>
 
-          {/* BOTONES DE CONTROL (ENCIMA DE LA LISTA) */}
+          {/* BOTONES DE CONTROL */}
           <div style={{ display: 'flex', gap: '0.4rem' }}>
             <button
               onClick={handleStartPause}
               style={{
                 flex: 2,
                 padding: '0.55rem',
-                backgroundColor: corriendo ? '#eab308' : '#22c55e',
-                color: '#000000',
+                backgroundColor: corriendo ? '#334155' : '#22c55e',
+                color: corriendo ? '#ffffff' : '#000000',
                 fontWeight: '700',
                 border: 'none',
                 borderRadius: '6px',
@@ -646,7 +681,7 @@ const CronometroDual = ({ modoInicial = null }) => {
               }}
             >
               {corriendo ? <Pause size={15} /> : <Play size={15} />}
-              {corriendo ? 'Pausar' : 'Play (Iniciar)'}
+              {corriendo ? 'Pausar' : 'Iniciar'}
             </button>
 
             <button
@@ -654,7 +689,7 @@ const CronometroDual = ({ modoInicial = null }) => {
               style={{
                 flex: 2,
                 padding: '0.55rem',
-                backgroundColor: '#3b82f6',
+                backgroundColor: '#2563eb',
                 color: '#ffffff',
                 fontWeight: '700',
                 border: 'none',
@@ -692,10 +727,12 @@ const CronometroDual = ({ modoInicial = null }) => {
             </button>
           </div>
 
-          {/* LISTA DE ORADORES EXCLUSIVA DEL CAUCUS */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '0.5rem', backgroundColor: '#0a0a0a', gap: '0.4rem' }}>
+          {/* LISTA DE SIGUIENTES ORADORES DEL CAUCUS */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '0.45rem', backgroundColor: 'var(--card-header-bg)', gap: '0.35rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: '700' }}>🎤 Lista Oradores del Caucus ({oradoresCaucus.length})</span>
+              <span style={{ fontSize: '0.72rem', fontWeight: '700', opacity: 0.8 }}>
+                🎤 Siguientes Oradores ({oradoresCaucus.length})
+              </span>
             </div>
 
             {/* Mini Buscador */}
@@ -707,12 +744,12 @@ const CronometroDual = ({ modoInicial = null }) => {
                 onChange={e => setBusquedaPais(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '0.25rem 0.5rem',
-                  fontSize: '0.75rem',
-                  backgroundColor: '#141414',
+                  padding: '0.35rem 0.6rem',
+                  fontSize: '0.8rem',
+                  backgroundColor: 'var(--panel-color)',
                   border: '1px solid var(--border-color)',
                   color: 'var(--text-color)',
-                  borderRadius: '4px',
+                  borderRadius: '5px',
                   boxSizing: 'border-box'
                 }}
               />
@@ -722,20 +759,22 @@ const CronometroDual = ({ modoInicial = null }) => {
                   top: '100%',
                   left: 0,
                   right: 0,
-                  backgroundColor: '#181818',
+                  backgroundColor: 'var(--card-header-bg)',
                   border: '1px solid var(--border-color)',
-                  maxHeight: '120px',
+                  maxHeight: '140px',
                   overflowY: 'auto',
                   zIndex: 20,
-                  borderRadius: '4px'
+                  borderRadius: '5px',
+                  boxShadow: '0 4px 15px rgba(0,0,0,0.5)'
                 }}>
                   {paisesDisponiblesCaucus.map(p => (
                     <div
                       key={p.id}
                       onClick={() => handleAñadirOradorCaucus(p)}
-                      style={{ padding: '0.3rem 0.5rem', fontSize: '0.75rem', cursor: 'pointer', borderBottom: '1px solid var(--subborder-color)' }}
+                      style={{ padding: '0.4rem 0.6rem', fontSize: '0.85rem', cursor: 'pointer', borderBottom: '1px solid var(--subborder-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                     >
-                      {p.bandera} {p.nombre}
+                      <span style={{ fontSize: '1.2rem' }}>{p.bandera}</span>
+                      <span style={{ fontWeight: '600' }}>{p.nombre}</span>
                     </div>
                   ))}
                 </div>
@@ -743,20 +782,66 @@ const CronometroDual = ({ modoInicial = null }) => {
             </div>
 
             {/* Render de la Cola del Caucus */}
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.35rem', paddingRight: '2px' }}>
               {oradoresCaucus.length === 0 ? (
-                <div style={{ fontSize: '0.72rem', opacity: 0.4, textAlign: 'center', margin: 'auto' }}>
+                <div style={{ fontSize: '0.78rem', opacity: 0.4, textAlign: 'center', margin: 'auto' }}>
                   Sin oradores en la cola del caucus.
                 </div>
               ) : (
                 oradoresCaucus.map((o, idx) => (
-                  <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.2rem 0.4rem', backgroundColor: idx === 0 ? 'rgba(34,197,94,0.1)' : '#121212', borderRadius: '4px', fontSize: '0.78rem' }}>
-                    <span>
-                      #{idx + 1} {o.bandera} {o.nombre} {o.esProponenteUltimo ? <strong style={{ color: '#eab308', fontSize: '0.68rem' }}>(Último)</strong> : ''}
-                    </span>
-                    <button onClick={() => removerOradorCaucus(o.id)} style={{ background: 'transparent', border: 'none', color: '#ef4444', opacity: 0.6, cursor: 'pointer' }}>
-                      <Trash2 size={12} />
-                    </button>
+                  <div key={o.id} style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '0.45rem 0.65rem',
+                    backgroundColor: idx === 0 ? 'rgba(34,197,94,0.12)' : (idx === 1 ? 'rgba(59,130,246,0.08)' : 'var(--panel-color)'),
+                    border: `1px solid ${idx === 0 ? '#166534' : (idx === 1 ? 'rgba(59,130,246,0.3)' : 'var(--subborder-color)')}`,
+                    borderRadius: '5px',
+                    transition: 'all 0.15s ease'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+                      <span style={{ fontSize: '0.78rem', fontWeight: '800', color: idx === 0 ? '#4ade80' : (idx === 1 ? '#60a5fa' : 'var(--muted-text)'), width: '22px' }}>
+                        #{idx + 1}
+                      </span>
+                      <span style={{ fontSize: '1.3rem' }}>{o.bandera}</span>
+                      <span style={{ fontWeight: idx === 0 ? '800' : '600', fontSize: '0.92rem', color: 'var(--text-color)' }}>
+                        {o.nombre}
+                      </span>
+                      {o.esProponenteUltimo && (
+                        <span style={{ fontSize: '0.62rem', backgroundColor: 'rgba(255,255,255,0.08)', padding: '1px 5px', borderRadius: '3px', opacity: 0.7 }}>
+                          (Último)
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      {idx === 0 && (
+                        <span style={{ backgroundColor: '#15803d', color: '#ffffff', fontWeight: '800', fontSize: '0.65rem', padding: '0.1rem 0.4rem', borderRadius: '3px' }}>
+                          HABLANDO
+                        </span>
+                      )}
+                      {idx === 1 && (
+                        <span style={{ backgroundColor: 'rgba(59,130,246,0.2)', color: '#93c5fd', fontWeight: '700', fontSize: '0.65rem', padding: '0.1rem 0.4rem', borderRadius: '3px' }}>
+                          SIGUIENTE
+                        </span>
+                      )}
+                      <button
+                        onClick={() => removerOradorCaucus(o.id)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#ef4444',
+                          opacity: 0.7,
+                          cursor: 'pointer',
+                          padding: '2px',
+                          display: 'flex',
+                          alignItems: 'center'
+                        }}
+                        title="Quitar de la lista"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
                 ))
               )}

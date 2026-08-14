@@ -129,55 +129,34 @@ const PizarraMociones = () => {
         </button>
       </div>
 
-      {/* ── Barra Informativa de Quórum y Mayorías Requeridas para Mociones ── */}
+      {/* ── Barra Informativa de Quórum y Mayorías (Compacta y Neutra) ── */}
       <div style={{
-        backgroundColor: '#0a0a0f',
+        backgroundColor: 'var(--card-header-bg)',
         border: '1px solid var(--border-color)',
         borderRadius: '6px',
-        padding: '0.45rem 0.75rem',
+        padding: '0.4rem 0.65rem',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
         gap: '0.4rem',
-        fontSize: '0.75rem'
+        fontSize: '0.73rem'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <Users size={14} color="#3b82f6" />
-          <span style={{ fontWeight: '700', color: '#93c5fd' }}>
-            Quórum: {totalAsistentes} en sala
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <Users size={13} style={{ opacity: 0.7 }} />
+          <span style={{ fontWeight: '600', opacity: 0.9 }}>
+            Quórum: <strong>{totalAsistentes}</strong> en sala
           </span>
-          <span style={{ fontSize: '0.68rem', opacity: 0.6 }}>
+          <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>
             ({presentes} P + {presentesYVotando} PyV de {totalPaises})
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.3rem',
-            backgroundColor: 'rgba(59, 130, 246, 0.12)',
-            border: '1px solid rgba(59, 130, 246, 0.3)',
-            borderRadius: '4px',
-            padding: '2px 7px'
-          }}>
-            <span style={{ color: '#93c5fd', fontWeight: '600', fontSize: '0.72rem' }}>May. Simple (50%+1):</span>
-            <strong style={{ color: '#60a5fa', fontSize: '0.82rem' }}>{mayoriaSimple} {mayoriaSimple === 1 ? 'voto' : 'votos'}</strong>
-          </div>
-
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.3rem',
-            backgroundColor: 'rgba(168, 85, 247, 0.12)',
-            border: '1px solid rgba(168, 85, 247, 0.3)',
-            borderRadius: '4px',
-            padding: '2px 7px'
-          }}>
-            <span style={{ color: '#e9d5ff', fontWeight: '600', fontSize: '0.72rem' }}>Calificada (2/3):</span>
-            <strong style={{ color: '#c084fc', fontSize: '0.82rem' }}>{mayoriaCalificada} {mayoriaCalificada === 1 ? 'voto' : 'votos'}</strong>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+          <span style={{ opacity: 0.5 }}>|</span>
+          <span style={{ opacity: 0.75 }}>Simple (50%+1): <strong style={{ color: '#38bdf8' }}>{mayoriaSimple} votos</strong></span>
+          <span style={{ opacity: 0.5 }}>|</span>
+          <span style={{ opacity: 0.75 }}>Calificada (2/3): <strong style={{ color: '#c084fc' }}>{mayoriaCalificada} votos</strong></span>
         </div>
       </div>
 
@@ -387,108 +366,155 @@ const PizarraMociones = () => {
         </form>
       )}
 
-      {/* Tabla de Mociones Ordenadas por Prioridad Estricta */}
-      <div style={{ flex: 1, overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '6px' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
-          <thead>
-            <tr style={{ backgroundColor: 'var(--card-header-bg)', borderBottom: '1px solid var(--border-color)', textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: '0.04em', opacity: 0.7 }}>
-              <th style={{ padding: '0.5rem', textAlign: 'left' }}>Proponente</th>
-              <th style={{ padding: '0.5rem', textAlign: 'left' }}>Tipo / Formato</th>
-              <th style={{ padding: '0.5rem', textAlign: 'left' }}>Tema</th>
-              <th style={{ padding: '0.5rem', textAlign: 'center' }}>T. Total</th>
-              <th style={{ padding: '0.5rem', textAlign: 'center' }}>T. Orador</th>
-              <th style={{ padding: '0.5rem', textAlign: 'center' }}>Estatus</th>
-              <th style={{ padding: '0.5rem', textAlign: 'right' }}>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {mocionesOrdenadas.length === 0 ? (
-              <tr>
-                <td colSpan="7" style={{ padding: '1.5rem', textAlign: 'center', opacity: 0.4 }}>
-                  No hay mociones registradas en la pizarra.
-                </td>
-              </tr>
-            ) : (
-              mocionesOrdenadas.map(m => (
-                <tr
-                  key={m.id}
-                  style={{
-                    borderBottom: '1px solid var(--subborder-color)',
-                  }}
-                >
-                  <td style={{ padding: '0.5rem', fontWeight: '600' }}>
-                    {m.proponente}
-                    {m.posicionProponente === 'Ultimo' && <span style={{ opacity: 0.5, fontSize: '0.65rem', display: 'block' }}>(Habla al final)</span>}
-                  </td>
-                  <td style={{ padding: '0.5rem', opacity: 0.8, fontSize: '0.75rem' }}>{m.tipo}</td>
-                  <td style={{ padding: '0.5rem', maxWidth: '130px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={m.tema}>
-                    {m.tema}
-                  </td>
-                  <td style={{ padding: '0.5rem', textAlign: 'center', fontFamily: 'monospace' }}>{formatMinutos(m.tiempoTotal)}</td>
-                  <td style={{ padding: '0.5rem', textAlign: 'center', fontFamily: 'monospace' }}>{m.tiempoOrador ? `${m.tiempoOrador}s` : 'N/A'}</td>
-                  <td style={{ padding: '0.5rem', textAlign: 'center' }}>
-                    <span style={{
-                      fontSize: '0.65rem',
-                      fontWeight: '700',
-                      padding: '0.15rem 0.4rem',
-                      borderRadius: '3px',
-                      backgroundColor:
-                        m.estado === 'Aprobada' ? '#15803d' :
-                        m.estado === 'Fallida' ? '#b91c1c' : 'var(--card-header-bg)',
-                      color: m.estado === 'Pendiente' ? 'var(--text-color)' : '#ffffff'
-                    }}>
-                      {m.estado}
-                    </span>
-                  </td>
-                  <td style={{ padding: '0.5rem', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', gap: '0.3rem', justifyContent: 'flex-end' }}>
-                      {/* Únicamente Opción de Aprobar (Verde) o Reprobar/Fallida (Rojo) - SIN 'Activar' */}
-                      <button
-                        onClick={() => votarMocion(m.id, 'Aprobada')}
-                        style={{
-                          background: m.estado === 'Aprobada' ? '#22c55e' : 'transparent',
-                          border: '1px solid #22c55e',
-                          color: m.estado === 'Aprobada' ? '#000000' : '#22c55e',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          padding: '3px 8px',
-                          fontSize: '0.72rem',
-                          fontWeight: '700',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '3px'
-                        }}
-                        title="Aprobar Moción"
-                      >
-                        <Check size={12} /> Aprobar
-                      </button>
+      {/* Lista / Tarjetas de Mociones con Máxima Visibilidad en País y Moción */}
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingRight: '2px' }}>
+        {mocionesOrdenadas.length === 0 ? (
+          <div style={{ padding: '2rem 1rem', textAlign: 'center', opacity: 0.4, border: '1px dashed var(--border-color)', borderRadius: '6px' }}>
+            No hay mociones registradas en la pizarra.
+          </div>
+        ) : (
+          mocionesOrdenadas.map((m, idx) => {
+            const esAprobada = m.estado === 'Aprobada';
+            const esFallida = m.estado === 'Fallida';
 
-                      <button
-                        onClick={() => votarMocion(m.id, 'Fallida')}
-                        style={{
-                          background: m.estado === 'Fallida' ? '#ef4444' : 'transparent',
-                          border: '1px solid #ef4444',
-                          color: m.estado === 'Fallida' ? '#ffffff' : '#ef4444',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          padding: '3px 8px',
-                          fontSize: '0.72rem',
-                          fontWeight: '700',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '3px'
-                        }}
-                        title="Reprobar / Fallida"
-                      >
-                        <X size={12} /> Reprobar
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+            const getTipoBadgeStyle = (tipoMocion) => {
+              if (tipoMocion === 'Caucus Moderado') {
+                return { bg: 'rgba(59, 130, 246, 0.15)', border: '#3b82f6', text: '#60a5fa' };
+              }
+              if (tipoMocion === 'Caucus No Moderado') {
+                return { bg: 'rgba(168, 85, 247, 0.15)', border: '#a855f7', text: '#c084fc' };
+              }
+              if (tipoMocion === 'Consulta General') {
+                return { bg: 'rgba(20, 184, 166, 0.15)', border: '#14b8a6', text: '#2dd4bf' };
+              }
+              if (tipoMocion === 'Tour de Table') {
+                return { bg: 'rgba(245, 158, 11, 0.15)', border: '#f59e0b', text: '#fbbf24' };
+              }
+              return { bg: 'rgba(99, 102, 241, 0.15)', border: '#6366f1', text: '#a5b4fc' };
+            };
+
+            const tipoBadge = getTipoBadgeStyle(m.tipo);
+
+            return (
+              <div
+                key={m.id}
+                style={{
+                  backgroundColor: esAprobada ? 'rgba(34, 197, 94, 0.08)' : (esFallida ? 'rgba(239, 68, 68, 0.08)' : 'var(--card-header-bg)'),
+                  border: `1px solid ${esAprobada ? '#166534' : (esFallida ? '#991b1b' : 'var(--border-color)')}`,
+                  borderRadius: '8px',
+                  padding: '0.75rem 0.95rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '0.85rem',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {/* Bloque Izquierdo: PROMINENCIA TOTAL EN TIPO DE MOCIÓN Y PAÍS */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1, minWidth: 0 }}>
+                  {/* Fila 1: TIPO DE MOCIÓN DESTACADO + País Proponente */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '0.72rem', fontWeight: '800', opacity: 0.5 }}>#{idx + 1}</span>
+                    
+                    {/* Badge de TIPO DE MOCIÓN Destacado */}
+                    <span style={{
+                      fontSize: '0.8rem',
+                      fontWeight: '800',
+                      padding: '3px 9px',
+                      borderRadius: '5px',
+                      backgroundColor: tipoBadge.bg,
+                      border: `1.5px solid ${tipoBadge.border}`,
+                      color: tipoBadge.text,
+                      letterSpacing: '0.03em',
+                      textTransform: 'uppercase'
+                    }}>
+                      {m.tipo}
+                    </span>
+
+                    <span style={{
+                      fontWeight: '800',
+                      fontSize: '1.05rem',
+                      color: 'var(--text-color)',
+                      letterSpacing: '0.01em'
+                    }}>
+                      {m.proponente}
+                    </span>
+
+                    {m.posicionProponente === 'Ultimo' && (
+                      <span style={{ fontSize: '0.65rem', backgroundColor: 'rgba(255,255,255,0.08)', padding: '2px 6px', borderRadius: '3px', opacity: 0.8, fontWeight: '700' }}>
+                        Habla al final
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Fila 2: TEMA / PROPÓSITO GRANDE Y CLARO */}
+                  <div style={{
+                    fontSize: '0.95rem',
+                    fontWeight: '700',
+                    color: 'var(--text-color)',
+                    opacity: 0.95,
+                    lineHeight: 1.3
+                  }}>
+                    «{m.tema}»
+                  </div>
+
+                  {/* Fila 3: Tiempos (Sutiles y limpios) */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', fontSize: '0.73rem', opacity: 0.65, marginTop: '2px' }}>
+                    <span>⏱ Total: <strong style={{ fontFamily: 'monospace', opacity: 1, color: 'var(--text-color)' }}>{formatMinutos(m.tiempoTotal)}</strong></span>
+                    {m.tiempoOrador > 0 && (
+                      <span>🎙 Por orador: <strong style={{ fontFamily: 'monospace', opacity: 1, color: 'var(--text-color)' }}>{m.tiempoOrador}s</strong></span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Bloque Derecho: Estado y Acciones */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
+                  <button
+                    onClick={() => votarMocion(m.id, 'Aprobada')}
+                    style={{
+                      background: esAprobada ? '#22c55e' : 'transparent',
+                      border: '1px solid #22c55e',
+                      color: esAprobada ? '#000000' : '#22c55e',
+                      borderRadius: '5px',
+                      cursor: 'pointer',
+                      padding: '0.35rem 0.65rem',
+                      fontSize: '0.75rem',
+                      fontWeight: '800',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                      transition: 'all 0.15s ease'
+                    }}
+                    title="Aprobar Moción"
+                  >
+                    <Check size={13} /> Aprobar
+                  </button>
+
+                  <button
+                    onClick={() => votarMocion(m.id, 'Fallida')}
+                    style={{
+                      background: esFallida ? '#ef4444' : 'transparent',
+                      border: '1px solid #ef4444',
+                      color: esFallida ? '#ffffff' : '#ef4444',
+                      borderRadius: '5px',
+                      cursor: 'pointer',
+                      padding: '0.35rem 0.65rem',
+                      fontSize: '0.75rem',
+                      fontWeight: '800',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                      transition: 'all 0.15s ease'
+                    }}
+                    title="Reprobar / Fallida"
+                  >
+                    <X size={13} /> Reprobar
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

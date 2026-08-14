@@ -66,11 +66,10 @@ const EstablecerAgenda = () => {
     }}>
       {/* ── Banner de Agenda Oficial Establecida ── */}
       <div style={{
-        backgroundColor: '#0d0b00',
-        border: '1px solid #eab308',
+        backgroundColor: 'var(--card-header-bg)',
+        border: '1px solid var(--border-color)',
         borderRadius: '8px',
-        padding: '0.85rem 1rem',
-        boxShadow: '0 0 18px rgba(234, 179, 8, 0.15)',
+        padding: '0.75rem 1rem',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -78,30 +77,30 @@ const EstablecerAgenda = () => {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '8px',
-            backgroundColor: 'rgba(234, 179, 8, 0.15)',
+            width: '36px',
+            height: '36px',
+            borderRadius: '7px',
+            backgroundColor: 'rgba(59, 130, 246, 0.15)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             flexShrink: 0
           }}>
-            <FileCheck2 size={22} color="#eab308" />
+            <FileCheck2 size={20} color="#3b82f6" />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <span style={{ 
                 fontSize: '0.68rem', 
                 fontWeight: '800', 
-                color: '#eab308', 
-                backgroundColor: 'rgba(234, 179, 8, 0.12)', 
+                color: '#60a5fa', 
+                backgroundColor: 'rgba(59, 130, 246, 0.12)', 
                 padding: '0.1rem 0.45rem', 
                 borderRadius: '4px',
-                letterSpacing: '0.05em',
+                letterSpacing: '0.04em',
                 textTransform: 'uppercase'
               }}>
-                📜 AGENDA OFICIAL REGISTRADA
+                📜 AGENDA OFICIAL
               </span>
             </div>
             <div style={{ fontWeight: '800', fontSize: '1rem', marginTop: '0.2rem', color: 'var(--text-color)' }}>
@@ -121,8 +120,8 @@ const EstablecerAgenda = () => {
           onKeyDown={e => e.key === 'Enter' && handleAgregarTema()}
           style={{
             flex: 1,
-            padding: '0.5rem 0.75rem',
-            backgroundColor: '#0a0a0a',
+            padding: '0.45rem 0.75rem',
+            backgroundColor: 'var(--card-header-bg)',
             border: '1px solid var(--border-color)',
             borderRadius: '6px',
             color: 'var(--text-color)',
@@ -133,9 +132,9 @@ const EstablecerAgenda = () => {
         <button
           onClick={handleAgregarTema}
           style={{
-            padding: '0.5rem 0.85rem',
-            backgroundColor: '#eab308',
-            color: '#000000',
+            padding: '0.45rem 0.85rem',
+            backgroundColor: 'var(--btn-bg)',
+            color: 'var(--btn-text)',
             fontWeight: '700',
             border: 'none',
             borderRadius: '6px',
@@ -146,15 +145,13 @@ const EstablecerAgenda = () => {
             fontSize: '0.82rem'
           }}
         >
-          <Plus size={16} /> Añadir Tema
+          <Plus size={15} /> Añadir
         </button>
       </div>
 
-
-
       {/* ── Lista Ordenada de Temas para la Agenda ── */}
-      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-        <div style={{ fontSize: '0.75rem', opacity: 0.6, fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.35rem', paddingRight: '2px' }}>
+        <div style={{ fontSize: '0.72rem', opacity: 0.6, fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
           Orden de Prioridad de la Agenda:
         </div>
 
@@ -165,9 +162,9 @@ const EstablecerAgenda = () => {
             <div
               key={item.id || index}
               style={{
-                padding: '0.65rem 0.85rem',
-                backgroundColor: esActual ? 'rgba(234, 179, 8, 0.07)' : 'var(--card-header-bg)',
-                border: `1px solid ${esActual ? '#eab308' : 'var(--border-color)'}`,
+                padding: '0.55rem 0.8rem',
+                backgroundColor: esActual ? 'rgba(59, 130, 246, 0.1)' : 'var(--card-header-bg)',
+                border: `1px solid ${esActual ? '#2563eb' : 'var(--border-color)'}`,
                 borderRadius: '6px',
                 display: 'flex',
                 alignItems: 'center',
@@ -181,8 +178,8 @@ const EstablecerAgenda = () => {
                   width: '22px',
                   height: '22px',
                   borderRadius: '50%',
-                  backgroundColor: esActual ? '#eab308' : 'var(--border-color)',
-                  color: esActual ? '#000000' : 'var(--muted-text)',
+                  backgroundColor: esActual ? '#2563eb' : 'var(--panel-color)',
+                  color: esActual ? '#ffffff' : 'var(--muted-text)',
                   fontWeight: '800',
                   fontSize: '0.75rem',
                   display: 'flex',
@@ -197,7 +194,7 @@ const EstablecerAgenda = () => {
                   <div style={{ 
                     fontWeight: '700', 
                     fontSize: '0.85rem', 
-                    color: esActual ? '#eab308' : 'var(--text-color)',
+                    color: 'var(--text-color)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
@@ -205,29 +202,29 @@ const EstablecerAgenda = () => {
                     {item.titulo}
                   </div>
                   <div style={{ fontSize: '0.68rem', opacity: 0.6, marginTop: '1px' }}>
-                    {esActual ? '🟢 TEMA EN DISCUSIÓN ACTIVA' : '⚪ Tema en Agenda Pendiente'}
+                    {esActual ? '🔵 TEMA EN DISCUSIÓN ACTIVA' : '⚪ Tema en Agenda Pendiente'}
                   </div>
                 </div>
               </div>
 
               {/* Botones de Acción */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                 {!esActual && (
                   <button
                     onClick={() => cambiarTemaActual(item.titulo)}
                     style={{
-                      padding: '0.25rem 0.5rem',
+                      padding: '0.22rem 0.5rem',
                       fontSize: '0.7rem',
                       fontWeight: '700',
                       borderRadius: '4px',
-                      border: '1px solid #eab308',
-                      backgroundColor: 'rgba(234, 179, 8, 0.12)',
-                      color: '#eab308',
+                      border: '1px solid #3b82f6',
+                      backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                      color: '#60a5fa',
                       cursor: 'pointer'
                     }}
                     title="Pasar a discutir este tema"
                   >
-                    Discutir Este Tema
+                    Discutir
                   </button>
                 )}
 
@@ -286,9 +283,9 @@ const EstablecerAgenda = () => {
         onClick={handleFijarAgendaOficial}
         style={{
           width: '100%',
-          padding: '0.65rem',
-          backgroundColor: '#eab308',
-          color: '#000000',
+          padding: '0.6rem',
+          backgroundColor: '#2563eb',
+          color: '#ffffff',
           fontWeight: '800',
           border: 'none',
           borderRadius: '6px',
@@ -297,12 +294,11 @@ const EstablecerAgenda = () => {
           alignItems: 'center',
           justifyContent: 'center',
           gap: '0.5rem',
-          fontSize: '0.88rem',
-          boxShadow: '0 4px 15px rgba(234, 179, 8, 0.25)',
+          fontSize: '0.85rem',
           transition: 'all 0.2s ease'
         }}
       >
-        <FileCheck2 size={18} /> ESTABLECER Y REGISTRAR AGENDA OFICIAL DE LA SESIÓN
+        <FileCheck2 size={17} /> REGISTRAR AGENDA OFICIAL DE LA SESIÓN
       </button>
     </div>
   );

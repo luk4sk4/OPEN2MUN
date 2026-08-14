@@ -114,105 +114,126 @@ const ListaOradores = () => {
       </div>
 
       {/* Lista Vertical de Oradores */}
-      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.35rem', paddingRight: '2px' }}>
         {oradoresCola.length === 0 ? (
           <div style={{ opacity: 0.4, textAlign: 'center', margin: 'auto', fontSize: '0.85rem' }}>
             La lista de oradores está vacía. Usa el buscador para añadir delegados.
           </div>
         ) : (
-          oradoresCola.map((orador, index) => (
-            <div
-              key={orador.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0.5rem 0.75rem',
-                backgroundColor: index === 0 ? 'rgba(34, 197, 94, 0.1)' : '#0d0d0d',
-                border: `1px solid ${index === 0 ? '#15803d' : 'var(--border-color)'}`,
-                borderRadius: '6px',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                <span style={{
-                  fontSize: '0.75rem',
-                  fontWeight: '700',
-                  color: index === 0 ? '#22c55e' : 'var(--muted-text)',
-                  width: '18px'
-                }}>
-                  #{index + 1}
-                </span>
-                <span style={{ fontSize: '1.1rem' }}>{orador.bandera}</span>
-                <span style={{ fontWeight: index === 0 ? '700' : '500', fontSize: '0.85rem' }}>
-                  {orador.nombre}
-                </span>
-                {index === 0 && (
+          oradoresCola.map((orador, index) => {
+            const esActual = index === 0;
+            const esSiguiente = index === 1;
+
+            return (
+              <div
+                key={orador.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.55rem 0.75rem',
+                  backgroundColor: esActual ? 'rgba(34, 197, 94, 0.12)' : (esSiguiente ? 'rgba(59, 130, 246, 0.07)' : 'var(--card-header-bg)'),
+                  border: `1px solid ${esActual ? '#166534' : (esSiguiente ? 'rgba(59, 130, 246, 0.3)' : 'var(--border-color)')}`,
+                  borderRadius: '6px',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0 }}>
                   <span style={{
-                    fontSize: '0.65rem',
-                    backgroundColor: '#15803d',
-                    color: '#ffffff',
-                    padding: '0.1rem 0.35rem',
-                    borderRadius: '3px',
-                    fontWeight: '700'
+                    fontSize: '0.75rem',
+                    fontWeight: '800',
+                    color: esActual ? '#4ade80' : (esSiguiente ? '#60a5fa' : 'var(--muted-text)'),
+                    width: '20px'
                   }}>
-                    EN USO
+                    #{index + 1}
                   </span>
-                )}
+                  <span style={{ fontSize: '1.25rem' }}>{orador.bandera}</span>
+                  <span style={{
+                    fontWeight: esActual ? '800' : '600',
+                    fontSize: esActual ? '0.95rem' : '0.85rem',
+                    color: 'var(--text-color)'
+                  }}>
+                    {orador.nombre}
+                  </span>
+                  {esActual && (
+                    <span style={{
+                      fontSize: '0.65rem',
+                      backgroundColor: '#15803d',
+                      color: '#ffffff',
+                      padding: '0.1rem 0.4rem',
+                      borderRadius: '3px',
+                      fontWeight: '800'
+                    }}>
+                      HABLANDO
+                    </span>
+                  )}
+                  {esSiguiente && (
+                    <span style={{
+                      fontSize: '0.65rem',
+                      backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                      color: '#93c5fd',
+                      padding: '0.1rem 0.4rem',
+                      borderRadius: '3px',
+                      fontWeight: '700'
+                    }}>
+                      SIGUIENTE
+                    </span>
+                  )}
+                </div>
+
+                {/* Botones de acción / Reordenar */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', flexShrink: 0 }}>
+                  <button
+                    onClick={() => moverOrador(index, -1)}
+                    disabled={index === 0}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--text-color)',
+                      opacity: index === 0 ? 0.15 : 0.7,
+                      cursor: index === 0 ? 'default' : 'pointer',
+                      padding: '2px'
+                    }}
+                    title="Subir en la lista"
+                  >
+                    <ChevronUp size={16} />
+                  </button>
+
+                  <button
+                    onClick={() => moverOrador(index, 1)}
+                    disabled={index === oradoresCola.length - 1}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--text-color)',
+                      opacity: index === oradoresCola.length - 1 ? 0.15 : 0.7,
+                      cursor: index === oradoresCola.length - 1 ? 'default' : 'pointer',
+                      padding: '2px'
+                    }}
+                    title="Bajar en la lista"
+                  >
+                    <ChevronDown size={16} />
+                  </button>
+
+                  <button
+                    onClick={() => removerOrador(orador.id)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#ef4444',
+                      opacity: 0.7,
+                      cursor: 'pointer',
+                      padding: '2px',
+                      marginLeft: '4px'
+                    }}
+                    title="Quitar de la lista"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
-
-              {/* Botones de acción / Reordenar */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                <button
-                  onClick={() => moverOrador(index, -1)}
-                  disabled={index === 0}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--text-color)',
-                    opacity: index === 0 ? 0.2 : 0.7,
-                    cursor: index === 0 ? 'default' : 'pointer',
-                    padding: '2px'
-                  }}
-                  title="Subir en la lista"
-                >
-                  <ChevronUp size={16} />
-                </button>
-
-                <button
-                  onClick={() => moverOrador(index, 1)}
-                  disabled={index === oradoresCola.length - 1}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--text-color)',
-                    opacity: index === oradoresCola.length - 1 ? 0.2 : 0.7,
-                    cursor: index === oradoresCola.length - 1 ? 'default' : 'pointer',
-                    padding: '2px'
-                  }}
-                  title="Bajar en la lista"
-                >
-                  <ChevronDown size={16} />
-                </button>
-
-                <button
-                  onClick={() => removerOrador(orador.id)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#ef4444',
-                    opacity: 0.7,
-                    cursor: 'pointer',
-                    padding: '2px',
-                    marginLeft: '4px'
-                  }}
-                  title="Quitar de la lista"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 

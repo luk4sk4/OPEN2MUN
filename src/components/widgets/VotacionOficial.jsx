@@ -249,18 +249,18 @@ const VotacionOficial = () => {
       gap: '0.75rem',
       fontSize: '0.85rem'
     }}>
-      {/* ── Header: Asunto y Selectores de Configuración ── */}
+      {/* ── Header: Asunto y Selectores de Configuración (Compacto) ── */}
       <div style={{
-        backgroundColor: '#0a0a0d',
+        backgroundColor: 'var(--card-header-bg)',
         border: '1px solid var(--border-color)',
-        borderRadius: '8px',
-        padding: '0.75rem 1rem',
+        borderRadius: '7px',
+        padding: '0.5rem 0.75rem',
         display: 'flex',
         flexDirection: 'column',
-        gap: '0.65rem'
+        gap: '0.45rem'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Vote size={18} color="#3b82f6" />
+          <Vote size={16} style={{ opacity: 0.7 }} />
           <input
             type="text"
             value={asunto}
@@ -273,79 +273,50 @@ const VotacionOficial = () => {
               borderBottom: '1px dashed var(--border-color)',
               color: 'var(--text-color)',
               fontWeight: '700',
-              fontSize: '0.95rem',
+              fontSize: '0.9rem',
               outline: 'none',
-              padding: '0.2rem 0'
+              padding: '0.15rem 0'
             }}
           />
         </div>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem' }}>
           {/* Votación Procedimental vs Sustantiva */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', backgroundColor: '#141417', padding: '3px', borderRadius: '6px', border: '1px solid var(--subborder-color)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', backgroundColor: 'var(--panel-color)', padding: '3px', borderRadius: '6px', border: '1px solid var(--subborder-color)' }}>
             <button
               onClick={() => configurarVotacion({ tipoVotacion: 'procedural' })}
               style={{
-                padding: '0.3rem 0.65rem',
+                padding: '0.35rem 0.65rem',
                 fontSize: '0.75rem',
                 fontWeight: '700',
                 borderRadius: '4px',
                 border: 'none',
-                backgroundColor: tipoVotacion === 'procedural' ? '#3b82f6' : 'transparent',
-                color: tipoVotacion === 'procedural' ? '#ffffff' : 'var(--muted-text)',
+                backgroundColor: tipoVotacion === 'procedural' ? 'var(--btn-bg)' : 'transparent',
+                color: tipoVotacion === 'procedural' ? 'var(--btn-text)' : 'var(--muted-text)',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.15s ease'
               }}
               title="Votación Procedimental: PROHIBIDA LA ABSTENCIÓN"
             >
-              Procedimental (Sin Abstención)
+              Procedimental (Sin Abst.)
             </button>
             <button
               onClick={() => configurarVotacion({ tipoVotacion: 'substantive' })}
               style={{
-                padding: '0.3rem 0.65rem',
+                padding: '0.35rem 0.65rem',
                 fontSize: '0.75rem',
                 fontWeight: '700',
                 borderRadius: '4px',
                 border: 'none',
-                backgroundColor: tipoVotacion === 'substantive' ? '#a855f7' : 'transparent',
-                color: tipoVotacion === 'substantive' ? '#ffffff' : 'var(--muted-text)',
+                backgroundColor: tipoVotacion === 'substantive' ? 'var(--btn-bg)' : 'transparent',
+                color: tipoVotacion === 'substantive' ? 'var(--btn-text)' : 'var(--muted-text)',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.15s ease'
               }}
               title="Votación Sustantiva: PERMITIDA LA ABSTENCIÓN"
             >
-              Sustantiva (Con Abstención)
+              Sustantiva (Con Abst.)
             </button>
-          </div>
-
-          {/* Selector de Mayoría */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            <span style={{ fontSize: '0.73rem', opacity: 0.7, fontWeight: '600' }}>Mayoría:</span>
-            <select
-              value={tipoMayoria}
-              onChange={e => configurarVotacion({ tipoMayoria: e.target.value })}
-              style={{
-                padding: '0.35rem 0.6rem',
-                backgroundColor: '#141417',
-                border: '1px solid var(--border-color)',
-                color: 'var(--text-color)',
-                borderRadius: '6px',
-                fontSize: '0.75rem',
-                fontWeight: '700',
-                outline: 'none'
-              }}
-            >
-              <option value="simple">
-                Mayoría Simple (50% + 1) — Requiere {reqSimpleQuorum} {reqSimpleQuorum === 1 ? 'voto' : 'votos'}
-              </option>
-              <option value="2/3">
-                Mayoría Calificada (2/3) — Requiere {reqDosTerciosQuorum} {reqDosTerciosQuorum === 1 ? 'voto' : 'votos'}
-              </option>
-              <option value="consensus">
-                Consenso (100%) — Requiere 0 Votos En Contra
-              </option>
-            </select>
           </div>
 
           {/* Toggle Veto P5 */}
@@ -355,293 +326,196 @@ const VotacionOficial = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '0.35rem',
-              padding: '0.3rem 0.65rem',
+              padding: '0.35rem 0.65rem',
               borderRadius: '6px',
-              border: `1px solid ${aplicarVeto ? '#eab308' : 'var(--border-color)'}`,
-              backgroundColor: aplicarVeto ? 'rgba(234, 179, 8, 0.15)' : 'transparent',
-              color: aplicarVeto ? '#eab308' : 'var(--muted-text)',
+              border: `1px solid ${aplicarVeto ? '#ca8a04' : 'var(--border-color)'}`,
+              backgroundColor: aplicarVeto ? 'rgba(202, 138, 4, 0.15)' : 'transparent',
+              color: aplicarVeto ? '#facc15' : 'var(--muted-text)',
               fontSize: '0.75rem',
               fontWeight: '700',
               cursor: 'pointer',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.15s ease'
             }}
             title="Activar/desactivar evaluación de Veto P5"
           >
-            <Crown size={14} color={aplicarVeto ? '#eab308' : '#888888'} />
+            <Crown size={14} color={aplicarVeto ? '#facc15' : '#888888'} />
             <span>Veto P5: {aplicarVeto ? 'ON' : 'OFF'}</span>
+          </button>
+        </div>
+
+        {/* ── Selector de Mayoría: Botones Claros y de Buen Tamaño ── */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '0.45rem',
+          marginTop: '0.1rem'
+        }}>
+          {/* Botón Mayoría Simple */}
+          <button
+            type="button"
+            onClick={() => configurarVotacion({ tipoMayoria: 'simple' })}
+            style={{
+              padding: '0.45rem 0.6rem',
+              borderRadius: '6px',
+              border: `1.5px solid ${tipoMayoria === 'simple' ? '#3b82f6' : 'var(--subborder-color)'}`,
+              backgroundColor: tipoMayoria === 'simple' ? 'rgba(59, 130, 246, 0.15)' : 'var(--panel-color)',
+              color: tipoMayoria === 'simple' ? '#60a5fa' : 'var(--muted-text)',
+              fontWeight: tipoMayoria === 'simple' ? '800' : '600',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '2px',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <span style={{ fontSize: '0.8rem', fontWeight: '800' }}>Mayoría Simple (50%+1)</span>
+            <span style={{ fontSize: '0.7rem', opacity: tipoMayoria === 'simple' ? 1 : 0.7, color: tipoMayoria === 'simple' ? '#93c5fd' : 'inherit' }}>
+              Requiere <strong>{reqSimpleQuorum}</strong> {reqSimpleQuorum === 1 ? 'voto' : 'votos'}
+            </span>
+          </button>
+
+          {/* Botón Mayoría Calificada 2/3 */}
+          <button
+            type="button"
+            onClick={() => configurarVotacion({ tipoMayoria: '2/3' })}
+            style={{
+              padding: '0.45rem 0.6rem',
+              borderRadius: '6px',
+              border: `1.5px solid ${tipoMayoria === '2/3' ? '#a855f7' : 'var(--subborder-color)'}`,
+              backgroundColor: tipoMayoria === '2/3' ? 'rgba(168, 85, 247, 0.15)' : 'var(--panel-color)',
+              color: tipoMayoria === '2/3' ? '#c084fc' : 'var(--muted-text)',
+              fontWeight: tipoMayoria === '2/3' ? '800' : '600',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '2px',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <span style={{ fontSize: '0.8rem', fontWeight: '800' }}>Calificada (2/3)</span>
+            <span style={{ fontSize: '0.7rem', opacity: tipoMayoria === '2/3' ? 1 : 0.7, color: tipoMayoria === '2/3' ? '#e9d5ff' : 'inherit' }}>
+              Requiere <strong>{reqDosTerciosQuorum}</strong> {reqDosTerciosQuorum === 1 ? 'voto' : 'votos'}
+            </span>
+          </button>
+
+          {/* Botón Consenso */}
+          <button
+            type="button"
+            onClick={() => configurarVotacion({ tipoMayoria: 'consensus' })}
+            style={{
+              padding: '0.45rem 0.6rem',
+              borderRadius: '6px',
+              border: `1.5px solid ${tipoMayoria === 'consensus' ? '#d97706' : 'var(--subborder-color)'}`,
+              backgroundColor: tipoMayoria === 'consensus' ? 'rgba(217, 119, 6, 0.15)' : 'var(--panel-color)',
+              color: tipoMayoria === 'consensus' ? '#fbbf24' : 'var(--muted-text)',
+              fontWeight: tipoMayoria === 'consensus' ? '800' : '600',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '2px',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <span style={{ fontSize: '0.8rem', fontWeight: '800' }}>Consenso (100%)</span>
+            <span style={{ fontSize: '0.7rem', opacity: tipoMayoria === 'consensus' ? 1 : 0.7, color: tipoMayoria === 'consensus' ? '#fde68a' : 'inherit' }}>
+              Requiere <strong>0</strong> En Contra
+            </span>
           </button>
         </div>
       </div>
 
-      {/* ── PANEL DE QUÓRUM Y REQUISITOS DE CADA MAYORÍA EN TIEMPO REAL ── */}
+      {/* ── BARRA COMPACTA DE QUÓRUM Y UMBRALES (Simple, no invasiva) ── */}
       <div style={{
-        backgroundColor: '#0c0d12',
-        border: '1px solid #27273a',
-        borderRadius: '8px',
-        padding: '0.65rem 0.85rem',
+        backgroundColor: 'var(--card-header-bg)',
+        border: '1px solid var(--border-color)',
+        borderRadius: '6px',
+        padding: '0.35rem 0.65rem',
         display: 'flex',
-        flexDirection: 'column',
-        gap: '0.5rem'
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '0.35rem',
+        fontSize: '0.72rem'
       }}>
-        {/* Cabecera de Quórum en Sala */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.4rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-            <Users size={15} color="#3b82f6" />
-            <span style={{ fontSize: '0.78rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#93c5fd' }}>
-              Quórum y Mayorías Requeridas en Sala
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.73rem' }}>
-            <span style={{ color: '#22c55e', fontWeight: '700' }}>
-              ● {totalAsistentes} en sala ({presentes} Presentes + {presentesYVotando} Presentes y Votando)
-            </span>
-            <span style={{ color: '#71717a' }}>|</span>
-            <span style={{ color: '#ef4444', fontWeight: '600' }}>
-              {ausentes} Ausentes
-            </span>
-            <span style={{ color: '#71717a' }}>|</span>
-            <span style={{ color: '#a1a1aa' }}>
-              Total: {totalPaises} delegaciones
-            </span>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <Users size={13} style={{ opacity: 0.7 }} />
+          <span style={{ fontWeight: '600' }}>
+            Quórum: <strong>{totalAsistentes}</strong> en sala ({presentes} P + {presentesYVotando} PyV)
+          </span>
+          {ausentes > 0 && <span style={{ opacity: 0.5 }}>· {ausentes} Ausentes</span>}
         </div>
 
-        {/* Tarjetas Dinámicas de Mayoría */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-          gap: '0.5rem'
-        }}>
-          {/* Card: Mayoría Simple */}
-          <div 
-            onClick={() => configurarVotacion({ tipoMayoria: 'simple' })}
-            style={{
-              backgroundColor: tipoMayoria === 'simple' ? 'rgba(59, 130, 246, 0.12)' : '#121218',
-              border: `1.5px solid ${tipoMayoria === 'simple' ? '#3b82f6' : '#232330'}`,
-              borderRadius: '7px',
-              padding: '0.55rem 0.75rem',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.2rem'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.7rem', fontWeight: '800', color: tipoMayoria === 'simple' ? '#60a5fa' : '#9ca3af' }}>
-                MAYORÍA SIMPLE (50% + 1)
-              </span>
-              {tipoMayoria === 'simple' && (
-                <span style={{ fontSize: '0.6rem', backgroundColor: '#1e3a8a', color: '#93c5fd', padding: '1px 5px', borderRadius: '3px', fontWeight: '800' }}>
-                  ACTIVA
-                </span>
-              )}
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
-              <span style={{ fontSize: '1.25rem', fontWeight: '900', color: '#60a5fa' }}>
-                {reqSimpleQuorum}
-              </span>
-              <span style={{ fontSize: '0.72rem', color: '#9ca3af', fontWeight: '600' }}>
-                {reqSimpleQuorum === 1 ? 'voto A Favor requerido' : 'votos A Favor requeridos'}
-              </span>
-            </div>
-
-            <div style={{ fontSize: '0.65rem', opacity: 0.7, marginTop: '2px' }}>
-              {favor >= reqSimpleQuorum && reqSimpleQuorum > 0 ? (
-                <span style={{ color: '#4ade80', fontWeight: '700' }}>✓ Alcanzada actualmente ({favor} votos)</span>
-              ) : (
-                <span>Faltan {Math.max(0, reqSimpleQuorum - favor)} votos (Progreso: {favor}/{reqSimpleQuorum})</span>
-              )}
-            </div>
-          </div>
-
-          {/* Card: Mayoría Calificada 2/3 */}
-          <div 
-            onClick={() => configurarVotacion({ tipoMayoria: '2/3' })}
-            style={{
-              backgroundColor: tipoMayoria === '2/3' ? 'rgba(168, 85, 247, 0.12)' : '#121218',
-              border: `1.5px solid ${tipoMayoria === '2/3' ? '#a855f7' : '#232330'}`,
-              borderRadius: '7px',
-              padding: '0.55rem 0.75rem',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.2rem'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.7rem', fontWeight: '800', color: tipoMayoria === '2/3' ? '#c084fc' : '#9ca3af' }}>
-                CALIFICADA (2/3)
-              </span>
-              {tipoMayoria === '2/3' && (
-                <span style={{ fontSize: '0.6rem', backgroundColor: '#581c87', color: '#e9d5ff', padding: '1px 5px', borderRadius: '3px', fontWeight: '800' }}>
-                  ACTIVA
-                </span>
-              )}
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
-              <span style={{ fontSize: '1.25rem', fontWeight: '900', color: '#c084fc' }}>
-                {reqDosTerciosQuorum}
-              </span>
-              <span style={{ fontSize: '0.72rem', color: '#9ca3af', fontWeight: '600' }}>
-                {reqDosTerciosQuorum === 1 ? 'voto A Favor requerido' : 'votos A Favor requeridos'}
-              </span>
-            </div>
-
-            <div style={{ fontSize: '0.65rem', opacity: 0.7, marginTop: '2px' }}>
-              {favor >= reqDosTerciosQuorum && reqDosTerciosQuorum > 0 ? (
-                <span style={{ color: '#4ade80', fontWeight: '700' }}>✓ Alcanzada actualmente ({favor} votos)</span>
-              ) : (
-                <span>Faltan {Math.max(0, reqDosTerciosQuorum - favor)} votos (Progreso: {favor}/{reqDosTerciosQuorum})</span>
-              )}
-            </div>
-          </div>
-
-          {/* Card: Consenso */}
-          <div 
-            onClick={() => configurarVotacion({ tipoMayoria: 'consensus' })}
-            style={{
-              backgroundColor: tipoMayoria === 'consensus' ? 'rgba(234, 179, 8, 0.12)' : '#121218',
-              border: `1.5px solid ${tipoMayoria === 'consensus' ? '#eab308' : '#232330'}`,
-              borderRadius: '7px',
-              padding: '0.55rem 0.75rem',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.2rem'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.7rem', fontWeight: '800', color: tipoMayoria === 'consensus' ? '#facc15' : '#9ca3af' }}>
-                CONSENSO / UNANIMIDAD
-              </span>
-              {tipoMayoria === 'consensus' && (
-                <span style={{ fontSize: '0.6rem', backgroundColor: '#713f12', color: '#fef08a', padding: '1px 5px', borderRadius: '3px', fontWeight: '800' }}>
-                  ACTIVA
-                </span>
-              )}
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
-              <span style={{ fontSize: '1.25rem', fontWeight: '900', color: '#facc15' }}>
-                0
-              </span>
-              <span style={{ fontSize: '0.72rem', color: '#9ca3af', fontWeight: '600' }}>
-                votos En Contra (100% apoyo)
-              </span>
-            </div>
-
-            <div style={{ fontSize: '0.65rem', opacity: 0.7, marginTop: '2px' }}>
-              {contra > 0 ? (
-                <span style={{ color: '#f87171', fontWeight: '700' }}>✕ Consenso roto ({contra} en contra)</span>
-              ) : (
-                <span style={{ color: favor > 0 ? '#4ade80' : '#a1a1aa' }}>
-                  {favor > 0 ? `✓ Sin votos en contra (${favor} a favor)` : 'Sin votos emitidos'}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Card: Mayoría Absoluta (Total Padrón) */}
-          <div 
-            style={{
-              backgroundColor: '#121218',
-              border: '1.5px solid #232330',
-              borderRadius: '7px',
-              padding: '0.55rem 0.75rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.2rem'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.7rem', fontWeight: '800', color: '#9ca3af' }}>
-                MAY. ABSOLUTA (PADRÓN)
-              </span>
-              <span style={{ fontSize: '0.6rem', color: '#71717a', fontWeight: '700' }}>
-                {totalPaises} TOTAL
-              </span>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
-              <span style={{ fontSize: '1.25rem', fontWeight: '900', color: '#e2e8f0' }}>
-                {reqAbsolutaTotal}
-              </span>
-              <span style={{ fontSize: '0.72rem', color: '#9ca3af', fontWeight: '600' }}>
-                votos (50% + 1 del total)
-              </span>
-            </div>
-
-            <div style={{ fontSize: '0.65rem', opacity: 0.6, marginTop: '2px' }}>
-              Progreso: {favor}/{reqAbsolutaTotal} sobre las {totalPaises} delegaciones
-            </div>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+          <span style={{ opacity: 0.4 }}>|</span>
+          <span>Req. Simple: <strong style={{ color: '#38bdf8' }}>{reqSimpleQuorum}</strong></span>
+          <span style={{ opacity: 0.4 }}>|</span>
+          <span>Req. 2/3: <strong style={{ color: '#c084fc' }}>{reqDosTerciosQuorum}</strong></span>
+          <span style={{ opacity: 0.4 }}>|</span>
+          <span>Padrón total: <strong style={{ opacity: 0.8 }}>{totalPaises}</strong></span>
         </div>
       </div>
 
       {/* ── Banner de Estado del Dictamen ── */}
       <div style={{
-        padding: '0.75rem 1rem',
-        borderRadius: '8px',
+        padding: '0.65rem 0.85rem',
+        borderRadius: '7px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         backgroundColor: estadoVotacion === 'APROBADA' ? 'rgba(34, 197, 94, 0.15)' :
-                         estadoVotacion === 'VETADA' ? 'rgba(239, 68, 68, 0.25)' :
+                         estadoVotacion === 'VETADA' ? 'rgba(239, 68, 68, 0.22)' :
                          estadoVotacion === 'REPROBADA' ? 'rgba(239, 68, 68, 0.15)' :
-                         estadoVotacion === 'SIN_VOTOS' ? 'rgba(113, 113, 122, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+                         estadoVotacion === 'SIN_VOTOS' ? 'var(--card-header-bg)' : 'rgba(59, 130, 246, 0.1)',
         border: `1px solid ${
           estadoVotacion === 'APROBADA' ? '#22c55e' :
           estadoVotacion === 'VETADA' ? '#ef4444' :
           estadoVotacion === 'REPROBADA' ? '#ef4444' :
-          estadoVotacion === 'SIN_VOTOS' ? '#52525b' : '#3b82f6'
+          estadoVotacion === 'SIN_VOTOS' ? 'var(--border-color)' : '#3b82f6'
         }`,
-        boxShadow: estadoVotacion === 'APROBADA' ? '0 0 15px rgba(34, 197, 94, 0.2)' :
-                   estadoVotacion === 'VETADA' ? '0 0 20px rgba(239, 68, 68, 0.35)' : 'none',
-        transition: 'all 0.3s ease'
+        transition: 'all 0.2s ease'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          {estadoVotacion === 'APROBADA' && <CheckCircle2 size={22} color="#22c55e" />}
-          {estadoVotacion === 'VETADA' && <ShieldAlert size={22} color="#ef4444" />}
-          {estadoVotacion === 'REPROBADA' && <XCircle size={22} color="#ef4444" />}
-          {estadoVotacion === 'EN_PROCESO' && <Info size={22} color="#3b82f6" />}
-          {estadoVotacion === 'SIN_VOTOS' && <HelpCircle size={22} color="#71717a" />}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {estadoVotacion === 'APROBADA' && <CheckCircle2 size={20} color="#22c55e" />}
+          {estadoVotacion === 'VETADA' && <ShieldAlert size={20} color="#ef4444" />}
+          {estadoVotacion === 'REPROBADA' && <XCircle size={20} color="#ef4444" />}
+          {estadoVotacion === 'EN_PROCESO' && <Info size={20} color="#3b82f6" />}
+          {estadoVotacion === 'SIN_VOTOS' && <HelpCircle size={20} style={{ opacity: 0.6 }} />}
 
           <div>
-            <div style={{ fontWeight: '800', fontSize: '0.95rem' }}>
+            <div style={{ fontWeight: '800', fontSize: '0.92rem' }}>
               {mensajeDictamen}
             </div>
-            <div style={{ fontSize: '0.7rem', opacity: 0.8, marginTop: '2px' }}>
-              Modalidad: {tipoVotacion === 'procedural' ? 'Procedimental (Obligatorio Votar)' : 'Sustantiva'} | 
-              Meta: <strong style={{ color: '#ffffff' }}>{textoRequerido}</strong> | 
-              Votos Emitidos: {votosEmitidos}/{totalAsistentes}
+            <div style={{ fontSize: '0.68rem', opacity: 0.7, marginTop: '1px' }}>
+              Meta: <strong style={{ color: 'var(--text-color)' }}>{textoRequerido}</strong> | 
+              Emitidos: <strong>{votosEmitidos}/{totalAsistentes}</strong>
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.4rem' }}>
+        <div style={{ display: 'flex', gap: '0.35rem' }}>
           <button
             onClick={toggleModoRollCall}
             style={{
               padding: '0.35rem 0.65rem',
-              backgroundColor: modoRollCall ? '#3b82f6' : 'transparent',
+              backgroundColor: modoRollCall ? '#2563eb' : 'transparent',
               border: '1px solid #3b82f6',
               color: modoRollCall ? '#ffffff' : '#3b82f6',
-              borderRadius: '6px',
+              borderRadius: '5px',
               fontWeight: '700',
-              fontSize: '0.75rem',
+              fontSize: '0.73rem',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '0.3rem'
             }}
           >
-            <Play size={13} /> {modoRollCall ? 'Salir Roll Call' : 'Modo Roll Call'}
+            <Play size={12} /> {modoRollCall ? 'Salir Roll Call' : 'Modo Roll Call'}
           </button>
           <button
             onClick={() => {
@@ -649,12 +523,12 @@ const VotacionOficial = () => {
               setModoRollCall(false);
             }}
             style={{
-              padding: '0.35rem 0.6rem',
+              padding: '0.35rem 0.55rem',
               backgroundColor: 'transparent',
               border: '1px solid var(--border-color)',
               color: 'var(--text-color)',
-              borderRadius: '6px',
-              fontSize: '0.75rem',
+              borderRadius: '5px',
+              fontSize: '0.73rem',
               fontWeight: '600',
               cursor: 'pointer',
               display: 'flex',
@@ -663,7 +537,7 @@ const VotacionOficial = () => {
             }}
             title="Reiniciar todos los votos"
           >
-            <RotateCcw size={13} /> Reiniciar
+            <RotateCcw size={12} /> Reiniciar
           </button>
         </div>
       </div>
@@ -671,56 +545,55 @@ const VotacionOficial = () => {
       {/* ── Asistente Roll Call Nominal Interactivo (2 Rondas Oficiales) ── */}
       {modoRollCall && (
         <div style={{
-          backgroundColor: '#0d0d14',
-          border: `1px solid ${rondaRollCall === 2 ? '#eab308' : '#3b82f6'}`,
+          backgroundColor: 'var(--card-header-bg)',
+          border: `1px solid ${rondaRollCall === 2 ? '#d97706' : '#3b82f6'}`,
           borderRadius: '8px',
-          padding: '0.85rem 1rem',
+          padding: '0.75rem 1rem',
           display: 'flex',
           flexDirection: 'column',
-          gap: '0.65rem',
-          animation: 'fadeIn 0.2s ease',
+          gap: '0.6rem',
           boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
         }}>
           {/* Banner de Ronda */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1f1f2e', paddingBottom: '0.4rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--subborder-color)', paddingBottom: '0.35rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Sparkles size={16} color={rondaRollCall === 2 ? '#eab308' : '#3b82f6'} />
-              <span style={{ fontWeight: '700', fontSize: '0.85rem', color: rondaRollCall === 2 ? '#facc15' : '#60a5fa' }}>
+              <Sparkles size={15} color={rondaRollCall === 2 ? '#f59e0b' : '#3b82f6'} />
+              <span style={{ fontWeight: '800', fontSize: '0.82rem', color: rondaRollCall === 2 ? '#f59e0b' : '#60a5fa' }}>
                 {rondaRollCall === 1 ? 'PRIMERA RONDA - VOTACIÓN NOMINAL' : 'SEGUNDA RONDA - DELEGACIONES QUE PASARON'}
               </span>
             </div>
-            <span style={{ fontSize: '0.73rem', opacity: 0.6 }}>
+            <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>
               {paisActualRollCall ? `Turno ${indiceRollCall + 1} de ${listaPaisesRondaRollCall.length}` : 'Ronda Completada'}
             </span>
           </div>
 
           {paisActualRollCall ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{ fontSize: '2.2rem' }}>{paisActualRollCall.bandera}</span>
+                <span style={{ fontSize: '2rem' }}>{paisActualRollCall.bandera}</span>
                 <div>
-                  <div style={{ fontSize: '0.7rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  <div style={{ fontSize: '0.68rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     {paisActualRollCall.estatus}
                   </div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: '800', color: '#ffffff' }}>
+                  <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-color)' }}>
                     {paisActualRollCall.nombre} {paisActualRollCall.veto && '👑'}
                   </div>
                 </div>
               </div>
 
               {/* Botones de Voto Roll Call */}
-              <div style={{ display: 'flex', gap: '0.4rem' }}>
+              <div style={{ display: 'flex', gap: '0.35rem' }}>
                 <button
                   onClick={() => registrarYAvanzarRollCall('favor')}
                   style={{
-                    padding: '0.55rem 0.9rem',
+                    padding: '0.5rem 0.85rem',
                     backgroundColor: '#22c55e',
                     color: '#000000',
                     fontWeight: '800',
                     border: 'none',
-                    borderRadius: '6px',
+                    borderRadius: '5px',
                     cursor: 'pointer',
-                    fontSize: '0.85rem'
+                    fontSize: '0.82rem'
                   }}
                 >
                   A Favor
@@ -732,14 +605,14 @@ const VotacionOficial = () => {
                     onClick={() => registrarYAvanzarRollCall('abstencion')}
                     disabled={paisActualRollCall.estatus === 'Presente y Votando' || rondaRollCall === 2}
                     style={{
-                      padding: '0.55rem 0.9rem',
-                      backgroundColor: (paisActualRollCall.estatus === 'Presente y Votando' || rondaRollCall === 2) ? '#27272a' : '#eab308',
-                      color: (paisActualRollCall.estatus === 'Presente y Votando' || rondaRollCall === 2) ? '#71717a' : '#000000',
+                      padding: '0.5rem 0.85rem',
+                      backgroundColor: (paisActualRollCall.estatus === 'Presente y Votando' || rondaRollCall === 2) ? '#27272a' : '#d97706',
+                      color: (paisActualRollCall.estatus === 'Presente y Votando' || rondaRollCall === 2) ? '#71717a' : '#ffffff',
                       fontWeight: '800',
                       border: 'none',
-                      borderRadius: '6px',
+                      borderRadius: '5px',
                       cursor: (paisActualRollCall.estatus === 'Presente y Votando' || rondaRollCall === 2) ? 'not-allowed' : 'pointer',
-                      fontSize: '0.85rem'
+                      fontSize: '0.82rem'
                     }}
                     title={
                       rondaRollCall === 2 
@@ -754,14 +627,14 @@ const VotacionOficial = () => {
                 <button
                   onClick={() => registrarYAvanzarRollCall('contra')}
                   style={{
-                    padding: '0.55rem 0.9rem',
+                    padding: '0.5rem 0.85rem',
                     backgroundColor: '#ef4444',
                     color: '#ffffff',
                     fontWeight: '800',
                     border: 'none',
-                    borderRadius: '6px',
+                    borderRadius: '5px',
                     cursor: 'pointer',
-                    fontSize: '0.85rem'
+                    fontSize: '0.82rem'
                   }}
                 >
                   En Contra
@@ -772,14 +645,14 @@ const VotacionOficial = () => {
                   <button
                     onClick={() => registrarYAvanzarRollCall('pasar')}
                     style={{
-                      padding: '0.55rem 0.8rem',
+                      padding: '0.5rem 0.75rem',
                       backgroundColor: '#3f3f46',
                       color: '#ffffff',
                       fontWeight: '700',
                       border: 'none',
-                      borderRadius: '6px',
+                      borderRadius: '5px',
                       cursor: 'pointer',
-                      fontSize: '0.8rem'
+                      fontSize: '0.78rem'
                     }}
                     title="Pasar / Omitir para votar en Segunda Ronda"
                   >
@@ -789,65 +662,66 @@ const VotacionOficial = () => {
               </div>
             </div>
           ) : (
-            <div style={{ textAlign: 'center', opacity: 0.7, padding: '0.5rem' }}>
+            <div style={{ textAlign: 'center', opacity: 0.7, padding: '0.4rem', fontSize: '0.8rem' }}>
               ¡Votación Nominal Roll Call finalizada! Todos los votos han sido registrados.
             </div>
           )}
         </div>
       )}
 
-      {/* ── Contadores y Barra de Distribución ── */}
+      {/* ── Contadores y Barra de Distribución (VOTOS DE LA GENTE DESTACADOS) ── */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(4, 1fr)',
         gap: '0.5rem',
         textAlign: 'center'
       }}>
-        <div style={{ backgroundColor: '#061a0c', border: '1px solid #166534', borderRadius: '8px', padding: '0.6rem' }}>
-          <div style={{ fontSize: '0.7rem', color: '#4ade80', fontWeight: '700' }}>A FAVOR</div>
-          <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#22c55e' }}>{favor}</div>
+        <div style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', border: '1px solid #166534', borderRadius: '7px', padding: '0.5rem' }}>
+          <div style={{ fontSize: '0.68rem', color: '#4ade80', fontWeight: '800', letterSpacing: '0.04em' }}>A FAVOR</div>
+          <div style={{ fontSize: '1.6rem', fontWeight: '900', color: '#22c55e', lineHeight: 1.1 }}>{favor}</div>
           <div style={{ fontSize: '0.65rem', opacity: 0.6 }}>
-            {totalAsistentes > 0 ? Math.round((favor / totalAsistentes) * 100) : 0}% del quórum
+            {totalAsistentes > 0 ? Math.round((favor / totalAsistentes) * 100) : 0}% sala
           </div>
         </div>
 
-        <div style={{ backgroundColor: '#1c0808', border: '1px solid #991b1b', borderRadius: '8px', padding: '0.6rem' }}>
-          <div style={{ fontSize: '0.7rem', color: '#f87171', fontWeight: '700' }}>EN CONTRA</div>
-          <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#ef4444' }}>{contra}</div>
+        <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid #991b1b', borderRadius: '7px', padding: '0.5rem' }}>
+          <div style={{ fontSize: '0.68rem', color: '#f87171', fontWeight: '800', letterSpacing: '0.04em' }}>EN CONTRA</div>
+          <div style={{ fontSize: '1.6rem', fontWeight: '900', color: '#ef4444', lineHeight: 1.1 }}>{contra}</div>
           <div style={{ fontSize: '0.65rem', opacity: 0.6 }}>
-            {totalAsistentes > 0 ? Math.round((contra / totalAsistentes) * 100) : 0}% del quórum
+            {totalAsistentes > 0 ? Math.round((contra / totalAsistentes) * 100) : 0}% sala
           </div>
         </div>
 
         <div style={{ 
-          backgroundColor: tipoVotacion === 'procedural' ? '#18181b' : '#1a1403', 
-          border: `1px solid ${tipoVotacion === 'procedural' ? '#27272a' : '#854d0e'}`, 
-          borderRadius: '8px', 
-          padding: '0.6rem',
-          opacity: tipoVotacion === 'procedural' ? 0.4 : 1
+          backgroundColor: tipoVotacion === 'procedural' ? 'var(--card-header-bg)' : 'rgba(217, 119, 6, 0.1)', 
+          border: `1px solid ${tipoVotacion === 'procedural' ? 'var(--border-color)' : '#92400e'}`, 
+          borderRadius: '7px', 
+          padding: '0.5rem',
+          opacity: tipoVotacion === 'procedural' ? 0.35 : 1
         }}>
-          <div style={{ fontSize: '0.7rem', color: tipoVotacion === 'procedural' ? '#71717a' : '#facc15', fontWeight: '700' }}>
+          <div style={{ fontSize: '0.68rem', color: tipoVotacion === 'procedural' ? 'var(--muted-text)' : '#f59e0b', fontWeight: '800', letterSpacing: '0.04em' }}>
             ABSTENCIÓN {tipoVotacion === 'procedural' && '(N/A)'}
           </div>
-          <div style={{ fontSize: '1.4rem', fontWeight: '900', color: tipoVotacion === 'procedural' ? '#71717a' : '#eab308' }}>
+          <div style={{ fontSize: '1.6rem', fontWeight: '900', color: tipoVotacion === 'procedural' ? 'var(--muted-text)' : '#f59e0b', lineHeight: 1.1 }}>
             {tipoVotacion === 'procedural' ? 0 : abstencion}
           </div>
           <div style={{ fontSize: '0.65rem', opacity: 0.6 }}>
-            {tipoVotacion === 'procedural' ? 'No permitida en procedimiento' : `${totalAsistentes > 0 ? Math.round((abstencion / totalAsistentes) * 100) : 0}% del quórum`}
+            {tipoVotacion === 'procedural' ? 'Prohibida' : `${totalAsistentes > 0 ? Math.round((abstencion / totalAsistentes) * 100) : 0}% sala`}
           </div>
         </div>
 
-        <div style={{ backgroundColor: '#0d0d12', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.6rem' }}>
-          <div style={{ fontSize: '0.7rem', color: '#a1a1aa', fontWeight: '700' }}>PENDIENTES</div>
-          <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#a1a1aa' }}>{votosPendientes}</div>
-          <div style={{ fontSize: '0.65rem', opacity: 0.6 }}>Sin emitir</div>
+        <div style={{ backgroundColor: 'var(--card-header-bg)', border: '1px solid var(--border-color)', borderRadius: '7px', padding: '0.5rem' }}>
+          <div style={{ fontSize: '0.68rem', color: 'var(--muted-text)', fontWeight: '800', letterSpacing: '0.04em' }}>PENDIENTES</div>
+          <div style={{ fontSize: '1.6rem', fontWeight: '900', color: 'var(--muted-text)', lineHeight: 1.1 }}>{votosPendientes}</div>
+          <div style={{ fontSize: '0.65rem', opacity: 0.5 }}>Sin emitir</div>
         </div>
       </div>
 
+      {/* Barra visual de progreso */}
       <div style={{
-        height: '10px',
+        height: '8px',
         width: '100%',
-        backgroundColor: '#18181b',
+        backgroundColor: 'var(--card-header-bg)',
         borderRadius: '9999px',
         overflow: 'hidden',
         display: 'flex',
@@ -858,25 +732,25 @@ const VotacionOficial = () => {
             <div style={{ width: `${(favor / totalAsistentes) * 100}%`, backgroundColor: '#22c55e', transition: 'width 0.3s ease' }} title={`A Favor: ${favor}`} />
             <div style={{ width: `${(contra / totalAsistentes) * 100}%`, backgroundColor: '#ef4444', transition: 'width 0.3s ease' }} title={`En Contra: ${contra}`} />
             {tipoVotacion === 'substantive' && (
-              <div style={{ width: `${(abstencion / totalAsistentes) * 100}%`, backgroundColor: '#eab308', transition: 'width 0.3s ease' }} title={`Abstención: ${abstencion}`} />
+              <div style={{ width: `${(abstencion / totalAsistentes) * 100}%`, backgroundColor: '#d97706', transition: 'width 0.3s ease' }} title={`Abstención: ${abstencion}`} />
             )}
           </>
         )}
       </div>
 
       {/* ── Buscador y Ordenamiento ── */}
-      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
         <div style={{
           flex: 1,
           display: 'flex',
           alignItems: 'center',
-          backgroundColor: '#0a0a0d',
+          backgroundColor: 'var(--card-header-bg)',
           border: '1px solid var(--border-color)',
-          borderRadius: '6px',
-          padding: '0.3rem 0.6rem',
-          gap: '0.4rem'
+          borderRadius: '5px',
+          padding: '0.25rem 0.5rem',
+          gap: '0.35rem'
         }}>
-          <Search size={14} style={{ opacity: 0.5 }} />
+          <Search size={13} style={{ opacity: 0.5 }} />
           <input
             type="text"
             placeholder="Buscar delegación por nombre..."
@@ -887,53 +761,49 @@ const VotacionOficial = () => {
               border: 'none',
               color: 'var(--text-color)',
               outline: 'none',
-              fontSize: '0.8rem',
+              fontSize: '0.78rem',
               width: '100%'
             }}
           />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-          <ArrowUpDown size={14} style={{ opacity: 0.6 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+          <ArrowUpDown size={13} style={{ opacity: 0.6 }} />
           <select
             value={criterioOrden}
             onChange={e => setCriterioOrden(e.target.value)}
             style={{
-              padding: '0.35rem 0.5rem',
-              backgroundColor: '#0a0a0d',
+              padding: '0.3rem 0.45rem',
+              backgroundColor: 'var(--card-header-bg)',
               border: '1px solid var(--border-color)',
               color: 'var(--text-color)',
-              borderRadius: '6px',
-              fontSize: '0.78rem',
+              borderRadius: '5px',
+              fontSize: '0.75rem',
               outline: 'none'
             }}
           >
-            <option value="alphabetical_asc">Orden Alfabético (A - Z)</option>
-            <option value="alphabetical_desc">Orden Alfabético (Z - A)</option>
-            <option value="vote_status">Por Estado de Voto Emitido</option>
-            <option value="p5_veto">👑 Miembros Veto P5 Primero</option>
+            <option value="alphabetical_asc">Orden A - Z</option>
+            <option value="alphabetical_desc">Orden Z - A</option>
+            <option value="vote_status">Por Estado de Voto</option>
+            <option value="p5_veto">👑 Veto P5 Primero</option>
             <option value="roll_call">Por Estatus de Asistencia</option>
           </select>
         </div>
       </div>
 
-      {/* ── Lista de Países con Botones de Voto Individual ── */}
+      {/* ── Lista de Países con VOTOS CLAROS Y DESTACADOS ── */}
       <div style={{ 
         flex: 1, 
         overflowY: 'auto', 
         display: 'flex', 
         flexDirection: 'column', 
-        gap: '0.35rem',
+        gap: '0.3rem',
         paddingRight: '2px' 
       }}>
         {listaPaisesProcesada.map(p => {
           const votoActual = votos[p.id];
           const esAusente = p.estatus === 'Ausente';
           const esPresenteYVotando = p.estatus === 'Presente y Votando';
-
-          // Reglas Oficiales MUN:
-          // 1) En procedimental PROHIBIDA abstención para todos.
-          // 2) En sustantiva, "Presente y Votando" NO puede abstenerse.
           const deshabilitarAbstencion = tipoVotacion === 'procedural' || esPresenteYVotando;
 
           return (
@@ -943,66 +813,91 @@ const VotacionOficial = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '0.5rem 0.75rem',
-                backgroundColor: esAusente ? '#08080a' : (votoActual ? '#111116' : '#0d0d0f'),
+                padding: '0.45rem 0.75rem',
+                backgroundColor: esAusente ? 'transparent' : (
+                  votoActual === 'favor' ? 'rgba(34, 197, 94, 0.08)' :
+                  votoActual === 'contra' ? 'rgba(239, 68, 68, 0.08)' :
+                  votoActual === 'abstencion' ? 'rgba(217, 119, 6, 0.08)' : 'var(--card-header-bg)'
+                ),
                 border: `1px solid ${
-                  votoActual === 'favor' ? '#22c55e55' :
-                  votoActual === 'contra' ? '#ef444455' :
-                  votoActual === 'abstencion' ? '#eab30855' : 'var(--border-color)'
+                  votoActual === 'favor' ? '#166534' :
+                  votoActual === 'contra' ? '#991b1b' :
+                  votoActual === 'abstencion' ? '#92400e' : 'var(--border-color)'
                 }`,
                 borderRadius: '6px',
-                opacity: esAusente ? 0.4 : 1,
-                transition: 'all 0.15s ease'
+                opacity: esAusente ? 0.35 : 1,
+                transition: 'all 0.15s ease',
+                gap: '0.5rem'
               }}
             >
               {/* Información de la Delegación */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0, flex: 1 }}>
-                <span style={{ fontSize: '1.2rem' }}>{p.bandera}</span>
+                <span style={{ fontSize: '1.25rem' }}>{p.bandera}</span>
                 
-                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <span style={{ fontWeight: '700', fontSize: '0.85rem' }}>{p.nombre}</span>
-                    {p.veto && (
-                      <span title="Miembro Permanente con Derecho a Veto (P5)">👑</span>
-                    )}
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '0.3rem', marginTop: '1px' }}>
-                    <span style={{
-                      fontSize: '0.63rem',
-                      fontWeight: '600',
-                      color: esAusente ? '#ef4444' : (esPresenteYVotando ? '#60a5fa' : '#4ade80'),
-                      backgroundColor: 'rgba(255,255,255,0.04)',
-                      padding: '0.05rem 0.35rem',
-                      borderRadius: '3px'
-                    }}>
-                      {p.estatus}
-                    </span>
-                  </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, flexWrap: 'wrap' }}>
+                  <span style={{ fontWeight: '800', fontSize: '0.9rem', color: 'var(--text-color)' }}>
+                    {p.nombre}
+                  </span>
+                  {p.veto && (
+                    <span title="Miembro Permanente con Derecho a Veto (P5)">👑</span>
+                  )}
+                  <span style={{
+                    fontSize: '0.62rem',
+                    fontWeight: '600',
+                    color: esAusente ? '#ef4444' : (esPresenteYVotando ? '#60a5fa' : '#4ade80'),
+                    backgroundColor: 'rgba(255,255,255,0.05)',
+                    padding: '0.05rem 0.3rem',
+                    borderRadius: '3px'
+                  }}>
+                    {p.estatus}
+                  </span>
                 </div>
               </div>
 
-              {/* Botones de Voto Individual */}
+              {/* Indicador de Voto Actual y Botones */}
               {esAusente ? (
                 <span style={{ fontSize: '0.72rem', color: '#ef4444', fontStyle: 'italic' }}>Ausente</span>
               ) : (
-                <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center', flexShrink: 0 }}>
+                  {/* Badge Prominente de Estado de Voto */}
+                  {votoActual === 'favor' && (
+                    <span style={{ fontSize: '0.68rem', fontWeight: '800', backgroundColor: '#15803d', color: '#ffffff', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
+                      ✓ A FAVOR
+                    </span>
+                  )}
+                  {votoActual === 'contra' && (
+                    <span style={{ fontSize: '0.68rem', fontWeight: '800', backgroundColor: '#b91c1c', color: '#ffffff', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
+                      ✕ EN CONTRA
+                    </span>
+                  )}
+                  {votoActual === 'abstencion' && (
+                    <span style={{ fontSize: '0.68rem', fontWeight: '800', backgroundColor: '#b45309', color: '#ffffff', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
+                      ⊘ ABSTENCIÓN
+                    </span>
+                  )}
+                  {!votoActual && (
+                    <span style={{ fontSize: '0.65rem', opacity: 0.4, fontWeight: '600', padding: '0.15rem 0.35rem' }}>
+                      Sin votar
+                    </span>
+                  )}
+
                   {/* Botón A FAVOR */}
                   <button
                     onClick={() => registrarVotoPais(p.id, votoActual === 'favor' ? null : 'favor')}
                     style={{
-                      padding: '0.28rem 0.6rem',
+                      padding: '0.25rem 0.55rem',
                       fontSize: '0.72rem',
                       fontWeight: '700',
                       borderRadius: '4px',
-                      border: '1px solid #166534',
+                      border: '1px solid #22c55e',
                       backgroundColor: votoActual === 'favor' ? '#22c55e' : 'transparent',
                       color: votoActual === 'favor' ? '#000000' : '#4ade80',
                       cursor: 'pointer',
                       transition: 'all 0.15s ease'
                     }}
+                    title="Votar A Favor"
                   >
-                    A Favor
+                    Favor
                   </button>
 
                   {/* Botón ABSTENCIÓN (Solo en Sustantiva para Presentes) */}
@@ -1011,20 +906,20 @@ const VotacionOficial = () => {
                       onClick={() => !deshabilitarAbstencion && registrarVotoPais(p.id, votoActual === 'abstencion' ? null : 'abstencion')}
                       disabled={deshabilitarAbstencion}
                       style={{
-                        padding: '0.28rem 0.6rem',
+                        padding: '0.25rem 0.55rem',
                         fontSize: '0.72rem',
                         fontWeight: '700',
                         borderRadius: '4px',
-                        border: `1px solid ${deshabilitarAbstencion ? '#27272a' : '#854d0e'}`,
-                        backgroundColor: votoActual === 'abstencion' ? '#eab308' : 'transparent',
-                        color: deshabilitarAbstencion ? '#52525b' : (votoActual === 'abstencion' ? '#000000' : '#facc15'),
+                        border: `1px solid ${deshabilitarAbstencion ? 'var(--border-color)' : '#d97706'}`,
+                        backgroundColor: votoActual === 'abstencion' ? '#d97706' : 'transparent',
+                        color: deshabilitarAbstencion ? 'var(--muted-text)' : (votoActual === 'abstencion' ? '#ffffff' : '#fbbf24'),
                         cursor: deshabilitarAbstencion ? 'not-allowed' : 'pointer',
-                        opacity: deshabilitarAbstencion ? 0.4 : 1,
+                        opacity: deshabilitarAbstencion ? 0.3 : 1,
                         transition: 'all 0.15s ease'
                       }}
-                      title={esPresenteYVotando ? 'Delegación Presente y Votando no puede abstenerse' : 'Abstención'}
+                      title={esPresenteYVotando ? 'Presente y Votando no puede abstenerse' : 'Abstención'}
                     >
-                      Abstención
+                      Abs.
                     </button>
                   )}
 
@@ -1032,18 +927,19 @@ const VotacionOficial = () => {
                   <button
                     onClick={() => registrarVotoPais(p.id, votoActual === 'contra' ? null : 'contra')}
                     style={{
-                      padding: '0.28rem 0.6rem',
+                      padding: '0.25rem 0.55rem',
                       fontSize: '0.72rem',
                       fontWeight: '700',
                       borderRadius: '4px',
-                      border: '1px solid #991b1b',
+                      border: '1px solid #ef4444',
                       backgroundColor: votoActual === 'contra' ? '#ef4444' : 'transparent',
                       color: votoActual === 'contra' ? '#ffffff' : '#f87171',
                       cursor: 'pointer',
                       transition: 'all 0.15s ease'
                     }}
+                    title="Votar En Contra"
                   >
-                    En Contra
+                    Contra
                   </button>
 
                   {/* Limpiar voto */}
@@ -1060,7 +956,7 @@ const VotacionOficial = () => {
                       }}
                       title="Limpiar voto"
                     >
-                      <X size={14} />
+                      <X size={13} />
                     </button>
                   )}
                 </div>

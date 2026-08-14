@@ -83,8 +83,8 @@ const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight
           display: 'flex',
           alignItems: 'center',
           gap: '0.4rem',
-          backgroundColor: isLight ? 'rgba(255,255,255,0.95)' : 'rgba(9,9,11,0.95)',
-          border: `1px solid ${open ? '#eab308' : (isLight ? '#e2e8f0' : '#27272a')}`,
+          backgroundColor: isLight ? 'rgba(255,255,255,0.95)' : 'rgba(15,15,18,0.95)',
+          border: `1px solid ${open ? 'var(--btn-bg)' : (isLight ? '#e2e8f0' : '#27272a')}`,
           borderRadius: '8px',
           padding: '0.4rem 0.65rem',
           boxShadow: '0 8px 25px rgba(0,0,0,0.45)',
@@ -93,18 +93,18 @@ const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight
           backdropFilter: 'blur(8px)',
           pointerEvents: 'auto'  // solo la pastilla captura eventos
         }}>
-        <Minimize2 size={15} color={open ? '#eab308' : (isLight ? '#0f172a' : '#ffffff')} />
+        <Minimize2 size={15} color={isLight ? '#0f172a' : '#ffffff'} />
         <span style={{
           fontSize: '0.72rem',
           fontWeight: '700',
-          color: open ? '#eab308' : (isLight ? '#0f172a' : '#ffffff'),
+          color: isLight ? '#0f172a' : '#ffffff',
           transition: 'color 0.2s ease'
         }}>
           {TAB_LABELS[activeTab] || activeTab}
         </span>
         <ChevronRight
           size={13}
-          color={open ? '#eab308' : (isLight ? '#64748b' : '#71717a')}
+          color={isLight ? '#64748b' : '#71717a'}
           style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}
         />
       </div>
@@ -114,8 +114,8 @@ const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight
         onMouseEnter={cancelClose}
         onMouseLeave={startClose}
         style={{
-          backgroundColor: isLight ? 'rgba(255,255,255,0.97)' : 'rgba(9,9,11,0.97)',
-          border: '1px solid #eab308',
+          backgroundColor: isLight ? 'rgba(255,255,255,0.97)' : 'rgba(15,15,18,0.97)',
+          border: `1px solid ${isLight ? '#cbd5e1' : '#3f3f46'}`,
           borderRadius: '10px',
           boxShadow: '0 16px 40px rgba(0,0,0,0.6)',
           backdropFilter: 'blur(12px)',
@@ -130,10 +130,10 @@ const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight
         {nombreComite && (
           <div style={{
             padding: '0.55rem 0.85rem',
-            borderBottom: '1px solid #eab308',
+            borderBottom: `1px solid ${isLight ? '#e2e8f0' : '#27272a'}`,
             fontSize: '0.7rem',
             fontWeight: '800',
-            color: '#eab308',
+            color: 'var(--text-color)',
             letterSpacing: '0.04em',
             textTransform: 'uppercase'
           }}>
@@ -157,8 +157,8 @@ const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight
                   padding: '0.45rem 0.65rem',
                   borderRadius: '6px',
                   border: 'none',
-                  backgroundColor: isActive ? '#eab308' : 'transparent',
-                  color: isActive ? '#000000' : (isLight ? '#0f172a' : '#ffffff'),
+                  backgroundColor: isActive ? 'var(--btn-bg)' : 'transparent',
+                  color: isActive ? 'var(--btn-text)' : (isLight ? '#0f172a' : '#ffffff'),
                   fontWeight: isActive ? '800' : '500',
                   fontSize: '0.8rem',
                   cursor: 'pointer',

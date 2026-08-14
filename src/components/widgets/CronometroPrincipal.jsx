@@ -135,18 +135,27 @@ const CronometroPrincipal = () => {
       backgroundColor: 'var(--panel-color)',
       color: 'var(--text-color)',
     }}>
-      {/* Header Orador */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.6rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ fontSize: '1.4rem' }}>{oradorActual.bandera}</span>
+      {/* Header Orador con Máxima Visibilidad y Vista Previa del Siguiente Orador */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.6rem', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <span style={{ fontSize: '1.6rem' }}>{oradorActual.bandera}</span>
           <div>
-            <div style={{ fontSize: '0.75rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Orador Activo</div>
-            <div style={{ fontWeight: '700', fontSize: '1.05rem' }}>{oradorActual.nombre}</div>
+            <div style={{ fontSize: '0.68rem', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '700' }}>
+              Orador Actual
+            </div>
+            <div style={{ fontWeight: '800', fontSize: '1.15rem', color: 'var(--text-color)', lineHeight: 1.2 }}>
+              {oradorActual.nombre}
+            </div>
+            {oradoresCola.length > 1 && (
+              <div style={{ fontSize: '0.72rem', opacity: 0.65, marginTop: '2px' }}>
+                Siguiente: <strong>{oradoresCola[1].bandera} {oradoresCola[1].nombre}</strong>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Presets & Tiempo Exacto Personalizado */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           {[45, 60, 90, 120].map(s => (
             <button
               key={s}
@@ -170,8 +179,8 @@ const CronometroPrincipal = () => {
           ))}
 
           {/* Selector de Tiempo Exacto */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', backgroundColor: '#111111', padding: '0.15rem 0.4rem', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
-            <span style={{ fontSize: '0.68rem', opacity: 0.75, fontWeight: '600' }}>Exacto:</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', backgroundColor: 'var(--card-header-bg)', padding: '0.15rem 0.4rem', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
+            <span style={{ fontSize: '0.65rem', opacity: 0.6, fontWeight: '600' }}>Exacto:</span>
             <input
               type="number"
               min="1"
@@ -183,11 +192,11 @@ const CronometroPrincipal = () => {
                 handleCambiarPreset(val);
               }}
               style={{
-                width: '46px',
-                padding: '0.15rem 0.25rem',
-                backgroundColor: '#000000',
+                width: '44px',
+                padding: '0.1rem 0.2rem',
+                backgroundColor: 'var(--panel-color)',
                 border: '1px solid var(--border-color)',
-                color: '#22c55e',
+                color: 'var(--text-color)',
                 borderRadius: '3px',
                 fontSize: '0.75rem',
                 fontWeight: '700',
@@ -196,7 +205,7 @@ const CronometroPrincipal = () => {
               }}
               title="Ingresar cantidad exacta de segundos para el cronómetro"
             />
-            <span style={{ fontSize: '0.68rem', opacity: 0.75 }}>s</span>
+            <span style={{ fontSize: '0.65rem', opacity: 0.6 }}>s</span>
           </div>
         </div>
       </div>
@@ -205,8 +214,8 @@ const CronometroPrincipal = () => {
       <div
         className={displayState.className}
         style={{
-          margin: '0.75rem 0',
-          padding: '1.4rem 1rem 1.6rem 1rem',
+          margin: '0.6rem 0',
+          padding: '1.2rem 1rem 1.4rem 1rem',
           borderRadius: '10px',
           textAlign: 'center',
           transition: 'all 0.3s ease',
@@ -226,18 +235,18 @@ const CronometroPrincipal = () => {
           }}>
             {formatTimeWithNegative(segundosRestantes)}
           </div>
-          <div style={{ fontSize: '0.8rem', opacity: 0.75, marginTop: '0.5rem', fontWeight: '600' }}>
-            {segundosRestantes < 0 ? '⚠️ TIEMPO EXCEDIDO (OVERTIME)' : `Asignado: ${tiempoInicial} seg`}
+          <div style={{ fontSize: '0.75rem', opacity: 0.6, marginTop: '0.4rem', fontWeight: '600' }}>
+            {segundosRestantes < 0 ? '⚠️ TIEMPO EXCEDIDO (OVERTIME)' : `Tiempo Asignado: ${tiempoInicial}s`}
           </div>
         </div>
 
-        {/* Barra de progreso inferior con degradado y glow suave */}
+        {/* Barra de progreso inferior */}
         <div style={{
           position: 'absolute',
           bottom: 0,
           left: 0,
           right: 0,
-          height: '5px',
+          height: '4px',
           backgroundColor: 'rgba(255, 255, 255, 0.08)'
         }}>
           <div style={{
@@ -247,12 +256,12 @@ const CronometroPrincipal = () => {
               ? 'linear-gradient(90deg, #ef4444, #dc2626)'
               : segundosRestantes <= 10
                 ? 'linear-gradient(90deg, #f97316, #ea580c)'
-                : 'linear-gradient(90deg, #3b82f6, #6366f1, #ec4899)',
+                : 'linear-gradient(90deg, #3b82f6, #6366f1)',
             boxShadow: segundosRestantes <= 10
               ? '0 0 12px rgba(239, 68, 68, 0.8)'
-              : '0 0 10px rgba(99, 102, 241, 0.6)',
+              : 'none',
             transition: 'width 0.4s linear, background 0.3s ease',
-            borderRadius: '0 3px 3px 0'
+            borderRadius: '0 2px 2px 0'
           }} />
         </div>
 
@@ -263,14 +272,14 @@ const CronometroPrincipal = () => {
             right: '8px',
             backgroundColor: '#15803d',
             color: '#ffffff',
-            fontSize: '0.75rem',
-            padding: '0.25rem 0.6rem',
+            fontSize: '0.72rem',
+            padding: '0.2rem 0.5rem',
             borderRadius: '4px',
             display: 'flex',
             alignItems: 'center',
             gap: '0.3rem'
           }}>
-            <CheckCircle2 size={13} /> Guardado en sesion_activa.json
+            <CheckCircle2 size={12} /> Guardado
           </div>
         )}
       </div>
@@ -282,8 +291,8 @@ const CronometroPrincipal = () => {
           style={{
             flex: '1 1 120px',
             padding: '0.6rem 0.8rem',
-            backgroundColor: corriendo ? '#eab308' : '#22c55e',
-            color: '#000000',
+            backgroundColor: corriendo ? '#334155' : '#22c55e',
+            color: corriendo ? '#ffffff' : '#000000',
             fontWeight: '700',
             border: 'none',
             borderRadius: '6px',
@@ -292,10 +301,11 @@ const CronometroPrincipal = () => {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '0.4rem',
-            fontSize: '0.85rem'
+            fontSize: '0.85rem',
+            transition: 'all 0.15s ease'
           }}
         >
-          {corriendo ? <Pause size={17} /> : <Play size={17} />}
+          {corriendo ? <Pause size={16} /> : <Play size={16} />}
           {corriendo ? 'Pausar' : 'Iniciar'}
         </button>
 

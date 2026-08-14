@@ -41,10 +41,10 @@ const MatrizPaises = () => {
     }}>
       {/* Header y Resumen de Quórum */}
       <div style={{
-        backgroundColor: '#070707',
+        backgroundColor: 'var(--card-header-bg)',
         border: '1px solid var(--border-color)',
-        borderRadius: '8px',
-        padding: '0.75rem',
+        borderRadius: '7px',
+        padding: '0.6rem 0.75rem',
         display: 'grid',
         gridTemplateColumns: 'repeat(4, 1fr)',
         gap: '0.5rem',
@@ -58,19 +58,19 @@ const MatrizPaises = () => {
 
         <div style={{ borderRight: '1px solid var(--subborder-color)', paddingRight: '0.3rem' }}>
           <div style={{ fontSize: '0.65rem', opacity: 0.6, textTransform: 'uppercase' }}>P. y Votando</div>
-          <div style={{ fontWeight: '800', fontSize: '1.1rem', color: '#3b82f6' }}>{presentesYVotando}</div>
+          <div style={{ fontWeight: '800', fontSize: '1.1rem', color: '#38bdf8' }}>{presentesYVotando}</div>
           <div style={{ fontSize: '0.65rem', opacity: 0.5 }}>Sin abstención</div>
         </div>
 
         <div style={{ borderRight: '1px solid var(--subborder-color)', paddingRight: '0.3rem' }}>
           <div style={{ fontSize: '0.65rem', opacity: 0.6, textTransform: 'uppercase' }}>May. Simple</div>
-          <div style={{ fontWeight: '800', fontSize: '1.1rem', color: '#eab308' }}>{mayoriaSimple}</div>
+          <div style={{ fontWeight: '800', fontSize: '1.1rem', color: '#60a5fa' }}>{mayoriaSimple}</div>
           <div style={{ fontSize: '0.65rem', opacity: 0.5 }}>50% + 1</div>
         </div>
 
         <div>
           <div style={{ fontSize: '0.65rem', opacity: 0.6, textTransform: 'uppercase' }}>May. 2/3</div>
-          <div style={{ fontWeight: '800', fontSize: '1.1rem', color: '#a855f7' }}>{mayoriaCalificada}</div>
+          <div style={{ fontWeight: '800', fontSize: '1.1rem', color: '#c084fc' }}>{mayoriaCalificada}</div>
           <div style={{ fontSize: '0.65rem', opacity: 0.5 }}>Calificada</div>
         </div>
       </div>
@@ -81,13 +81,13 @@ const MatrizPaises = () => {
           flex: 1,
           display: 'flex',
           alignItems: 'center',
-          backgroundColor: '#050505',
+          backgroundColor: 'var(--card-header-bg)',
           border: '1px solid var(--border-color)',
-          borderRadius: '6px',
-          padding: '0.3rem 0.5rem',
-          gap: '0.4rem'
+          borderRadius: '5px',
+          padding: '0.25rem 0.5rem',
+          gap: '0.35rem'
         }}>
-          <Search size={14} style={{ opacity: 0.5 }} />
+          <Search size={13} style={{ opacity: 0.5 }} />
           <input
             type="text"
             placeholder="Buscar país..."
@@ -98,7 +98,7 @@ const MatrizPaises = () => {
               border: 'none',
               color: 'var(--text-color)',
               outline: 'none',
-              fontSize: '0.8rem',
+              fontSize: '0.78rem',
               width: '100%'
             }}
           />
@@ -108,12 +108,12 @@ const MatrizPaises = () => {
           value={filtroEstatus}
           onChange={e => setFiltroEstatus(e.target.value)}
           style={{
-            padding: '0.35rem',
-            backgroundColor: '#050505',
+            padding: '0.3rem 0.45rem',
+            backgroundColor: 'var(--card-header-bg)',
             border: '1px solid var(--border-color)',
             color: 'var(--text-color)',
-            borderRadius: '6px',
-            fontSize: '0.78rem'
+            borderRadius: '5px',
+            fontSize: '0.75rem'
           }}
         >
           <option value="TODOS">Todos ({totalPaises})</option>
@@ -125,7 +125,7 @@ const MatrizPaises = () => {
       </div>
 
       {/* Lista / Matriz de Países */}
-      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.3rem', paddingRight: '2px' }}>
         {paisesFiltrados.map(p => (
           <div
             key={p.id}
@@ -134,15 +134,15 @@ const MatrizPaises = () => {
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '0.45rem 0.75rem',
-              backgroundColor: '#0a0a0a',
+              backgroundColor: 'var(--card-header-bg)',
               border: '1px solid var(--border-color)',
               borderRadius: '6px',
               fontSize: '0.82rem'
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontSize: '1.1rem' }}>{p.bandera}</span>
-              <span style={{ fontWeight: '600' }}>{p.nombre}</span>
+              <span style={{ fontSize: '1.2rem' }}>{p.bandera}</span>
+              <span style={{ fontWeight: '700', color: 'var(--text-color)' }}>{p.nombre}</span>
 
               {/* Botón / Indicador de Veto 👑 */}
               <button
@@ -158,7 +158,7 @@ const MatrizPaises = () => {
                 }}
                 title={p.veto ? 'Tiene derecho a Veto (👑 P5)' : 'Sin derecho a Veto'}
               >
-                <Crown size={15} color={p.veto ? '#eab308' : '#888888'} fill={p.veto ? '#eab308' : 'none'} />
+                <Crown size={14} color={p.veto ? '#facc15' : '#888888'} fill={p.veto ? '#facc15' : 'none'} />
               </button>
             </div>
 
