@@ -17,12 +17,23 @@ import {
   Vote,
   FileCheck2,
   Upload,
-  Building2
+  Building2,
+  UserPlus
 } from 'lucide-react';
 import WidgetRegistry from '../widgets/WidgetRegistry';
 
 // Metadata rica para cada widget disponible
 export const WIDGET_METADATA = {
+  anadir_paises: {
+    title: 'Añadir Países',
+    category: 'Debate',
+    description: 'Búsqueda rápida y selección de países para añadir a la Lista General o Debate.',
+    icon: UserPlus,
+    iconBg: 'rgba(168, 85, 247, 0.2)',
+    iconColor: '#c084fc',
+    defaultColSpan: 6,
+    defaultRowSpan: 4,
+  },
   establecer_agenda: {
     title: 'Establecer Agenda',
     category: 'Debate',

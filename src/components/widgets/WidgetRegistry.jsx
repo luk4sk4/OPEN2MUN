@@ -10,6 +10,7 @@ import VotacionOficial from './VotacionOficial';
 import EstablecerAgenda from './EstablecerAgenda';
 import ImportarPaises from './ImportarPaises';
 import ConfigurarComite from './ConfigurarComite';
+import AnadirPaises from './AnadirPaises';
 
 const WidgetRegistry = {
   "establecer_agenda": EstablecerAgenda,
@@ -23,6 +24,8 @@ const WidgetRegistry = {
   "votacion_oficial": VotacionOficial,
   "importar_paises": ImportarPaises,
   "configurar_comite": ConfigurarComite,
+  "anadir_paises": AnadirPaises,
+  "agregar_paises": AnadirPaises,
   "widget_prueba_1": DummyWidget1,
   "widget_prueba_2": DummyWidget2,
 };
