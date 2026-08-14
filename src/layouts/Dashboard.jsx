@@ -14,16 +14,20 @@ import {
   Sun,
   Moon,
   Home,
-  ChevronRight
+  ChevronRight,
+  Radio,
+  MessageSquare
 } from 'lucide-react';
 import configMaster from '../config/config_master.json';
 import WidgetRegistry from '../components/widgets/WidgetRegistry';
 import SettingsModal from '../components/modals/SettingsModal';
 import AccessibilityModal from '../components/modals/AccessibilityModal';
+import LiveSessionModal from '../components/modals/LiveSessionModal';
 import WidgetSidebar, { WIDGET_METADATA } from '../components/panels/WidgetSidebar';
 import OpenMunLogo from '../components/common/OpenMunLogo';
 import HomePage from '../components/pages/HomePage';
 import { useSession } from '../context/SessionContext';
+import { useP2P } from '../context/P2PContext';
 
 // ─── Grid constants ────────────────────────────────────────────────────────────
 const COLS = 12;
@@ -208,7 +212,44 @@ const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight
 };
 
 const Dashboard = () => {
-  const { descargarSesionJSON, cargarSesionJSON, agendaSesion, nombreComite } = useSession();
+  const { 
+    descargarSesionJSON, 
+    cargarSesionJSON, 
+    agendaSesion, 
+    nombreComite, 
+    paises, 
+    oradoresCola, 
+    oradoresCaucus, 
+    caucusActivo, 
+    votacionSesion, 
+    relojGSLState 
+  } = useSession();
+
+  const {
+    openLiveModal,
+    isLiveModalOpen,
+    closeLiveModal,
+    connectionStatus,
+    connectedPeers,
+    speakingRequests,
+    broadcastCurrentState,
+    setViewMode
+  } = useP2P();
+
+  // Sincronizar estado automáticamente a todos los peers conectados si el Chair está emitiendo
+  useEffect(() => {
+    broadcastCurrentState({
+      comision: nombreComite || 'Asamblea General - openMUN',
+      paises,
+      oradoresCola,
+      oradoresCaucus,
+      caucusActivo,
+      agendaSesion,
+      nombreComite,
+      votacionSesion,
+      relojGSLState
+    });
+  }, [broadcastCurrentState, paises, oradoresCola, oradoresCaucus, caucusActivo, agendaSesion, nombreComite, votacionSesion, relojGSLState]);
 
   // Cargar configuración desde localStorage si existe, o usar configMaster por defecto
   const [config, setConfig] = useState(() => {
@@ -627,6 +668,7 @@ const Dashboard = () => {
 
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} config={config} setConfig={setConfig} />
       <AccessibilityModal isOpen={isAccessOpen} onClose={() => setIsAccessOpen(false)} config={config} setConfig={setConfig} />
+      <LiveSessionModal isOpen={isLiveModalOpen} onClose={closeLiveModal} isLight={isLight} />
 
       {/* Sidebar de Widgets */}
       <WidgetSidebar
@@ -728,7 +770,43 @@ const Dashboard = () => {
             </div>
 
             {/* Acciones de Sesión JSON, Modo Claro/Oscuro y Opciones */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', width: '380px', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', width: '480px', justifyContent: 'flex-end' }}>
+              {/* Botón Sesión en Vivo P2P */}
+              <button
+                onClick={openLiveModal}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  backgroundColor: connectionStatus === 'host_active' ? 'rgba(34, 197, 94, 0.15)' : 'transparent',
+                  border: `1px solid ${connectionStatus === 'host_active' ? '#22c55e' : 'var(--subborder-color)'}`,
+                  borderRadius: '6px',
+                  color: connectionStatus === 'host_active' ? '#22c55e' : 'var(--text-color)',
+                  padding: '0.4rem 0.65rem',
+                  fontSize: '0.78rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  position: 'relative'
+                }}
+                title="Gestionar sala en vivo P2P (Delegados, Secretaría y Backroom)"
+              >
+                <Radio size={14} className={connectionStatus === 'host_active' ? 'animate-pulse' : ''} />
+                <span>
+                  {connectionStatus === 'host_active' ? `En Vivo (${connectedPeers.length})` : 'P2P Live'}
+                </span>
+                {speakingRequests.length > 0 && (
+                  <span style={{
+                    width: '7px',
+                    height: '7px',
+                    borderRadius: '50%',
+                    backgroundColor: '#ef4444',
+                    position: 'absolute',
+                    top: '3px',
+                    right: '3px'
+                  }} />
+                )}
+              </button>
+
               <button
                 onClick={() => fileInputRef.current?.click()}
                 style={{
@@ -914,7 +992,11 @@ const Dashboard = () => {
       {/* ── VISTA PRINCIPAL O TABLERO DE WIDGETS ── */}
       {activeTab === 'HOME' ? (
         <main style={{ flex: 1, padding: '1rem', overflowY: 'auto' }}>
-          <HomePage onNavigateToComienzo={() => setActiveTab('COMIENZO')} isLight={isLight} />
+          <HomePage 
+            onNavigateToComienzo={() => setActiveTab('COMIENZO')} 
+            onNavigateToJoin={() => setViewMode('join')}
+            isLight={isLight} 
+          />
         </main>
       ) : (
         <main style={{

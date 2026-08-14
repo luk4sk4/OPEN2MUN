@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Coffee, Play, Heart, Code2, Sparkles, ExternalLink, Edit3, ShieldCheck, Mail, Send, Copy, Check, MessageSquareHeart } from 'lucide-react';
+import { Coffee, Play, Heart, Code2, Sparkles, ExternalLink, Edit3, ShieldCheck, Mail, Send, Copy, Check, MessageSquareHeart, Radio, Users } from 'lucide-react';
 import OpenMunLogo from '../common/OpenMunLogo';
 
-const HomePage = ({ onNavigateToComienzo, isLight }) => {
+const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
   const [notasUsuario, setNotasUsuario] = useState(() => {
     return localStorage.getItem('openmun_home_notes') || 'Añade aquí tus notas personalizadas o agenda del evento...';
   });
@@ -82,7 +82,7 @@ const HomePage = ({ onNavigateToComienzo, isLight }) => {
 
         {/* ── BOTONES DE ACCIÓN: DONACIÓN, GITHUB Y COMENZAR ── */}
         <div style={{ display: 'flex', gap: '0.85rem', flexWrap: 'wrap', justifyContent: 'center', marginTop: '0.75rem' }}>
-          {/* Botón Comenzar Simulación */}
+          {/* Botón Comenzar Simulación (Chair) */}
           <button
             onClick={onNavigateToComienzo}
             style={{
@@ -101,8 +101,32 @@ const HomePage = ({ onNavigateToComienzo, isLight }) => {
               transition: 'all 0.2s ease'
             }}
           >
-            <Play size={18} fill="currentColor" /> Comenzar Simulación
+            <Play size={18} fill="currentColor" /> Comenzar como Mesa (Chair)
           </button>
+
+          {/* Botón Unirse a Sala en Vivo (Delegados / Staff) */}
+          {onNavigateToJoin && (
+            <button
+              onClick={onNavigateToJoin}
+              style={{
+                padding: '0.75rem 1.4rem',
+                backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                border: '1px solid #3b82f6',
+                color: '#60a5fa',
+                fontWeight: '800',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.6rem',
+                fontSize: '0.95rem',
+                boxShadow: '0 4px 15px rgba(59, 130, 246, 0.2)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <Radio size={18} /> Unirse a Sala en Vivo
+            </button>
+          )}
 
           {/* Botón de Donación (Tipico de Café) */}
           <a
