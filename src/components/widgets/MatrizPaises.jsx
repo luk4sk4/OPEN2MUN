@@ -1,14 +1,39 @@
 import React, { useState } from 'react';
-import { Crown, Search, Users, CheckCircle, AlertCircle, XCircle, Play, Sparkles, RotateCcw, ArrowUpDown, GripVertical } from 'lucide-react';
+import {
+  Crown,
+  Search,
+  Users,
+  CheckCircle,
+  AlertCircle,
+  XCircle,
+  Play,
+  Sparkles,
+  RotateCcw,
+  ArrowUpDown,
+  GripVertical,
+  Edit2
+} from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
+import CountryFlag from '../common/CountryFlag';
+import EditarPaisModal from '../modals/EditarPaisModal';
 
 const MatrizPaises = () => {
-  const { paises, cambiarEstatusPais, resetearAsistencia, toggleVetoPais, ordenarPaisesAlfabetico, reordenarPaises } = useSession();
+  const {
+    paises,
+    cambiarEstatusPais,
+    actualizarPais,
+    eliminarPais,
+    resetearAsistencia,
+    toggleVetoPais,
+    ordenarPaisesAlfabetico,
+    reordenarPaises
+  } = useSession();
 
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstatus, setFiltroEstatus] = useState('TODOS');
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
+  const [paisAEditar, setPaisAEditar] = useState(null);
 
   // Estado para Roll Call Nominal de Asistencia
   const [modoRollCall, setModoRollCall] = useState(false);
@@ -103,169 +128,218 @@ const MatrizPaises = () => {
       boxSizing: 'border-box',
       backgroundColor: 'var(--panel-color)',
       color: 'var(--text-color)',
-      gap: '0.8rem'
+      gap: '0.75rem',
+      position: 'relative'
     }}>
-      {/* Header y Resumen de Quórum */}
+      {/* Modal de edición rápida de país */}
+      {paisAEditar && (
+        <EditarPaisModal
+          isOpen={!!paisAEditar}
+          pais={paisAEditar}
+          onClose={() => setPaisAEditar(null)}
+          onGuardar={(id, datos) => {
+            actualizarPais(id, datos);
+            setPaisAEditar(null);
+          }}
+          onEliminar={(id) => {
+            eliminarPais(id);
+            setPaisAEditar(null);
+          }}
+        />
+      )}
+
+      {/* HEADER & BARRA DE ESTADÍSTICAS / QUÓRUM */}
       <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+        gap: '0.5rem',
+        padding: '0.6rem 0.8rem',
         backgroundColor: 'var(--card-header-bg)',
         border: '1px solid var(--border-color)',
-        borderRadius: '7px',
-        padding: '0.6rem 0.75rem',
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: '0.5rem',
-        textAlign: 'center'
+        borderRadius: '8px'
       }}>
-        <div style={{ borderRight: '1px solid var(--subborder-color)', paddingRight: '0.3rem' }}>
-          <div style={{ fontSize: '0.65rem', opacity: 0.6, textTransform: 'uppercase' }}>Presentes</div>
-          <div style={{ fontWeight: '800', fontSize: '1.1rem', color: '#22c55e' }}>{totalAsistentes}/{totalPaises}</div>
-          <div style={{ fontSize: '0.65rem', opacity: 0.5 }}>{porcentajeAsistencia}% Quórum</div>
+        {/* Total Delegaciones */}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Total Quórum
+          </span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
+            <span style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-color)' }}>
+              {totalAsistentes}
+            </span>
+            <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>/ {totalPaises} ({porcentajeAsistencia}%)</span>
+          </div>
         </div>
 
-        <div style={{ borderRight: '1px solid var(--subborder-color)', paddingRight: '0.3rem' }}>
-          <div style={{ fontSize: '0.65rem', opacity: 0.6, textTransform: 'uppercase' }}>P. y Votando</div>
-          <div style={{ fontWeight: '800', fontSize: '1.1rem', color: '#38bdf8' }}>{presentesYVotando}</div>
-          <div style={{ fontSize: '0.65rem', opacity: 0.5 }}>Sin abstención</div>
+        {/* Presentes */}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span style={{ fontSize: '0.7rem', color: '#22c55e', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Presentes
+          </span>
+          <span style={{ fontSize: '1.25rem', fontWeight: '800', color: '#22c55e' }}>
+            {presentes}
+          </span>
         </div>
 
-        <div style={{ borderRight: '1px solid var(--subborder-color)', paddingRight: '0.3rem' }}>
-          <div style={{ fontSize: '0.65rem', opacity: 0.6, textTransform: 'uppercase' }}>May. Simple</div>
-          <div style={{ fontWeight: '800', fontSize: '1.1rem', color: '#60a5fa' }}>{mayoriaSimple}</div>
-          <div style={{ fontSize: '0.65rem', opacity: 0.5 }}>50% + 1</div>
+        {/* Presentes y Votando */}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span style={{ fontSize: '0.7rem', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            P. y Votando
+          </span>
+          <span style={{ fontSize: '1.25rem', fontWeight: '800', color: '#3b82f6' }}>
+            {presentesYVotando}
+          </span>
         </div>
 
-        <div>
-          <div style={{ fontSize: '0.65rem', opacity: 0.6, textTransform: 'uppercase' }}>May. 2/3</div>
-          <div style={{ fontWeight: '800', fontSize: '1.1rem', color: '#c084fc' }}>{mayoriaCalificada}</div>
-          <div style={{ fontSize: '0.65rem', opacity: 0.5 }}>Calificada</div>
+        {/* Ausentes */}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span style={{ fontSize: '0.7rem', color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Ausentes
+          </span>
+          <span style={{ fontSize: '1.25rem', fontWeight: '800', color: '#ef4444' }}>
+            {ausentes}
+          </span>
+        </div>
+
+        {/* Mayorías Calculadas */}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span style={{ fontSize: '0.7rem', color: '#eab308', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Mayorías (Simp / 2/3)
+          </span>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'baseline' }}>
+            <span style={{ fontSize: '1.1rem', fontWeight: '800', color: '#eab308' }} title="Mayoría Simple">
+              {mayoriaSimple}
+            </span>
+            <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>|</span>
+            <span style={{ fontSize: '1.1rem', fontWeight: '800', color: '#f59e0b' }} title="Mayoría Calificada (2/3)">
+              {mayoriaCalificada}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Barra de Filtros, Ordenamiento y Búsqueda */}
-      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
-        <div style={{
-          flex: 1,
-          minWidth: '120px',
-          display: 'flex',
-          alignItems: 'center',
-          backgroundColor: 'var(--card-header-bg)',
-          border: '1px solid var(--border-color)',
-          borderRadius: '5px',
-          padding: '0.25rem 0.5rem',
-          gap: '0.35rem'
-        }}>
-          <Search size={13} style={{ opacity: 0.5 }} />
-          <input
-            type="text"
-            placeholder="Buscar país..."
-            value={busqueda}
-            onChange={e => setBusqueda(e.target.value)}
+      {/* CONTROLES Y HERRAMIENTAS DE PASO DE LISTA */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '0.5rem'
+      }}>
+        {/* Buscador y Filtros */}
+        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flex: '1 1 280px' }}>
+          <div style={{ position: 'relative', flex: 1 }}>
+            <Search size={14} style={{ position: 'absolute', left: '8px', top: '9px', color: 'var(--muted-text)' }} />
+            <input
+              type="text"
+              placeholder="Buscar delegación..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.4rem 0.6rem 0.4rem 1.8rem',
+                fontSize: '0.8rem',
+                borderRadius: '6px',
+                border: '1px solid var(--border-color)',
+                backgroundColor: 'var(--card-header-bg)',
+                color: 'var(--text-color)'
+              }}
+            />
+          </div>
+
+          <select
+            value={filtroEstatus}
+            onChange={(e) => setFiltroEstatus(e.target.value)}
             style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-color)',
-              outline: 'none',
+              padding: '0.4rem 0.6rem',
               fontSize: '0.78rem',
-              width: '100%'
+              borderRadius: '6px',
+              border: '1px solid var(--border-color)',
+              backgroundColor: 'var(--card-header-bg)',
+              color: 'var(--text-color)',
+              cursor: 'pointer'
             }}
-          />
+          >
+            <option value="TODOS">Todos ({totalPaises})</option>
+            <option value="Presente">Presente ({presentes})</option>
+            <option value="Presente y Votando">P. y Votando ({presentesYVotando})</option>
+            <option value="Ausente">Ausente ({ausentes})</option>
+            <option value="VETO">P5 / Veto</option>
+          </select>
         </div>
 
-        <select
-          value={filtroEstatus}
-          onChange={e => setFiltroEstatus(e.target.value)}
-          style={{
-            padding: '0.3rem 0.45rem',
-            backgroundColor: 'var(--card-header-bg)',
-            border: '1px solid var(--border-color)',
-            color: 'var(--text-color)',
-            borderRadius: '5px',
-            fontSize: '0.75rem'
-          }}
-        >
-          <option value="TODOS">Todos ({totalPaises})</option>
-          <option value="Presente">Presente</option>
-          <option value="Presente y Votando">Presente y Votando</option>
-          <option value="Ausente">Ausente</option>
-          <option value="VETO">👑 Miembros Veto</option>
-        </select>
+        {/* Acciones Rápidas */}
+        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+          <button
+            onClick={ordenarPaisesAlfabetico}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.3rem',
+              padding: '0.4rem 0.65rem',
+              backgroundColor: 'var(--card-header-bg)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              color: 'var(--text-color)',
+              fontSize: '0.78rem',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}
+            title="Ordenar alfabéticamente A-Z"
+          >
+            <ArrowUpDown size={13} />
+            <span>A-Z</span>
+          </button>
 
-        {/* Botón Orden A-Z de Países en la Matriz */}
-        <button
-          type="button"
-          onClick={ordenarPaisesAlfabetico}
-          style={{
-            padding: '0.3rem 0.55rem',
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid var(--border-color)',
-            color: 'var(--text-color)',
-            borderRadius: '5px',
-            fontSize: '0.75rem',
-            fontWeight: '600',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.3rem',
-            whiteSpace: 'nowrap'
-          }}
-          title="Ordenar países de A a Z en la matriz"
-        >
-          <ArrowUpDown size={12} />
-          <span>A-Z</span>
-        </button>
+          <button
+            onClick={resetearAsistencia}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.3rem',
+              padding: '0.4rem 0.65rem',
+              backgroundColor: 'var(--card-header-bg)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              color: '#ef4444',
+              fontSize: '0.78rem',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}
+            title="Marcar a todos como Ausente para iniciar nueva sesión"
+          >
+            <RotateCcw size={13} />
+            <span>Reiniciar Lista</span>
+          </button>
 
-        {/* Botón para activar el Roll Call */}
-        <button
-          onClick={toggleModoRollCall}
-          style={{
-            padding: '0.3rem 0.65rem',
-            backgroundColor: modoRollCall ? '#2563eb' : 'transparent',
-            border: '1px solid #3b82f6',
-            color: modoRollCall ? '#ffffff' : '#3b82f6',
-            borderRadius: '5px',
-            fontWeight: '700',
-            fontSize: '0.75rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.3rem',
-            whiteSpace: 'nowrap'
-          }}
-          title={modoRollCall ? 'Salir del Modo Roll Call' : 'Iniciar Paso de Lista Nominal (Roll Call)'}
-        >
-          <Play size={12} fill={modoRollCall ? '#ffffff' : 'none'} />
-          <span>{modoRollCall ? 'Salir' : 'Roll Call'}</span>
-        </button>
-
-        {/* Botón para reiniciar todos a Ausente */}
-        <button
-          onClick={resetearAsistencia}
-          style={{
-            padding: '0.3rem 0.55rem',
-            backgroundColor: 'transparent',
-            border: '1px solid var(--border-color)',
-            color: 'var(--text-color)',
-            borderRadius: '5px',
-            fontSize: '0.75rem',
-            fontWeight: '600',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.3rem',
-            whiteSpace: 'nowrap'
-          }}
-          title="Reiniciar todos los países a Ausente"
-        >
-          <RotateCcw size={12} />
-          <span>Reiniciar</span>
-        </button>
+          <button
+            onClick={toggleModoRollCall}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              padding: '0.4rem 0.85rem',
+              backgroundColor: modoRollCall ? '#ef4444' : '#3b82f6',
+              border: 'none',
+              borderRadius: '6px',
+              color: '#ffffff',
+              fontSize: '0.78rem',
+              fontWeight: '700',
+              cursor: 'pointer',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+            }}
+          >
+            <Play size={13} fill="#ffffff" />
+            <span>{modoRollCall ? 'Cerrar Paso Nominal' : 'Paso Nominal (Roll Call)'}</span>
+          </button>
+        </div>
       </div>
 
-      {/* Asistente Roll Call Nominal Interactivo */}
+      {/* ── MODO ROLL CALL NOMINAL INTERACTIVO ── */}
       {modoRollCall && (
         <div style={{
           backgroundColor: 'var(--card-header-bg)',
-          border: `1px solid ${rondaRollCall === 2 ? '#d97706' : '#3b82f6'}`,
+          border: '2px solid #3b82f6',
           borderRadius: '8px',
           padding: '0.75rem 1rem',
           display: 'flex',
@@ -274,7 +348,7 @@ const MatrizPaises = () => {
           boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
         }}>
           {/* Banner de Ronda */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--subborder-color)', paddingBottom: '0.35rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.35rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <Sparkles size={15} color={rondaRollCall === 2 ? '#f59e0b' : '#3b82f6'} />
               <span style={{ fontWeight: '800', fontSize: '0.82rem', color: rondaRollCall === 2 ? '#f59e0b' : '#60a5fa' }}>
@@ -289,7 +363,7 @@ const MatrizPaises = () => {
           {paisActualRollCall ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{ fontSize: '2rem' }}>{paisActualRollCall.bandera}</span>
+                <CountryFlag bandera={paisActualRollCall.bandera} nombre={paisActualRollCall.nombre} size="xl" />
                 <div>
                   <div style={{ fontSize: '0.68rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     Estatus actual: {paisActualRollCall.estatus}
@@ -334,6 +408,24 @@ const MatrizPaises = () => {
                   P. y Votando
                 </button>
 
+                {rondaRollCall === 1 && (
+                  <button
+                    onClick={() => registrarYAvanzarRollCall('pasar')}
+                    style={{
+                      padding: '0.5rem 0.85rem',
+                      backgroundColor: '#f59e0b',
+                      color: '#000000',
+                      fontWeight: '800',
+                      border: 'none',
+                      borderRadius: '5px',
+                      cursor: 'pointer',
+                      fontSize: '0.82rem'
+                    }}
+                  >
+                    Pasar
+                  </button>
+                )}
+
                 <button
                   onClick={() => registrarYAvanzarRollCall('Ausente')}
                   style={{
@@ -349,174 +441,189 @@ const MatrizPaises = () => {
                 >
                   Ausente
                 </button>
-
-                {/* Botón Pasar / Omitir (Solo disponible en Ronda 1) */}
-                {rondaRollCall === 1 && (
-                  <button
-                    onClick={() => registrarYAvanzarRollCall('pasar')}
-                    style={{
-                      padding: '0.5rem 0.75rem',
-                      backgroundColor: '#3f3f46',
-                      color: '#ffffff',
-                      fontWeight: '700',
-                      border: 'none',
-                      borderRadius: '5px',
-                      cursor: 'pointer',
-                      fontSize: '0.78rem'
-                    }}
-                    title="Pasar / Omitir para responder en Segunda Ronda"
-                  >
-                    Pasar
-                  </button>
-                )}
               </div>
             </div>
           ) : (
-            <div style={{ textAlign: 'center', opacity: 0.7, padding: '0.4rem', fontSize: '0.8rem' }}>
-              ¡Paso de Lista finalizado!
+            <div style={{ textAlign: 'center', padding: '0.75rem', color: '#22c55e', fontWeight: '700' }}>
+              ✓ Paso de lista nominal completado para todas las delegaciones.
             </div>
           )}
         </div>
       )}
 
-      {/* Lista / Matriz de Países */}
-      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.3rem', paddingRight: '2px' }}>
-        {paisesFiltrados.map((p, idx) => {
-          const isDragging = draggedIndex === idx;
-          const isDragOver = dragOverIndex === idx;
+      {/* ── LISTA / MATRIZ DE DELEGACIONES ── */}
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.35rem',
+        paddingRight: '0.2rem'
+      }}>
+        {paisesFiltrados.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted-text)', fontSize: '0.85rem' }}>
+            No se encontraron delegaciones con el filtro seleccionado.
+          </div>
+        ) : (
+          paisesFiltrados.map((p, index) => {
+            const isDragging = draggedIndex === index;
+            const isDragOver = dragOverIndex === index;
 
-          return (
-            <div
-              key={p.id}
-              draggable
-              onDragStart={(e) => {
-                e.dataTransfer.setData('text/plain', idx.toString());
-                e.dataTransfer.effectAllowed = 'move';
-                setDraggedIndex(idx);
-              }}
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'move';
-              }}
-              onDragEnter={(e) => {
-                e.preventDefault();
-                if (draggedIndex !== idx) setDragOverIndex(idx);
-              }}
-              onDragLeave={() => {
-                if (dragOverIndex === idx) setDragOverIndex(null);
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                const fromFilteredIndexStr = e.dataTransfer.getData('text/plain');
-                const fromFilteredIndex = parseInt(fromFilteredIndexStr, 10);
-                if (!isNaN(fromFilteredIndex) && fromFilteredIndex !== idx) {
-                  const sourcePais = paisesFiltrados[fromFilteredIndex];
-                  const targetPais = paisesFiltrados[idx];
-                  if (sourcePais && targetPais) {
-                    const fromMasterIndex = paises.findIndex(item => item.id === sourcePais.id);
-                    const toMasterIndex = paises.findIndex(item => item.id === targetPais.id);
-                    if (fromMasterIndex !== -1 && toMasterIndex !== -1) {
-                      reordenarPaises(fromMasterIndex, toMasterIndex);
+            return (
+              <div
+                key={p.id}
+                draggable
+                onDragStart={() => setDraggedIndex(index)}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  if (dragOverIndex !== index) setDragOverIndex(index);
+                }}
+                onDrop={() => {
+                  if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+                    const fromOriginal = paises.findIndex(item => item.id === paisesFiltrados[draggedIndex].id);
+                    const toOriginal = paises.findIndex(item => item.id === paisesFiltrados[dragOverIndex].id);
+                    if (fromOriginal !== -1 && toOriginal !== -1) {
+                      reordenarPaises(fromOriginal, toOriginal);
                     }
                   }
-                }
-                setDraggedIndex(null);
-                setDragOverIndex(null);
-              }}
-              onDragEnd={() => {
-                setDraggedIndex(null);
-                setDragOverIndex(null);
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0.45rem 0.75rem',
-                backgroundColor: isDragging ? 'rgba(59, 130, 246, 0.15)' : 'var(--card-header-bg)',
-                border: isDragOver ? '2px dashed #3b82f6' : '1px solid var(--border-color)',
-                borderRadius: '6px',
-                fontSize: '0.82rem',
-                opacity: isDragging ? 0.5 : 1,
-                cursor: 'grab',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <GripVertical size={13} style={{ color: '#71717a', cursor: 'grab', flexShrink: 0 }} title="Arrastrar para reordenar país" />
-                <span style={{ fontSize: '1.2rem' }}>{p.bandera}</span>
-                <span style={{ fontWeight: '700', color: 'var(--text-color)' }}>{p.nombre}</span>
+                  setDraggedIndex(null);
+                  setDragOverIndex(null);
+                }}
+                onDragEnd={() => {
+                  setDraggedIndex(null);
+                  setDragOverIndex(null);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.45rem 0.75rem',
+                  backgroundColor: isDragging ? 'rgba(59, 130, 246, 0.15)' : 'var(--card-header-bg)',
+                  border: isDragOver ? '2px dashed #3b82f6' : '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                  fontSize: '0.82rem',
+                  opacity: isDragging ? 0.5 : 1,
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {/* Lado Izquierdo: Drag + Bandera + Nombre + Veto */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <GripVertical size={13} style={{ color: '#71717a', cursor: 'grab', flexShrink: 0 }} title="Arrastrar para reordenar país" />
+                  
+                  {/* Bandera con click para editar */}
+                  <div
+                    onClick={() => setPaisAEditar(p)}
+                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                    title="Haz clic para cambiar bandera o imagen"
+                  >
+                    <CountryFlag bandera={p.bandera} nombre={p.nombre} size="md" />
+                  </div>
 
-                {/* Botón / Indicador de Veto 👑 */}
-                <button
-                  onClick={() => toggleVetoPais(p.id)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '2px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    opacity: p.veto ? 1 : 0.2
-                  }}
-                  title={p.veto ? 'Tiene derecho a Veto (👑 P5)' : 'Sin derecho a Veto'}
-                >
-                  <Crown size={14} color={p.veto ? '#facc15' : '#888888'} fill={p.veto ? '#facc15' : 'none'} />
-                </button>
+                  <span
+                    onClick={() => setPaisAEditar(p)}
+                    style={{
+                      fontWeight: '700',
+                      color: 'var(--text-color)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem'
+                    }}
+                    title="Haz clic para editar delegación"
+                  >
+                    {p.nombre}
+                  </span>
+
+                  {/* Botón / Indicador de Veto 👑 */}
+                  <button
+                    onClick={() => toggleVetoPais(p.id)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '2px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      opacity: p.veto ? 1 : 0.2
+                    }}
+                    title={p.veto ? 'Tiene derecho a Veto (👑 P5)' : 'Sin derecho a Veto'}
+                  >
+                    <Crown size={14} color={p.veto ? '#facc15' : '#888888'} fill={p.veto ? '#facc15' : 'none'} />
+                  </button>
+
+                  {/* Botón editar delegación */}
+                  <button
+                    onClick={() => setPaisAEditar(p)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '2px',
+                      color: 'var(--muted-text)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      opacity: 0.6
+                    }}
+                    title="Editar nombre o bandera"
+                  >
+                    <Edit2 size={12} />
+                  </button>
+                </div>
+
+                {/* Selector de Estatus Roll Call */}
+                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                  <button
+                    onClick={() => cambiarEstatusPais(p.id, 'Presente')}
+                    style={{
+                      padding: '0.2rem 0.45rem',
+                      fontSize: '0.7rem',
+                      fontWeight: '600',
+                      borderRadius: '4px',
+                      border: '1px solid #15803d',
+                      backgroundColor: p.estatus === 'Presente' ? '#15803d' : 'transparent',
+                      color: p.estatus === 'Presente' ? '#ffffff' : '#22c55e',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Presente
+                  </button>
+
+                  <button
+                    onClick={() => cambiarEstatusPais(p.id, 'Presente y Votando')}
+                    style={{
+                      padding: '0.2rem 0.45rem',
+                      fontSize: '0.7rem',
+                      fontWeight: '600',
+                      borderRadius: '4px',
+                      border: '1px solid #1d4ed8',
+                      backgroundColor: p.estatus === 'Presente y Votando' ? '#1d4ed8' : 'transparent',
+                      color: p.estatus === 'Presente y Votando' ? '#ffffff' : '#3b82f6',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    P. y Votando
+                  </button>
+
+                  <button
+                    onClick={() => cambiarEstatusPais(p.id, 'Ausente')}
+                    style={{
+                      padding: '0.2rem 0.45rem',
+                      fontSize: '0.7rem',
+                      fontWeight: '600',
+                      borderRadius: '4px',
+                      border: '1px solid #b91c1c',
+                      backgroundColor: p.estatus === 'Ausente' ? '#b91c1c' : 'transparent',
+                      color: p.estatus === 'Ausente' ? '#ffffff' : '#ef4444',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Ausente
+                  </button>
+                </div>
               </div>
-
-              {/* Selector de Estatus Roll Call */}
-              <div style={{ display: 'flex', gap: '0.25rem' }}>
-                <button
-                  onClick={() => cambiarEstatusPais(p.id, 'Presente')}
-                  style={{
-                    padding: '0.2rem 0.45rem',
-                    fontSize: '0.7rem',
-                    fontWeight: '600',
-                    borderRadius: '4px',
-                    border: '1px solid #15803d',
-                    backgroundColor: p.estatus === 'Presente' ? '#15803d' : 'transparent',
-                    color: p.estatus === 'Presente' ? '#ffffff' : '#22c55e',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Presente
-                </button>
-
-                <button
-                  onClick={() => cambiarEstatusPais(p.id, 'Presente y Votando')}
-                  style={{
-                    padding: '0.2rem 0.45rem',
-                    fontSize: '0.7rem',
-                    fontWeight: '600',
-                    borderRadius: '4px',
-                    border: '1px solid #1d4ed8',
-                    backgroundColor: p.estatus === 'Presente y Votando' ? '#1d4ed8' : 'transparent',
-                    color: p.estatus === 'Presente y Votando' ? '#ffffff' : '#3b82f6',
-                    cursor: 'pointer'
-                  }}
-                >
-                  P. y Votando
-                </button>
-
-                <button
-                  onClick={() => cambiarEstatusPais(p.id, 'Ausente')}
-                  style={{
-                    padding: '0.2rem 0.45rem',
-                    fontSize: '0.7rem',
-                    fontWeight: '600',
-                    borderRadius: '4px',
-                    border: '1px solid #b91c1c',
-                    backgroundColor: p.estatus === 'Ausente' ? '#b91c1c' : 'transparent',
-                    color: p.estatus === 'Ausente' ? '#ffffff' : '#ef4444',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Ausente
-                </button>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </div>
   );

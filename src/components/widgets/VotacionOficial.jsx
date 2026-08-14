@@ -19,6 +19,7 @@ import {
   Target
 } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
+import CountryFlag from '../common/CountryFlag';
 
 const VotacionOficial = () => {
   const {
@@ -536,7 +537,7 @@ const VotacionOficial = () => {
           {paisActualRollCall ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{ fontSize: '2rem' }}>{paisActualRollCall.bandera}</span>
+                <CountryFlag bandera={paisActualRollCall.bandera} nombre={paisActualRollCall.nombre} size="xl" />
                 <div>
                   <div style={{ fontSize: '0.68rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     {paisActualRollCall.estatus}
@@ -797,7 +798,7 @@ const VotacionOficial = () => {
             >
               {/* Información de la Delegación */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0, flex: 1 }}>
-                <span style={{ fontSize: '1.25rem' }}>{p.bandera}</span>
+                <CountryFlag bandera={p.bandera} nombre={p.nombre} size="md" />
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, flexWrap: 'wrap' }}>
                   <span style={{ fontWeight: '800', fontSize: '0.9rem', color: 'var(--text-color)' }}>

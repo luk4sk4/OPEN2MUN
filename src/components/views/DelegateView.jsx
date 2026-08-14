@@ -23,6 +23,7 @@ import {
   Check,
   AlertCircle
 } from 'lucide-react';
+import CountryFlag from '../common/CountryFlag';
 import { useP2P } from '../../context/P2PContext';
 import OpenMunLogo from '../common/OpenMunLogo';
 
@@ -645,7 +646,8 @@ const DelegateView = ({ isLight, onExit }) => {
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', fontWeight: '700' }}>
                         <span style={{ color: 'var(--muted-text)', fontSize: '0.75rem' }}>#{idx + 1}</span>
-                        <span>{o.bandera || '🇺🇳'} {o.nombre}</span>
+                        <CountryFlag bandera={o.bandera} nombre={o.nombre} size="sm" />
+                        <span>{o.nombre}</span>
                       </div>
                       {idx === 0 && (
                         <span style={{ fontSize: '0.65rem', fontWeight: '800', color: '#22c55e' }}>EN TURNO</span>

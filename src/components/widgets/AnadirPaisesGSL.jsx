@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Users, Check, Plus, X, Crown, Sparkles, UserPlus, Trash2, ArrowUpDown, GripVertical } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
+import CountryFlag from '../common/CountryFlag';
 
 // Normalizar texto para búsqueda sin distinguir tildes ni mayúsculas
 function normalizar(texto) {
@@ -499,9 +500,7 @@ const AnadirPaisesGSL = () => {
                 >
                   {/* Bandera y Nombre */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0, flex: 1 }}>
-                    <span style={{ fontSize: '1.15rem', lineHeight: 1, flexShrink: 0 }}>
-                      {pais.bandera || '🇺🇳'}
-                    </span>
+                    <CountryFlag bandera={pais.bandera} nombre={pais.nombre} size="sm" />
                     <span style={{
                       fontSize: '0.78rem',
                       fontWeight: estaEnLista ? '500' : '700',

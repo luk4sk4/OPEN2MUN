@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Upload,
   ClipboardPaste,
@@ -11,103 +11,29 @@ import {
   Globe2,
   Sparkles,
   X,
-  FileText
+  FileText,
+  Camera,
+  Image as ImageIcon,
+  Edit2,
+  Plus
 } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
-
-// ── Diccionario rápido de banderas para auto-detección ────────────────────────
-const BANDERAS_MAP = {
-  // P5
-  'estados unidos': '🇺🇸', 'eeuu': '🇺🇸', 'usa': '🇺🇸', 'united states': '🇺🇸',
-  'reino unido': '🇬🇧', 'uk': '🇬🇧', 'united kingdom': '🇬🇧', 'gran bretaña': '🇬🇧',
-  'francia': '🇫🇷', 'france': '🇫🇷',
-  'rusia': '🇷🇺', 'federacion rusa': '🇷🇺', 'federación rusa': '🇷🇺', 'russia': '🇷🇺',
-  'china': '🇨🇳',
-  // Iberoamérica
-  'espana': '🇪🇸', 'españa': '🇪🇸', 'spain': '🇪🇸',
-  'mexico': '🇲🇽', 'méxico': '🇲🇽',
-  'argentina': '🇦🇷',
-  'colombia': '🇨🇴',
-  'chile': '🇨🇱',
-  'peru': '🇵🇪', 'perú': '🇵🇪',
-  'brasil': '🇧🇷', 'brazil': '🇧🇷',
-  'ecuador': '🇪🇨',
-  'venezuela': '🇻🇪',
-  'uruguay': '🇺🇾',
-  'paraguay': '🇵🇾',
-  'bolivia': '🇧🇴',
-  'cuba': '🇨🇺',
-  'republica dominicana': '🇩🇴', 'república dominicana': '🇩🇴',
-  'costa rica': '🇨🇷',
-  'panama': '🇵🇦', 'panamá': '🇵🇦',
-  'guatemala': '🇬🇹',
-  'honduras': '🇭🇳',
-  'el salvador': '🇸🇻',
-  'nicaragua': '🇳🇮',
-  // Europa
-  'alemania': '🇩🇪', 'germany': '🇩🇪',
-  'italia': '🇮🇹', 'italy': '🇮🇹',
-  'portugal': '🇵🇹',
-  'paises bajos': '🇳🇱', 'países bajos': '🇳🇱', 'holanda': '🇳🇱', 'netherlands': '🇳🇱',
-  'belgica': '🇧🇪', 'bélgica': '🇧🇪', 'belgium': '🇧🇪',
-  'suiza': '🇨🇭', 'switzerland': '🇨🇭',
-  'austria': '🇦🇹',
-  'suecia': '🇸🇪', 'sweden': '🇸🇪',
-  'noruega': '🇳🇴', 'norway': '🇳🇴',
-  'dinamarca': '🇩🇰', 'denmark': '🇩🇰',
-  'finlandia': '🇫🇮', 'finland': '🇫🇮',
-  'grecia': '🇬🇷', 'greece': '🇬🇷',
-  'polonia': '🇵🇱', 'poland': '🇵🇱',
-  'irlanda': '🇮🇪', 'ireland': '🇮🇪',
-  'ucrania': '🇺🇦', 'ukraine': '🇺🇦',
-  'turquia': '🇹🇷', 'turquía': '🇹🇷', 'turkey': '🇹🇷',
-  // Asia / Oceanía
-  'japon': '🇯🇵', 'japón': '🇯🇵', 'japan': '🇯🇵',
-  'corea del sur': '🇰🇷', 'south korea': '🇰🇷', 'corea': '🇰🇷',
-  'corea del norte': '🇰🇵', 'north korea': '🇰🇵',
-  'india': '🇮🇳',
-  'indonesia': '🇮🇩',
-  'pakistan': '🇵🇰', 'pakistán': '🇵🇰',
-  'australia': '🇦🇺',
-  'nueva zelanda': '🇳🇿', 'new zealand': '🇳🇿',
-  'singapur': '🇸🇬', 'singapore': '🇸🇬',
-  'filipinas': '🇵🇭', 'philippines': '🇵🇭',
-  'vietnam': '🇻🇳',
-  'tailandia': '🇹🇭', 'thailand': '🇹🇭',
-  'malasia': '🇲🇾', 'malaysia': '🇲🇾',
-  // Medio Oriente
-  'israel': '🇮🇱',
-  'palestina': '🇵🇸', 'palestine': '🇵🇸',
-  'arabia saudita': '🇸🇦', 'arabia saudi': '🇸🇦', 'saudi arabia': '🇸🇦',
-  'iran': '🇮🇷', 'irán': '🇮🇷',
-  'irak': '🇮🇶', 'iraq': '🇮🇶',
-  'egipto': '🇪🇬', 'egypt': '🇪🇬',
-  'emiratos arabes unidos': '🇦🇪', 'emiratos árabes unidos': '🇦🇪', 'eau': '🇦🇪', 'uae': '🇦🇪',
-  'qatar': '🇶🇦',
-  // África
-  'sudafrica': '🇿🇦', 'sudáfrica': '🇿🇦', 'south africa': '🇿🇦',
-  'nigeria': '🇳🇬',
-  'kenia': '🇰🇪', 'kenya': '🇰🇪',
-  'marruecos': '🇲🇦', 'morocco': '🇲🇦',
-  'argelia': '🇩🇿', 'algeria': '🇩🇿',
-  'ghana': '🇬🇭',
-  'etiopia': '🇪🇹', 'etiopía': '🇪🇹', 'ethiopia': '🇪🇹',
-  // América del Norte
-  'canada': '🇨🇦', 'canadá': '🇨🇦',
-  // Organizaciones
-  'union europea': '🇪🇺', 'unión europea': '🇪🇺', 'ue': '🇪🇺', 'eu': '🇪🇺',
-  'onu': '🇺🇳', 'naciones unidas': '🇺🇳', 'un': '🇺🇳'
-};
+import CountryFlag from '../common/CountryFlag';
+import {
+  normalizarBandera,
+  procesarImagenBandera,
+  DICCIONARIO_PAISES_ISO
+} from '../../utils/flags';
 
 const P5_SET = new Set([
-  'estados unidos', 'eeuu', 'usa', 'united states',
-  'reino unido', 'uk', 'united kingdom', 'gran bretaña',
+  'estados unidos', 'eeuu', 'usa', 'united states', 'ee.uu.',
+  'reino unido', 'uk', 'united kingdom', 'gran bretaña', 'gran bretana',
   'francia', 'france',
   'rusia', 'federacion rusa', 'federación rusa', 'russia',
   'china'
 ]);
 
-function normalizar(texto) {
+function normalizarTexto(texto) {
   return String(texto || '')
     .toLowerCase()
     .normalize('NFD')
@@ -116,84 +42,84 @@ function normalizar(texto) {
 }
 
 function autodetectarBanderaYVeto(nombre) {
-  const norm = normalizar(nombre);
-  const bandera = BANDERAS_MAP[norm] || '🇺🇳';
+  const norm = normalizarTexto(nombre);
+  const bandera = normalizarBandera('', nombre);
   const veto = P5_SET.has(norm);
   return { bandera, veto };
 }
 
-// ── Presets de Comités ───────────────────────────────────────────────────────
+// ── Presets de Comités con Códigos ISO ───────────────────────────────────────
 const PRESETS = [
   {
     id: 'unsc',
     nombre: 'Consejo de Seguridad (UNSC)',
     paises: [
-      { nombre: 'China', bandera: '🇨🇳', veto: true },
-      { nombre: 'Estados Unidos', bandera: '🇺🇸', veto: true },
-      { nombre: 'Francia', bandera: '🇫🇷', veto: true },
-      { nombre: 'Reino Unido', bandera: '🇬🇧', veto: true },
-      { nombre: 'Rusia', bandera: '🇷🇺', veto: true },
-      { nombre: 'Argelia', bandera: '🇩🇿', veto: false },
-      { nombre: 'Dinamarca', bandera: '🇩🇰', veto: false },
-      { nombre: 'Grecia', bandera: '🇬🇷', veto: false },
-      { nombre: 'Guyana', bandera: '🇬🇾', veto: false },
-      { nombre: 'Pakistán', bandera: '🇵🇰', veto: false },
-      { nombre: 'Panamá', bandera: '🇵🇦', veto: false },
-      { nombre: 'República de Corea', bandera: '🇰🇷', veto: false },
-      { nombre: 'Sierra Leona', bandera: '🇸🇱', veto: false },
-      { nombre: 'Eslovenia', bandera: '🇸🇮', veto: false },
-      { nombre: 'Somalia', bandera: '🇸🇴', veto: false }
+      { nombre: 'China', bandera: 'cn', veto: true },
+      { nombre: 'Estados Unidos', bandera: 'us', veto: true },
+      { nombre: 'Francia', bandera: 'fr', veto: true },
+      { nombre: 'Reino Unido', bandera: 'gb', veto: true },
+      { nombre: 'Rusia', bandera: 'ru', veto: true },
+      { nombre: 'Argelia', bandera: 'dz', veto: false },
+      { nombre: 'Dinamarca', bandera: 'dk', veto: false },
+      { nombre: 'Grecia', bandera: 'gr', veto: false },
+      { nombre: 'Guyana', bandera: 'gy', veto: false },
+      { nombre: 'Pakistán', bandera: 'pk', veto: false },
+      { nombre: 'Panamá', bandera: 'pa', veto: false },
+      { nombre: 'República de Corea', bandera: 'kr', veto: false },
+      { nombre: 'Sierra Leona', bandera: 'sl', veto: false },
+      { nombre: 'Eslovenia', bandera: 'si', veto: false },
+      { nombre: 'Somalia', bandera: 'so', veto: false }
     ]
   },
   {
     id: 'g20',
     nombre: 'Cumbre del G20',
     paises: [
-      { nombre: 'Alemania', bandera: '🇩🇪', veto: false },
-      { nombre: 'Arabia Saudita', bandera: '🇸🇦', veto: false },
-      { nombre: 'Argentina', bandera: '🇦🇷', veto: false },
-      { nombre: 'Australia', bandera: '🇦🇺', veto: false },
-      { nombre: 'Brasil', bandera: '🇧🇷', veto: false },
-      { nombre: 'Canadá', bandera: '🇨🇦', veto: false },
-      { nombre: 'China', bandera: '🇨🇳', veto: true },
-      { nombre: 'Corea del Sur', bandera: '🇰🇷', veto: false },
-      { nombre: 'Estados Unidos', bandera: '🇺🇸', veto: true },
-      { nombre: 'Francia', bandera: '🇫🇷', veto: true },
-      { nombre: 'India', bandera: '🇮🇳', veto: false },
-      { nombre: 'Indonesia', bandera: '🇮🇩', veto: false },
-      { nombre: 'Italia', bandera: '🇮🇹', veto: false },
-      { nombre: 'Japón', bandera: '🇯🇵', veto: false },
-      { nombre: 'México', bandera: '🇲🇽', veto: false },
-      { nombre: 'Reino Unido', bandera: '🇬🇧', veto: true },
-      { nombre: 'Rusia', bandera: '🇷🇺', veto: true },
-      { nombre: 'Sudáfrica', bandera: '🇿🇦', veto: false },
-      { nombre: 'Turquía', bandera: '🇹🇷', veto: false },
-      { nombre: 'Unión Europea', bandera: '🇪🇺', veto: false }
+      { nombre: 'Alemania', bandera: 'de', veto: false },
+      { nombre: 'Arabia Saudita', bandera: 'sa', veto: false },
+      { nombre: 'Argentina', bandera: 'ar', veto: false },
+      { nombre: 'Australia', bandera: 'au', veto: false },
+      { nombre: 'Brasil', bandera: 'br', veto: false },
+      { nombre: 'Canadá', bandera: 'ca', veto: false },
+      { nombre: 'China', bandera: 'cn', veto: true },
+      { nombre: 'Corea del Sur', bandera: 'kr', veto: false },
+      { nombre: 'Estados Unidos', bandera: 'us', veto: true },
+      { nombre: 'Francia', bandera: 'fr', veto: true },
+      { nombre: 'India', bandera: 'in', veto: false },
+      { nombre: 'Indonesia', bandera: 'id', veto: false },
+      { nombre: 'Italia', bandera: 'it', veto: false },
+      { nombre: 'Japón', bandera: 'jp', veto: false },
+      { nombre: 'México', bandera: 'mx', veto: false },
+      { nombre: 'Reino Unido', bandera: 'gb', veto: true },
+      { nombre: 'Rusia', bandera: 'ru', veto: true },
+      { nombre: 'Sudáfrica', bandera: 'za', veto: false },
+      { nombre: 'Turquía', bandera: 'tr', veto: false },
+      { nombre: 'Unión Europea', bandera: 'eu', veto: false }
     ]
   },
   {
     id: 'latam',
     nombre: 'América Latina y Caribe (CELAC)',
     paises: [
-      { nombre: 'Argentina', bandera: '🇦🇷', veto: false },
-      { nombre: 'Bolivia', bandera: '🇧🇴', veto: false },
-      { nombre: 'Brasil', bandera: '🇧🇷', veto: false },
-      { nombre: 'Chile', bandera: '🇨🇱', veto: false },
-      { nombre: 'Colombia', bandera: '🇨🇴', veto: false },
-      { nombre: 'Costa Rica', bandera: '🇨🇷', veto: false },
-      { nombre: 'Cuba', bandera: '🇨🇺', veto: false },
-      { nombre: 'Ecuador', bandera: '🇪🇨', veto: false },
-      { nombre: 'El Salvador', bandera: '🇸🇻', veto: false },
-      { nombre: 'Guatemala', bandera: '🇬🇹', veto: false },
-      { nombre: 'Honduras', bandera: '🇭🇳', veto: false },
-      { nombre: 'México', bandera: '🇲🇽', veto: false },
-      { nombre: 'Nicaragua', bandera: '🇳🇮', veto: false },
-      { nombre: 'Panamá', bandera: '🇵🇦', veto: false },
-      { nombre: 'Paraguay', bandera: '🇵🇾', veto: false },
-      { nombre: 'Perú', bandera: '🇵🇪', veto: false },
-      { nombre: 'República Dominicana', bandera: '🇩🇴', veto: false },
-      { nombre: 'Uruguay', bandera: '🇺🇾', veto: false },
-      { nombre: 'Venezuela', bandera: '🇻🇪', veto: false }
+      { nombre: 'Argentina', bandera: 'ar', veto: false },
+      { nombre: 'Bolivia', bandera: 'bo', veto: false },
+      { nombre: 'Brasil', bandera: 'br', veto: false },
+      { nombre: 'Chile', bandera: 'cl', veto: false },
+      { nombre: 'Colombia', bandera: 'co', veto: false },
+      { nombre: 'Costa Rica', bandera: 'cr', veto: false },
+      { nombre: 'Cuba', bandera: 'cu', veto: false },
+      { nombre: 'Ecuador', bandera: 'ec', veto: false },
+      { nombre: 'El Salvador', bandera: 'sv', veto: false },
+      { nombre: 'Guatemala', bandera: 'gt', veto: false },
+      { nombre: 'Honduras', bandera: 'hn', veto: false },
+      { nombre: 'México', bandera: 'mx', veto: false },
+      { nombre: 'Nicaragua', bandera: 'ni', veto: false },
+      { nombre: 'Panamá', bandera: 'pa', veto: false },
+      { nombre: 'Paraguay', bandera: 'py', veto: false },
+      { nombre: 'Perú', bandera: 'pe', veto: false },
+      { nombre: 'República Dominicana', bandera: 'do', veto: false },
+      { nombre: 'Uruguay', bandera: 'uy', veto: false },
+      { nombre: 'Venezuela', bandera: 've', veto: false }
     ]
   }
 ];
@@ -230,7 +156,8 @@ function filaAPais(fila, index) {
 
   const auto = autodetectarBanderaYVeto(nombre);
   const id = get('id', 'codigo', 'code', 'iso') || `pais_${Date.now()}_${index}`;
-  const bandera = get('bandera', 'flag', 'emoji') || auto.bandera;
+  const rawBandera = get('bandera', 'flag', 'emoji', 'imagen', 'image');
+  const bandera = rawBandera ? normalizarBandera(rawBandera, nombre) : auto.bandera;
   const vetoRaw = get('veto', 'p5', 'permanent_member', 'miembro_permanente');
   const veto = vetoRaw !== undefined
     ? ['true', '1', 'si', 'sí', 'yes', 's'].includes(vetoRaw.toLowerCase())
@@ -293,12 +220,57 @@ const ImportarPaises = () => {
   const [tab, setTab] = useState('archivo'); // 'archivo' | 'pegar' | 'individual' | 'presets'
   const [textoPegar, setTextoPegar] = useState('');
   const [nuevoNombre, setNuevoNombre] = useState('');
+  const [nuevaBandera, setNuevaBandera] = useState('');
+  const [nuevoVeto, setNuevoVeto] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState('');
   const [exito, setExito] = useState('');
   const [preview, setPreview] = useState(null);
+  const [selectedPreviewIndex, setSelectedPreviewIndex] = useState(null);
 
   const fileInputRef = useRef(null);
+  const rowFileInputRef = useRef(null);
+  const individualFileInputRef = useRef(null);
+
+  // Soporte global de Pegado (Ctrl+V) cuando se tiene una fila de preview seleccionada
+  useEffect(() => {
+    const handlePaste = async (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const file = items[i].getAsFile();
+          if (file) {
+            try {
+              const base64 = await procesarImagenBandera(file);
+              if (preview && selectedPreviewIndex !== null && preview[selectedPreviewIndex]) {
+                e.preventDefault();
+                setPreview(prev => {
+                  const copy = [...prev];
+                  copy[selectedPreviewIndex] = { ...copy[selectedPreviewIndex], bandera: base64 };
+                  return copy;
+                });
+                setExito(`✨ Imagen pegada a "${preview[selectedPreviewIndex].nombre}"`);
+                setTimeout(() => setExito(''), 3000);
+              } else if (tab === 'individual') {
+                e.preventDefault();
+                setNuevaBandera(base64);
+                setExito('✨ Imagen personalizada pegada');
+                setTimeout(() => setExito(''), 3000);
+              }
+            } catch (err) {
+              console.error('Error al procesar imagen pegada:', err);
+            }
+          }
+          break;
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [preview, selectedPreviewIndex, tab]);
 
   // Procesar archivo seleccionado
   const handleArchivo = async (e) => {
@@ -310,6 +282,7 @@ const ImportarPaises = () => {
     setError('');
     setExito('');
     setPreview(null);
+    setSelectedPreviewIndex(null);
 
     try {
       const ext = archivo.name.split('.').pop().toLowerCase();
@@ -350,6 +323,7 @@ const ImportarPaises = () => {
       return;
     }
     setPreview(parsed);
+    setSelectedPreviewIndex(null);
   };
 
   // Cargar preset de comisión
@@ -362,6 +336,7 @@ const ImportarPaises = () => {
       estatus: 'Presente'
     }));
     setPreview(parsed);
+    setSelectedPreviewIndex(null);
   };
 
   // Añadir un solo país al instante
@@ -369,19 +344,61 @@ const ImportarPaises = () => {
     e?.preventDefault();
     if (!nuevoNombre.trim()) return;
 
-    const { bandera, veto } = autodetectarBanderaYVeto(nuevoNombre.trim());
+    const auto = autodetectarBanderaYVeto(nuevoNombre.trim());
+    const finalBandera = nuevaBandera || auto.bandera;
+
     const nuevo = {
       id: `pais_${Date.now()}`,
       nombre: nuevoNombre.trim(),
-      bandera,
-      veto,
+      bandera: finalBandera,
+      veto: nuevoVeto || auto.veto,
       estatus: 'Presente'
     };
 
     setPaises([...paises, nuevo]);
     setNuevoNombre('');
-    setExito(`"${nuevo.nombre}" añadido.`);
+    setNuevaBandera('');
+    setNuevoVeto(false);
+    setExito(`"${nuevo.nombre}" añadido correctamente.`);
     setTimeout(() => setExito(''), 3000);
+  };
+
+  // Subir imagen para una fila concreta de la previsualización
+  const handleSubirImagenFila = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || selectedPreviewIndex === null) return;
+
+    try {
+      const base64 = await procesarImagenBandera(file);
+      setPreview(prev => {
+        const copy = [...prev];
+        copy[selectedPreviewIndex] = { ...copy[selectedPreviewIndex], bandera: base64 };
+        return copy;
+      });
+      setExito(`✨ Imagen asignada a "${preview[selectedPreviewIndex].nombre}"`);
+      setTimeout(() => setExito(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setError('Error al procesar la imagen.');
+    } finally {
+      if (rowFileInputRef.current) rowFileInputRef.current.value = '';
+    }
+  };
+
+  // Subir imagen para creación individual
+  const handleSubirImagenIndividual = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const base64 = await procesarImagenBandera(file);
+      setNuevaBandera(base64);
+      setExito('✨ Imagen cargada');
+      setTimeout(() => setExito(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setError('Error al procesar la imagen.');
+    }
   };
 
   // Aplicar preview
@@ -398,15 +415,18 @@ const ImportarPaises = () => {
       setExito(`${nuevos.length} delegaciones nuevas añadidas.`);
     }
     setPreview(null);
+    setSelectedPreviewIndex(null);
     setTextoPegar('');
     setTimeout(() => setExito(''), 4000);
   };
 
   const handleVaciarLista = () => {
     if (paises.length === 0) return;
-    setPaises([]);
-    setExito('Lista de delegaciones vaciada.');
-    setTimeout(() => setExito(''), 3000);
+    if (confirm('¿Vaciar toda la lista de delegaciones del comité actual?')) {
+      setPaises([]);
+      setExito('Lista de delegaciones vaciada.');
+      setTimeout(() => setExito(''), 3000);
+    }
   };
 
   return (
@@ -421,6 +441,15 @@ const ImportarPaises = () => {
       gap: '0.65rem',
       fontSize: '0.82rem'
     }}>
+      {/* Input oculto para subida de imagen por fila en preview */}
+      <input
+        ref={rowFileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleSubirImagenFila}
+        style={{ display: 'none' }}
+      />
+
       {/* Barra superior con contador y vaciar */}
       <div style={{
         display: 'flex',
@@ -457,7 +486,7 @@ const ImportarPaises = () => {
         )}
       </div>
 
-      {/* Selector de modo simplificado */}
+      {/* Selector de modo */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(4, 1fr)',
@@ -483,6 +512,7 @@ const ImportarPaises = () => {
                 setError('');
                 setExito('');
                 setPreview(null);
+                setSelectedPreviewIndex(null);
               }}
               style={{
                 display: 'flex',
@@ -541,10 +571,9 @@ const ImportarPaises = () => {
         </div>
       )}
 
-      {/* ── MODO 1: ARCHIVO (Izquierda: Subida, Derecha: Columnas esperadas) ── */}
+      {/* ── MODO 1: ARCHIVO ── */}
       {tab === 'archivo' && !preview && (
         <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1.05fr 1fr', gap: '0.5rem', alignItems: 'stretch' }}>
-          {/* Izquierda: Subir archivo */}
           <div
             onClick={() => fileInputRef.current?.click()}
             style={{
@@ -582,7 +611,6 @@ const ImportarPaises = () => {
             )}
           </div>
 
-          {/* Derecha: Columnas esperadas */}
           <div style={{
             backgroundColor: 'var(--card-header-bg)',
             border: '1px solid var(--border-color)',
@@ -598,37 +626,25 @@ const ImportarPaises = () => {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
               {[
-                { col: 'nombre / name', tag: 'Requerido', req: true },
-                { col: 'bandera / emoji', tag: 'Opcional (auto)', req: false },
-                { col: 'veto / p5', tag: 'Opcional (si/no)', req: false },
-                { col: 'estatus / status', tag: 'Opcional', req: false }
-              ].map((c, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    fontSize: '0.66rem',
-                    padding: '0.15rem 0.35rem',
-                    backgroundColor: 'rgba(0,0,0,0.15)',
-                    borderRadius: '4px'
-                  }}
-                >
-                  <code style={{ color: '#eab308', fontWeight: '600', fontSize: '0.66rem' }}>{c.col}</code>
-                  <span style={{
-                    opacity: c.req ? 0.95 : 0.5,
-                    fontSize: '0.6rem',
-                    color: c.req ? '#22c55e' : 'inherit',
-                    fontWeight: c.req ? '700' : 'normal'
+                { col: 'Nombre / Pais', req: true, desc: 'Nombre de la delegación' },
+                { col: 'Bandera / Flag', req: false, desc: 'ISO (es, us) o URL / imagen' },
+                { col: 'Veto / P5', req: false, desc: 'true/si/1 para derecho a veto' }
+              ].map(c => (
+                <div key={c.col} style={{ fontSize: '0.69rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <code style={{
+                    backgroundColor: 'rgba(234,179,8,0.12)',
+                    color: '#eab308',
+                    padding: '1px 4px',
+                    borderRadius: '3px',
+                    fontSize: '0.66rem'
                   }}>
-                    {c.tag}
-                  </span>
+                    {c.col}
+                  </code>
+                  {c.req && <span style={{ color: '#ef4444', fontSize: '0.65rem' }}>*</span>}
                 </div>
               ))}
             </div>
           </div>
-
           <input
             ref={fileInputRef}
             type="file"
@@ -639,27 +655,23 @@ const ImportarPaises = () => {
         </div>
       )}
 
-      {/* ── MODO 2: PEGAR LISTA DE TEXTO ── */}
+      {/* ── MODO 2: PEGAR TEXTO ── */}
       {tab === 'pegar' && !preview && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
           <textarea
             value={textoPegar}
-            onChange={e => setTextoPegar(e.target.value)}
-            placeholder={'Pega tu lista de países aquí (uno por línea o separados por coma):\n\nArgentina\nBrasil\nChile\nColombia\nEspaña\nFrancia'}
-            rows={5}
+            onChange={(e) => setTextoPegar(e.target.value)}
+            placeholder="Pega nombres de países (uno por línea o separados por coma):&#10;España&#10;Francia&#10;Estados Unidos&#10;Cruz Roja..."
             style={{
               flex: 1,
-              width: '100%',
-              boxSizing: 'border-box',
               padding: '0.5rem',
-              backgroundColor: 'var(--card-header-bg)',
+              backgroundColor: 'var(--input-bg, rgba(255,255,255,0.04))',
               border: '1px solid var(--border-color)',
               borderRadius: '6px',
               color: 'var(--text-color)',
-              fontSize: '0.78rem',
-              resize: 'none',
-              outline: 'none',
-              fontFamily: 'inherit'
+              fontSize: '0.76rem',
+              fontFamily: 'monospace',
+              resize: 'none'
             }}
           />
           <button
@@ -672,64 +684,126 @@ const ImportarPaises = () => {
               border: 'none',
               borderRadius: '5px',
               cursor: 'pointer',
-              fontSize: '0.78rem'
+              fontSize: '0.75rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.35rem'
             }}
           >
-            Procesar Lista
+            <Sparkles size={13} />
+            Analizar y Previsualizar
           </button>
         </div>
       )}
 
-      {/* ── MODO 3: AÑADIR INDIVIDUAL ── */}
+      {/* ── MODO 3: INDIVIDUAL CON SOPORTE DE IMAGEN / CTRL+V ── */}
       {tab === 'individual' && !preview && (
-        <form onSubmit={handleAñadirIndividual} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', justifyContent: 'center' }}>
-          <div style={{ display: 'flex', gap: '0.35rem' }}>
+        <form onSubmit={handleAñadirIndividual} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.7rem', opacity: 0.7, marginBottom: '0.2rem' }}>
+              Nombre de la Delegación:
+            </label>
             <input
               type="text"
-              placeholder="Nombre del país (ej: Argentina, Francia...)"
               value={nuevoNombre}
-              onChange={e => setNuevoNombre(e.target.value)}
-              autoFocus
+              onChange={(e) => setNuevoNombre(e.target.value)}
+              placeholder="Ej. Japón, Médicos Sin Fronteras, URSS..."
               style={{
-                flex: 1,
-                padding: '0.5rem 0.65rem',
-                backgroundColor: 'var(--card-header-bg)',
+                width: '100%',
+                padding: '0.45rem 0.6rem',
+                backgroundColor: 'var(--input-bg, rgba(255,255,255,0.04))',
                 border: '1px solid var(--border-color)',
-                borderRadius: '6px',
+                borderRadius: '5px',
                 color: 'var(--text-color)',
-                fontSize: '0.8rem',
-                outline: 'none'
+                fontSize: '0.78rem',
+                fontWeight: '600'
               }}
             />
+          </div>
+
+          {/* Selector / Subir Bandera o Pegar Ctrl+V */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.45rem',
+            backgroundColor: 'var(--card-header-bg)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '6px'
+          }}>
+            <CountryFlag
+              bandera={nuevaBandera || normalizarBandera('', nuevoNombre)}
+              nombre={nuevoNombre || 'Delegación'}
+              size="md"
+            />
+            <div style={{ flex: 1, fontSize: '0.7rem', color: 'var(--muted-text)' }}>
+              {nuevaBandera ? 'Imagen asignada' : 'Autodetectada o pega con Ctrl+V'}
+            </div>
             <button
-              type="submit"
-              disabled={!nuevoNombre.trim()}
+              type="button"
+              onClick={() => individualFileInputRef.current?.click()}
               style={{
-                padding: '0.5rem 0.8rem',
-                backgroundColor: nuevoNombre.trim() ? '#eab308' : 'var(--card-header-bg)',
-                color: nuevoNombre.trim() ? '#000000' : 'var(--muted-text)',
-                fontWeight: '700',
+                padding: '0.25rem 0.5rem',
+                backgroundColor: 'var(--border-color)',
+                color: 'var(--text-color)',
                 border: 'none',
-                borderRadius: '6px',
-                cursor: nuevoNombre.trim() ? 'pointer' : 'not-allowed',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '0.7rem',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.25rem',
-                fontSize: '0.78rem'
+                gap: '0.25rem'
               }}
             >
-              <UserPlus size={13} /> Añadir
+              <Upload size={11} /> Imagen
             </button>
+            <input
+              ref={individualFileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleSubirImagenIndividual}
+              style={{ display: 'none' }}
+            />
           </div>
-          <div style={{ fontSize: '0.68rem', opacity: 0.5, textAlign: 'center' }}>
-            ✨ La bandera y el estatus de Veto se detectan automáticamente.
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.2rem 0' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.72rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={nuevoVeto}
+                onChange={(e) => setNuevoVeto(e.target.checked)}
+                style={{ accentColor: '#eab308' }}
+              />
+              <span>Derecho a Veto (P5)</span>
+            </label>
+
+            <button
+              type="submit"
+              style={{
+                padding: '0.45rem 0.9rem',
+                backgroundColor: '#22c55e',
+                color: '#ffffff',
+                fontWeight: '700',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontSize: '0.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.3rem'
+              }}
+            >
+              <Plus size={14} />
+              Añadir
+            </button>
           </div>
         </form>
       )}
 
-      {/* ── MODO 4: PRESETS DE COMITÉS ── */}
+      {/* ── MODO 4: PRESETS ── */}
       {tab === 'presets' && !preview && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.35rem', overflowY: 'auto' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.4rem', overflowY: 'auto' }}>
           {PRESETS.map(p => (
             <div
               key={p.id}
@@ -738,19 +812,17 @@ const ImportarPaises = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '0.45rem 0.6rem',
+                padding: '0.45rem 0.65rem',
                 backgroundColor: 'var(--card-header-bg)',
                 border: '1px solid var(--border-color)',
                 borderRadius: '6px',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease'
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#eab308'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-color)'; }}
             >
               <div>
                 <div style={{ fontWeight: '700', fontSize: '0.78rem' }}>{p.nombre}</div>
-                <div style={{ fontSize: '0.68rem', opacity: 0.55 }}>{p.paises.length} delegaciones</div>
+                <div style={{ fontSize: '0.68rem', opacity: 0.55 }}>{p.paises.length} delegaciones oficiales</div>
               </div>
               <button
                 style={{
@@ -771,15 +843,18 @@ const ImportarPaises = () => {
         </div>
       )}
 
-      {/* ── VISTA PREVIA Y CONFIRMACIÓN ── */}
+      {/* ── VISTA PREVIA INTERACTIVA (Paso de revisión con cambio de bandera y Ctrl+V) ── */}
       {preview && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.4rem', minHeight: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontWeight: '700', fontSize: '0.78rem' }}>
               Detectados: <strong style={{ color: '#eab308' }}>{preview.length} países</strong>
+              <span style={{ fontSize: '0.68rem', color: 'var(--muted-text)', marginLeft: '0.4rem' }}>
+                (Haz clic en 📷 o presiona <strong>Ctrl+V</strong> para asignar imagen)
+              </span>
             </span>
             <button
-              onClick={() => setPreview(null)}
+              onClick={() => { setPreview(null); setSelectedPreviewIndex(null); }}
               style={{ background: 'transparent', border: 'none', color: 'var(--muted-text)', cursor: 'pointer', padding: '2px' }}
               title="Cancelar"
             >
@@ -792,20 +867,83 @@ const ImportarPaises = () => {
             overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',
-            gap: '0.2rem',
+            gap: '0.25rem',
             backgroundColor: 'var(--card-header-bg)',
             border: '1px solid var(--border-color)',
             borderRadius: '6px',
-            padding: '0.35rem',
-            maxHeight: '140px'
+            padding: '0.4rem',
+            maxHeight: '150px'
           }}>
-            {preview.map((p, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.74rem', padding: '0.15rem 0.3rem' }}>
-                <span>{p.bandera}</span>
-                <span style={{ flex: 1, fontWeight: '600' }}>{p.nombre}</span>
-                {p.veto && <Crown size={11} color="#eab308" title="Miembro Veto" />}
-              </div>
-            ))}
+            {preview.map((p, i) => {
+              const isSelected = selectedPreviewIndex === i;
+              return (
+                <div
+                  key={i}
+                  onClick={() => setSelectedPreviewIndex(i)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.45rem',
+                    fontSize: '0.74rem',
+                    padding: '0.2rem 0.4rem',
+                    borderRadius: '4px',
+                    backgroundColor: isSelected ? 'rgba(59, 130, 246, 0.18)' : 'transparent',
+                    border: isSelected ? '1px solid #3b82f6' : '1px solid transparent',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <CountryFlag bandera={p.bandera} nombre={p.nombre} size="sm" />
+                  
+                  {/* Botón rápido para subir imagen a esta delegación */}
+                  <button
+                    type="button"
+                    title="Subir imagen personalizada para esta delegación"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedPreviewIndex(i);
+                      rowFileInputRef.current?.click();
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      padding: '2px',
+                      color: isSelected ? '#3b82f6' : 'var(--muted-text)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <Camera size={12} />
+                  </button>
+
+                  <span style={{ flex: 1, fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {p.nombre}
+                  </span>
+
+                  {p.veto && <Crown size={12} color="#eab308" title="Miembro Veto" />}
+
+                  {/* Eliminar fila del preview */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPreview(prev => prev.filter((_, idx) => idx !== i));
+                      if (selectedPreviewIndex === i) setSelectedPreviewIndex(null);
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--muted-text)',
+                      cursor: 'pointer',
+                      padding: '2px'
+                    }}
+                    title="Eliminar de la lista"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              );
+            })}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem' }}>
@@ -847,4 +985,3 @@ const ImportarPaises = () => {
 };
 
 export default ImportarPaises;
-

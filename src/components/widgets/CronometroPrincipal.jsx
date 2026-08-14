@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, Plus, Square, Download, Clock, CheckCircle2, ArrowRightLeft, Shield, HelpCircle, SkipForward } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
+import CountryFlag from '../common/CountryFlag';
 
 const CronometroPrincipal = () => {
   const { paises, oradoresCola, removerOrador, registrarIntervencion, descargarSesionJSON, actualizarRelojGSL, yieldEvento, cederTiempo } = useSession();
@@ -145,7 +146,7 @@ const CronometroPrincipal = () => {
       {/* Header Orador con Máxima Visibilidad y Vista Previa del Siguiente Orador */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.6rem', gap: '0.5rem', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <span style={{ fontSize: '1.6rem' }}>{oradorActual.bandera}</span>
+          <CountryFlag bandera={oradorActual.bandera} nombre={oradorActual.nombre} size="xl" />
           <div>
             <div style={{ fontSize: '0.68rem', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '700' }}>
               Orador Actual
@@ -154,8 +155,10 @@ const CronometroPrincipal = () => {
               {oradorActual.nombre}
             </div>
             {oradoresCola.length > 1 && (
-              <div style={{ fontSize: '0.72rem', opacity: 0.65, marginTop: '2px' }}>
-                Siguiente: <strong>{oradoresCola[1].bandera} {oradoresCola[1].nombre}</strong>
+              <div style={{ fontSize: '0.72rem', opacity: 0.65, marginTop: '3px', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <span>Siguiente:</span>
+                <CountryFlag bandera={oradoresCola[1].bandera} nombre={oradoresCola[1].nombre} size="xs" />
+                <strong>{oradoresCola[1].nombre}</strong>
               </div>
             )}
           </div>

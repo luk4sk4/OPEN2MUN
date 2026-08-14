@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Trophy, Clock, FileText, CheckCircle, HelpCircle, ArrowUpDown } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
+import CountryFlag from '../common/CountryFlag';
 
 const HistoricoDelegaciones = () => {
   const { paises, mociones, historicoMociones = [], registroIntervenciones } = useSession();
@@ -210,8 +211,10 @@ const HistoricoDelegaciones = () => {
                 >
                   {/* País */}
                   <td style={{ padding: '0.45rem 0.6rem', fontWeight: '600' }}>
-                    <span style={{ marginRight: '0.3rem' }}>{p.bandera}</span>
-                    {p.nombre}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                      <CountryFlag bandera={p.bandera} nombre={p.nombre} size="sm" />
+                      <span>{p.nombre}</span>
+                    </div>
                   </td>
 
                   {/* Mociones Presentadas */}

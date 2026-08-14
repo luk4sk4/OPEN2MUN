@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, SkipForward, Clock, Trash2, ArrowUpDown, GripVertical } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
+import CountryFlag from '../common/CountryFlag';
 
 const CronometroDual = ({ modoInicial = null }) => {
   const {
@@ -401,8 +402,8 @@ const CronometroDual = ({ modoInicial = null }) => {
               ...displayOradorState.style
             }}
           >
-            <div style={{ fontSize: '1.35rem', marginBottom: '0.3rem', fontWeight: '800' }}>
-              <span style={{ fontSize: '1.65rem', marginRight: '0.4rem' }}>{oradorActual.bandera}</span>
+            <div style={{ fontSize: '1.35rem', marginBottom: '0.3rem', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+              <CountryFlag bandera={oradorActual.bandera} nombre={oradorActual.nombre} size="lg" />
               <span>{oradorActual.nombre}</span>
             </div>
             <div style={{
@@ -650,7 +651,7 @@ const CronometroDual = ({ modoInicial = null }) => {
                       <span style={{ fontSize: '0.78rem', fontWeight: '800', color: idx === 0 ? '#4ade80' : (idx === 1 ? '#60a5fa' : 'var(--muted-text)'), width: '22px' }}>
                         #{idx + 1}
                       </span>
-                      <span style={{ fontSize: '1.3rem' }}>{o.bandera}</span>
+                      <CountryFlag bandera={o.bandera} nombre={o.nombre} size="md" />
                       <span style={{ fontWeight: idx === 0 ? '800' : '600', color: 'var(--text-color)', fontSize: '0.92rem' }}>
                         {o.nombre}
                       </span>
@@ -743,7 +744,7 @@ const CronometroDual = ({ modoInicial = null }) => {
             }}
           >
             <div style={{ fontSize: '1.35rem', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: 'var(--text-color)' }}>
-              <span style={{ fontSize: '1.65rem' }}>{oradorActual.bandera}</span>
+              <CountryFlag bandera={oradorActual.bandera} nombre={oradorActual.nombre} size="lg" />
               <span>{oradorActual.nombre}</span>
               {oradorActual.esProponenteUltimo && (
                 <span style={{ fontSize: '0.68rem', backgroundColor: 'rgba(255,255,255,0.12)', color: 'var(--text-color)', padding: '0.12rem 0.4rem', borderRadius: '4px', fontWeight: '700' }}>
@@ -973,7 +974,7 @@ const CronometroDual = ({ modoInicial = null }) => {
                       onClick={() => handleAñadirOradorCaucus(p)}
                       style={{ padding: '0.4rem 0.6rem', fontSize: '0.85rem', cursor: 'pointer', borderBottom: '1px solid var(--subborder-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                     >
-                      <span style={{ fontSize: '1.2rem' }}>{p.bandera}</span>
+                      <CountryFlag bandera={p.bandera} nombre={p.nombre} size="sm" />
                       <span style={{ fontWeight: '600' }}>{p.nombre}</span>
                     </div>
                   ))}
@@ -1052,7 +1053,7 @@ const CronometroDual = ({ modoInicial = null }) => {
                         <span style={{ fontSize: '0.78rem', fontWeight: '800', color: idx === 0 ? '#4ade80' : (idx === 1 ? '#60a5fa' : 'var(--muted-text)'), width: '22px' }}>
                           #{idx + 1}
                         </span>
-                        <span style={{ fontSize: '1.3rem' }}>{o.bandera}</span>
+                        <CountryFlag bandera={o.bandera} nombre={o.nombre} size="md" />
                         <span style={{ fontWeight: idx === 0 ? '800' : '600', fontSize: '0.92rem', color: 'var(--text-color)' }}>
                           {o.nombre}
                         </span>

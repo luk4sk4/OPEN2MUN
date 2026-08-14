@@ -155,6 +155,14 @@ export const SessionProvider = ({ children }) => {
     setPaises(prev => prev.map(p => p.id === id ? { ...p, estatus: nuevoEstatus } : p));
   };
 
+  const actualizarPais = (id, nuevosCampos) => {
+    setPaises(prev => prev.map(p => p.id === id ? { ...p, ...nuevosCampos } : p));
+  };
+
+  const eliminarPais = (id) => {
+    setPaises(prev => prev.filter(p => p.id !== id));
+  };
+
   const resetearAsistencia = () => {
     setPaises(prev => prev.map(p => ({ ...p, estatus: 'Ausente' })));
   };
@@ -657,6 +665,8 @@ export const SessionProvider = ({ children }) => {
       paises,
       setPaises,
       cambiarEstatusPais,
+      actualizarPais,
+      eliminarPais,
       resetearAsistencia,
       toggleVetoPais,
       ordenarPaisesAlfabetico,

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Trash2, Plus, ArrowUpDown, GripVertical } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
+import CountryFlag from '../common/CountryFlag';
 
 const ListaOradores = () => {
   const {
@@ -172,7 +173,8 @@ const ListaOradores = () => {
                   onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span>{p.bandera}</span> {p.nombre}
+                    <CountryFlag bandera={p.bandera} nombre={p.nombre} size="sm" />
+                    <span>{p.nombre}</span>
                   </span>
                   <Plus size={14} style={{ opacity: 0.7 }} />
                 </div>
@@ -260,7 +262,7 @@ const ListaOradores = () => {
                   }}>
                     #{index + 1}
                   </span>
-                  <span style={{ fontSize: '1.25rem' }}>{orador.bandera}</span>
+                  <CountryFlag bandera={orador.bandera} nombre={orador.nombre} size="md" />
                   <span style={{
                     fontWeight: esActual ? '800' : '600',
                     fontSize: esActual ? '0.95rem' : '0.85rem',

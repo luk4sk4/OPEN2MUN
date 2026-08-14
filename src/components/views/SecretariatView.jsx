@@ -29,6 +29,7 @@ import {
   Calendar,
   UserPlus
 } from 'lucide-react';
+import CountryFlag from '../common/CountryFlag';
 import { useP2P } from '../../context/P2PContext';
 import OpenMunLogo from '../common/OpenMunLogo';
 import MatrizPaises from '../widgets/MatrizPaises';
@@ -1363,9 +1364,10 @@ const SecretariatView = ({ isLight, onExit }) => {
                         }}>
                           {idx + 1}
                         </span>
-                        <span style={{ fontWeight: '700', fontSize: '0.85rem' }}>
-                          {o.bandera || '🇺🇳'} {o.nombre}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <CountryFlag bandera={o.bandera} nombre={o.nombre} size="sm" />
+                          <span style={{ fontWeight: '700', fontSize: '0.85rem' }}>{o.nombre}</span>
+                        </div>
                       </div>
                       {idx === 0 && (
                         <span style={{ fontSize: '0.68rem', fontWeight: '800', color: '#22c55e' }}>
@@ -1444,9 +1446,10 @@ const SecretariatView = ({ isLight, onExit }) => {
                         }}>
                           {idx + 1}
                         </span>
-                        <span style={{ fontWeight: '700', fontSize: '0.85rem' }}>
-                          {o.bandera || '🇺🇳'} {o.nombre}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <CountryFlag bandera={o.bandera} nombre={o.nombre} size="sm" />
+                          <span style={{ fontWeight: '700', fontSize: '0.85rem' }}>{o.nombre}</span>
+                        </div>
                       </div>
                       {idx === 0 && (
                         <span style={{ fontSize: '0.68rem', fontWeight: '800', color: '#c084fc' }}>
