@@ -5,16 +5,33 @@ export const LOCAL_BROADCAST_CHANNEL_NAME = 'openmun_local_secret_channel';
 /**
  * Tipos de mensajes normalizados
  */
+export const DEFAULT_ROOM_SETTINGS = {
+  speakerRequestMode: 'approval', // 'direct' | 'approval' | 'disabled'
+  caucusRequestMode: 'approval',  // 'direct' | 'approval' | 'disabled'
+  allowDelegateNotes: true,
+  allowChairNotes: true,
+  allowMotions: true,
+  allowLiveVoting: true
+};
+
+/**
+ * Tipos de mensajes normalizados
+ */
 export const MSG_TYPES = {
   AUTH: 'AUTH',
   AUTH_RESULT: 'AUTH_RESULT',
   SYNC_STATE: 'SYNC_STATE',
+  UPDATE_ROOM_SETTINGS: 'UPDATE_ROOM_SETTINGS',
+  ROOM_SETTINGS_UPDATED: 'ROOM_SETTINGS_UPDATED',
   REQUEST_SPEAKING: 'REQUEST_SPEAKING',
   SPEAKING_PROCESSED: 'SPEAKING_PROCESSED',
+  PROCESS_SPEAKING_REQUEST: 'PROCESS_SPEAKING_REQUEST',
   SEND_NOTE: 'SEND_NOTE',
   NOTE_RECEIVED: 'NOTE_RECEIVED',
   CRISIS_ALERT: 'CRISIS_ALERT',
+  CAST_VOTE: 'CAST_VOTE',
   KICK: 'KICK',
+  KICK_PEER: 'KICK_PEER',
   PING: 'PING',
   PONG: 'PONG'
 };
@@ -38,6 +55,7 @@ class PeerService {
     this.roomId = null;
     this.secretPassword = 'secreto123';
     this.backroomPassword = 'crisis123';
+    this.roomSettings = { ...DEFAULT_ROOM_SETTINGS };
     this.latestSessionState = null;
     this.hostConn = null;
   }
@@ -61,12 +79,15 @@ class PeerService {
   // ─────────────────────────────────────────────────────────────
   // INICIALIZACIÓN DEL HOST (CHAIR)
   // ─────────────────────────────────────────────────────────────
-  async initHost(roomId, passwords = {}) {
+  async initHost(roomId, options = {}) {
     this.destroy();
     this.isHost = true;
     this.roomId = roomId || generateRoomCode();
-    this.secretPassword = passwords.secretPassword || 'secreto123';
-    this.backroomPassword = passwords.backroomPassword || 'crisis123';
+    this.secretPassword = options.secretPassword || 'secreto123';
+    this.backroomPassword = options.backroomPassword || 'crisis123';
+    if (options.roomSettings) {
+      this.roomSettings = { ...DEFAULT_ROOM_SETTINGS, ...options.roomSettings };
+    }
 
     // Inicializar BroadcastChannel para la sesión secreta local (mismo navegador)
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
@@ -93,7 +114,7 @@ class PeerService {
       });
 
       this.peer.on('open', (id) => {
-        this.emit('host_ready', { roomId: id });
+        this.emit('host_ready', { roomId: id, roomSettings: this.roomSettings });
         resolve(id);
       });
 
@@ -162,7 +183,7 @@ class PeerService {
           payload: { role: 'secretariat', country: 'Secretaría Local', isLocal: true },
           id: `auth-${Date.now()}`
         });
-        this.emit('connected', { role: 'secretariat', isLocal: true });
+        this.emit('connected', { role: 'secretariat', isLocal: true, roomSettings: this.roomSettings });
         return true;
       }
       throw new Error('BroadcastChannel no soportado en este navegador');
@@ -204,7 +225,15 @@ class PeerService {
         conn.on('data', (data) => {
           if (data?.type === MSG_TYPES.AUTH_RESULT) {
             if (data.payload?.success) {
-              this.emit('connected', { role: data.payload.role, country: data.payload.country, sessionState: data.payload.sessionState });
+              if (data.payload.roomSettings) {
+                this.roomSettings = data.payload.roomSettings;
+              }
+              this.emit('connected', {
+                role: data.payload.role,
+                country: data.payload.country,
+                sessionState: data.payload.sessionState,
+                roomSettings: data.payload.roomSettings
+              });
               resolve(data.payload);
             } else {
               conn.close();
@@ -289,6 +318,7 @@ class PeerService {
               success: true,
               role,
               country: meta.country,
+              roomSettings: this.roomSettings,
               sessionState: this.latestSessionState || null
             }
           });
@@ -305,7 +335,13 @@ class PeerService {
       } else if (isLocal && authorized) {
         this.broadcastLocal({
           type: MSG_TYPES.AUTH_RESULT,
-          payload: { success: true, role: 'secretariat', country: 'Secretaría Local', sessionState: this.latestSessionState || null }
+          payload: {
+            success: true,
+            role: 'secretariat',
+            country: 'Secretaría Local',
+            roomSettings: this.roomSettings,
+            sessionState: this.latestSessionState || null
+          }
         });
       }
       return;
@@ -318,11 +354,126 @@ class PeerService {
       return;
     }
 
-    // 2. Notificar al Host de la recepción del mensaje
+    // 2. Modificación de Ajustes de Sala (desde Secretaría u otro operador autorizado)
+    if (message.type === MSG_TYPES.UPDATE_ROOM_SETTINGS) {
+      if (senderMeta.role === 'secretariat' || isLocal) {
+        this.roomSettings = { ...this.roomSettings, ...message.payload };
+        this.emit('room_settings_updated', this.roomSettings);
+        this.broadcastRoomSettings();
+      }
+      return;
+    }
+
+    // 3. Procesamiento de Solicitudes de Oradores desde Secretaría
+    if (message.type === MSG_TYPES.PROCESS_SPEAKING_REQUEST) {
+      if (senderMeta.role === 'secretariat' || isLocal) {
+        this.emit('process_speaking_request', message.payload);
+      }
+      return;
+    }
+
+    // 4. Expulsión de peer desde Secretaría
+    if (message.type === MSG_TYPES.KICK_PEER) {
+      if (senderMeta.role === 'secretariat' || isLocal) {
+        this.kickPeer(message.payload?.peerId);
+      }
+      return;
+    }
+
+    // 5. Emisión de Voto desde Delegado
+    if (message.type === MSG_TYPES.CAST_VOTE) {
+      if (this.roomSettings.allowLiveVoting) {
+        this.emit('vote_received', {
+          country: senderMeta.country,
+          vote: message.payload?.vote
+        });
+      }
+      return;
+    }
+
+    // 6. Solicitudes de Orador / Moción (desde Delegado)
+    if (message.type === MSG_TYPES.REQUEST_SPEAKING) {
+      const speechType = message.payload?.speechType; // 'GSL' | 'CAUCUS' | 'POINT_MOTION'
+      const country = senderMeta.country;
+
+      // Verificar modo de solicitud según tipo
+      if (speechType === 'GSL') {
+        const mode = this.roomSettings.speakerRequestMode;
+        if (mode === 'disabled') {
+          if (conn) {
+            conn.send({
+              type: MSG_TYPES.SPEAKING_PROCESSED,
+              payload: { success: false, mode: 'disabled', message: 'Las solicitudes a la Lista de Oradores están cerradas por la Mesa.' }
+            });
+          }
+          return;
+        } else if (mode === 'direct') {
+          // Inserción directa en la lista de oradores
+          this.emit('direct_speaker_request', { speechType: 'GSL', country });
+          if (conn) {
+            conn.send({
+              type: MSG_TYPES.SPEAKING_PROCESSED,
+              payload: { success: true, mode: 'direct', message: '¡Te has añadido a la Lista de Oradores!' }
+            });
+          }
+          return;
+        }
+      } else if (speechType === 'CAUCUS') {
+        const mode = this.roomSettings.caucusRequestMode;
+        if (mode === 'disabled') {
+          if (conn) {
+            conn.send({
+              type: MSG_TYPES.SPEAKING_PROCESSED,
+              payload: { success: false, mode: 'disabled', message: 'Las solicitudes para Caucus Moderado están cerradas por la Mesa.' }
+            });
+          }
+          return;
+        } else if (mode === 'direct') {
+          this.emit('direct_speaker_request', { speechType: 'CAUCUS', country });
+          if (conn) {
+            conn.send({
+              type: MSG_TYPES.SPEAKING_PROCESSED,
+              payload: { success: true, mode: 'direct', message: '¡Te has añadido a la lista del Caucus!' }
+            });
+          }
+          return;
+        }
+      } else if (speechType === 'POINT_MOTION') {
+        if (!this.roomSettings.allowMotions) {
+          if (conn) {
+            conn.send({
+              type: MSG_TYPES.SPEAKING_PROCESSED,
+              payload: { success: false, mode: 'disabled', message: 'La presentación de mociones está deshabilitada por la Mesa.' }
+            });
+          }
+          return;
+        }
+      }
+
+      // Si requiere aprobación (o moción), se añade a la cola de pendientes del Host y Secretaría
+      if (conn) {
+        conn.send({
+          type: MSG_TYPES.SPEAKING_PROCESSED,
+          payload: { success: true, mode: 'approval', message: 'Solicitud enviada a la Mesa para su aprobación.' }
+        });
+      }
+    }
+
+    // Notificar al Host de la recepción del mensaje
     this.emit('message_received_by_host', { peerId, senderMeta, message });
 
-    // 3. Enrutamiento de Notas (Pajes / Mensajería)
+    // 7. Enrutamiento de Notas (Pajes / Mensajería)
     if (message.type === MSG_TYPES.SEND_NOTE) {
+      // Validar si las notas están permitidas
+      if (senderMeta.role === 'delegate') {
+        const target = message.payload?.to;
+        if (target === 'CHAIR' && !this.roomSettings.allowChairNotes) {
+          return;
+        }
+        if (target !== 'CHAIR' && target !== 'BACKROOM' && !this.roomSettings.allowDelegateNotes) {
+          return;
+        }
+      }
       this.routeNoteMessage(senderMeta, message);
     }
   }
@@ -350,13 +501,13 @@ class PeerService {
       let shouldReceive = false;
 
       if (meta.role === 'delegate') {
-        // Un delegado SOLO recibe notas destinadas a su país
-        if (target.toLowerCase() === meta.country.toLowerCase()) {
+        // Un delegado SOLO recibe notas destinadas a su país o a TODOS
+        if (target.toLowerCase() === meta.country.toLowerCase() || target.toUpperCase() === 'TODOS') {
           shouldReceive = true;
         }
       } else if (meta.role === 'backroom') {
-        // El backroom recibe notas destinadas a BACKROOM o enviadas por el propio BACKROOM
-        if (target.toUpperCase() === 'BACKROOM' || formattedNote.fromRole === 'backroom') {
+        // El backroom recibe notas destinadas a BACKROOM o enviadas por el propio BACKROOM o a TODOS
+        if (target.toUpperCase() === 'BACKROOM' || formattedNote.fromRole === 'backroom' || target.toUpperCase() === 'TODOS') {
           shouldReceive = true;
         }
       } else if (meta.role === 'secretariat') {
@@ -393,7 +544,28 @@ class PeerService {
     this.latestSessionState = state;
     const msg = {
       type: MSG_TYPES.SYNC_STATE,
-      payload: state
+      payload: {
+        ...state,
+        roomSettings: this.roomSettings
+      }
+    };
+
+    this.connections.forEach((conn) => {
+      try {
+        conn.send(msg);
+      } catch (e) { }
+    });
+
+    this.broadcastLocal(msg);
+  }
+
+  broadcastRoomSettings(settings = null) {
+    if (settings) {
+      this.roomSettings = { ...this.roomSettings, ...settings };
+    }
+    const msg = {
+      type: MSG_TYPES.ROOM_SETTINGS_UPDATED,
+      payload: this.roomSettings
     };
 
     this.connections.forEach((conn) => {
@@ -473,6 +645,30 @@ class PeerService {
     });
   }
 
+  updateRoomSettingsAsClient(settings) {
+    return this.sendToServer(MSG_TYPES.UPDATE_ROOM_SETTINGS, settings);
+  }
+
+  processSpeakingRequestAsClient(requestId, action, requestData = {}) {
+    return this.sendToServer(MSG_TYPES.PROCESS_SPEAKING_REQUEST, {
+      requestId,
+      action, // 'accept' | 'reject'
+      requestData
+    });
+  }
+
+  castVoteAsClient(country, vote) {
+    return this.sendToServer(MSG_TYPES.CAST_VOTE, {
+      country,
+      vote,
+      timestamp: Date.now()
+    });
+  }
+
+  kickPeerAsClient(peerId) {
+    return this.sendToServer(MSG_TYPES.KICK_PEER, { peerId });
+  }
+
   kickPeer(peerId) {
     const conn = this.connections.get(peerId);
     if (conn) {
@@ -518,3 +714,4 @@ class PeerService {
 
 export const peerService = new PeerService();
 export default peerService;
+

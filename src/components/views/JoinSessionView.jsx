@@ -9,7 +9,12 @@ import {
   Globe, 
   AlertCircle,
   Sparkles,
-  Layers
+  Layers,
+  Eye,
+  EyeOff,
+  Building2,
+  ShieldAlert,
+  CheckCircle2
 } from 'lucide-react';
 import { useP2P } from '../../context/P2PContext';
 import OpenMunLogo from '../common/OpenMunLogo';
@@ -28,6 +33,7 @@ const JoinSessionView = ({ isLight, onBackToChair }) => {
   const [selectedCountry, setSelectedCountry] = useState('');
   const [customCountry, setCustomCountry] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
+  const [mostrarPassword, setMostrarPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -78,26 +84,27 @@ const JoinSessionView = ({ isLight, onBackToChair }) => {
       padding: '2rem 1rem',
       backgroundColor: 'var(--bg-color)',
       color: 'var(--text-color)',
-      fontFamily: 'Inter, system-ui, sans-serif'
+      fontFamily: 'Inter, system-ui, sans-serif',
+      position: 'relative'
     }}>
       {/* Botón Volver a la Mesa Principal */}
       <button
         onClick={onBackToChair}
         style={{
           position: 'absolute',
-          top: '20px',
-          left: '20px',
+          top: '24px',
+          left: '24px',
           background: 'transparent',
           border: '1px solid var(--subborder-color)',
-          borderRadius: '8px',
+          borderRadius: '10px',
           color: 'var(--muted-text)',
-          padding: '0.5rem 0.85rem',
+          padding: '0.55rem 0.95rem',
           fontSize: '0.82rem',
-          fontWeight: '600',
+          fontWeight: '700',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
-          gap: '0.4rem',
+          gap: '0.45rem',
           transition: 'all 0.15s ease'
         }}
       >
@@ -107,24 +114,25 @@ const JoinSessionView = ({ isLight, onBackToChair }) => {
       <div style={{
         backgroundColor: 'var(--panel-color)',
         border: '1px solid var(--border-color)',
-        borderRadius: '16px',
-        padding: '2.25rem 2rem',
-        maxWidth: '480px',
+        borderRadius: '20px',
+        padding: '2.5rem 2.2rem',
+        maxWidth: '520px',
         width: '100%',
-        boxShadow: '0 20px 50px rgba(0,0,0,0.45)',
+        boxShadow: '0 25px 60px rgba(0,0,0,0.55)',
         display: 'flex',
         flexDirection: 'column',
-        gap: '1.5rem'
+        gap: '1.5rem',
+        animation: 'fadeIn 0.2s ease-out'
       }}>
         {/* Encabezado y Logo */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '0.75rem' }}>
-          <OpenMunLogo height={42} isLight={isLight} />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '0.85rem' }}>
+          <OpenMunLogo height={46} isLight={isLight} />
           <div>
-            <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: '800', letterSpacing: '-0.02em' }}>
+            <h2 style={{ margin: 0, fontSize: '1.45rem', fontWeight: '800', letterSpacing: '-0.02em' }}>
               Unirse a Sala en Vivo
             </h2>
             <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.82rem', color: 'var(--muted-text)' }}>
-              Conéctate a la sesión activa mediante red P2P
+              Conéctate a la sesión activa mediante la red descentralizada P2P
             </p>
           </div>
         </div>
@@ -132,31 +140,30 @@ const JoinSessionView = ({ isLight, onBackToChair }) => {
         {/* Mensaje de Error si ocurrió alguno */}
         {error && (
           <div style={{
-            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: '8px',
-            padding: '0.65rem 0.85rem',
+            backgroundColor: 'rgba(239, 68, 68, 0.12)',
+            border: '1px solid rgba(239, 68, 68, 0.35)',
+            borderRadius: '10px',
+            padding: '0.75rem 1rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
-            fontSize: '0.82rem',
-            color: '#f87171'
+            gap: '0.55rem',
+            color: '#f87171',
+            fontSize: '0.82rem'
           }}>
-            <AlertCircle size={16} style={{ flexShrink: 0 }} />
+            <AlertCircle size={17} style={{ flexShrink: 0 }} />
             <span>{error}</span>
           </div>
         )}
 
         <form onSubmit={handleJoin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {/* Input Código de Sala */}
+          {/* Código de Sala */}
           <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Código de la Sala
+            <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Código de Sala (Room ID)
             </label>
-            <div style={{ display: 'flex', position: 'relative', marginTop: '0.4rem' }}>
+            <div style={{ position: 'relative', marginTop: '0.4rem' }}>
               <input
                 type="text"
-                required
                 placeholder="Ej: MUN-4921"
                 value={roomIdInput}
                 onChange={e => setRoomIdInput(e.target.value.toUpperCase())}
@@ -164,187 +171,213 @@ const JoinSessionView = ({ isLight, onBackToChair }) => {
                   width: '100%',
                   backgroundColor: 'var(--card-header-bg)',
                   border: '1px solid var(--subborder-color)',
-                  borderRadius: '8px',
-                  padding: '0.7rem 0.9rem',
+                  borderRadius: '10px',
+                  padding: '0.75rem 1rem',
                   color: 'var(--text-color)',
                   fontWeight: '800',
                   fontFamily: 'monospace',
-                  fontSize: '1.1rem',
-                  letterSpacing: '0.05em'
+                  fontSize: '1.15rem',
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase'
+                }}
+              />
+              <Radio size={18} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted-text)' }} />
+            </div>
+          </div>
+
+          {/* Selector de Rol en Tarjetas */}
+          <div>
+            <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Tipo de Acceso / Rol
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.65rem', marginTop: '0.4rem' }}>
+              {/* Delegado */}
+              <div
+                onClick={() => setSelectedRole('delegate')}
+                style={{
+                  border: `1.5px solid ${selectedRole === 'delegate' ? '#22c55e' : 'var(--subborder-color)'}`,
+                  backgroundColor: selectedRole === 'delegate' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(255,255,255,0.02)',
+                  borderRadius: '10px',
+                  padding: '0.75rem 0.5rem',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <User size={18} color={selectedRole === 'delegate' ? '#22c55e' : 'var(--muted-text)'} />
+                <span style={{ fontSize: '0.78rem', fontWeight: '800', color: selectedRole === 'delegate' ? '#22c55e' : 'var(--text-color)' }}>
+                  Delegación
+                </span>
+              </div>
+
+              {/* Secretaría */}
+              <div
+                onClick={() => setSelectedRole('secretariat')}
+                style={{
+                  border: `1.5px solid ${selectedRole === 'secretariat' ? '#3b82f6' : 'var(--subborder-color)'}`,
+                  backgroundColor: selectedRole === 'secretariat' ? 'rgba(59, 130, 246, 0.12)' : 'rgba(255,255,255,0.02)',
+                  borderRadius: '10px',
+                  padding: '0.75rem 0.5rem',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <Layers size={18} color={selectedRole === 'secretariat' ? '#3b82f6' : 'var(--muted-text)'} />
+                <span style={{ fontSize: '0.78rem', fontWeight: '800', color: selectedRole === 'secretariat' ? '#3b82f6' : 'var(--text-color)' }}>
+                  Secretaría
+                </span>
+              </div>
+
+              {/* Backroom */}
+              <div
+                onClick={() => setSelectedRole('backroom')}
+                style={{
+                  border: `1.5px solid ${selectedRole === 'backroom' ? '#f97316' : 'var(--subborder-color)'}`,
+                  backgroundColor: selectedRole === 'backroom' ? 'rgba(249, 115, 22, 0.12)' : 'rgba(255,255,255,0.02)',
+                  borderRadius: '10px',
+                  padding: '0.75rem 0.5rem',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <ShieldAlert size={18} color={selectedRole === 'backroom' ? '#f97316' : 'var(--muted-text)'} />
+                <span style={{ fontSize: '0.78rem', fontWeight: '800', color: selectedRole === 'backroom' ? '#f97316' : 'var(--text-color)' }}>
+                  Backroom
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Formulario según el Rol seleccionado */}
+          {selectedRole === 'delegate' ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                País o Delegación
+              </label>
+
+              <select
+                value={selectedCountry}
+                onChange={e => {
+                  setSelectedCountry(e.target.value);
+                  if (e.target.value) setCustomCountry('');
+                }}
+                style={{
+                  backgroundColor: 'var(--card-header-bg)',
+                  border: '1px solid var(--subborder-color)',
+                  borderRadius: '10px',
+                  padding: '0.7rem 0.9rem',
+                  color: 'var(--text-color)',
+                  fontWeight: '700',
+                  fontSize: '0.88rem'
+                }}
+              >
+                <option value="">Selecciona un país de la lista...</option>
+                {PAISES_DEFAULT.map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+
+              <div style={{ textAlign: 'center', fontSize: '0.72rem', color: 'var(--muted-text)', fontWeight: '700' }}>
+                — O escribe el nombre si no está en la lista —
+              </div>
+
+              <input
+                type="text"
+                placeholder="Nombre de la delegación (ej: Singapur)"
+                value={customCountry}
+                onChange={e => {
+                  setCustomCountry(e.target.value);
+                  if (e.target.value) setSelectedCountry('');
+                }}
+                style={{
+                  backgroundColor: 'var(--card-header-bg)',
+                  border: '1px solid var(--subborder-color)',
+                  borderRadius: '10px',
+                  padding: '0.7rem 0.9rem',
+                  color: 'var(--text-color)',
+                  fontWeight: '700',
+                  fontSize: '0.88rem'
                 }}
               />
             </div>
-          </div>
-
-          {/* Selector de Rol */}
-          <div>
-            <label style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Tipo de Sesión / Rol
-            </label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginTop: '0.4rem' }}>
-              <button
-                type="button"
-                onClick={() => setSelectedRole('delegate')}
-                style={{
-                  padding: '0.65rem 0.5rem',
-                  borderRadius: '8px',
-                  border: `1px solid ${selectedRole === 'delegate' ? 'var(--btn-bg)' : 'var(--subborder-color)'}`,
-                  backgroundColor: selectedRole === 'delegate' ? 'var(--btn-bg)' : 'var(--card-header-bg)',
-                  color: selectedRole === 'delegate' ? 'var(--btn-text)' : 'var(--muted-text)',
-                  fontWeight: '700',
-                  fontSize: '0.8rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '0.3rem',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                <User size={16} /> Delegado
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSelectedRole('secretariat')}
-                style={{
-                  padding: '0.65rem 0.5rem',
-                  borderRadius: '8px',
-                  border: `1px solid ${selectedRole === 'secretariat' ? 'var(--btn-bg)' : 'var(--subborder-color)'}`,
-                  backgroundColor: selectedRole === 'secretariat' ? 'var(--btn-bg)' : 'var(--card-header-bg)',
-                  color: selectedRole === 'secretariat' ? 'var(--btn-text)' : 'var(--muted-text)',
-                  fontWeight: '700',
-                  fontSize: '0.8rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '0.3rem',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                <Layers size={16} /> Secreto
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSelectedRole('backroom')}
-                style={{
-                  padding: '0.65rem 0.5rem',
-                  borderRadius: '8px',
-                  border: `1px solid ${selectedRole === 'backroom' ? 'var(--btn-bg)' : 'var(--subborder-color)'}`,
-                  backgroundColor: selectedRole === 'backroom' ? 'var(--btn-bg)' : 'var(--card-header-bg)',
-                  color: selectedRole === 'backroom' ? 'var(--btn-text)' : 'var(--muted-text)',
-                  fontWeight: '700',
-                  fontSize: '0.8rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '0.3rem',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                <ShieldCheck size={16} /> Backroom
-              </button>
-            </div>
-          </div>
-
-          {/* Campos específicos por rol */}
-          {selectedRole === 'delegate' ? (
-            <div>
-              <label style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Tu País / Delegación
-              </label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.4rem' }}>
-                <select
-                  value={selectedCountry}
-                  onChange={e => { setSelectedCountry(e.target.value); setCustomCountry(''); }}
-                  style={{
-                    width: '100%',
-                    backgroundColor: 'var(--card-header-bg)',
-                    border: '1px solid var(--subborder-color)',
-                    borderRadius: '8px',
-                    padding: '0.65rem 0.85rem',
-                    color: 'var(--text-color)',
-                    fontSize: '0.88rem',
-                    fontWeight: '600'
-                  }}
-                >
-                  <option value="">-- Seleccionar de la lista --</option>
-                  {PAISES_DEFAULT.map(p => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select>
-
-                <input
-                  type="text"
-                  placeholder="O escribe el nombre de tu delegación..."
-                  value={customCountry}
-                  onChange={e => { setCustomCountry(e.target.value); setSelectedCountry(''); }}
-                  style={{
-                    width: '100%',
-                    backgroundColor: 'var(--card-header-bg)',
-                    border: '1px solid var(--subborder-color)',
-                    borderRadius: '8px',
-                    padding: '0.6rem 0.85rem',
-                    color: 'var(--text-color)',
-                    fontSize: '0.85rem'
-                  }}
-                />
-              </div>
-            </div>
           ) : (
-            <div>
-              <label style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Contraseña / PIN de {selectedRole === 'secretariat' ? 'Secretaría' : 'Backroom'}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Contraseña de Acceso ({selectedRole === 'secretariat' ? 'Secretaría' : 'Backroom'})
               </label>
-              <div style={{ display: 'flex', position: 'relative', marginTop: '0.4rem' }}>
+              <div style={{ position: 'relative' }}>
                 <input
-                  type="password"
-                  required
-                  placeholder="Introduce la contraseña"
+                  type={mostrarPassword ? 'text' : 'password'}
+                  placeholder="Introduce la contraseña proporcionada por el Chair"
                   value={passwordInput}
                   onChange={e => setPasswordInput(e.target.value)}
                   style={{
                     width: '100%',
                     backgroundColor: 'var(--card-header-bg)',
                     border: '1px solid var(--subborder-color)',
-                    borderRadius: '8px',
-                    padding: '0.65rem 0.85rem',
+                    borderRadius: '10px',
+                    padding: '0.75rem 2.5rem 0.75rem 1rem',
                     color: 'var(--text-color)',
-                    fontSize: '0.9rem',
-                    fontWeight: '600'
+                    fontSize: '0.88rem'
                   }}
                 />
+                <button
+                  type="button"
+                  onClick={() => setMostrarPassword(!mostrarPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--muted-text)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {mostrarPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
             </div>
           )}
 
-          {/* Botón Unirse */}
+          {/* Botón de Enviar */}
           <button
             type="submit"
-            disabled={isSubmitting || connectionStatus === 'connecting'}
+            disabled={isSubmitting}
             style={{
-              marginTop: '0.5rem',
               backgroundColor: 'var(--btn-bg)',
               color: 'var(--btn-text)',
               border: 'none',
-              borderRadius: '8px',
-              padding: '0.8rem 1.5rem',
+              borderRadius: '10px',
+              padding: '0.85rem',
               fontWeight: '800',
-              fontSize: '0.95rem',
+              fontSize: '0.92rem',
               cursor: isSubmitting ? 'wait' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '0.5rem',
-              boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
-              transition: 'all 0.2s ease'
+              marginTop: '0.5rem',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+              transition: 'all 0.15s ease'
             }}
           >
-            <Radio size={17} />
-            {isSubmitting ? 'Conectando...' : `Conectarse como ${selectedRole === 'delegate' ? 'Delegado' : selectedRole}`}
+            <Radio size={17} /> {isSubmitting ? 'Conectando...' : 'Entrar a la Sesión'}
           </button>
         </form>
       </div>

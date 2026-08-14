@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import peerService, { MSG_TYPES, generateRoomCode } from '../services/peerService';
+import peerService, { MSG_TYPES, generateRoomCode, DEFAULT_ROOM_SETTINGS } from '../services/peerService';
 
 const P2PContext = createContext();
 
@@ -42,6 +42,16 @@ export const P2PProvider = ({ children }) => {
     return localStorage.getItem('openmun_backroom_pass') || 'crisis123';
   });
 
+  // Ajustes de Sala y Permisos de Delegados
+  const [roomSettings, setRoomSettings] = useState(() => {
+    try {
+      const saved = localStorage.getItem('openmun_room_settings');
+      return saved ? { ...DEFAULT_ROOM_SETTINGS, ...JSON.parse(saved) } : { ...DEFAULT_ROOM_SETTINGS };
+    } catch (e) {
+      return { ...DEFAULT_ROOM_SETTINGS };
+    }
+  });
+
   const [connectedPeers, setConnectedPeers] = useState([]);
   const [notes, setNotes] = useState([]);
   const [unreadNotesCount, setUnreadNotesCount] = useState(0);
@@ -49,6 +59,18 @@ export const P2PProvider = ({ children }) => {
   const [remoteSessionState, setRemoteSessionState] = useState(null);
   const [isLiveModalOpen, setIsLiveModalOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+
+  // Callback ref para manipulación de SessionContext desde Host al procesar solicitudes automáticas o remotas
+  const sessionActionHandlersRef = useRef({
+    onAddSpeakerGSL: null,
+    onAddSpeakerCaucus: null,
+    onAddMotion: null,
+    onCastVote: null
+  });
+
+  const registerSessionHandlers = useCallback((handlers) => {
+    sessionActionHandlersRef.current = { ...sessionActionHandlersRef.current, ...handlers };
+  }, []);
 
   const addNotification = useCallback((text, type = 'info') => {
     const id = Date.now() + Math.random();
@@ -68,6 +90,7 @@ export const P2PProvider = ({ children }) => {
         setRole('chair');
         setError(null);
         setRoomId(data.roomId);
+        if (data.roomSettings) setRoomSettings(data.roomSettings);
         localStorage.setItem('openmun_last_room_id', data.roomId);
         addNotification(`🟢 Sala P2P iniciada con éxito (${data.roomId})`, 'success');
       }
@@ -78,6 +101,7 @@ export const P2PProvider = ({ children }) => {
         setError(null);
         if (data.country) setClientCountry(data.country);
         if (data.sessionState) setRemoteSessionState(data.sessionState);
+        if (data.roomSettings) setRoomSettings(data.roomSettings);
         addNotification(`✅ Conectado a la sala como ${data.country || data.role}`, 'success');
       }
 
@@ -106,6 +130,61 @@ export const P2PProvider = ({ children }) => {
         }
       }
 
+      if (event === 'room_settings_updated') {
+        setRoomSettings(data);
+        localStorage.setItem('openmun_room_settings', JSON.stringify(data));
+        addNotification('⚙️ Ajustes de sala y permisos actualizados', 'info');
+      }
+
+      // Solicitud directa de orador (Host auto-adiciona a la sesión)
+      if (event === 'direct_speaker_request') {
+        const { speechType, country } = data;
+        if (speechType === 'GSL') {
+          if (sessionActionHandlersRef.current.onAddSpeakerGSL) {
+            sessionActionHandlersRef.current.onAddSpeakerGSL({ nombre: country, bandera: '🇺🇳' });
+          }
+          addNotification(`⚡ ${country} se ha añadido a la Lista de Oradores (Directo)`, 'success');
+        } else if (speechType === 'CAUCUS') {
+          if (sessionActionHandlersRef.current.onAddSpeakerCaucus) {
+            sessionActionHandlersRef.current.onAddSpeakerCaucus({ nombre: country, bandera: '🇺🇳' });
+          }
+          addNotification(`⚡ ${country} se ha añadido al Caucus Moderado (Directo)`, 'success');
+        }
+      }
+
+      // Procesamiento de solicitud desde Secretaría (Host ejecuta)
+      if (event === 'process_speaking_request') {
+        const { requestId, action, requestData } = data;
+        setSpeakingRequests(prev => prev.filter(r => r.id !== requestId));
+        if (action === 'accept' && requestData) {
+          if (requestData.speechType === 'GSL' && sessionActionHandlersRef.current.onAddSpeakerGSL) {
+            sessionActionHandlersRef.current.onAddSpeakerGSL({ nombre: requestData.country, bandera: '🇺🇳' });
+          } else if (requestData.speechType === 'CAUCUS' && sessionActionHandlersRef.current.onAddSpeakerCaucus) {
+            sessionActionHandlersRef.current.onAddSpeakerCaucus({ nombre: requestData.country, bandera: '🇺🇳' });
+          } else if (requestData.speechType === 'POINT_MOTION' && sessionActionHandlersRef.current.onAddMotion) {
+            sessionActionHandlersRef.current.onAddMotion({
+              tipo: requestData.details?.tipo || 'Punto de Orden',
+              proponente: requestData.country,
+              tema: requestData.details?.tema || 'Solicitud de Delegación',
+              tiempoTotal: requestData.details?.tiempoTotal || 0,
+              tiempoOrador: requestData.details?.tiempoOrador || 0
+            });
+          }
+          addNotification(`✅ Solicitud de ${requestData.country} aprobada por Secretaría`, 'success');
+        } else if (action === 'reject') {
+          addNotification(`❌ Solicitud rechazada por Secretaría`, 'info');
+        }
+      }
+
+      // Recepción de voto telemático en Host
+      if (event === 'vote_received') {
+        const { country, vote } = data;
+        if (sessionActionHandlersRef.current.onCastVote) {
+          sessionActionHandlersRef.current.onCastVote(country, vote);
+        }
+        addNotification(`🗳️ Voto registrado de ${country}: ${vote}`, 'info');
+      }
+
       // Recepción de Notas
       if (event === 'note_for_chair') {
         setNotes(prev => [data, ...prev]);
@@ -118,7 +197,7 @@ export const P2PProvider = ({ children }) => {
         const { senderMeta, message } = data;
         if (message.type === MSG_TYPES.REQUEST_SPEAKING) {
           const req = {
-            id: `req-${Date.now()}`,
+            id: `req-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
             country: senderMeta.country,
             speechType: message.payload.speechType,
             details: message.payload.details,
@@ -134,6 +213,15 @@ export const P2PProvider = ({ children }) => {
         const message = data;
         if (message.type === MSG_TYPES.SYNC_STATE) {
           setRemoteSessionState(message.payload);
+          if (message.payload?.roomSettings) {
+            setRoomSettings(message.payload.roomSettings);
+          }
+        } else if (message.type === MSG_TYPES.ROOM_SETTINGS_UPDATED) {
+          setRoomSettings(message.payload);
+          addNotification('⚙️ Ajustes de sala y permisos actualizados por la Mesa', 'info');
+        } else if (message.type === MSG_TYPES.SPEAKING_PROCESSED) {
+          const { success, mode, message: msgText } = message.payload || {};
+          addNotification(msgText || (success ? 'Solicitud procesada' : 'No se pudo procesar'), success ? 'success' : 'warning');
         } else if (message.type === MSG_TYPES.NOTE_RECEIVED) {
           setNotes(prev => [message.payload, ...prev]);
           setUnreadNotesCount(prev => prev + 1);
@@ -155,26 +243,45 @@ export const P2PProvider = ({ children }) => {
     };
   }, [addNotification]);
 
-  // Guardar contraseñas cuando cambien
+  // Guardar contraseñas y ajustes cuando cambien
   useEffect(() => {
     localStorage.setItem('openmun_secret_pass', secretPassword);
     localStorage.setItem('openmun_backroom_pass', backroomPassword);
   }, [secretPassword, backroomPassword]);
 
+  useEffect(() => {
+    localStorage.setItem('openmun_room_settings', JSON.stringify(roomSettings));
+  }, [roomSettings]);
+
   // ─────────────────────────────────────────────────────────────
   // MÉTODOS DE CONTROL
   // ─────────────────────────────────────────────────────────────
-  const startHosting = useCallback(async (customRoomId, secPass, bckPass) => {
+  const updateRoomSettings = useCallback((newSettings) => {
+    const merged = { ...roomSettings, ...newSettings };
+    setRoomSettings(merged);
+    localStorage.setItem('openmun_room_settings', JSON.stringify(merged));
+
+    if (connectionStatus === 'host_active') {
+      peerService.broadcastRoomSettings(merged);
+    } else if (connectionStatus === 'connected' && (role === 'secretariat' || role === 'chair')) {
+      peerService.updateRoomSettingsAsClient(merged);
+    }
+    addNotification('Ajustes de sala guardados', 'success');
+  }, [roomSettings, connectionStatus, role, addNotification]);
+
+  const startHosting = useCallback(async (customRoomId, secPass, bckPass, customSettings = null) => {
     const finalRoomId = customRoomId || roomId || generateRoomCode();
     const finalSecPass = secPass || secretPassword;
     const finalBckPass = bckPass || backroomPassword;
+    const finalSettings = customSettings || roomSettings;
 
     setConnectionStatus('connecting');
     setError(null);
     try {
       await peerService.initHost(finalRoomId, {
         secretPassword: finalSecPass,
-        backroomPassword: finalBckPass
+        backroomPassword: finalBckPass,
+        roomSettings: finalSettings
       });
       return true;
     } catch (err) {
@@ -182,7 +289,7 @@ export const P2PProvider = ({ children }) => {
       setConnectionStatus('error');
       return false;
     }
-  }, [roomId, secretPassword, backroomPassword]);
+  }, [roomId, secretPassword, backroomPassword, roomSettings]);
 
   const stopHosting = useCallback(() => {
     peerService.destroy();
@@ -247,9 +354,56 @@ export const P2PProvider = ({ children }) => {
     return peerService.requestSpeakingAsClient(speechType, details);
   }, []);
 
+  const approveSpeakingRequest = useCallback((req) => {
+    if (connectionStatus === 'host_active') {
+      // Si somos el Chair/Host, ejecutamos inmediatamente con los handlers registrados
+      if (req.speechType === 'GSL' && sessionActionHandlersRef.current.onAddSpeakerGSL) {
+        sessionActionHandlersRef.current.onAddSpeakerGSL({ nombre: req.country, bandera: '🇺🇳' });
+      } else if (req.speechType === 'CAUCUS' && sessionActionHandlersRef.current.onAddSpeakerCaucus) {
+        sessionActionHandlersRef.current.onAddSpeakerCaucus({ nombre: req.country, bandera: '🇺🇳' });
+      } else if (req.speechType === 'POINT_MOTION' && sessionActionHandlersRef.current.onAddMotion) {
+        sessionActionHandlersRef.current.onAddMotion({
+          tipo: req.details?.tipo || 'Punto de Orden',
+          proponente: req.country,
+          tema: req.details?.tema || 'Solicitud de Delegación',
+          tiempoTotal: req.details?.tiempoTotal || 0,
+          tiempoOrador: req.details?.tiempoOrador || 0
+        });
+      }
+      setSpeakingRequests(prev => prev.filter(r => r.id !== req.id));
+      addNotification(`✅ Aceptada solicitud de ${req.country}`, 'success');
+    } else {
+      // Si somos Secretaría (cliente remoto o local), enviamos el comando al host
+      peerService.processSpeakingRequestAsClient(req.id, 'accept', req);
+      setSpeakingRequests(prev => prev.filter(r => r.id !== req.id));
+      addNotification(`Aprobación enviada para ${req.country}`, 'info');
+    }
+  }, [connectionStatus, addNotification]);
+
+  const rejectSpeakingRequest = useCallback((reqId) => {
+    if (connectionStatus === 'host_active') {
+      setSpeakingRequests(prev => prev.filter(r => r.id !== reqId));
+    } else {
+      peerService.processSpeakingRequestAsClient(reqId, 'reject');
+      setSpeakingRequests(prev => prev.filter(r => r.id !== reqId));
+    }
+    addNotification('Solicitud rechazada', 'info');
+  }, [connectionStatus, addNotification]);
+
+  const castVote = useCallback((voteOption) => {
+    if (connectionStatus === 'connected' && role === 'delegate') {
+      peerService.castVoteAsClient(clientCountry, voteOption);
+      addNotification(`🗳️ Voto emitido: ${voteOption}`, 'success');
+    }
+  }, [connectionStatus, role, clientCountry, addNotification]);
+
   const kickPeer = useCallback((peerId) => {
-    peerService.kickPeer(peerId);
-  }, []);
+    if (connectionStatus === 'host_active') {
+      peerService.kickPeer(peerId);
+    } else {
+      peerService.kickPeerAsClient(peerId);
+    }
+  }, [connectionStatus]);
 
   const markNotesAsRead = useCallback(() => {
     setUnreadNotesCount(0);
@@ -280,6 +434,9 @@ export const P2PProvider = ({ children }) => {
       setSecretPassword,
       backroomPassword,
       setBackroomPassword,
+      roomSettings,
+      setRoomSettings,
+      updateRoomSettings,
       connectedPeers,
       notes,
       setNotes,
@@ -287,6 +444,9 @@ export const P2PProvider = ({ children }) => {
       markNotesAsRead,
       speakingRequests,
       setSpeakingRequests,
+      approveSpeakingRequest,
+      rejectSpeakingRequest,
+      castVote,
       remoteSessionState,
       isLiveModalOpen,
       openLiveModal,
@@ -299,6 +459,7 @@ export const P2PProvider = ({ children }) => {
       requestSpeaking,
       kickPeer,
       broadcastCurrentState,
+      registerSessionHandlers,
       notifications
     }}>
       {children}
@@ -352,3 +513,4 @@ export const useP2P = () => {
 };
 
 export default P2PContext;
+

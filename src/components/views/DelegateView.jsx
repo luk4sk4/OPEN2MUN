@@ -15,7 +15,13 @@ import {
   Inbox,
   PenTool,
   HelpCircle,
-  Vote
+  Vote,
+  Zap,
+  CheckCircle2,
+  Lock,
+  X,
+  Check,
+  AlertCircle
 } from 'lucide-react';
 import { useP2P } from '../../context/P2PContext';
 import OpenMunLogo from '../common/OpenMunLogo';
@@ -29,6 +35,8 @@ const DelegateView = ({ isLight, onExit }) => {
     sendNote,
     requestSpeaking,
     remoteSessionState,
+    roomSettings,
+    castVote,
     leaveRoom
   } = useP2P();
 
@@ -44,21 +52,36 @@ const DelegateView = ({ isLight, onExit }) => {
   const [solicitudGSLHecha, setSolicitudGSLHecha] = useState(false);
   const [solicitudCaucusHecha, setSolicitudCaucusHecha] = useState(false);
   const [subTabNotas, setSubTabNotas] = useState('BUZON'); // 'BUZON' | 'REDACTAR'
+  const [miVotoEmitido, setMiVotoEmitido] = useState(null);
 
   // Estado sincronizado desde el Chair
   const state = remoteSessionState || {};
-  const oradorActualGSL = state.oradoresCola?.[0]?.nombre || 'Ninguno';
-  const oradorActualCaucus = state.oradoresCaucus?.[0]?.nombre || 'Ninguno';
-  const temaActual = state.agendaSesion?.temaActual || state.caucusActivo?.tema || 'Sesión en curso';
+  const settings = roomSettings || {};
+  const oradoresCola = state.oradoresCola || [];
+  const oradoresCaucus = state.oradoresCaucus || [];
+  const caucusActivo = state.caucusActivo || {};
+  const agendaSesion = state.agendaSesion || {};
+  const votacionSesion = state.votacionSesion || {};
+
+  const estaEnGSL = oradoresCola.some(o => o.nombre?.toLowerCase() === clientCountry?.toLowerCase());
+  const estaEnCaucus = oradoresCaucus.some(o => o.nombre?.toLowerCase() === clientCountry?.toLowerCase());
+
+  const oradorActualGSL = oradoresCola[0]?.nombre || 'Ninguno';
+  const oradorActualCaucus = oradoresCaucus[0]?.nombre || 'Ninguno';
+  const temaActual = agendaSesion.temaActual || caucusActivo.tema || 'Sesión General en curso';
   const paisesDisponibles = state.paises || [];
 
+  // Manejador de Solicitud de Turno GSL
   const handlePedirGSL = () => {
+    if (settings.speakerRequestMode === 'disabled') return;
     requestSpeaking('GSL', { country: clientCountry });
     setSolicitudGSLHecha(true);
     setTimeout(() => setSolicitudGSLHecha(false), 4000);
   };
 
+  // Manejador de Solicitud de Turno Caucus
   const handlePedirCaucus = () => {
+    if (settings.caucusRequestMode === 'disabled') return;
     requestSpeaking('CAUCUS', { country: clientCountry });
     setSolicitudCaucusHecha(true);
     setTimeout(() => setSolicitudCaucusHecha(false), 4000);
@@ -66,6 +89,8 @@ const DelegateView = ({ isLight, onExit }) => {
 
   const handleEnviarMocion = (e) => {
     e.preventDefault();
+    if (!settings.allowMotions) return;
+
     requestSpeaking('POINT_MOTION', {
       country: clientCountry,
       tipo: tipoMocion,
@@ -75,7 +100,6 @@ const DelegateView = ({ isLight, onExit }) => {
     });
     setPedirMocionOpen(false);
     setTemaMocion('');
-    alert('Moción enviada a la Mesa (Chair)');
   };
 
   const handleEnviarNota = (e) => {
@@ -87,11 +111,16 @@ const DelegateView = ({ isLight, onExit }) => {
     setSubTabNotas('BUZON');
   };
 
+  const handleEmitirVoto = (opcion) => {
+    castVote(opcion);
+    setMiVotoEmitido(opcion);
+  };
+
   // Filtrar notas que pertenecen a este país
   const misNotas = notes.filter(n => 
     n.from?.toLowerCase() === clientCountry?.toLowerCase() ||
     n.to?.toLowerCase() === clientCountry?.toLowerCase() ||
-    n.to === 'TODOS'
+    n.to?.toUpperCase() === 'TODOS'
   );
 
   return (
@@ -118,8 +147,8 @@ const DelegateView = ({ isLight, onExit }) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <OpenMunLogo height={30} isLight={isLight} />
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <span style={{ fontWeight: '800', fontSize: '0.95rem', letterSpacing: '-0.01em' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+              <span style={{ fontWeight: '800', fontSize: '1rem', letterSpacing: '-0.01em' }}>
                 {clientCountry || 'Delegación'}
               </span>
               <span style={{
@@ -127,7 +156,7 @@ const DelegateView = ({ isLight, onExit }) => {
                 fontWeight: '700',
                 backgroundColor: 'rgba(34, 197, 94, 0.15)',
                 color: '#22c55e',
-                padding: '0.1rem 0.4rem',
+                padding: '0.1rem 0.45rem',
                 borderRadius: '4px',
                 display: 'flex',
                 alignItems: 'center',
@@ -137,15 +166,16 @@ const DelegateView = ({ isLight, onExit }) => {
                 En Vivo ({roomId})
               </span>
             </div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)' }}>
-              Sesión de Delegado
+            <div style={{ fontSize: '0.74rem', color: 'var(--muted-text)' }}>
+              {state.comision || 'Comité Conectado'}
             </div>
           </div>
         </div>
 
+        {/* Botón Salir */}
         <button
           onClick={() => {
-            if (confirm('¿Deseas salir de la sesión?')) {
+            if (confirm('¿Deseas desconectarte de la sala?')) {
               leaveRoom();
               if (onExit) onExit();
             }
@@ -155,40 +185,38 @@ const DelegateView = ({ isLight, onExit }) => {
             border: '1px solid var(--subborder-color)',
             borderRadius: '6px',
             color: 'var(--muted-text)',
-            padding: '0.4rem 0.65rem',
+            padding: '0.35rem 0.65rem',
             fontSize: '0.75rem',
             fontWeight: '600',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.3rem'
+            gap: '0.35rem'
           }}
         >
-          <LogOut size={14} /> Salir
+          <LogOut size={13} /> Salir
         </button>
       </header>
 
-      {/* ── Tabs de Navegación del Delegado ── */}
+      {/* ── Subheader / Navegación Móvil ── */}
       <div style={{
         display: 'flex',
         borderBottom: '1px solid var(--subborder-color)',
         backgroundColor: 'var(--subnav-bg)',
         padding: '0.35rem 1rem',
-        gap: '0.5rem',
-        justifyContent: 'center'
+        gap: '0.5rem'
       }}>
         <button
           onClick={() => setActiveTab('DEBATE')}
           style={{
             flex: 1,
-            maxWidth: '240px',
-            padding: '0.55rem',
-            borderRadius: '8px',
+            padding: '0.5rem',
+            borderRadius: '6px',
             border: 'none',
             backgroundColor: activeTab === 'DEBATE' ? 'var(--btn-bg)' : 'transparent',
             color: activeTab === 'DEBATE' ? 'var(--btn-text)' : 'var(--muted-text)',
             fontWeight: '700',
-            fontSize: '0.85rem',
+            fontSize: '0.82rem',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -197,400 +225,532 @@ const DelegateView = ({ isLight, onExit }) => {
             transition: 'all 0.15s ease'
           }}
         >
-          <Mic size={16} /> Debate y Palabra
+          <Mic size={14} /> Sala de Debate
         </button>
 
         <button
           onClick={() => setActiveTab('NOTAS')}
           style={{
             flex: 1,
-            maxWidth: '240px',
-            padding: '0.55rem',
-            borderRadius: '8px',
+            padding: '0.5rem',
+            borderRadius: '6px',
             border: 'none',
             backgroundColor: activeTab === 'NOTAS' ? 'var(--btn-bg)' : 'transparent',
             color: activeTab === 'NOTAS' ? 'var(--btn-text)' : 'var(--muted-text)',
             fontWeight: '700',
-            fontSize: '0.85rem',
+            fontSize: '0.82rem',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '0.4rem',
-            transition: 'all 0.15s ease',
-            position: 'relative'
+            position: 'relative',
+            transition: 'all 0.15s ease'
           }}
         >
-          <MessageSquare size={16} /> Notas y Pajes
-          {misNotas.length > 0 && (
-            <span style={{
-              backgroundColor: '#3b82f6',
-              color: '#ffffff',
-              fontSize: '0.65rem',
-              fontWeight: '800',
-              padding: '0.1rem 0.35rem',
-              borderRadius: '999px',
-              marginLeft: '2px'
-            }}>
-              {misNotas.length}
-            </span>
-          )}
+          <MessageSquare size={14} /> Pajes / Mensajería ({misNotas.length})
         </button>
       </div>
 
-      {/* ── Contenido Principal ── */}
-      <main style={{
-        flex: 1,
-        maxWidth: '800px',
-        width: '100%',
-        margin: '0 auto',
-        padding: '1.25rem 1rem 3rem 1rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1.25rem'
-      }}>
+      {/* ── Cuerpo Principal del Delegado ── */}
+      <main style={{ padding: '1rem', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
         {activeTab === 'DEBATE' && (
           <>
-            {/* Tarjeta de Estado Actual del Comité */}
+            {/* 1. Card de Estado de Debate en Vivo */}
             <div style={{
               backgroundColor: 'var(--panel-color)',
               border: '1px solid var(--border-color)',
-              borderRadius: '14px',
-              padding: '1.25rem',
-              boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
+              borderRadius: '12px',
+              padding: '1rem',
               display: 'flex',
               flexDirection: 'column',
-              gap: '1rem'
+              gap: '0.75rem',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <div>
-                  <span style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Tema en Discusión
-                  </span>
-                  <h3 style={{ margin: '0.2rem 0 0 0', fontSize: '1.15rem', fontWeight: '800' }}>
-                    {temaActual}
-                  </h3>
-                </div>
-
-                {state.caucusActivo?.activo && (
-                  <span style={{
-                    fontSize: '0.72rem',
-                    fontWeight: '700',
-                    backgroundColor: 'rgba(249, 115, 22, 0.15)',
-                    color: '#f97316',
-                    padding: '0.25rem 0.6rem',
-                    borderRadius: '6px',
-                    border: '1px solid rgba(249, 115, 22, 0.3)'
-                  }}>
-                    {state.caucusActivo.tipo}
-                  </span>
-                )}
-              </div>
-
-              {/* Oradores Actuales */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div style={{
-                  backgroundColor: 'var(--card-header-bg)',
-                  border: '1px solid var(--subborder-color)',
-                  borderRadius: '8px',
-                  padding: '0.75rem'
-                }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
-                    🎙️ Orador Actual GSL
-                  </div>
-                  <div style={{ fontSize: '0.95rem', fontWeight: '800', marginTop: '0.25rem' }}>
-                    {oradorActualGSL}
-                  </div>
-                </div>
-
-                <div style={{
-                  backgroundColor: 'var(--card-header-bg)',
-                  border: '1px solid var(--subborder-color)',
-                  borderRadius: '8px',
-                  padding: '0.75rem'
-                }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
-                    ⏱️ Orador Caucus / Debate
-                  </div>
-                  <div style={{ fontSize: '0.95rem', fontWeight: '800', marginTop: '0.25rem' }}>
-                    {oradorActualCaucus}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Botones de Acción de Palabra */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-              <button
-                onClick={handlePedirGSL}
-                style={{
-                  backgroundColor: solicitudGSLHecha ? '#22c55e' : 'var(--btn-bg)',
-                  color: solicitudGSLHecha ? '#ffffff' : 'var(--btn-text)',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '1rem',
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{
+                  fontSize: '0.7rem',
                   fontWeight: '800',
-                  fontSize: '1rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.6rem',
-                  boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                {solicitudGSLHecha ? <CheckCircle size={20} /> : <Mic size={20} />}
-                {solicitudGSLHecha ? '¡Turno GSL Solicitado a la Mesa!' : 'Levantar Mano / Pedir Palabra GSL'}
-              </button>
+                  color: caucusActivo.activo ? '#a855f7' : '#3b82f6',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
+                }}>
+                  {caucusActivo.activo ? '⏱️ Caucus Moderado Activo' : '📋 Lista General de Oradores (GSL)'}
+                </span>
+                <span style={{ fontSize: '0.72rem', color: 'var(--muted-text)' }}>
+                  Sincronizado
+                </span>
+              </div>
 
-              <button
-                onClick={handlePedirCaucus}
-                style={{
-                  backgroundColor: solicitudCaucusHecha ? '#22c55e' : 'var(--card-header-bg)',
-                  color: solicitudCaucusHecha ? '#ffffff' : 'var(--text-color)',
-                  border: '1px solid var(--subborder-color)',
-                  borderRadius: '12px',
-                  padding: '1rem',
-                  fontWeight: '700',
-                  fontSize: '0.95rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.6rem',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                {solicitudCaucusHecha ? <CheckCircle size={18} /> : <Clock size={18} />}
-                {solicitudCaucusHecha ? '¡Turno de Caucus Solicitado!' : 'Pedir Palabra en Debate / Caucus'}
-              </button>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--muted-text)' }}>Tema en Discusión:</div>
+                <div style={{ fontSize: '1.05rem', fontWeight: '800', marginTop: '2px', color: 'var(--text-color)' }}>
+                  {temaActual}
+                </div>
+              </div>
 
-              <button
-                onClick={() => setPedirMocionOpen(true)}
-                style={{
-                  backgroundColor: 'transparent',
-                  border: '1px dashed var(--border-color)',
-                  color: 'var(--muted-text)',
-                  borderRadius: '10px',
-                  padding: '0.85rem',
-                  fontWeight: '600',
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem'
-                }}
-              >
-                <Vote size={16} /> Enviar Moción o Punto de Procedimiento
-              </button>
-            </div>
-
-            {/* Modal de Enviar Moción */}
-            {pedirMocionOpen && (
+              {/* Orador actual en el podio */}
               <div style={{
-                position: 'fixed',
-                top: 0, left: 0, right: 0, bottom: 0,
-                backgroundColor: 'rgba(0,0,0,0.7)',
-                backdropFilter: 'blur(4px)',
-                zIndex: 9999,
+                backgroundColor: 'var(--card-header-bg)',
+                border: '1px solid var(--subborder-color)',
+                borderRadius: '8px',
+                padding: '0.75rem 1rem',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                padding: '1rem'
+                justifyContent: 'space-between'
               }}>
-                <div style={{
-                  backgroundColor: 'var(--panel-color)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '14px',
-                  padding: '1.5rem',
-                  maxWidth: '440px',
-                  width: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '1rem',
-                  boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '800' }}>Proponer Moción / Punto</h4>
-                    <button onClick={() => setPedirMocionOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--muted-text)', cursor: 'pointer' }}>✕</button>
+                <div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)', textTransform: 'uppercase', fontWeight: '700' }}>
+                    Orador en la Palabra
                   </div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#22c55e', marginTop: '2px' }}>
+                    {caucusActivo.activo ? oradorActualCaucus : oradorActualGSL}
+                  </div>
+                </div>
 
-                  <form onSubmit={handleEnviarMocion} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                    <div>
-                      <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)' }}>Tipo de Moción</label>
-                      <select
-                        value={tipoMocion}
-                        onChange={e => setTipoMocion(e.target.value)}
-                        style={{
-                          width: '100%',
-                          backgroundColor: 'var(--card-header-bg)',
-                          border: '1px solid var(--subborder-color)',
-                          borderRadius: '6px',
-                          padding: '0.55rem',
-                          color: 'var(--text-color)',
-                          fontSize: '0.85rem',
-                          marginTop: '0.25rem'
-                        }}
-                      >
-                        <option value="Caucus Moderado">Caucus Moderado</option>
-                        <option value="Caucus No Moderado">Caucus No Moderado</option>
-                        <option value="Consulta General">Consulta General</option>
-                        <option value="Tour de Table">Tour de Table</option>
-                        <option value="Punto de Orden">Punto de Orden</option>
-                        <option value="Duda Parlamentaria">Duda Parlamentaria</option>
-                        <option value="Privilegio Personal">Privilegio Personal</option>
-                      </select>
-                    </div>
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#22c55e'
+                }}>
+                  <Mic size={18} />
+                </div>
+              </div>
+            </div>
 
-                    <div>
-                      <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)' }}>Tema / Explicación</label>
-                      <input
-                        type="text"
-                        placeholder="Ej: Estrategia de reducción de emisiones..."
-                        value={temaMocion}
-                        onChange={e => setTemaMocion(e.target.value)}
-                        style={{
-                          width: '100%',
-                          backgroundColor: 'var(--card-header-bg)',
-                          border: '1px solid var(--subborder-color)',
-                          borderRadius: '6px',
-                          padding: '0.55rem',
-                          color: 'var(--text-color)',
-                          fontSize: '0.85rem',
-                          marginTop: '0.25rem'
-                        }}
-                      />
-                    </div>
+            {/* 2. Votación en Vivo si está activa y permitida */}
+            {settings.allowLiveVoting && votacionSesion?.asunto && (
+              <div style={{
+                backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                border: '1.5px solid rgba(59, 130, 246, 0.35)',
+                borderRadius: '12px',
+                padding: '1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.75rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '800', fontSize: '0.9rem', color: '#60a5fa' }}>
+                    <Vote size={18} /> Votación Telemática en Vivo
+                  </div>
+                  {miVotoEmitido && (
+                    <span style={{ fontSize: '0.72rem', fontWeight: '700', color: '#22c55e' }}>
+                      ✓ Voto Registrado: {miVotoEmitido}
+                    </span>
+                  )}
+                </div>
 
-                    {tipoMocion.includes('Caucus') && (
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                        <div>
-                          <label style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--muted-text)' }}>Tiempo Total (s)</label>
-                          <input
-                            type="number"
-                            value={tiempoTotalMocion}
-                            onChange={e => setTiempoTotalMocion(Number(e.target.value))}
-                            style={{
-                              width: '100%',
-                              backgroundColor: 'var(--card-header-bg)',
-                              border: '1px solid var(--subborder-color)',
-                              borderRadius: '6px',
-                              padding: '0.45rem',
-                              color: 'var(--text-color)',
-                              fontSize: '0.85rem',
-                              marginTop: '0.25rem'
-                            }}
-                          />
-                        </div>
-                        <div>
-                          <label style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--muted-text)' }}>Tiempo/Orador (s)</label>
-                          <input
-                            type="number"
-                            value={tiempoOradorMocion}
-                            onChange={e => setTiempoOradorMocion(Number(e.target.value))}
-                            style={{
-                              width: '100%',
-                              backgroundColor: 'var(--card-header-bg)',
-                              border: '1px solid var(--subborder-color)',
-                              borderRadius: '6px',
-                              padding: '0.45rem',
-                              color: 'var(--text-color)',
-                              fontSize: '0.85rem',
-                              marginTop: '0.25rem'
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )}
+                <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>
+                  {votacionSesion.asunto}
+                </div>
 
-                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                      <button
-                        type="button"
-                        onClick={() => setPedirMocionOpen(false)}
-                        style={{
-                          flex: 1,
-                          padding: '0.55rem',
-                          borderRadius: '6px',
-                          border: '1px solid var(--subborder-color)',
-                          backgroundColor: 'transparent',
-                          color: 'var(--muted-text)',
-                          fontWeight: '600',
-                          fontSize: '0.8rem',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        type="submit"
-                        style={{
-                          flex: 1,
-                          padding: '0.55rem',
-                          borderRadius: '6px',
-                          border: 'none',
-                          backgroundColor: 'var(--btn-bg)',
-                          color: 'var(--btn-text)',
-                          fontWeight: '700',
-                          fontSize: '0.8rem',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Enviar Moción
-                      </button>
-                    </div>
-                  </form>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
+                  <button
+                    onClick={() => handleEmitirVoto('A Favor')}
+                    style={{
+                      backgroundColor: miVotoEmitido === 'A Favor' ? '#22c55e' : 'rgba(34, 197, 94, 0.15)',
+                      color: miVotoEmitido === 'A Favor' ? '#ffffff' : '#4ade80',
+                      border: '1px solid rgba(34, 197, 94, 0.4)',
+                      borderRadius: '8px',
+                      padding: '0.5rem',
+                      fontWeight: '800',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    A Favor
+                  </button>
+
+                  <button
+                    onClick={() => handleEmitirVoto('En Contra')}
+                    style={{
+                      backgroundColor: miVotoEmitido === 'En Contra' ? '#ef4444' : 'rgba(239, 68, 68, 0.15)',
+                      color: miVotoEmitido === 'En Contra' ? '#ffffff' : '#f87171',
+                      border: '1px solid rgba(239, 68, 68, 0.4)',
+                      borderRadius: '8px',
+                      padding: '0.5rem',
+                      fontWeight: '800',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    En Contra
+                  </button>
+
+                  <button
+                    onClick={() => handleEmitirVoto('Abstención')}
+                    style={{
+                      backgroundColor: miVotoEmitido === 'Abstención' ? '#eab308' : 'rgba(234, 179, 8, 0.15)',
+                      color: miVotoEmitido === 'Abstención' ? '#ffffff' : '#fde047',
+                      border: '1px solid rgba(234, 179, 8, 0.4)',
+                      borderRadius: '8px',
+                      padding: '0.5rem',
+                      fontWeight: '800',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Abstención
+                  </button>
+
+                  <button
+                    onClick={() => handleEmitirVoto('Pase')}
+                    style={{
+                      backgroundColor: miVotoEmitido === 'Pase' ? '#6b7280' : 'rgba(107, 114, 128, 0.15)',
+                      color: miVotoEmitido === 'Pase' ? '#ffffff' : '#d1d5db',
+                      border: '1px solid rgba(107, 114, 128, 0.4)',
+                      borderRadius: '8px',
+                      padding: '0.5rem',
+                      fontWeight: '800',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Pase
+                  </button>
                 </div>
               </div>
             )}
-          </>
-        )}
 
-        {activeTab === 'NOTAS' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {/* Subtabs de Notas */}
-            <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--subborder-color)', paddingBottom: '0.5rem' }}>
+            {/* 3. Panel de Acciones de Orador (GSL y Caucus) adaptativo */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              {/* Botón / Estado GSL */}
+              <div style={{
+                backgroundColor: 'var(--panel-color)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '12px',
+                padding: '1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                gap: '0.75rem'
+              }}>
+                <div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Zap size={16} color="#3b82f6" /> Lista General (GSL)
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)', marginTop: '3px' }}>
+                    {settings.speakerRequestMode === 'direct'
+                      ? '⚡ Modo Directo: Ingreso inmediato'
+                      : (settings.speakerRequestMode === 'approval'
+                          ? '✋ Requiere validación de la Mesa'
+                          : '🔒 Solicitudes cerradas por la Mesa')}
+                  </div>
+                </div>
+
+                {estaEnGSL ? (
+                  <div style={{
+                    backgroundColor: 'rgba(34, 197, 94, 0.12)',
+                    border: '1px solid rgba(34, 197, 94, 0.3)',
+                    color: '#22c55e',
+                    borderRadius: '8px',
+                    padding: '0.5rem',
+                    textAlign: 'center',
+                    fontSize: '0.78rem',
+                    fontWeight: '800',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.35rem'
+                  }}>
+                    <CheckCircle size={14} /> ¡Ya estás en la lista GSL!
+                  </div>
+                ) : (
+                  <button
+                    disabled={settings.speakerRequestMode === 'disabled' || solicitudGSLHecha}
+                    onClick={handlePedirGSL}
+                    style={{
+                      backgroundColor: settings.speakerRequestMode === 'disabled'
+                        ? 'rgba(255,255,255,0.05)'
+                        : (solicitudGSLHecha ? '#22c55e' : 'var(--btn-bg)'),
+                      color: settings.speakerRequestMode === 'disabled' ? 'var(--muted-text)' : 'var(--btn-text)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '0.6rem',
+                      fontWeight: '800',
+                      fontSize: '0.82rem',
+                      cursor: settings.speakerRequestMode === 'disabled' ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.35rem',
+                      boxShadow: settings.speakerRequestMode === 'disabled' ? 'none' : '0 4px 12px rgba(0,0,0,0.2)',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    {settings.speakerRequestMode === 'disabled' ? (
+                      <><Lock size={14} /> Cerrado</>
+                    ) : (
+                      solicitudGSLHecha ? <><Check size={14} /> Solicitud Enviada</> : <><Mic size={14} /> Pedir Turno GSL</>
+                    )}
+                  </button>
+                )}
+              </div>
+
+              {/* Botón / Estado Caucus Moderado */}
+              <div style={{
+                backgroundColor: 'var(--panel-color)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '12px',
+                padding: '1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                gap: '0.75rem'
+              }}>
+                <div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Clock size={16} color="#a855f7" /> Caucus Moderado
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)', marginTop: '3px' }}>
+                    {settings.caucusRequestMode === 'direct'
+                      ? '⚡ Modo Directo: Ingreso inmediato'
+                      : (settings.caucusRequestMode === 'approval'
+                          ? '✋ Requiere validación de la Mesa'
+                          : '🔒 Solicitudes cerradas')}
+                  </div>
+                </div>
+
+                {estaEnCaucus ? (
+                  <div style={{
+                    backgroundColor: 'rgba(168, 85, 247, 0.12)',
+                    border: '1px solid rgba(168, 85, 247, 0.3)',
+                    color: '#c084fc',
+                    borderRadius: '8px',
+                    padding: '0.5rem',
+                    textAlign: 'center',
+                    fontSize: '0.78rem',
+                    fontWeight: '800',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.35rem'
+                  }}>
+                    <CheckCircle size={14} /> ¡En lista de Caucus!
+                  </div>
+                ) : (
+                  <button
+                    disabled={settings.caucusRequestMode === 'disabled' || solicitudCaucusHecha}
+                    onClick={handlePedirCaucus}
+                    style={{
+                      backgroundColor: settings.caucusRequestMode === 'disabled'
+                        ? 'rgba(255,255,255,0.05)'
+                        : (solicitudCaucusHecha ? '#a855f7' : 'var(--btn-bg)'),
+                      color: settings.caucusRequestMode === 'disabled' ? 'var(--muted-text)' : 'var(--btn-text)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '0.6rem',
+                      fontWeight: '800',
+                      fontSize: '0.82rem',
+                      cursor: settings.caucusRequestMode === 'disabled' ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.35rem',
+                      boxShadow: settings.caucusRequestMode === 'disabled' ? 'none' : '0 4px 12px rgba(0,0,0,0.2)',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    {settings.caucusRequestMode === 'disabled' ? (
+                      <><Lock size={14} /> Cerrado</>
+                    ) : (
+                      solicitudCaucusHecha ? <><Check size={14} /> Solicitud Enviada</> : <><Mic size={14} /> Pedir Turno Caucus</>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* 4. Proponer Moción / Puntos de Orden */}
+            <div style={{
+              backgroundColor: 'var(--panel-color)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '12px',
+              padding: '1rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '1rem'
+            }}>
+              <div>
+                <div style={{ fontWeight: '800', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <FileText size={16} color="#eab308" /> Proponer Moción o Punto
+                </div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--muted-text)', marginTop: '2px' }}>
+                  {settings.allowMotions
+                    ? 'Formula una moción de Caucus, Punto de Orden o Privilegio hacia la Mesa.'
+                    : 'La presentación de mociones está deshabilitada por la Mesa.'}
+                </div>
+              </div>
+
               <button
-                onClick={() => setSubTabNotas('BUZON')}
+                disabled={!settings.allowMotions}
+                onClick={() => setPedirMocionOpen(true)}
                 style={{
-                  padding: '0.4rem 0.85rem',
-                  borderRadius: '6px',
-                  border: 'none',
-                  backgroundColor: subTabNotas === 'BUZON' ? 'var(--btn-bg)' : 'transparent',
-                  color: subTabNotas === 'BUZON' ? 'var(--btn-text)' : 'var(--muted-text)',
+                  backgroundColor: settings.allowMotions ? 'var(--card-header-bg)' : 'rgba(255,255,255,0.04)',
+                  border: '1px solid var(--subborder-color)',
+                  color: settings.allowMotions ? 'var(--text-color)' : 'var(--muted-text)',
+                  borderRadius: '8px',
+                  padding: '0.5rem 0.95rem',
                   fontWeight: '700',
                   fontSize: '0.8rem',
-                  cursor: 'pointer',
+                  cursor: settings.allowMotions ? 'pointer' : 'not-allowed',
+                  whiteSpace: 'nowrap',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.35rem'
                 }}
               >
-                <Inbox size={14} /> Buzón ({misNotas.length})
+                {settings.allowMotions ? <PenTool size={14} /> : <Lock size={14} />} Proponer
+              </button>
+            </div>
+
+            {/* 5. Próximos Oradores en Cola */}
+            <div style={{
+              backgroundColor: 'var(--panel-color)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '12px',
+              padding: '1rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem'
+            }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: '800' }}>
+                Próximos en Lista ({oradoresCola.length})
+              </div>
+
+              {oradoresCola.length === 0 ? (
+                <div style={{ fontSize: '0.78rem', color: 'var(--muted-text)', textAlign: 'center', padding: '1rem' }}>
+                  La lista de oradores está vacía.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  {oradoresCola.slice(0, 5).map((o, idx) => (
+                    <div
+                      key={o.id || idx}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0.45rem 0.65rem',
+                        borderRadius: '6px',
+                        backgroundColor: o.nombre?.toLowerCase() === clientCountry?.toLowerCase() ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255,255,255,0.02)',
+                        border: `1px solid ${o.nombre?.toLowerCase() === clientCountry?.toLowerCase() ? '#3b82f644' : 'transparent'}`
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', fontWeight: '700' }}>
+                        <span style={{ color: 'var(--muted-text)', fontSize: '0.75rem' }}>#{idx + 1}</span>
+                        <span>{o.bandera || '🇺🇳'} {o.nombre}</span>
+                      </div>
+                      {idx === 0 && (
+                        <span style={{ fontSize: '0.65rem', fontWeight: '800', color: '#22c55e' }}>EN TURNO</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════ */}
+        {/* PESTAÑA: PAJES / NOTAS                                  */}
+        {/* ═══════════════════════════════════════════════════════ */}
+        {activeTab === 'NOTAS' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {/* Subtabs de Notas */}
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                onClick={() => setSubTabNotas('BUZON')}
+                style={{
+                  flex: 1,
+                  padding: '0.5rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: subTabNotas === 'BUZON' ? 'var(--btn-bg)' : 'var(--card-header-bg)',
+                  color: subTabNotas === 'BUZON' ? 'var(--btn-text)' : 'var(--muted-text)',
+                  fontWeight: '700',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Buzón de Mensajes ({misNotas.length})
               </button>
 
               <button
                 onClick={() => setSubTabNotas('REDACTAR')}
                 style={{
-                  padding: '0.4rem 0.85rem',
-                  borderRadius: '6px',
+                  flex: 1,
+                  padding: '0.5rem',
+                  borderRadius: '8px',
                   border: 'none',
-                  backgroundColor: subTabNotas === 'REDACTAR' ? 'var(--btn-bg)' : 'transparent',
+                  backgroundColor: subTabNotas === 'REDACTAR' ? 'var(--btn-bg)' : 'var(--card-header-bg)',
                   color: subTabNotas === 'REDACTAR' ? 'var(--btn-text)' : 'var(--muted-text)',
                   fontWeight: '700',
                   fontSize: '0.8rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.35rem'
+                  cursor: 'pointer'
                 }}
               >
-                <PenTool size={14} /> Redactar Nota
+                + Redactar Nota
               </button>
             </div>
 
-            {subTabNotas === 'REDACTAR' ? (
+            {subTabNotas === 'BUZON' ? (
+              misNotas.length === 0 ? (
+                <div style={{
+                  padding: '3rem 1.5rem',
+                  textAlign: 'center',
+                  backgroundColor: 'var(--panel-color)',
+                  borderRadius: '12px',
+                  border: '1px dashed var(--subborder-color)',
+                  color: 'var(--muted-text)'
+                }}>
+                  <Inbox size={32} style={{ opacity: 0.35, marginBottom: '0.5rem' }} />
+                  <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>Buzón Vacío</div>
+                  <div style={{ fontSize: '0.75rem', marginTop: '3px' }}>
+                    No has recibido ni enviado notas todavía.
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                  {misNotas.map(n => {
+                    const isOutgoing = n.from?.toLowerCase() === clientCountry?.toLowerCase();
+                    return (
+                      <div
+                        key={n.id}
+                        style={{
+                          backgroundColor: isOutgoing ? 'rgba(59, 130, 246, 0.08)' : 'var(--panel-color)',
+                          border: `1px solid ${isOutgoing ? 'rgba(59, 130, 246, 0.25)' : 'var(--border-color)'}`,
+                          borderRadius: '10px',
+                          padding: '0.85rem 1rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.4rem'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '0.8rem', fontWeight: '800', color: isOutgoing ? '#60a5fa' : '#22c55e' }}>
+                            {isOutgoing ? `Para: ${n.to}` : `De: ${n.from}`}
+                          </span>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--muted-text)' }}>
+                            {new Date(n.timestamp || Date.now()).toLocaleTimeString()}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>
+                          {n.text}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
+            ) : (
+              /* Formulario Redactar Nota */
               <form onSubmit={handleEnviarNota} style={{
                 backgroundColor: 'var(--panel-color)',
                 border: '1px solid var(--border-color)',
@@ -598,8 +758,7 @@ const DelegateView = ({ isLight, onExit }) => {
                 padding: '1.25rem',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '1rem',
-                boxShadow: '0 6px 20px rgba(0,0,0,0.15)'
+                gap: '0.85rem'
               }}>
                 <div>
                   <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
@@ -610,131 +769,249 @@ const DelegateView = ({ isLight, onExit }) => {
                     onChange={e => setDestinatario(e.target.value)}
                     style={{
                       width: '100%',
+                      marginTop: '0.35rem',
                       backgroundColor: 'var(--card-header-bg)',
                       border: '1px solid var(--subborder-color)',
-                      borderRadius: '6px',
-                      padding: '0.6rem 0.75rem',
+                      borderRadius: '8px',
+                      padding: '0.6rem',
                       color: 'var(--text-color)',
-                      fontSize: '0.88rem',
-                      fontWeight: '600',
-                      marginTop: '0.35rem'
+                      fontWeight: '700',
+                      fontSize: '0.85rem'
                     }}
                   >
-                    <optgroup label="Mesa y Staff">
-                      <option value="CHAIR">🏛️ Mesa de Presidencia (Chair)</option>
-                      <option value="BACKROOM">🚨 Backroom / Crisis</option>
-                    </optgroup>
-                    <optgroup label="Otras Delegaciones">
-                      {paisesDisponibles.length > 0 ? (
-                        paisesDisponibles
-                          .filter(p => p.nombre.toLowerCase() !== clientCountry?.toLowerCase())
-                          .map(p => (
-                            <option key={p.id || p.nombre} value={p.nombre}>{p.bandera || '🇺🇳'} {p.nombre}</option>
-                          ))
-                      ) : (
-                        <option value="Francia">Francia</option>
-                      )}
-                    </optgroup>
+                    {settings.allowChairNotes !== false && (
+                      <option value="CHAIR">🏛️ Mesa Directiva (Chair)</option>
+                    )}
+                    {settings.allowDelegateNotes !== false && (
+                      <optgroup label="Delegaciones">
+                        {paisesDisponibles.filter(p => p.nombre?.toLowerCase() !== clientCountry?.toLowerCase()).map(p => (
+                          <option key={p.nombre} value={p.nombre}>{p.bandera || '🇺🇳'} {p.nombre}</option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                 </div>
 
                 <div>
                   <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
-                    Mensaje / Nota
+                    Tipo de Nota
+                  </label>
+                  <select
+                    value={tipoNota}
+                    onChange={e => setTipoNota(e.target.value)}
+                    style={{
+                      width: '100%',
+                      marginTop: '0.35rem',
+                      backgroundColor: 'var(--card-header-bg)',
+                      border: '1px solid var(--subborder-color)',
+                      borderRadius: '8px',
+                      padding: '0.55rem',
+                      color: 'var(--text-color)',
+                      fontSize: '0.82rem'
+                    }}
+                  >
+                    <option value="general">General / Mensaje</option>
+                    <option value="urgente">Urgente</option>
+                    <option value="pregunta">Pregunta de Procedimiento</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                    Mensaje
                   </label>
                   <textarea
                     rows={4}
-                    required
-                    placeholder="Escribe el contenido de la nota para los pajes o destinatario..."
+                    placeholder="Escribe el mensaje para el paje..."
                     value={textoNota}
                     onChange={e => setTextoNota(e.target.value)}
                     style={{
                       width: '100%',
+                      marginTop: '0.35rem',
                       backgroundColor: 'var(--card-header-bg)',
                       border: '1px solid var(--subborder-color)',
-                      borderRadius: '6px',
-                      padding: '0.65rem 0.75rem',
+                      borderRadius: '8px',
+                      padding: '0.65rem',
                       color: 'var(--text-color)',
-                      fontSize: '0.88rem',
-                      marginTop: '0.35rem',
-                      resize: 'vertical',
-                      fontFamily: 'inherit'
+                      fontSize: '0.85rem',
+                      resize: 'vertical'
                     }}
                   />
                 </div>
 
                 <button
                   type="submit"
+                  disabled={!textoNota.trim()}
                   style={{
                     backgroundColor: 'var(--btn-bg)',
                     color: 'var(--btn-text)',
                     border: 'none',
                     borderRadius: '8px',
-                    padding: '0.75rem 1.25rem',
+                    padding: '0.65rem',
                     fontWeight: '800',
-                    fontSize: '0.9rem',
-                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    cursor: textoNota.trim() ? 'pointer' : 'not-allowed',
+                    opacity: textoNota.trim() ? 1 : 0.5,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '0.4rem',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                    gap: '0.4rem'
                   }}
                 >
                   <Send size={15} /> Enviar Nota
                 </button>
               </form>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                {misNotas.length === 0 ? (
-                  <div style={{
-                    padding: '3rem 1rem',
-                    textAlign: 'center',
-                    color: 'var(--muted-text)',
-                    backgroundColor: 'var(--card-header-bg)',
-                    borderRadius: '10px',
-                    border: '1px dashed var(--subborder-color)',
-                    fontSize: '0.85rem'
-                  }}>
-                    Aún no has enviado ni recibido ninguna nota en esta sesión.
-                  </div>
-                ) : (
-                  misNotas.map(nota => {
-                    const esEnviadaPorMi = nota.from?.toLowerCase() === clientCountry?.toLowerCase();
-                    return (
-                      <div
-                        key={nota.id}
-                        style={{
-                          backgroundColor: esEnviadaPorMi ? 'var(--card-header-bg)' : 'var(--panel-color)',
-                          border: `1px solid ${esEnviadaPorMi ? 'var(--subborder-color)' : '#3b82f644'}`,
-                          borderRadius: '10px',
-                          padding: '0.85rem 1rem',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '0.4rem',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem' }}>
-                          <span style={{ fontWeight: '700', color: esEnviadaPorMi ? 'var(--muted-text)' : '#60a5fa' }}>
-                            {esEnviadaPorMi ? `Para: ${nota.to}` : `De: ${nota.from}`}
-                          </span>
-                          <span style={{ color: 'var(--muted-text)', fontSize: '0.7rem' }}>
-                            {new Date(nota.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: '0.88rem', lineHeight: '1.4' }}>
-                          {nota.text}
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
             )}
           </div>
         )}
       </main>
+
+      {/* ── Modal para Proponer Moción ── */}
+      {pedirMocionOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.75)',
+          backdropFilter: 'blur(6px)',
+          zIndex: 99999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem'
+        }}>
+          <div style={{
+            backgroundColor: 'var(--panel-color)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '14px',
+            padding: '1.5rem',
+            width: '460px',
+            maxWidth: '95vw',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800' }}>
+                Proponer Moción / Punto
+              </h3>
+              <button
+                onClick={() => setPedirMocionOpen(false)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--muted-text)', cursor: 'pointer' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleEnviarMocion} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)' }}>Tipo de Moción</label>
+                <select
+                  value={tipoMocion}
+                  onChange={e => setTipoMocion(e.target.value)}
+                  style={{
+                    width: '100%',
+                    marginTop: '0.35rem',
+                    backgroundColor: 'var(--card-header-bg)',
+                    border: '1px solid var(--subborder-color)',
+                    borderRadius: '8px',
+                    padding: '0.6rem',
+                    color: 'var(--text-color)',
+                    fontWeight: '700'
+                  }}
+                >
+                  <option value="Caucus Moderado">Caucus Moderado</option>
+                  <option value="Caucus No Moderado">Caucus No Moderado</option>
+                  <option value="Punto de Orden">Punto de Orden</option>
+                  <option value="Punto de Privilegio Personal">Punto de Privilegio Personal</option>
+                  <option value="Punto de Duda Parlamentaria">Punto de Duda Parlamentaria</option>
+                  <option value="Cierre de Debate">Cierre de Debate</option>
+                </select>
+              </div>
+
+              {tipoMocion.includes('Caucus') && (
+                <>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)' }}>Tema Específico</label>
+                    <input
+                      type="text"
+                      placeholder="Ej: Financiamiento para energías renovables..."
+                      value={temaMocion}
+                      onChange={e => setTemaMocion(e.target.value)}
+                      style={{
+                        width: '100%',
+                        marginTop: '0.35rem',
+                        backgroundColor: 'var(--card-header-bg)',
+                        border: '1px solid var(--subborder-color)',
+                        borderRadius: '8px',
+                        padding: '0.6rem',
+                        color: 'var(--text-color)'
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)' }}>Tiempo Total (segundos)</label>
+                      <input
+                        type="number"
+                        value={tiempoTotalMocion}
+                        onChange={e => setTiempoTotalMocion(Number(e.target.value))}
+                        style={{
+                          width: '100%',
+                          marginTop: '0.35rem',
+                          backgroundColor: 'var(--card-header-bg)',
+                          border: '1px solid var(--subborder-color)',
+                          borderRadius: '8px',
+                          padding: '0.55rem',
+                          color: 'var(--text-color)'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)' }}>Por Orador (segundos)</label>
+                      <input
+                        type="number"
+                        value={tiempoOradorMocion}
+                        onChange={e => setTiempoOradorMocion(Number(e.target.value))}
+                        style={{
+                          width: '100%',
+                          marginTop: '0.35rem',
+                          backgroundColor: 'var(--card-header-bg)',
+                          border: '1px solid var(--subborder-color)',
+                          borderRadius: '8px',
+                          padding: '0.55rem',
+                          color: 'var(--text-color)'
+                        }}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <button
+                type="submit"
+                style={{
+                  backgroundColor: 'var(--btn-bg)',
+                  color: 'var(--btn-text)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '0.65rem',
+                  fontWeight: '800',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  marginTop: '0.5rem'
+                }}
+              >
+                Enviar Moción a la Mesa
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

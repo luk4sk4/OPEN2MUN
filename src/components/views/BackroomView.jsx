@@ -11,7 +11,10 @@ import {
   Clock,
   Sparkles,
   Zap,
-  Building2
+  Building2,
+  Bell,
+  Shield,
+  CheckCircle2
 } from 'lucide-react';
 import { useP2P } from '../../context/P2PContext';
 import OpenMunLogo from '../common/OpenMunLogo';
@@ -26,21 +29,24 @@ const BackroomView = ({ isLight, onExit }) => {
     leaveRoom
   } = useP2P();
 
-  const [activeTab, setActiveTab] = useState('DELEGADOS'); // 'DELEGADOS' | 'CHAIR' | 'CRISIS'
+  const [activeTab, setActiveTab] = useState('CRISIS'); // 'CRISIS' | 'DELEGADOS' | 'CHAIR'
   const [destinatario, setDestinatario] = useState('TODOS');
   const [mensajeTexto, setMensajeTexto] = useState('');
   const [tituloCrisis, setTituloCrisis] = useState('');
   const [descripcionCrisis, setDescripcionCrisis] = useState('');
+  const [historialCrisis, setHistorialCrisis] = useState([]);
+  const [alertaEnviada, setAlertaEnviada] = useState(false);
 
   const state = remoteSessionState || {};
-  const nombreComite = state.comision || state.nombreComite || 'Comité de Crisis';
+  const nombreComite = state.comision || state.nombreComite || 'Comité de Crisis / Gabinete';
   const paises = state.paises || [];
 
   // Filtrar notas relevantes para el Backroom
   const notasBackroom = notes.filter(n => 
     n.to === 'BACKROOM' || 
     n.fromRole === 'backroom' ||
-    n.from?.toUpperCase() === 'BACKROOM'
+    n.from?.toUpperCase() === 'BACKROOM' ||
+    n.type === 'crisis'
   );
 
   const handleEnviarNota = (e) => {
@@ -56,19 +62,28 @@ const BackroomView = ({ isLight, onExit }) => {
     e.preventDefault();
     if (!tituloCrisis.trim()) return;
 
-    // Enviar alerta de crisis a través del peerService
-    peerService.sendToServer('CRISIS_ALERT', {
+    const nuevaAlerta = {
+      id: `crisis-${Date.now()}`,
       title: tituloCrisis.trim(),
       description: descripcionCrisis.trim(),
       timestamp: Date.now()
+    };
+
+    // Enviar alerta de crisis a través del peerService
+    peerService.sendToServer('CRISIS_ALERT', {
+      title: nuevaAlerta.title,
+      description: nuevaAlerta.description,
+      timestamp: nuevaAlerta.timestamp
     });
 
     // Enviar también como nota a TODOS
-    sendNote('TODOS', `🚨 DIRECTIVA DE CRISIS: ${tituloCrisis} - ${descripcionCrisis}`, 'crisis');
+    sendNote('TODOS', `🚨 DIRECTIVA DE CRISIS: ${nuevaAlerta.title} - ${nuevaAlerta.description}`, 'crisis');
 
+    setHistorialCrisis(prev => [nuevaAlerta, ...prev]);
     setTituloCrisis('');
     setDescripcionCrisis('');
-    alert('¡Alerta de crisis transmitida a todas las delegaciones!');
+    setAlertaEnviada(true);
+    setTimeout(() => setAlertaEnviada(false), 4000);
   };
 
   return (
@@ -82,7 +97,7 @@ const BackroomView = ({ isLight, onExit }) => {
     }}>
       {/* ── Header de Backroom ── */}
       <header style={{
-        padding: '0.75rem 1.5rem',
+        padding: '0.85rem 1.5rem',
         backgroundColor: 'var(--header-bg)',
         borderBottom: '1px solid var(--subborder-color)',
         display: 'flex',
@@ -92,20 +107,20 @@ const BackroomView = ({ isLight, onExit }) => {
         top: 0,
         zIndex: 100
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
           <OpenMunLogo height={32} isLight={isLight} />
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontWeight: '800', fontSize: '1rem', letterSpacing: '-0.01em', color: '#f97316' }}>
-                Consola de Backroom / Crisis
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+              <span style={{ fontWeight: '800', fontSize: '1.05rem', letterSpacing: '-0.01em', color: '#f97316' }}>
+                Consola de Backroom y Crisis
               </span>
               <span style={{
-                fontSize: '0.68rem',
+                fontSize: '0.7rem',
                 fontWeight: '700',
                 backgroundColor: 'rgba(249, 115, 22, 0.15)',
                 color: '#f97316',
                 padding: '0.15rem 0.5rem',
-                borderRadius: '4px',
+                borderRadius: '6px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px'
@@ -114,8 +129,8 @@ const BackroomView = ({ isLight, onExit }) => {
                 Sala: {roomId}
               </span>
             </div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)' }}>
-              Comunicaciones secretas y directivas de crisis
+            <div style={{ fontSize: '0.74rem', color: 'var(--muted-text)' }}>
+              Comando de incidentes, directivas de emergencia e inteligencia
             </div>
           </div>
         </div>
@@ -128,11 +143,11 @@ const BackroomView = ({ isLight, onExit }) => {
             }
           }}
           style={{
-            background: 'transparent',
-            border: '1px solid var(--subborder-color)',
-            borderRadius: '6px',
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: '8px',
             color: '#ef4444',
-            padding: '0.4rem 0.75rem',
+            padding: '0.45rem 0.75rem',
             fontSize: '0.75rem',
             fontWeight: '600',
             cursor: 'pointer',
@@ -141,23 +156,42 @@ const BackroomView = ({ isLight, onExit }) => {
             gap: '0.35rem'
           }}
         >
-          <LogOut size={13} /> Salir
+          <LogOut size={14} /> Salir
         </button>
       </header>
 
-      {/* ── Tabs de Navegación de Crisis ── */}
+      {/* ── Sub-navegación ── */}
       <div style={{
-        display: 'flex',
-        borderBottom: '1px solid var(--subborder-color)',
         backgroundColor: 'var(--subnav-bg)',
-        padding: '0.35rem 1rem',
-        gap: '0.5rem',
-        justifyContent: 'center'
+        borderBottom: '1px solid var(--subborder-color)',
+        padding: '0.4rem 1.5rem',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem'
       }}>
+        <button
+          onClick={() => setActiveTab('CRISIS')}
+          style={{
+            padding: '0.5rem 0.95rem',
+            borderRadius: '8px',
+            border: 'none',
+            backgroundColor: activeTab === 'CRISIS' ? 'rgba(249, 115, 22, 0.2)' : 'transparent',
+            color: activeTab === 'CRISIS' ? '#f97316' : 'var(--muted-text)',
+            fontWeight: '700',
+            fontSize: '0.82rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.45rem'
+          }}
+        >
+          <ShieldAlert size={15} /> Lanzador de Crisis
+        </button>
+
         <button
           onClick={() => setActiveTab('DELEGADOS')}
           style={{
-            padding: '0.5rem 1rem',
+            padding: '0.5rem 0.95rem',
             borderRadius: '8px',
             border: 'none',
             backgroundColor: activeTab === 'DELEGADOS' ? 'var(--btn-bg)' : 'transparent',
@@ -167,17 +201,16 @@ const BackroomView = ({ isLight, onExit }) => {
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.4rem',
-            transition: 'all 0.15s ease'
+            gap: '0.45rem'
           }}
         >
-          <Users size={14} /> Notas con Delegaciones
+          <MessageSquare size={15} /> Mensajería y Filtraciones ({notasBackroom.length})
         </button>
 
         <button
           onClick={() => setActiveTab('CHAIR')}
           style={{
-            padding: '0.5rem 1rem',
+            padding: '0.5rem 0.95rem',
             borderRadius: '8px',
             border: 'none',
             backgroundColor: activeTab === 'CHAIR' ? 'var(--btn-bg)' : 'transparent',
@@ -187,290 +220,317 @@ const BackroomView = ({ isLight, onExit }) => {
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.4rem',
-            transition: 'all 0.15s ease'
+            gap: '0.45rem'
           }}
         >
-          <Building2 size={14} /> Canal con la Mesa (Chair)
-        </button>
-
-        <button
-          onClick={() => setActiveTab('CRISIS')}
-          style={{
-            padding: '0.5rem 1rem',
-            borderRadius: '8px',
-            border: 'none',
-            backgroundColor: activeTab === 'CRISIS' ? 'var(--btn-bg)' : 'transparent',
-            color: activeTab === 'CRISIS' ? 'var(--btn-text)' : 'var(--muted-text)',
-            fontWeight: '700',
-            fontSize: '0.82rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            transition: 'all 0.15s ease'
-          }}
-        >
-          <Zap size={14} color="#f97316" /> Lanzar Directiva de Crisis
+          <Building2 size={15} /> Canal Directo con la Mesa
         </button>
       </div>
 
-      {/* ── Contenido ── */}
-      <main style={{
-        flex: 1,
-        maxWidth: '900px',
-        width: '100%',
-        margin: '0 auto',
-        padding: '1.5rem 1rem 3rem 1rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1.25rem'
-      }}>
-        {activeTab !== 'CRISIS' ? (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-            {/* Formulario de Envío de Nota */}
-            <form onSubmit={handleEnviarNota} style={{
+      {/* ── Contenido Principal ── */}
+      <main style={{ padding: '1.5rem', flex: 1, overflowY: 'auto' }}>
+        {activeTab === 'CRISIS' && (
+          <div style={{ maxWidth: '850px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '1.5rem' }}>
+            {/* Redactar y Emitir Alerta de Crisis */}
+            <div style={{
               backgroundColor: 'var(--panel-color)',
               border: '1px solid var(--border-color)',
-              borderRadius: '12px',
+              borderRadius: '16px',
+              padding: '1.5rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.1rem',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.3)'
+            }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '800', fontSize: '1.1rem', color: '#f97316' }}>
+                  <ShieldAlert size={20} /> Transmitir Directiva de Crisis
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--muted-text)', marginTop: '3px' }}>
+                  Emite una alerta de emergencia visual e instantánea a todos los delegados conectados.
+                </div>
+              </div>
+
+              {alertaEnviada && (
+                <div style={{
+                  backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                  border: '1px solid rgba(34, 197, 94, 0.35)',
+                  color: '#22c55e',
+                  borderRadius: '8px',
+                  padding: '0.7rem 1rem',
+                  fontSize: '0.85rem',
+                  fontWeight: '700',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <CheckCircle2 size={18} /> ¡Alerta de crisis transmitida con éxito a toda la sala!
+                </div>
+              )}
+
+              <form onSubmit={handleLanzarAlertaCrisis} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.76rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                    Titular del Evento / Directiva
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Ataque cibernético a la red eléctrica nacional"
+                    value={tituloCrisis}
+                    onChange={e => setTituloCrisis(e.target.value)}
+                    style={{
+                      width: '100%',
+                      marginTop: '0.35rem',
+                      backgroundColor: 'var(--card-header-bg)',
+                      border: '1px solid var(--subborder-color)',
+                      borderRadius: '10px',
+                      padding: '0.7rem 1rem',
+                      color: 'var(--text-color)',
+                      fontWeight: '800',
+                      fontSize: '0.92rem'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.76rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                    Detalles y Consecuencias del Comunicado
+                  </label>
+                  <textarea
+                    rows={5}
+                    placeholder="Describe los hechos, actores involucrados, ultimátums y directivas para los comités..."
+                    value={descripcionCrisis}
+                    onChange={e => setDescripcionCrisis(e.target.value)}
+                    style={{
+                      width: '100%',
+                      marginTop: '0.35rem',
+                      backgroundColor: 'var(--card-header-bg)',
+                      border: '1px solid var(--subborder-color)',
+                      borderRadius: '10px',
+                      padding: '0.75rem',
+                      color: 'var(--text-color)',
+                      fontSize: '0.88rem',
+                      resize: 'vertical'
+                    }}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={!tituloCrisis.trim()}
+                  style={{
+                    backgroundColor: '#ea580c',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '0.8rem',
+                    fontWeight: '800',
+                    fontSize: '0.92rem',
+                    cursor: tituloCrisis.trim() ? 'pointer' : 'not-allowed',
+                    opacity: tituloCrisis.trim() ? 1 : 0.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    boxShadow: '0 4px 18px rgba(234, 88, 12, 0.4)',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <Zap size={18} /> Lanzar Alerta de Crisis a la Sala
+                </button>
+              </form>
+            </div>
+
+            {/* Historial de Directivas */}
+            <div style={{
+              backgroundColor: 'var(--panel-color)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '16px',
               padding: '1.25rem',
               display: 'flex',
               flexDirection: 'column',
-              gap: '1rem',
-              boxShadow: '0 6px 20px rgba(0,0,0,0.15)',
-              height: 'fit-content'
+              gap: '1rem'
             }}>
-              <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '800' }}>
-                {activeTab === 'CHAIR' ? 'Enviar Nota a la Mesa' : 'Enviar Nota / Directiva Secreta'}
-              </h4>
+              <div style={{ fontWeight: '800', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <Clock size={16} color="#f97316" /> Registro de Crisis Emitidas ({historialCrisis.length})
+              </div>
+
+              {historialCrisis.length === 0 ? (
+                <div style={{
+                  padding: '3rem 1rem',
+                  textAlign: 'center',
+                  color: 'var(--muted-text)',
+                  fontSize: '0.82rem'
+                }}>
+                  No se han emitido alertas de crisis en esta sesión.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {historialCrisis.map(c => (
+                    <div
+                      key={c.id}
+                      style={{
+                        backgroundColor: 'var(--card-header-bg)',
+                        border: '1px solid var(--subborder-color)',
+                        borderRadius: '10px',
+                        padding: '0.85rem 1rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.35rem'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontWeight: '800', fontSize: '0.9rem', color: '#f97316' }}>
+                          🚨 {c.title}
+                        </span>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--muted-text)' }}>
+                          {new Date(c.timestamp).toLocaleTimeString()}
+                        </span>
+                      </div>
+                      {c.description && (
+                        <div style={{ fontSize: '0.8rem', color: 'var(--muted-text)' }}>
+                          {c.description}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {(activeTab === 'DELEGADOS' || activeTab === 'CHAIR') && (
+          <div style={{ maxWidth: '750px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            {/* Formulario de envío */}
+            <form onSubmit={handleEnviarNota} style={{
+              backgroundColor: 'var(--panel-color)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '14px',
+              padding: '1.25rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.85rem'
+            }}>
+              <div style={{ fontWeight: '800', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <Send size={16} color="#f97316" />
+                {activeTab === 'CHAIR' ? 'Mensaje Confidencial a la Mesa (Chair)' : 'Filtración / Nota a Delegación'}
+              </div>
 
               {activeTab === 'DELEGADOS' && (
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
-                    Delegación Destino
+                  <label style={{ fontSize: '0.74rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                    Destinatario
                   </label>
                   <select
                     value={destinatario}
                     onChange={e => setDestinatario(e.target.value)}
                     style={{
                       width: '100%',
+                      marginTop: '0.35rem',
                       backgroundColor: 'var(--card-header-bg)',
                       border: '1px solid var(--subborder-color)',
-                      borderRadius: '6px',
-                      padding: '0.55rem 0.75rem',
+                      borderRadius: '8px',
+                      padding: '0.6rem',
                       color: 'var(--text-color)',
-                      fontSize: '0.85rem',
-                      fontWeight: '600',
-                      marginTop: '0.35rem'
+                      fontWeight: '700'
                     }}
                   >
-                    <option value="TODOS">📢 TODAS LAS DELEGACIONES (Comunicado)</option>
-                    {paises.map(p => (
-                      <option key={p.id || p.nombre} value={p.nombre}>{p.bandera || '🇺🇳'} {p.nombre}</option>
-                    ))}
+                    <option value="TODOS">📢 TODA LA SALA (Público)</option>
+                    <optgroup label="Delegaciones">
+                      {paises.map(p => (
+                        <option key={p.nombre} value={p.nombre}>{p.bandera || '🇺🇳'} {p.nombre}</option>
+                      ))}
+                    </optgroup>
                   </select>
                 </div>
               )}
 
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
-                  Contenido del Mensaje
+                <label style={{ fontSize: '0.74rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                  Contenido
                 </label>
                 <textarea
-                  rows={5}
-                  required
-                  placeholder="Redacta la respuesta de crisis o información clasificada..."
+                  rows={3}
+                  placeholder={activeTab === 'CHAIR' ? 'Escribe instrucciones secretas para la Mesa...' : 'Escribe información clasificada o filtración...'}
                   value={mensajeTexto}
                   onChange={e => setMensajeTexto(e.target.value)}
                   style={{
                     width: '100%',
+                    marginTop: '0.35rem',
                     backgroundColor: 'var(--card-header-bg)',
                     border: '1px solid var(--subborder-color)',
-                    borderRadius: '6px',
-                    padding: '0.65rem 0.75rem',
+                    borderRadius: '8px',
+                    padding: '0.65rem',
                     color: 'var(--text-color)',
-                    fontSize: '0.85rem',
-                    marginTop: '0.35rem',
-                    resize: 'vertical',
-                    fontFamily: 'inherit'
+                    fontSize: '0.85rem'
                   }}
                 />
               </div>
 
               <button
                 type="submit"
+                disabled={!mensajeTexto.trim()}
                 style={{
                   backgroundColor: 'var(--btn-bg)',
                   color: 'var(--btn-text)',
                   border: 'none',
                   borderRadius: '8px',
-                  padding: '0.7rem 1.25rem',
+                  padding: '0.65rem',
                   fontWeight: '800',
-                  fontSize: '0.88rem',
-                  cursor: 'pointer',
+                  fontSize: '0.85rem',
+                  cursor: mensajeTexto.trim() ? 'pointer' : 'not-allowed',
+                  opacity: mensajeTexto.trim() ? 1 : 0.5,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.4rem',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                  gap: '0.4rem'
                 }}
               >
-                <Send size={15} /> Enviar Mensaje
+                <Send size={14} /> Despachar
               </button>
             </form>
 
-            {/* Historial de Notas del Backroom */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-color)' }}>
-                Registro de Mensajes ({notasBackroom.length})
-              </span>
-
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.5rem',
-                maxHeight: '480px',
-                overflowY: 'auto'
-              }}>
-                {notasBackroom.length === 0 ? (
-                  <div style={{
-                    padding: '3rem 1rem',
-                    textAlign: 'center',
-                    color: 'var(--muted-text)',
-                    backgroundColor: 'var(--card-header-bg)',
-                    borderRadius: '10px',
-                    border: '1px dashed var(--subborder-color)',
-                    fontSize: '0.82rem'
-                  }}>
-                    No hay mensajes intercambiados todavía.
-                  </div>
-                ) : (
-                  notasBackroom.map(nota => {
-                    const esMio = nota.fromRole === 'backroom' || nota.from?.toUpperCase() === 'BACKROOM';
-                    return (
-                      <div
-                        key={nota.id}
-                        style={{
-                          backgroundColor: esMio ? 'var(--card-header-bg)' : 'var(--panel-color)',
-                          border: `1px solid ${esMio ? 'var(--subborder-color)' : '#f9731644'}`,
-                          borderRadius: '8px',
-                          padding: '0.75rem 0.9rem',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '0.3rem'
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem' }}>
-                          <span style={{ fontWeight: '700', color: esMio ? '#f97316' : '#60a5fa' }}>
-                            {esMio ? `Para: ${nota.to}` : `De: ${nota.from}`}
-                          </span>
-                          <span style={{ color: 'var(--muted-text)' }}>
-                            {new Date(nota.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>
-                          {nota.text}
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
+            {/* Feed de notas */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: '800' }}>
+                Historial de Mensajes ({notasBackroom.length})
               </div>
+
+              {notasBackroom.length === 0 ? (
+                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--muted-text)', fontSize: '0.82rem' }}>
+                  No hay mensajes registrados.
+                </div>
+              ) : (
+                notasBackroom.map(n => (
+                  <div
+                    key={n.id}
+                    style={{
+                      backgroundColor: 'var(--panel-color)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '10px',
+                      padding: '0.85rem 1rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.35rem'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+                      <span style={{ fontWeight: '800', color: '#f97316' }}>
+                        {n.from} ➔ {n.to}
+                      </span>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--muted-text)' }}>
+                        {new Date(n.timestamp || Date.now()).toLocaleTimeString()}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>
+                      {n.text}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
-        ) : (
-          /* Formulario de Directiva de Crisis Urgente */
-          <form onSubmit={handleLanzarAlertaCrisis} style={{
-            backgroundColor: 'var(--panel-color)',
-            border: '1px solid #f9731666',
-            borderRadius: '14px',
-            padding: '1.5rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1.25rem',
-            boxShadow: '0 10px 30px rgba(249, 115, 22, 0.15)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <ShieldAlert size={24} color="#f97316" />
-              <div>
-                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-color)' }}>
-                  Emitir Directiva / Noticia de Crisis
-                </h3>
-                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--muted-text)', marginTop: '2px' }}>
-                  Esta directiva se transmitirá como alerta inmediata a todos los delegados conectados y a la mesa.
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
-                Titular de la Crisis
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="Ej: Incidente en el Estrecho de Ormuz..."
-                value={tituloCrisis}
-                onChange={e => setTituloCrisis(e.target.value)}
-                style={{
-                  width: '100%',
-                  backgroundColor: 'var(--card-header-bg)',
-                  border: '1px solid var(--subborder-color)',
-                  borderRadius: '6px',
-                  padding: '0.65rem 0.85rem',
-                  color: 'var(--text-color)',
-                  fontSize: '0.9rem',
-                  fontWeight: '700',
-                  marginTop: '0.35rem'
-                }}
-              />
-            </div>
-
-            <div>
-              <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
-                Detalles y Comunicado Oficial
-              </label>
-              <textarea
-                rows={5}
-                placeholder="Describe la actualización del escenario, condiciones y órdenes para las delegaciones..."
-                value={descripcionCrisis}
-                onChange={e => setDescripcionCrisis(e.target.value)}
-                style={{
-                  width: '100%',
-                  backgroundColor: 'var(--card-header-bg)',
-                  border: '1px solid var(--subborder-color)',
-                  borderRadius: '6px',
-                  padding: '0.65rem 0.85rem',
-                  color: 'var(--text-color)',
-                  fontSize: '0.85rem',
-                  marginTop: '0.35rem',
-                  resize: 'vertical',
-                  fontFamily: 'inherit'
-                }}
-              />
-            </div>
-
-            <button
-              type="submit"
-              style={{
-                backgroundColor: '#f97316',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '0.8rem 1.5rem',
-                fontWeight: '800',
-                fontSize: '0.95rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                boxShadow: '0 4px 15px rgba(249, 115, 22, 0.35)'
-              }}
-            >
-              <Zap size={18} /> Transmitir Alerta a la Sala
-            </button>
-          </form>
         )}
       </main>
     </div>

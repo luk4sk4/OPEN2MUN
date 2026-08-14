@@ -222,7 +222,11 @@ const Dashboard = () => {
     oradoresCaucus, 
     caucusActivo, 
     votacionSesion, 
-    relojGSLState 
+    relojGSLState,
+    agregarOrador,
+    agregarOradorCaucus,
+    agregarMocion,
+    registrarVotoPais
   } = useSession();
 
   const {
@@ -233,8 +237,20 @@ const Dashboard = () => {
     connectedPeers,
     speakingRequests,
     broadcastCurrentState,
+    registerSessionHandlers,
+    roomSettings,
     setViewMode
   } = useP2P();
+
+  // Registrar handlers de sesión para solicitudes P2P automáticas o remotas
+  useEffect(() => {
+    registerSessionHandlers({
+      onAddSpeakerGSL: (pais) => agregarOrador(pais),
+      onAddSpeakerCaucus: (pais) => agregarOradorCaucus(pais),
+      onAddMotion: (mocion) => agregarMocion(mocion),
+      onCastVote: (country, vote) => registrarVotoPais(country, vote)
+    });
+  }, [registerSessionHandlers, agregarOrador, agregarOradorCaucus, agregarMocion, registrarVotoPais]);
 
   // Sincronizar estado automáticamente a todos los peers conectados si el Chair está emitiendo
   useEffect(() => {
@@ -247,9 +263,10 @@ const Dashboard = () => {
       agendaSesion,
       nombreComite,
       votacionSesion,
-      relojGSLState
+      relojGSLState,
+      roomSettings
     });
-  }, [broadcastCurrentState, paises, oradoresCola, oradoresCaucus, caucusActivo, agendaSesion, nombreComite, votacionSesion, relojGSLState]);
+  }, [broadcastCurrentState, paises, oradoresCola, oradoresCaucus, caucusActivo, agendaSesion, nombreComite, votacionSesion, relojGSLState, roomSettings]);
 
   // Cargar configuración desde localStorage si existe, o usar configMaster por defecto
   const [config, setConfig] = useState(() => {
