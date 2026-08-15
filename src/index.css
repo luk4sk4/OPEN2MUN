@@ -88,8 +88,20 @@ body {
   color: var(--timer-orange-color, #f97316) !important;
 }
 
-.timer-negative {
-  background-color: var(--timer-negative-bg, #3f0c0c) !important;
-  border-color: var(--timer-negative-border, #ef4444) !important;
-  color: var(--timer-negative-color, #ef4444) !important;
+
+/* Controles flotantes de Widgets (Visibles solo al pasar el ratón o interactuar) */
+.widget-card .widget-floating-controls {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 0.2s cubic-bezier(0.2, 0, 0, 1), transform 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
+
+.widget-card:hover .widget-floating-controls,
+.widget-card:focus-within .widget-floating-controls,
+.widget-card.is-interacting .widget-floating-controls {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+

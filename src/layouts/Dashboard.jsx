@@ -1124,6 +1124,7 @@ const Dashboard = () => {
               return (
                 <div
                   key={w.i}
+                  className={`widget-card ${isInteracting ? 'is-interacting' : ''}`}
                   onMouseDown={() => setFocusedWidgetId(w.i)}
                   onTouchStart={() => setFocusedWidgetId(w.i)}
                   style={{
@@ -1143,38 +1144,60 @@ const Dashboard = () => {
                     transform: isDraggingThis ? 'scale(1.01)' : 'scale(1)',
                   }}
                 >
-                  {/* Handle Superior de Drag */}
+                  {/* Borde Superior Draggable Fino (Reserva de arrastre) */}
                   <div
                     onMouseDown={(e) => handleStartDrag(e, w.i)}
                     onTouchStart={(e) => handleStartDrag(e, w.i)}
                     style={{
+                      position: 'absolute',
+                      top: 0, left: 0, right: 0,
+                      height: '8px',
+                      zIndex: 15,
+                      cursor: isDraggingThis ? 'grabbing' : 'grab',
+                      borderTopLeftRadius: 'var(--border-radius)',
+                      borderTopRightRadius: 'var(--border-radius)'
+                    }}
+                    title={`Arrastrar widget: ${meta.title}`}
+                  />
+
+                  {/* Botones Flotantes Compactos de Control (Visibles al pasar el ratón) */}
+                  <div
+                    className="widget-floating-controls"
+                    style={{
+                      position: 'absolute',
+                      top: '6px',
+                      right: '6px',
+                      zIndex: 25,
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '0.4rem 0.75rem',
-                      backgroundColor: 'var(--card-header-bg)',
-                      borderBottom: '1px solid var(--border-color)',
-                      borderTopLeftRadius: 'var(--border-radius)',
-                      borderTopRightRadius: 'var(--border-radius)',
-                      cursor: isDraggingThis ? 'grabbing' : 'grab',
-                      flexShrink: 0,
-                      userSelect: 'none',
-                      transition: 'background-color 0.2s ease, border-color 0.3s ease'
+                      gap: '4px',
+                      backgroundColor: isLight ? 'rgba(240, 242, 245, 0.92)' : 'rgba(16, 18, 26, 0.92)',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '6px',
+                      padding: '2px 4px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                      userSelect: 'none'
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flex: 1, minWidth: 0 }}>
-                      <GripVertical size={15} style={{ opacity: 0.6, flexShrink: 0 }} />
-                      <span style={{
-                        fontSize: '0.78rem',
-                        fontWeight: '600',
-                        letterSpacing: '0.02em',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        color: 'var(--text-color)'
-                      }}>
-                        {meta.title}
-                      </span>
+                    {/* Icono / Handle para Arrastrar */}
+                    <div
+                      onMouseDown={(e) => handleStartDrag(e, w.i)}
+                      onTouchStart={(e) => handleStartDrag(e, w.i)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: isDraggingThis ? 'grabbing' : 'grab',
+                        padding: '2px 4px',
+                        borderRadius: '4px',
+                        color: 'var(--text-color)',
+                        opacity: 0.8
+                      }}
+                      title={`Arrastrar widget: ${meta.title}`}
+                    >
+                      <GripVertical size={14} />
                     </div>
 
                     {isInteracting && (
@@ -1183,15 +1206,16 @@ const Dashboard = () => {
                         fontWeight: '700',
                         backgroundColor: 'var(--btn-bg)',
                         color: 'var(--btn-text)',
-                        padding: '0.1rem 0.4rem',
+                        padding: '0.1rem 0.35rem',
                         borderRadius: '4px',
-                        marginRight: '0.5rem',
-                        fontFamily: 'monospace'
+                        fontFamily: 'monospace',
+                        lineHeight: 1
                       }}>
-                        {w.colSpan}x{w.rowSpan} @ ({w.col},{w.row})
+                        {w.colSpan}x{w.rowSpan}
                       </span>
                     )}
 
+                    {/* Botón para Cerrar / Desactivar Widget */}
                     <button
                       onMouseDown={e => e.stopPropagation()}
                       onTouchStart={e => e.stopPropagation()}
@@ -1202,23 +1226,24 @@ const Dashboard = () => {
                         color: 'var(--text-color)',
                         cursor: 'pointer',
                         display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                         opacity: 0.6,
                         padding: '2px',
                         borderRadius: '4px',
-                        transition: 'all 0.15s ease'
+                        transition: 'opacity 0.15s ease'
                       }}
-                      title="Desactivar Widget"
+                      title={`Quitar widget (${meta.title})`}
                     >
-                      <X size={15} />
+                      <X size={14} />
                     </button>
                   </div>
 
-                  {/* Contenido del Widget */}
+                  {/* Contenido del Widget (Aprovechamiento 100% de espacio) */}
                   <div style={{
                     flex: 1,
                     overflow: 'auto',
-                    borderBottomLeftRadius: 'var(--border-radius)',
-                    borderBottomRightRadius: 'var(--border-radius)',
+                    borderRadius: 'var(--border-radius)',
                     pointerEvents: isInteracting ? 'none' : 'auto'
                   }}>
                     {WidgetComponent ? <WidgetComponent /> : (

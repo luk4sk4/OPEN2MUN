@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { getFlagImageUrl, obtenerIniciales, generarColorAvatar } from '../../utils/flags';
 
 const SIZES = {
-  xs: { width: '16px', height: '12px', fontSize: '0.55rem' },
-  sm: { width: '20px', height: '15px', fontSize: '0.65rem' },
-  md: { width: '24px', height: '18px', fontSize: '0.75rem' },
-  lg: { width: '32px', height: '24px', fontSize: '0.9rem' },
-  xl: { width: '48px', height: '36px', fontSize: '1.2rem' },
-  '2xl': { width: '64px', height: '48px', fontSize: '1.5rem' }
+  xs: { width: '22px', height: '16px', fontSize: '0.65rem' },
+  sm: { width: '26px', height: '19px', fontSize: '0.72rem' },
+  md: { width: '32px', height: '24px', fontSize: '0.85rem' },
+  lg: { width: '44px', height: '33px', fontSize: '1.05rem' },
+  xl: { width: '64px', height: '48px', fontSize: '1.4rem' },
+  '2xl': { width: '88px', height: '66px', fontSize: '1.8rem' }
 };
 
 /**

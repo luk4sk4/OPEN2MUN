@@ -1,15 +1,38 @@
+
+
 templatescomittes
 
 
-en el Sistema de votacion TIENE QUE PONER CUANTO NECESITAN PARA CADA MAYORIA
-
 tamaño de letra y modo claro
 
-Gestor de Widgets: boton default y boton Load template
-
+	
 en ajustes Tambien load template and select style 
 
 minimalist // art nuveau // OPENMUNBASIC // OLDSCHOOL
 
 
-add speaker by click
+mapa mundi en votaciones 
+
+
+rehaul P2P
+
+modo crisis
+
+quitarle IA
+
+modo claro 
+
+
+tamaño letra
+
+
+
+
+
+
+
+
+
+	
+
+

@@ -872,7 +872,7 @@ const ImportarPaises = () => {
             border: '1px solid var(--border-color)',
             borderRadius: '6px',
             padding: '0.4rem',
-            maxHeight: '150px'
+            maxHeight: '180px'
           }}>
             {preview.map((p, i) => {
               const isSelected = selectedPreviewIndex === i;

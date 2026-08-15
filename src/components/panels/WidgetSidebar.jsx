@@ -9,8 +9,6 @@ import {
   Hourglass, 
   Globe, 
   BarChart3, 
-  TestTube, 
-  FlaskConical,
   Check,
   Zap,
   Sliders,
@@ -26,7 +24,8 @@ import {
   Download,
   Layers,
   Sparkles,
-  Info
+  Info,
+  FlaskConical
 } from 'lucide-react';
 import WidgetRegistry from '../widgets/WidgetRegistry';
 import configMaster from '../../config/config_master.json';
@@ -173,26 +172,6 @@ export const WIDGET_METADATA = {
     defaultColSpan: 6,
     defaultRowSpan: 3,
   },
-  widget_prueba_1: {
-    title: 'Widget Prueba 1',
-    category: 'Laboratorio',
-    description: 'Componente experimental de prueba para desarrollo.',
-    icon: TestTube,
-    iconBg: 'rgba(100, 116, 139, 0.15)',
-    iconColor: '#94a3b8',
-    defaultColSpan: 4,
-    defaultRowSpan: 2,
-  },
-  widget_prueba_2: {
-    title: 'Widget Prueba 2',
-    category: 'Laboratorio',
-    description: 'Componente secundario de demostración.',
-    icon: FlaskConical,
-    iconBg: 'rgba(100, 116, 139, 0.15)',
-    iconColor: '#94a3b8',
-    defaultColSpan: 4,
-    defaultRowSpan: 2,
-  },
 };
 
 // Lista canónica de widgets únicos sin alias redundantes
@@ -209,9 +188,7 @@ export const CANONICAL_WIDGET_IDS = [
   'anadir_paises_debate',
   'votacion_oficial',
   'matriz_paises',
-  'historico_delegaciones',
-  'widget_prueba_1',
-  'widget_prueba_2'
+  'historico_delegaciones'
 ];
 
 // Mapeo de widgets por defecto según la pestaña/aspecto activo
@@ -232,7 +209,7 @@ export const RECOMMENDED_BY_TAB = {
   DEBATE: ['cronometro_dual', 'pizarra_mociones', 'anadir_paises_debate', 'cronometro_only_time'],
   VOTING: ['votacion_oficial', 'matriz_paises'],
   INFO: ['matriz_paises', 'historico_delegaciones'],
-  LAB: ['cronometro_principal', 'lista_oradores', 'cronometro_dual', 'pizarra_mociones', 'anadir_paises_gsl', 'widget_prueba_1', 'widget_prueba_2'],
+  LAB: ['cronometro_principal', 'lista_oradores', 'cronometro_dual', 'pizarra_mociones', 'anadir_paises_gsl'],
   HOME: ['lista_oradores', 'cronometro_principal', 'pizarra_mociones', 'votacion_oficial', 'matriz_paises', 'establecer_agenda']
 };
 
