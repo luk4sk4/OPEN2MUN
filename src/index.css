@@ -105,3 +105,38 @@ body {
   transform: translateY(0);
 }
 
+/* Ocultar flechas default de los inputs de tipo number */
+.no-spin::-webkit-outer-spin-button,
+.no-spin::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.no-spin[type=number] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Estilo para flechas personalizadas de ajuste de tiempo */
+.timer-arrow-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 2px 4px;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.timer-arrow-btn:hover {
+  background-color: rgba(59, 130, 246, 0.15);
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+.timer-arrow-btn:active {
+  transform: scale(0.92);
+}
+
+

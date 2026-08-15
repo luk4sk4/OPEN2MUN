@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, Plus, Square, Download, Clock, CheckCircle2, ArrowRightLeft, Shield, HelpCircle, SkipForward, AlertTriangle } from 'lucide-react';
+import { Play, Pause, RotateCcw, Plus, Minus, Square, Download, Clock, CheckCircle2, ArrowRightLeft, Shield, HelpCircle, SkipForward, AlertTriangle, ChevronUp, ChevronDown } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
 
@@ -58,8 +58,16 @@ const CronometroPrincipal = () => {
     setSegundosRestantes(prev => prev + 5);
   };
 
+  const handleSubtract5Sec = () => {
+    setSegundosRestantes(prev => prev - 5);
+  };
+
   const handleAdd15Sec = () => {
     setSegundosRestantes(prev => prev + 15);
+  };
+
+  const handleSubtract15Sec = () => {
+    setSegundosRestantes(prev => prev - 15);
   };
 
   const handleCambiarPreset = (nuevosSegundos) => {
@@ -165,7 +173,7 @@ const CronometroPrincipal = () => {
         </div>
 
         {/* Presets & Tiempo Exacto Personalizado */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           {[45, 60, 90, 120].map(s => (
             <button
               key={s}
@@ -181,20 +189,30 @@ const CronometroPrincipal = () => {
                 backgroundColor: tiempoInicial === s ? 'var(--btn-bg)' : 'transparent',
                 color: tiempoInicial === s ? 'var(--btn-text)' : 'var(--text-color)',
                 cursor: 'pointer',
-                fontWeight: '600'
+                fontWeight: '600',
+                transition: 'all 0.15s ease'
               }}
             >
               {s}s
             </button>
           ))}
 
-          {/* Selector de Tiempo Exacto */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', backgroundColor: 'var(--card-header-bg)', padding: '0.15rem 0.4rem', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
+          {/* Selector de Tiempo Exacto con Flechas Estilizadas */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.25rem',
+            backgroundColor: 'var(--card-header-bg)',
+            padding: '0.15rem 0.35rem',
+            borderRadius: '5px',
+            border: '1px solid var(--border-color)'
+          }}>
             <span style={{ fontSize: '0.65rem', opacity: 0.6, fontWeight: '600' }}>Exacto:</span>
             <input
               type="number"
               min="1"
               max="3600"
+              className="no-spin"
               value={inputSegundos}
               onChange={(e) => {
                 const val = Math.max(1, parseInt(e.target.value) || 0);
@@ -202,8 +220,8 @@ const CronometroPrincipal = () => {
                 handleCambiarPreset(val);
               }}
               style={{
-                width: '44px',
-                padding: '0.1rem 0.2rem',
+                width: '38px',
+                padding: '0.1rem 0.15rem',
                 backgroundColor: 'var(--panel-color)',
                 border: '1px solid var(--border-color)',
                 color: 'var(--text-color)',
@@ -215,6 +233,47 @@ const CronometroPrincipal = () => {
               }}
               title="Ingresar cantidad exacta de segundos para el cronómetro"
             />
+            {/* Flechas estilizadas para sumar/quitar tiempo */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  const val = Math.min(3600, inputSegundos + 5);
+                  setInputSegundos(val);
+                  handleCambiarPreset(val);
+                }}
+                className="timer-arrow-btn"
+                style={{
+                  padding: 0,
+                  width: '15px',
+                  height: '10px',
+                  borderRadius: '2px',
+                  lineHeight: 1
+                }}
+                title="Aumentar 5 segundos"
+              >
+                <ChevronUp size={10} />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const val = Math.max(1, inputSegundos - 5);
+                  setInputSegundos(val);
+                  handleCambiarPreset(val);
+                }}
+                className="timer-arrow-btn"
+                style={{
+                  padding: 0,
+                  width: '15px',
+                  height: '10px',
+                  borderRadius: '2px',
+                  lineHeight: 1
+                }}
+                title="Quitar 5 segundos"
+              >
+                <ChevronDown size={10} />
+              </button>
+            </div>
             <span style={{ fontSize: '0.65rem', opacity: 0.6 }}>s</span>
           </div>
         </div>
@@ -350,39 +409,73 @@ const CronometroPrincipal = () => {
           <RotateCcw size={15} />
         </button>
 
-        <button
-          onClick={handleAdd5Sec}
-          style={{
-            flex: '0 1 42px',
-            padding: '0.6rem 0.3rem',
-            backgroundColor: 'rgba(34,197,94,0.15)',
-            border: '1px solid #22c55e',
-            color: '#22c55e',
-            fontWeight: '700',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '0.8rem'
-          }}
-        >
-          +5s
-        </button>
+        <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+          <button
+            onClick={handleSubtract5Sec}
+            style={{
+              padding: '0.6rem 0.45rem',
+              backgroundColor: 'rgba(239,68,68,0.1)',
+              border: '1px solid rgba(239,68,68,0.3)',
+              color: '#f87171',
+              fontWeight: '700',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '0.78rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '2px',
+              transition: 'all 0.15s ease'
+            }}
+            title="Quitar 5 segundos al orador"
+          >
+            <ChevronDown size={13} />
+            <span>-5s</span>
+          </button>
 
-        <button
-          onClick={handleAdd15Sec}
-          style={{
-            flex: '0 1 42px',
-            padding: '0.6rem 0.3rem',
-            backgroundColor: 'transparent',
-            border: '1px solid var(--border-color)',
-            color: 'var(--text-color)',
-            fontWeight: '600',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '0.8rem'
-          }}
-        >
-          +15s
-        </button>
+          <button
+            onClick={handleAdd5Sec}
+            style={{
+              padding: '0.6rem 0.45rem',
+              backgroundColor: 'rgba(34,197,94,0.15)',
+              border: '1px solid #22c55e',
+              color: '#22c55e',
+              fontWeight: '700',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '0.78rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '2px',
+              transition: 'all 0.15s ease'
+            }}
+            title="Sumar 5 segundos al orador"
+          >
+            <ChevronUp size={13} />
+            <span>+5s</span>
+          </button>
+
+          <button
+            onClick={handleAdd15Sec}
+            style={{
+              padding: '0.6rem 0.45rem',
+              backgroundColor: 'var(--card-header-bg)',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-color)',
+              fontWeight: '600',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '0.78rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '2px',
+              transition: 'all 0.15s ease'
+            }}
+            title="Sumar 15 segundos al orador"
+          >
+            <ChevronUp size={13} />
+            <span>+15s</span>
+          </button>
+        </div>
 
         <button
           onClick={() => setModalYieldOpen(true)}

@@ -37,12 +37,6 @@
       { "i": "matriz_paises", "col": 0, "row": 0, "colSpan": 6, "rowSpan": 4 },
       { "i": "historico_delegaciones", "col": 6, "row": 0, "colSpan": 6, "rowSpan": 4 }
     ],
-    "LAB": [
-      { "i": "cronometro_principal", "col": 0, "row": 0, "colSpan": 4, "rowSpan": 3 },
-      { "i": "lista_oradores", "col": 4, "row": 0, "colSpan": 4, "rowSpan": 4 },
-      { "i": "cronometro_dual", "col": 8, "row": 0, "colSpan": 4, "rowSpan": 4 },
-      { "i": "pizarra_mociones", "col": 0, "row": 3, "colSpan": 6, "rowSpan": 4 },
-      { "i": "anadir_paises_gsl", "col": 6, "row": 3, "colSpan": 6, "rowSpan": 4 }
-    ]
+    "LIBRE": []
   }
 }

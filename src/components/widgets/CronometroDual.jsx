@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, SkipForward, Clock, Trash2, ArrowUpDown, GripVertical, Mic } from 'lucide-react';
+import { Play, Pause, RotateCcw, SkipForward, Clock, Trash2, ArrowUpDown, GripVertical, Mic, ChevronUp, ChevronDown, Plus, Minus } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
 
@@ -89,18 +89,25 @@ const CronometroDual = ({ modoInicial = null }) => {
     setTiempoOradorSeg(limiteOradorSeg);
   };
 
+  const handleModificarTiempoTotal = (seg) => {
+    setTiempoTotalSeg(prev => Math.max(0, prev + seg));
+    setTiempoTotalInicial(prev => Math.max(0, prev + seg));
+  };
+
+  const handleModificarTiempoOrador = (seg) => {
+    setTiempoOradorSeg(prev => prev + seg);
+  };
+
   const handleAumentarSegundos = (seg) => {
-    setTiempoTotalSeg(prev => prev + seg);
-    setTiempoTotalInicial(prev => prev + seg);
+    handleModificarTiempoTotal(seg);
   };
 
   const handleAumentar5MinCaucus = () => {
-    setTiempoTotalSeg(prev => prev + 300);
-    setTiempoTotalInicial(prev => prev + 300);
+    handleModificarTiempoTotal(300);
   };
 
   const handleAumentar5SegOrador = () => {
-    setTiempoOradorSeg(prev => prev + 5);
+    handleModificarTiempoOrador(5);
   };
 
   // Formato con soporte de números negativos (-00:01, -00:02...)
@@ -304,11 +311,11 @@ const CronometroDual = ({ modoInicial = null }) => {
           </div>
 
           {/* BOTONES DE CONTROL Y TIEMPO RÁPIDO */}
-          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
             <button
               onClick={handleStartPause}
               style={{
-                flex: 2,
+                flex: '2 1 120px',
                 padding: '0.6rem',
                 backgroundColor: corriendo ? '#334155' : '#22c55e',
                 color: corriendo ? '#ffffff' : '#000000',
@@ -331,7 +338,7 @@ const CronometroDual = ({ modoInicial = null }) => {
             <button
               onClick={handleReset}
               style={{
-                flex: 1,
+                flex: '1 1 80px',
                 padding: '0.6rem',
                 backgroundColor: 'transparent',
                 border: '1px solid var(--border-color)',
@@ -342,6 +349,7 @@ const CronometroDual = ({ modoInicial = null }) => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                gap: '0.25rem',
                 fontSize: '0.85rem'
               }}
               title="Reiniciar"
@@ -349,39 +357,100 @@ const CronometroDual = ({ modoInicial = null }) => {
               <RotateCcw size={15} /> Reiniciar
             </button>
 
-            <button
-              onClick={() => handleAumentarSegundos(60)}
-              style={{
-                flex: 1,
-                padding: '0.6rem',
-                backgroundColor: 'var(--card-header-bg)',
-                border: '1px solid var(--border-color)',
-                color: 'var(--text-color)',
-                fontWeight: '600',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '0.8rem'
-              }}
-            >
-              +1 min
-            </button>
+            {/* Flechas estilizadas para sumar/quitar tiempo total del Caucus */}
+            <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => handleModificarTiempoTotal(-300)}
+                style={{
+                  padding: '0.6rem 0.45rem',
+                  backgroundColor: 'rgba(239,68,68,0.1)',
+                  border: '1px solid rgba(239,68,68,0.3)',
+                  color: '#f87171',
+                  fontWeight: '700',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '0.78rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '2px',
+                  transition: 'all 0.15s ease'
+                }}
+                title="Quitar 5 minutos"
+              >
+                <ChevronDown size={13} />
+                <span>-5m</span>
+              </button>
 
-            <button
-              onClick={() => handleAumentarSegundos(300)}
-              style={{
-                flex: 1,
-                padding: '0.6rem',
-                backgroundColor: 'var(--card-header-bg)',
-                border: '1px solid var(--border-color)',
-                color: 'var(--text-color)',
-                fontWeight: '600',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '0.8rem'
-              }}
-            >
-              +5 min
-            </button>
+              <button
+                type="button"
+                onClick={() => handleModificarTiempoTotal(-60)}
+                style={{
+                  padding: '0.6rem 0.45rem',
+                  backgroundColor: 'rgba(239,68,68,0.1)',
+                  border: '1px solid rgba(239,68,68,0.3)',
+                  color: '#f87171',
+                  fontWeight: '700',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '0.78rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '2px',
+                  transition: 'all 0.15s ease'
+                }}
+                title="Quitar 1 minuto"
+              >
+                <ChevronDown size={13} />
+                <span>-1m</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleModificarTiempoTotal(60)}
+                style={{
+                  padding: '0.6rem 0.45rem',
+                  backgroundColor: 'rgba(34,197,94,0.15)',
+                  border: '1px solid #22c55e',
+                  color: '#22c55e',
+                  fontWeight: '700',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '0.78rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '2px',
+                  transition: 'all 0.15s ease'
+                }}
+                title="Sumar 1 minuto"
+              >
+                <ChevronUp size={13} />
+                <span>+1m</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleModificarTiempoTotal(300)}
+                style={{
+                  padding: '0.6rem 0.45rem',
+                  backgroundColor: 'var(--card-header-bg)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-color)',
+                  fontWeight: '700',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '0.78rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '2px',
+                  transition: 'all 0.15s ease'
+                }}
+                title="Sumar 5 minutos"
+              >
+                <ChevronUp size={13} />
+                <span>+5m</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -420,21 +489,55 @@ const CronometroDual = ({ modoInicial = null }) => {
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', alignItems: 'center', marginTop: '0.2rem' }}>
               <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>Asignado ({limiteOradorSeg}s)</span>
-              <button
-                onClick={handleAumentar5SegOrador}
-                style={{
-                  padding: '0.15rem 0.4rem',
-                  backgroundColor: 'rgba(34, 197, 94, 0.15)',
-                  border: '1px solid #22c55e',
-                  color: '#22c55e',
-                  borderRadius: '3px',
-                  cursor: 'pointer',
-                  fontSize: '0.7rem',
-                  fontWeight: '700'
-                }}
-              >
-                +5s
-              </button>
+              
+              {/* Flechas estilizadas para sumar/quitar tiempo al orador en Tour de Table */}
+              <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => handleModificarTiempoOrador(-5)}
+                  style={{
+                    padding: '0.15rem 0.4rem',
+                    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    color: '#f87171',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '0.7rem',
+                    fontWeight: '700',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '2px',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Quitar 5 segundos al orador"
+                >
+                  <ChevronDown size={11} />
+                  <span>-5s</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleModificarTiempoOrador(5)}
+                  style={{
+                    padding: '0.15rem 0.4rem',
+                    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                    border: '1px solid #22c55e',
+                    color: '#22c55e',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '0.7rem',
+                    fontWeight: '700',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '2px',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Sumar 5 segundos al orador"
+                >
+                  <ChevronUp size={11} />
+                  <span>+5s</span>
+                </button>
+              </div>
             </div>
 
             {/* Barra de progreso inferior */}
@@ -705,28 +808,110 @@ const CronometroDual = ({ modoInicial = null }) => {
             padding: '0.45rem 0.85rem',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between'
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '0.4rem'
           }}>
             <span style={{ fontSize: '0.85rem', opacity: 0.75, fontWeight: '700', letterSpacing: '0.02em' }}>Tiempo Total Caucus:</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '1.65rem', letterSpacing: '0.04em', color: tiempoTotalSeg < 0 ? '#ef4444' : 'var(--text-color)', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
                 {formatTimeWithNegative(tiempoTotalSeg)}
               </span>
-              <button
-                onClick={handleAumentar5MinCaucus}
-                style={{
-                  padding: '0.25rem 0.55rem',
-                  backgroundColor: 'var(--btn-bg)',
-                  color: 'var(--btn-text)',
-                  border: 'none',
-                  borderRadius: '4px',
-                  fontWeight: '800',
-                  fontSize: '0.75rem',
-                  cursor: 'pointer'
-                }}
-              >
-                +5 min
-              </button>
+              
+              {/* Flechas estilizadas para sumar/quitar tiempo al total del Caucus */}
+              <div style={{ display: 'flex', gap: '0.2rem', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => handleModificarTiempoTotal(-300)}
+                  style={{
+                    padding: '0.2rem 0.4rem',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    color: '#f87171',
+                    borderRadius: '4px',
+                    fontWeight: '700',
+                    fontSize: '0.72rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1px',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Quitar 5 minutos al caucus"
+                >
+                  <ChevronDown size={11} />
+                  <span>-5m</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleModificarTiempoTotal(-60)}
+                  style={{
+                    padding: '0.2rem 0.4rem',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    color: '#f87171',
+                    borderRadius: '4px',
+                    fontWeight: '700',
+                    fontSize: '0.72rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1px',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Quitar 1 minuto al caucus"
+                >
+                  <ChevronDown size={11} />
+                  <span>-1m</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleModificarTiempoTotal(60)}
+                  style={{
+                    padding: '0.2rem 0.4rem',
+                    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                    border: '1px solid #22c55e',
+                    color: '#22c55e',
+                    borderRadius: '4px',
+                    fontWeight: '700',
+                    fontSize: '0.72rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1px',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Sumar 1 minuto al caucus"
+                >
+                  <ChevronUp size={11} />
+                  <span>+1m</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleModificarTiempoTotal(300)}
+                  style={{
+                    padding: '0.2rem 0.45rem',
+                    backgroundColor: 'var(--btn-bg)',
+                    color: 'var(--btn-text)',
+                    border: 'none',
+                    borderRadius: '4px',
+                    fontWeight: '800',
+                    fontSize: '0.72rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1px',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Sumar 5 minutos al caucus"
+                >
+                  <ChevronUp size={11} />
+                  <span>+5m</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -766,21 +951,55 @@ const CronometroDual = ({ modoInicial = null }) => {
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '0.6rem', alignItems: 'center', marginTop: '0.3rem' }}>
               <span style={{ fontSize: '0.78rem', opacity: 0.75, fontWeight: '600' }}>Límite ({limiteOradorSeg}s)</span>
-              <button
-                onClick={handleAumentar5SegOrador}
-                style={{
-                  padding: '0.15rem 0.5rem',
-                  backgroundColor: 'rgba(34, 197, 94, 0.18)',
-                  border: '1px solid #22c55e',
-                  color: '#22c55e',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '0.72rem',
-                  fontWeight: '800'
-                }}
-              >
-                +5s
-              </button>
+              
+              {/* Flechas estilizadas para sumar/quitar tiempo al orador */}
+              <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => handleModificarTiempoOrador(-5)}
+                  style={{
+                    padding: '0.15rem 0.45rem',
+                    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    color: '#f87171',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '0.72rem',
+                    fontWeight: '800',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '2px',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Quitar 5 segundos al orador"
+                >
+                  <ChevronDown size={12} />
+                  <span>-5s</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleModificarTiempoOrador(5)}
+                  style={{
+                    padding: '0.15rem 0.45rem',
+                    backgroundColor: 'rgba(34, 197, 94, 0.18)',
+                    border: '1px solid #22c55e',
+                    color: '#22c55e',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '0.72rem',
+                    fontWeight: '800',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '2px',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Sumar 5 segundos al orador"
+                >
+                  <ChevronUp size={12} />
+                  <span>+5s</span>
+                </button>
+              </div>
             </div>
 
             {/* Barra de progreso inferior */}

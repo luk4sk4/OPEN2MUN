@@ -21,7 +21,7 @@ import {
   Timer,
   Vote,
   BarChart2,
-  FlaskConical,
+  LayoutGrid,
   Landmark,
   Scroll
 } from 'lucide-react';
@@ -57,7 +57,7 @@ const TAB_CONFIG = {
   DEBATE: { label: 'Debate', Icon: Timer },
   VOTING: { label: 'Voting', Icon: Vote },
   INFO: { label: 'Info', Icon: BarChart2 },
-  LAB: { label: 'Lab', Icon: FlaskConical },
+  LIBRE: { label: 'Libre', Icon: LayoutGrid },
 };
 
 const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight, nombreComite }) => {
@@ -229,16 +229,16 @@ const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight
 };
 
 const Dashboard = () => {
-  const { 
-    descargarSesionJSON, 
-    cargarSesionJSON, 
-    agendaSesion, 
-    nombreComite, 
-    paises, 
-    oradoresCola, 
-    oradoresCaucus, 
-    caucusActivo, 
-    votacionSesion, 
+  const {
+    descargarSesionJSON,
+    cargarSesionJSON,
+    agendaSesion,
+    nombreComite,
+    paises,
+    oradoresCola,
+    oradoresCaucus,
+    caucusActivo,
+    votacionSesion,
     relojGSLState,
     agregarOrador,
     agregarOradorCaucus,
@@ -290,7 +290,16 @@ const Dashboard = () => {
   const [config, setConfig] = useState(() => {
     try {
       const saved = localStorage.getItem('openmun_config');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.layouts) {
+          if (parsed.layouts.LAB !== undefined && parsed.layouts.LIBRE === undefined) {
+            delete parsed.layouts.LAB;
+            parsed.layouts.LIBRE = [];
+          }
+        }
+        return parsed;
+      }
     } catch (err) {
       console.error('Error al leer config de localStorage:', err);
     }
@@ -422,7 +431,7 @@ const Dashboard = () => {
     e.target.value = '';
   };
 
-  const tabs = ['HOME', 'COMIENZO', 'GSL', 'DEBATE', 'VOTING', 'INFO', 'LAB'];
+  const tabs = ['HOME', 'COMIENZO', 'GSL', 'DEBATE', 'VOTING', 'INFO', 'LIBRE'];
   const widgets = config.layouts[activeTab] || [];
 
   // Actualizador seguro para la pestaña activa sin stale closures
@@ -935,7 +944,7 @@ const Dashboard = () => {
                 }}
                 title="Exportar archivo sesion_activa.json"
               >
-                <Download size={14} /> Exportar JSON
+                <Download size={14} /> Exportar sesión
               </button>
 
 
@@ -1089,10 +1098,10 @@ const Dashboard = () => {
       {/* ── VISTA PRINCIPAL O TABLERO DE WIDGETS ── */}
       {activeTab === 'HOME' ? (
         <main style={{ flex: 1, padding: '1rem', overflowY: 'auto' }}>
-          <HomePage 
-            onNavigateToComienzo={() => setActiveTab('COMIENZO')} 
+          <HomePage
+            onNavigateToComienzo={() => setActiveTab('COMIENZO')}
             onNavigateToJoin={() => setViewMode('join')}
-            isLight={isLight} 
+            isLight={isLight}
           />
         </main>
       ) : (

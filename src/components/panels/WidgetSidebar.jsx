@@ -198,7 +198,7 @@ export const DEFAULT_WIDGETS_BY_TAB = {
   DEBATE: ['cronometro_dual', 'pizarra_mociones', 'anadir_paises_debate'],
   VOTING: ['votacion_oficial', 'matriz_paises'],
   INFO: ['matriz_paises', 'historico_delegaciones'],
-  LAB: ['cronometro_principal', 'lista_oradores', 'cronometro_dual', 'pizarra_mociones', 'anadir_paises_gsl'],
+  LIBRE: [],
   HOME: ['lista_oradores', 'cronometro_principal', 'pizarra_mociones', 'votacion_oficial', 'matriz_paises']
 };
 
@@ -209,7 +209,7 @@ export const RECOMMENDED_BY_TAB = {
   DEBATE: ['cronometro_dual', 'pizarra_mociones', 'anadir_paises_debate', 'cronometro_only_time'],
   VOTING: ['votacion_oficial', 'matriz_paises'],
   INFO: ['matriz_paises', 'historico_delegaciones'],
-  LAB: ['cronometro_principal', 'lista_oradores', 'cronometro_dual', 'pizarra_mociones', 'anadir_paises_gsl'],
+  LIBRE: [],
   HOME: ['lista_oradores', 'cronometro_principal', 'pizarra_mociones', 'votacion_oficial', 'matriz_paises', 'establecer_agenda']
 };
 
@@ -310,9 +310,9 @@ export const PRESET_TEMPLATES = [
   },
   {
     id: 'crisis_lab',
-    title: 'Crisis & Multi-Módulo (Lab)',
-    targetTab: 'LAB',
-    category: 'Laboratorio',
+    title: 'Crisis & Multi-Módulo',
+    targetTab: 'LIBRE',
+    category: 'Debate',
     badge: 'Completo',
     icon: FlaskConical,
     iconBg: 'rgba(234, 179, 8, 0.2)',
@@ -422,8 +422,8 @@ const WidgetSidebar = ({
     return RECOMMENDED_BY_TAB[activeTab] || defaultWidgetIdsForTab;
   }, [activeTab, defaultWidgetIdsForTab]);
 
-  const categories = ['TODOS', 'Recomendados', 'Tiempo', 'Debate', 'Mociones', 'Votaciones', 'Estadísticas', 'Configuración', 'Laboratorio'];
-  const templateCategories = ['TODAS', 'Debate', 'Votaciones', 'Configuración', 'Estadísticas', 'Tiempo', 'Laboratorio'];
+  const categories = ['TODOS', 'Recomendados', 'Tiempo', 'Debate', 'Mociones', 'Votaciones', 'Estadísticas', 'Configuración'];
+  const templateCategories = ['TODAS', 'Debate', 'Votaciones', 'Configuración', 'Estadísticas', 'Tiempo'];
 
   // Ordenar los widgets colocando ARRIBA DE TODO los que son default y recomendados en el aspecto actual
   const sortedAndFilteredWidgets = useMemo(() => {

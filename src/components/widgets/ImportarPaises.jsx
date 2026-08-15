@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Upload,
   ClipboardPaste,
@@ -11,13 +11,17 @@ import {
   Globe2,
   Sparkles,
   X,
-  FileText,
   Camera,
   Image as ImageIcon,
   Edit2,
   Plus,
-  Clock
+  Clock,
+  Search,
+  Download,
+  ArrowUpDown,
+  Check
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
 import {
@@ -25,6 +29,7 @@ import {
   procesarImagenBandera,
   DICCIONARIO_PAISES_ISO
 } from '../../utils/flags';
+import { PLANTILLAS_PAISES } from '../../plantillas/paises';
 
 const P5_SET = new Set([
   'estados unidos', 'eeuu', 'usa', 'united states', 'ee.uu.',
@@ -49,83 +54,7 @@ function autodetectarBanderaYVeto(nombre) {
   return { bandera, veto };
 }
 
-// ── Presets de Comités con Códigos ISO ───────────────────────────────────────
-const PRESETS = [
-  {
-    id: 'unsc',
-    nombre: 'Consejo de Seguridad (UNSC)',
-    paises: [
-      { nombre: 'China', bandera: 'cn', veto: true },
-      { nombre: 'Estados Unidos', bandera: 'us', veto: true },
-      { nombre: 'Francia', bandera: 'fr', veto: true },
-      { nombre: 'Reino Unido', bandera: 'gb', veto: true },
-      { nombre: 'Rusia', bandera: 'ru', veto: true },
-      { nombre: 'Argelia', bandera: 'dz', veto: false },
-      { nombre: 'Dinamarca', bandera: 'dk', veto: false },
-      { nombre: 'Grecia', bandera: 'gr', veto: false },
-      { nombre: 'Guyana', bandera: 'gy', veto: false },
-      { nombre: 'Pakistán', bandera: 'pk', veto: false },
-      { nombre: 'Panamá', bandera: 'pa', veto: false },
-      { nombre: 'República de Corea', bandera: 'kr', veto: false },
-      { nombre: 'Sierra Leona', bandera: 'sl', veto: false },
-      { nombre: 'Eslovenia', bandera: 'si', veto: false },
-      { nombre: 'Somalia', bandera: 'so', veto: false }
-    ]
-  },
-  {
-    id: 'g20',
-    nombre: 'Cumbre del G20',
-    paises: [
-      { nombre: 'Alemania', bandera: 'de', veto: false },
-      { nombre: 'Arabia Saudita', bandera: 'sa', veto: false },
-      { nombre: 'Argentina', bandera: 'ar', veto: false },
-      { nombre: 'Australia', bandera: 'au', veto: false },
-      { nombre: 'Brasil', bandera: 'br', veto: false },
-      { nombre: 'Canadá', bandera: 'ca', veto: false },
-      { nombre: 'China', bandera: 'cn', veto: true },
-      { nombre: 'Corea del Sur', bandera: 'kr', veto: false },
-      { nombre: 'Estados Unidos', bandera: 'us', veto: true },
-      { nombre: 'Francia', bandera: 'fr', veto: true },
-      { nombre: 'India', bandera: 'in', veto: false },
-      { nombre: 'Indonesia', bandera: 'id', veto: false },
-      { nombre: 'Italia', bandera: 'it', veto: false },
-      { nombre: 'Japón', bandera: 'jp', veto: false },
-      { nombre: 'México', bandera: 'mx', veto: false },
-      { nombre: 'Reino Unido', bandera: 'gb', veto: true },
-      { nombre: 'Rusia', bandera: 'ru', veto: true },
-      { nombre: 'Sudáfrica', bandera: 'za', veto: false },
-      { nombre: 'Turquía', bandera: 'tr', veto: false },
-      { nombre: 'Unión Europea', bandera: 'eu', veto: false }
-    ]
-  },
-  {
-    id: 'latam',
-    nombre: 'América Latina y Caribe (CELAC)',
-    paises: [
-      { nombre: 'Argentina', bandera: 'ar', veto: false },
-      { nombre: 'Bolivia', bandera: 'bo', veto: false },
-      { nombre: 'Brasil', bandera: 'br', veto: false },
-      { nombre: 'Chile', bandera: 'cl', veto: false },
-      { nombre: 'Colombia', bandera: 'co', veto: false },
-      { nombre: 'Costa Rica', bandera: 'cr', veto: false },
-      { nombre: 'Cuba', bandera: 'cu', veto: false },
-      { nombre: 'Ecuador', bandera: 'ec', veto: false },
-      { nombre: 'El Salvador', bandera: 'sv', veto: false },
-      { nombre: 'Guatemala', bandera: 'gt', veto: false },
-      { nombre: 'Honduras', bandera: 'hn', veto: false },
-      { nombre: 'México', bandera: 'mx', veto: false },
-      { nombre: 'Nicaragua', bandera: 'ni', veto: false },
-      { nombre: 'Panamá', bandera: 'pa', veto: false },
-      { nombre: 'Paraguay', bandera: 'py', veto: false },
-      { nombre: 'Perú', bandera: 'pe', veto: false },
-      { nombre: 'República Dominicana', bandera: 'do', veto: false },
-      { nombre: 'Uruguay', bandera: 'uy', veto: false },
-      { nombre: 'Venezuela', bandera: 've', veto: false }
-    ]
-  }
-];
-
-// ── Parsers flexibles ────────────────────────────────────────────────────────
+// ── Parsers flexibles (Base siempre 'Ausente') ──────────────────────────────
 function filaAPais(fila, index) {
   if (typeof fila === 'string') {
     const limpio = fila.trim();
@@ -136,7 +65,7 @@ function filaAPais(fila, index) {
       nombre: limpio,
       bandera,
       veto,
-      estatus: 'Presente'
+      estatus: 'Ausente'
     };
   }
 
@@ -163,11 +92,8 @@ function filaAPais(fila, index) {
   const veto = vetoRaw !== undefined
     ? ['true', '1', 'si', 'sí', 'yes', 's'].includes(vetoRaw.toLowerCase())
     : auto.veto;
-  const estatusRaw = get('estatus', 'status', 'estado', 'asistencia') || 'Presente';
-  const ESTATUSES_VALIDOS = ['Presente', 'Presente y Votando', 'Ausente'];
-  const estatus = ESTATUSES_VALIDOS.find(e => e.toLowerCase() === estatusRaw.toLowerCase()) || 'Presente';
 
-  return { id, nombre, bandera, veto, estatus };
+  return { id, nombre, bandera, veto, estatus: 'Ausente' };
 }
 
 function parsearTexto(texto) {
@@ -206,12 +132,21 @@ function parsearJSON(texto) {
 }
 
 async function parsearXLSX(archivo) {
-  const XLSX = await import('https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs');
-  const buffer = await archivo.arrayBuffer();
-  const wb = XLSX.read(buffer, { type: 'array' });
-  const ws = wb.Sheets[wb.SheetNames[0]];
-  const filas = XLSX.utils.sheet_to_json(ws, { defval: '' });
-  return filas.map((f, i) => filaAPais(f, i)).filter(Boolean);
+  try {
+    const buffer = await archivo.arrayBuffer();
+    const wb = XLSX.read(buffer, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const filas = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    return filas.map((f, i) => filaAPais(f, i)).filter(Boolean);
+  } catch (err) {
+    console.error('Error al leer con XLSX local, probando fallback:', err);
+    const DynamicXLSX = await import('https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs');
+    const buffer = await archivo.arrayBuffer();
+    const wb = DynamicXLSX.read(buffer, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const filas = DynamicXLSX.utils.sheet_to_json(ws, { defval: '' });
+    return filas.map((f, i) => filaAPais(f, i)).filter(Boolean);
+  }
 }
 
 // ── Componente Principal ────────────────────────────────────────────────────
@@ -223,17 +158,62 @@ const ImportarPaises = () => {
   const [nuevoNombre, setNuevoNombre] = useState('');
   const [nuevaBandera, setNuevaBandera] = useState('');
   const [nuevoVeto, setNuevoVeto] = useState(false);
+  
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState('');
   const [exito, setExito] = useState('');
   const [preview, setPreview] = useState(null);
   const [selectedPreviewIndex, setSelectedPreviewIndex] = useState(null);
+  const [busquedaPreview, setBusquedaPreview] = useState('');
+  const [filtroPreview, setFiltroPreview] = useState('TODOS'); // 'TODOS' | 'VETO' | 'SIN_VETO'
+  const [busquedaPreset, setBusquedaPreset] = useState('');
+  const [confirmandoVaciar, setConfirmandoVaciar] = useState(false);
 
   const fileInputRef = useRef(null);
   const rowFileInputRef = useRef(null);
   const individualFileInputRef = useRef(null);
 
-  // Soporte global de Pegado (Ctrl+V) cuando se tiene una fila de preview seleccionada
+  // Sugerencias de autocompletado para el formulario individual
+  const sugerenciasNombres = useMemo(() => {
+    if (!nuevoNombre.trim() || nuevoNombre.length < 2) return [];
+    const q = normalizarTexto(nuevoNombre);
+    const resultados = [];
+    const vistos = new Set();
+
+    for (const [clave, iso] of Object.entries(DICCIONARIO_PAISES_ISO)) {
+      if (clave.includes(q)) {
+        const nombreFormateado = clave.charAt(0).toUpperCase() + clave.slice(1);
+        if (!vistos.has(nombreFormateado)) {
+          vistos.add(nombreFormateado);
+          resultados.push({ nombre: nombreFormateado, iso });
+        }
+      }
+      if (resultados.length >= 6) break;
+    }
+    return resultados;
+  }, [nuevoNombre]);
+
+  // Actualización automática de bandera e indicación de veto al escribir nombre individual
+  const banderaDetectadaIndividual = useMemo(() => {
+    if (nuevaBandera) return nuevaBandera;
+    if (!nuevoNombre.trim()) return 'un';
+    return autodetectarBanderaYVeto(nuevoNombre).bandera;
+  }, [nuevoNombre, nuevaBandera]);
+
+  const vetoSugeridoIndividual = useMemo(() => {
+    if (!nuevoNombre.trim()) return false;
+    return autodetectarBanderaYVeto(nuevoNombre).veto;
+  }, [nuevoNombre]);
+
+  // Sincronizar veto sugerido si el usuario no lo ha cambiado manualmente
+  useEffect(() => {
+    if (vetoSugeridoIndividual && !nuevoVeto) {
+      setNuevoVeto(true);
+    }
+  }, [vetoSugeridoIndividual]);
+
+  // Soporte global de Pegado (Ctrl+V) cuando se tiene una fila de preview seleccionada o en individual
   useEffect(() => {
     const handlePaste = async (e) => {
       const items = e.clipboardData?.items;
@@ -252,16 +232,17 @@ const ImportarPaises = () => {
                   copy[selectedPreviewIndex] = { ...copy[selectedPreviewIndex], bandera: base64 };
                   return copy;
                 });
-                setExito(`Imagen pegada a "${preview[selectedPreviewIndex].nombre}"`);
+                setExito(`Imagen asignada a "${preview[selectedPreviewIndex].nombre}"`);
                 setTimeout(() => setExito(''), 3000);
               } else if (tab === 'individual') {
                 e.preventDefault();
                 setNuevaBandera(base64);
-                setExito('Imagen personalizada pegada');
+                setExito('Imagen de bandera asignada');
                 setTimeout(() => setExito(''), 3000);
               }
             } catch (err) {
               console.error('Error al procesar imagen pegada:', err);
+              setError('No se pudo procesar la imagen del portapapeles');
             }
           }
           break;
@@ -273,9 +254,8 @@ const ImportarPaises = () => {
     return () => window.removeEventListener('paste', handlePaste);
   }, [preview, selectedPreviewIndex, tab]);
 
-  // Procesar archivo seleccionado
-  const handleArchivo = async (e) => {
-    const archivo = e.target.files?.[0];
+  // Procesar archivo seleccionado o soltado
+  const procesarArchivoObjeto = async (archivo) => {
     if (!archivo) return;
     if (fileInputRef.current) fileInputRef.current.value = '';
 
@@ -303,10 +283,37 @@ const ImportarPaises = () => {
         throw new Error('No se detectaron delegaciones válidas en el archivo.');
       }
       setPreview(parsed);
+      setExito(`¡Archivo procesado con éxito! Revisa la lista antes de guardar.`);
+      setTimeout(() => setExito(''), 3500);
     } catch (err) {
       setError(err.message || 'Error al procesar el archivo.');
     } finally {
       setCargando(false);
+    }
+  };
+
+  const handleArchivoChange = (e) => {
+    const archivo = e.target.files?.[0];
+    if (archivo) procesarArchivoObjeto(archivo);
+  };
+
+  // Drag and drop sobre la zona de carga de archivo
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDraggingFile(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDraggingFile(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDraggingFile(false);
+    const archivo = e.dataTransfer.files?.[0];
+    if (archivo) {
+      procesarArchivoObjeto(archivo);
     }
   };
 
@@ -315,52 +322,107 @@ const ImportarPaises = () => {
     setError('');
     setExito('');
     if (!textoPegar.trim()) {
-      setError('Pega una lista de países antes de continuar.');
+      setError('Pega una lista de países o datos antes de continuar.');
       return;
     }
-    const parsed = parsearTexto(textoPegar);
-    if (parsed.length === 0) {
-      setError('No se encontraron países válidos en el texto.');
-      return;
+    try {
+      let parsed = [];
+      if (textoPegar.trim().startsWith('[') || textoPegar.trim().startsWith('{')) {
+        try {
+          parsed = parsearJSON(textoPegar);
+        } catch {
+          parsed = parsearTexto(textoPegar);
+        }
+      } else {
+        parsed = parsearTexto(textoPegar);
+      }
+
+      if (parsed.length === 0) {
+        setError('No se encontraron países válidos en el texto.');
+        return;
+      }
+      setPreview(parsed);
+      setSelectedPreviewIndex(null);
+      setExito(`Se detectaron ${parsed.length} delegaciones.`);
+      setTimeout(() => setExito(''), 3000);
+    } catch (err) {
+      setError(err.message || 'Error al interpretar el texto pegado.');
     }
-    setPreview(parsed);
-    setSelectedPreviewIndex(null);
   };
 
-  // Cargar preset de comisión
-  const handleCargarPreset = (preset) => {
+  // Pegar directo desde el portapapeles del sistema
+  const handlePegarDesdeClipboard = async () => {
+    try {
+      if (!navigator.clipboard?.readText) {
+        setError('Acceso al portapapeles no soportado por el navegador.');
+        return;
+      }
+      const text = await navigator.clipboard.readText();
+      if (!text) {
+        setError('El portapapeles está vacío.');
+        return;
+      }
+      setTextoPegar(text);
+      setExito('Texto pegado del portapapeles');
+      setTimeout(() => setExito(''), 2500);
+    } catch (err) {
+      console.error(err);
+      setError('Permiso de portapapeles denegado. Usa Ctrl+V manualmente.');
+    }
+  };
+
+  // Cargar preset de comisión desde los archivos JSON
+  const handleCargarPreset = (preset, aplicarDirecto = false) => {
     const parsed = preset.paises.map((p, i) => ({
       id: `preset_${preset.id}_${i}_${Date.now()}`,
       nombre: p.nombre,
       bandera: p.bandera,
       veto: !!p.veto,
-      estatus: 'Presente'
+      estatus: 'Ausente'
     }));
-    setPreview(parsed);
-    setSelectedPreviewIndex(null);
+
+    if (aplicarDirecto) {
+      setPaises(parsed);
+      setExito(`Comité "${preset.nombre}" cargado (${parsed.length} delegaciones).`);
+      setTimeout(() => setExito(''), 3500);
+    } else {
+      setPreview(parsed);
+      setSelectedPreviewIndex(null);
+    }
   };
 
   // Añadir un solo país al instante
   const handleAñadirIndividual = (e) => {
     e?.preventDefault();
-    if (!nuevoNombre.trim()) return;
+    if (!nuevoNombre.trim()) {
+      setError('Escribe el nombre de la delegación.');
+      return;
+    }
 
     const auto = autodetectarBanderaYVeto(nuevoNombre.trim());
     const finalBandera = nuevaBandera || auto.bandera;
 
     const nuevo = {
-      id: `pais_${Date.now()}`,
+      id: `pais_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       nombre: nuevoNombre.trim(),
       bandera: finalBandera,
-      veto: nuevoVeto || auto.veto,
-      estatus: 'Presente'
+      veto: nuevoVeto,
+      estatus: 'Ausente'
     };
+
+    // Validar duplicado exacto
+    const existe = paises.some(p => p.nombre.toLowerCase() === nuevo.nombre.toLowerCase());
+    if (existe) {
+      if (!confirm(`"${nuevo.nombre}" ya existe en la sesión. ¿Añadirla de todos modos?`)) {
+        return;
+      }
+    }
 
     setPaises([...paises, nuevo]);
     setNuevoNombre('');
     setNuevaBandera('');
     setNuevoVeto(false);
-    setExito(`"${nuevo.nombre}" añadido correctamente.`);
+    setExito(`"${nuevo.nombre}" añadida a la sesión.`);
     setTimeout(() => setExito(''), 3000);
   };
 
@@ -380,7 +442,7 @@ const ImportarPaises = () => {
       setTimeout(() => setExito(''), 3000);
     } catch (err) {
       console.error(err);
-      setError('Error al procesar la imagen.');
+      setError('Error al procesar la imagen seleccionada.');
     } finally {
       if (rowFileInputRef.current) rowFileInputRef.current.value = '';
     }
@@ -394,7 +456,7 @@ const ImportarPaises = () => {
     try {
       const base64 = await procesarImagenBandera(file);
       setNuevaBandera(base64);
-      setExito('Imagen cargada');
+      setExito('Imagen de bandera cargada');
       setTimeout(() => setExito(''), 3000);
     } catch (err) {
       console.error(err);
@@ -402,13 +464,35 @@ const ImportarPaises = () => {
     }
   };
 
-  // Aplicar preview
+  // Descargar plantilla CSV de muestra (con estatus Ausente de base)
+  const handleDescargarPlantilla = () => {
+    const csvContent = 'data:text/csv;charset=utf-8,' + encodeURIComponent(
+      'Nombre,Bandera,Veto\n' +
+      'Estados Unidos,us,true\n' +
+      'Reino Unido,gb,true\n' +
+      'Francia,fr,true\n' +
+      'España,es,false\n' +
+      'México,mx,false\n' +
+      'Japón,jp,false\n' +
+      'Brasil,br,false\n'
+    );
+    const link = document.createElement('a');
+    link.setAttribute('href', csvContent);
+    link.setAttribute('download', 'plantilla_delegaciones_openMUN.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setExito('Plantilla CSV descargada');
+    setTimeout(() => setExito(''), 3000);
+  };
+
+  // Aplicar preview a la sesión
   const handleAplicar = (modo) => {
     if (!preview || preview.length === 0) return;
 
     if (modo === 'reemplazar') {
       setPaises(preview);
-      setExito(`Lista actualizada con ${preview.length} delegaciones.`);
+      setExito(`Lista actualizada: ${preview.length} delegaciones.`);
     } else {
       const nombresExistentes = new Set(paises.map(p => p.nombre.toLowerCase()));
       const nuevos = preview.filter(p => !nombresExistentes.has(p.nombre.toLowerCase()));
@@ -418,20 +502,57 @@ const ImportarPaises = () => {
     setPreview(null);
     setSelectedPreviewIndex(null);
     setTextoPegar('');
-    setTimeout(() => setExito(''), 4000);
+    setTimeout(() => setExito(''), 3500);
   };
 
   const handleVaciarLista = () => {
     if (paises.length === 0) return;
-    if (confirm('¿Vaciar toda la lista de delegaciones del comité actual?')) {
-      setPaises([]);
-      setExito('Lista de delegaciones vaciada.');
-      setTimeout(() => setExito(''), 3000);
-    }
+    setPaises([]);
+    setConfirmandoVaciar(false);
+    setExito('Lista de delegaciones vaciada por completo.');
+    setTimeout(() => setExito(''), 3000);
   };
+
+  // Filtrado de la previsualización
+  const previewFiltrada = useMemo(() => {
+    if (!preview) return [];
+    const q = normalizarTexto(busquedaPreview);
+    return preview.filter(p => {
+      const matchNombre = normalizarTexto(p.nombre).includes(q);
+      if (!matchNombre) return false;
+      if (filtroPreview === 'VETO') return p.veto;
+      if (filtroPreview === 'SIN_VETO') return !p.veto;
+      return true;
+    });
+  }, [preview, busquedaPreview, filtroPreview]);
+
+  // Filtrado de presets JSON
+  const presetsFiltrados = useMemo(() => {
+    if (!busquedaPreset.trim()) return PLANTILLAS_PAISES;
+    const q = normalizarTexto(busquedaPreset);
+    return PLANTILLAS_PAISES.filter(p => 
+      normalizarTexto(p.nombre).includes(q) || 
+      normalizarTexto(p.descripcion).includes(q) ||
+      normalizarTexto(p.categoria).includes(q)
+    );
+  }, [busquedaPreset]);
+
+  // Acciones en lote en la previsualización
+  const handleMarcarTodosVeto = (valor) => {
+    if (!preview) return;
+    setPreview(prev => prev.map(p => ({ ...p, veto: valor })));
+  };
+
+  const handleOrdenarPreviewAZ = () => {
+    if (!preview) return;
+    setPreview(prev => [...prev].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')));
+  };
+
+  const totalVetosSesion = paises.filter(p => p.veto).length;
 
   return (
     <div style={{
+      position: 'relative',
       padding: '0.85rem',
       height: '100%',
       display: 'flex',
@@ -440,7 +561,8 @@ const ImportarPaises = () => {
       backgroundColor: 'var(--panel-color)',
       color: 'var(--text-color)',
       gap: '0.65rem',
-      fontSize: '0.82rem'
+      fontSize: '0.82rem',
+      fontFamily: 'Inter, system-ui, sans-serif'
     }}>
       {/* Input oculto para subida de imagen por fila en preview */}
       <input
@@ -451,63 +573,157 @@ const ImportarPaises = () => {
         style={{ display: 'none' }}
       />
 
-      {/* Barra superior con contador y vaciar */}
+      {/* ── HEADER SUPERIOR CON METRICAS Y ACCIONES (AZUL Y VERDE) ──────────── */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0.35rem 0.55rem',
+        flexWrap: 'wrap',
+        gap: '0.5rem',
+        padding: '0.5rem 0.65rem',
         backgroundColor: 'var(--card-header-bg)',
         border: '1px solid var(--border-color)',
-        borderRadius: '6px'
+        borderRadius: '8px'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '700', fontSize: '0.78rem' }}>
-          <Globe2 size={14} color="#eab308" />
-          <span>Delegaciones: <strong style={{ color: '#eab308' }}>{paises.length}</strong></span>
+        {/* Lado izquierdo: Título y Contadores */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+          <div style={{
+            width: '28px',
+            height: '28px',
+            borderRadius: '6px',
+            backgroundColor: 'rgba(59, 130, 246, 0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#3b82f6'
+          }}>
+            <Globe2 size={16} />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '800', fontSize: '0.86rem' }}>
+              <span>Importar Países</span>
+              <span style={{
+                fontSize: '0.68rem',
+                backgroundColor: 'rgba(59, 130, 246, 0.18)',
+                color: '#60a5fa',
+                padding: '0.1rem 0.4rem',
+                borderRadius: '4px',
+                fontWeight: '700'
+              }}>
+                {paises.length} en sesión
+              </span>
+              {totalVetosSesion > 0 && (
+                <span style={{
+                  fontSize: '0.66rem',
+                  backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                  color: '#22c55e',
+                  padding: '0.1rem 0.35rem',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '2px',
+                  fontWeight: '700'
+                }}>
+                  <Crown size={10} /> {totalVetosSesion} Veto
+                </span>
+              )}
+            </div>
+          </div>
         </div>
-        {paises.length > 0 && (
+
+        {/* Lado derecho: Acciones de header (Plantilla y Vaciar) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
           <button
-            onClick={handleVaciarLista}
+            type="button"
+            onClick={handleDescargarPlantilla}
+            title="Descargar plantilla de Excel / CSV lista para rellenar"
             style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#ef4444',
-              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.25rem',
+              gap: '0.3rem',
+              padding: '0.25rem 0.5rem',
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '5px',
+              color: 'var(--text-color)',
               fontSize: '0.7rem',
               fontWeight: '600',
-              opacity: 0.8
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
             }}
-            title="Borrar todas las delegaciones actuales"
           >
-            <Trash2 size={12} /> Vaciar
+            <Download size={12} color="#3b82f6" />
+            <span>Plantilla</span>
           </button>
-        )}
+
+          {paises.length > 0 && !confirmandoVaciar && (
+            <button
+              type="button"
+              onClick={() => setConfirmandoVaciar(true)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                padding: '0.25rem 0.5rem',
+                backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                borderRadius: '5px',
+                color: '#ef4444',
+                fontSize: '0.7rem',
+                fontWeight: '600',
+                cursor: 'pointer'
+              }}
+              title="Borrar todas las delegaciones de la sesión"
+            >
+              <Trash2 size={12} />
+              <span>Vaciar</span>
+            </button>
+          )}
+
+          {confirmandoVaciar && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', backgroundColor: 'rgba(239,68,68,0.2)', padding: '0.15rem 0.4rem', borderRadius: '5px', border: '1px solid #ef4444' }}>
+              <span style={{ fontSize: '0.68rem', color: '#ef4444', fontWeight: '700' }}>¿Vaciar?</span>
+              <button
+                type="button"
+                onClick={handleVaciarLista}
+                style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: '3px', padding: '1px 6px', fontSize: '0.66rem', fontWeight: '700', cursor: 'pointer' }}
+              >
+                Sí
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmandoVaciar(false)}
+                style={{ background: 'transparent', color: 'var(--text-color)', border: 'none', padding: '1px 4px', fontSize: '0.66rem', cursor: 'pointer' }}
+              >
+                No
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Selector de modo */}
+      {/* ── SELECTOR DE MODO (LAS 4 OPCIONES CON ESTILO AZUL OPENMUN) ────────── */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: '0.25rem',
+        gap: '0.3rem',
         backgroundColor: 'var(--card-header-bg)',
-        padding: '2px',
-        borderRadius: '6px',
+        padding: '3px',
+        borderRadius: '8px',
         border: '1px solid var(--border-color)'
       }}>
         {[
-          { key: 'archivo', label: 'Archivo', icon: Upload },
-          { key: 'pegar', label: 'Pegar', icon: ClipboardPaste },
-          { key: 'individual', label: '1 País', icon: UserPlus },
-          { key: 'presets', label: 'Plantillas', icon: Sparkles }
+          { key: 'archivo', label: 'Archivo', icon: Upload, desc: 'Excel, CSV, JSON' },
+          { key: 'pegar', label: 'Pegar', icon: ClipboardPaste, desc: 'Texto directo' },
+          { key: 'individual', label: '1 País', icon: UserPlus, desc: 'Añadir único' },
+          { key: 'presets', label: 'Plantillas', icon: Sparkles, desc: 'Comités listos' }
         ].map(m => {
           const Icon = m.icon;
           const activo = tab === m.key && !preview;
           return (
             <button
               key={m.key}
+              type="button"
               onClick={() => {
                 setTab(m.key);
                 setError('');
@@ -519,352 +735,895 @@ const ImportarPaises = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '0.3rem',
-                padding: '0.35rem 0.2rem',
-                fontSize: '0.74rem',
-                fontWeight: '700',
-                borderRadius: '4px',
+                gap: '0.35rem',
+                padding: '0.45rem 0.2rem',
+                fontSize: '0.75rem',
+                fontWeight: activo ? '800' : '600',
+                borderRadius: '6px',
                 border: 'none',
-                backgroundColor: activo ? '#eab308' : 'transparent',
-                color: activo ? '#000000' : 'var(--muted-text)',
+                backgroundColor: activo ? '#3b82f6' : 'transparent',
+                color: activo ? '#ffffff' : 'var(--muted-text)',
                 cursor: 'pointer',
-                transition: 'all 0.15s ease'
+                transition: 'all 0.18s ease',
+                boxShadow: activo ? '0 2px 6px rgba(59, 130, 246, 0.3)' : 'none'
               }}
             >
-              <Icon size={12} />
+              <Icon size={14} />
               <span>{m.label}</span>
             </button>
           );
         })}
       </div>
 
-      {/* Alertas */}
+      {/* ── ALERTAS DE FEEDBACK ──────────────────────────────────────────────── */}
       {error && (
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '0.4rem',
-          backgroundColor: 'rgba(239,68,68,0.12)',
-          border: '1px solid #ef4444',
-          borderRadius: '5px',
-          padding: '0.4rem 0.6rem',
+          gap: '0.45rem',
+          backgroundColor: 'rgba(239, 68, 68, 0.12)',
+          border: '1px solid rgba(239, 68, 68, 0.4)',
+          borderRadius: '6px',
+          padding: '0.45rem 0.65rem',
           fontSize: '0.74rem',
-          color: '#ef4444'
+          color: '#f87171'
         }}>
           <AlertCircle size={14} style={{ flexShrink: 0 }} />
-          <span>{error}</span>
+          <span style={{ flex: 1 }}>{error}</span>
+          <button onClick={() => setError('')} style={{ background: 'transparent', border: 'none', color: '#f87171', cursor: 'pointer' }}>
+            <X size={12} />
+          </button>
         </div>
       )}
       {exito && (
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '0.4rem',
-          backgroundColor: 'rgba(34,197,94,0.12)',
-          border: '1px solid #22c55e',
-          borderRadius: '5px',
-          padding: '0.4rem 0.6rem',
+          gap: '0.45rem',
+          backgroundColor: 'rgba(34, 197, 94, 0.12)',
+          border: '1px solid rgba(34, 197, 94, 0.4)',
+          borderRadius: '6px',
+          padding: '0.45rem 0.65rem',
           fontSize: '0.74rem',
-          color: '#22c55e'
+          color: '#4ade80'
         }}>
           <CheckCircle2 size={14} style={{ flexShrink: 0 }} />
-          <span>{exito}</span>
+          <span style={{ flex: 1 }}>{exito}</span>
+          <button onClick={() => setExito('')} style={{ background: 'transparent', border: 'none', color: '#4ade80', cursor: 'pointer' }}>
+            <X size={12} />
+          </button>
         </div>
       )}
 
-      {/* ── MODO 1: ARCHIVO ── */}
+      {/* ── CONTENIDO PRINCIPAL: MODO 1 - ARCHIVO ────────────────────────────── */}
       {tab === 'archivo' && !preview && (
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1.05fr 1fr', gap: '0.5rem', alignItems: 'stretch' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.55rem', minHeight: 0 }}>
+          {/* Zona de Drop Drag & Drop */}
           <div
             onClick={() => fileInputRef.current?.click()}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
             style={{
-              border: '2px dashed var(--border-color)',
-              borderRadius: '8px',
-              padding: '0.75rem 0.5rem',
+              flex: 1,
+              border: isDraggingFile ? '2px dashed #3b82f6' : '2px dashed var(--border-color)',
+              borderRadius: '10px',
+              padding: '1rem',
               textAlign: 'center',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
-              backgroundColor: 'rgba(234,179,8,0.02)',
+              backgroundColor: isDraggingFile ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.02)',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '0.35rem'
+              gap: '0.45rem'
             }}
             onMouseEnter={e => {
-              e.currentTarget.style.borderColor = '#eab308';
-              e.currentTarget.style.backgroundColor = 'rgba(234,179,8,0.05)';
+              if (!isDraggingFile) {
+                e.currentTarget.style.borderColor = '#3b82f6';
+                e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.05)';
+              }
             }}
             onMouseLeave={e => {
-              e.currentTarget.style.borderColor = 'var(--border-color)';
-              e.currentTarget.style.backgroundColor = 'rgba(234,179,8,0.02)';
+              if (!isDraggingFile) {
+                e.currentTarget.style.borderColor = 'var(--border-color)';
+                e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.02)';
+              }
             }}
           >
-            <Upload size={22} color="#eab308" />
-            <div style={{ fontWeight: '700', fontSize: '0.8rem' }}>Subir archivo</div>
-            <div style={{ fontSize: '0.66rem', opacity: 0.6 }}>
-              Excel (.xlsx), CSV, JSON, TXT
+            <div style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(59, 130, 246, 0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#3b82f6'
+            }}>
+              <Upload size={22} />
             </div>
+
+            <div style={{ fontWeight: '800', fontSize: '0.88rem', color: 'var(--text-color)' }}>
+              {isDraggingFile ? '¡Suelta el archivo aquí!' : 'Arrastra tu archivo o haz clic para explorar'}
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+              {['.xlsx', '.xls', '.csv', '.json', '.txt'].map(fmt => (
+                <span key={fmt} style={{
+                  fontSize: '0.67rem',
+                  padding: '0.1rem 0.4rem',
+                  borderRadius: '4px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--muted-text)',
+                  fontFamily: 'monospace'
+                }}>
+                  {fmt}
+                </span>
+              ))}
+            </div>
+
             {cargando && (
-              <div style={{ fontSize: '0.68rem', color: '#eab308', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                <Clock size={12} className="animate-spin" />
-                <span>Analizando...</span>
+              <div style={{
+                fontSize: '0.72rem',
+                color: '#3b82f6',
+                marginTop: '0.2rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                fontWeight: '700'
+              }}>
+                <Clock size={14} className="animate-spin" />
+                <span>Analizando archivo y banderas...</span>
               </div>
             )}
           </div>
 
+          {/* Guía rápida de columnas */}
           <div style={{
             backgroundColor: 'var(--card-header-bg)',
             border: '1px solid var(--border-color)',
             borderRadius: '8px',
-            padding: '0.45rem 0.55rem',
+            padding: '0.55rem 0.75rem',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'flex-start',
-            gap: '0.25rem'
+            gap: '0.35rem'
           }}>
-            <div style={{ fontSize: '0.67rem', fontWeight: '700', opacity: 0.7, textTransform: 'uppercase', letterSpacing: '0.03em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-              <FileSpreadsheet size={13} />
-              <span>Columnas esperadas:</span>
+            <div style={{
+              fontSize: '0.7rem',
+              fontWeight: '800',
+              color: 'var(--text-color)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <FileSpreadsheet size={13} color="#3b82f6" />
+                <span>Columnas Soportadas</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleDescargarPlantilla}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#3b82f6',
+                  cursor: 'pointer',
+                  fontSize: '0.68rem',
+                  fontWeight: '700',
+                  textDecoration: 'underline'
+                }}
+              >
+                Descargar Ejemplo
+              </button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.4rem' }}>
               {[
-                { col: 'Nombre / Pais', req: true, desc: 'Nombre de la delegación' },
-                { col: 'Bandera / Flag', req: false, desc: 'ISO (es, us) o URL / imagen' },
+                { col: 'Nombre / Pais', req: true, desc: 'Nombre delegación (ej: España)' },
+                { col: 'Bandera / ISO', req: false, desc: 'Código ISO (es, us) o URL' },
                 { col: 'Veto / P5', req: false, desc: 'true/si/1 para derecho a veto' }
               ].map(c => (
-                <div key={c.col} style={{ fontSize: '0.69rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  <code style={{
-                    backgroundColor: 'rgba(234,179,8,0.12)',
-                    color: '#eab308',
-                    padding: '1px 4px',
-                    borderRadius: '3px',
-                    fontSize: '0.66rem'
-                  }}>
-                    {c.col}
-                  </code>
-                  {c.req && <span style={{ color: '#ef4444', fontSize: '0.65rem' }}>*</span>}
+                <div key={c.col} style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid var(--subborder-color, var(--border-color))',
+                  borderRadius: '5px',
+                  padding: '0.35rem 0.45rem'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '2px' }}>
+                    <code style={{ fontSize: '0.7rem', fontWeight: '700', color: '#60a5fa' }}>{c.col}</code>
+                    {c.req && <span style={{ color: '#ef4444', fontSize: '0.7rem', fontWeight: '800' }}>*</span>}
+                  </div>
+                  <div style={{ fontSize: '0.64rem', color: 'var(--muted-text)', lineHeight: '1.2' }}>
+                    {c.desc}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
+
           <input
             ref={fileInputRef}
             type="file"
             accept=".xlsx,.xls,.csv,.json,.txt"
-            onChange={handleArchivo}
+            onChange={handleArchivoChange}
             style={{ display: 'none' }}
           />
         </div>
       )}
 
-      {/* ── MODO 2: PEGAR TEXTO ── */}
+      {/* ── CONTENIDO PRINCIPAL: MODO 2 - PEGAR TEXTO ─────────────────────────── */}
       {tab === 'pegar' && !preview && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-          <textarea
-            value={textoPegar}
-            onChange={(e) => setTextoPegar(e.target.value)}
-            placeholder="Pega nombres de países (uno por línea o separados por coma):&#10;España&#10;Francia&#10;Estados Unidos&#10;Cruz Roja..."
-            style={{
-              flex: 1,
-              padding: '0.5rem',
-              backgroundColor: 'var(--input-bg, rgba(255,255,255,0.04))',
-              border: '1px solid var(--border-color)',
-              borderRadius: '6px',
-              color: 'var(--text-color)',
-              fontSize: '0.76rem',
-              fontFamily: 'monospace',
-              resize: 'none'
-            }}
-          />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', minHeight: 0 }}>
+          {/* Barra de herramientas rápida sobre el textarea */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.35rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={handlePegarDesdeClipboard}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  padding: '0.25rem 0.5rem',
+                  backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                  borderRadius: '4px',
+                  color: '#60a5fa',
+                  fontSize: '0.7rem',
+                  fontWeight: '700',
+                  cursor: 'pointer'
+                }}
+              >
+                <ClipboardPaste size={12} />
+                <span>Pegar Portapapeles</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTextoPegar("España\nFrancia\nAlemania\nEstados Unidos\nChina\nJapón\nBrasil")}
+                style={{
+                  padding: '0.25rem 0.45rem',
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '4px',
+                  color: 'var(--text-color)',
+                  fontSize: '0.68rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Ejemplo Lista
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTextoPegar("nombre,bandera,veto\nEstados Unidos,us,true\nFrancia,fr,true\nEspaña,es,false\nChile,cl,false")}
+                style={{
+                  padding: '0.25rem 0.45rem',
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '4px',
+                  color: 'var(--text-color)',
+                  fontSize: '0.68rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Ejemplo CSV
+              </button>
+            </div>
+
+            {textoPegar && (
+              <button
+                type="button"
+                onClick={() => setTextoPegar('')}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--muted-text)',
+                  fontSize: '0.7rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '2px'
+                }}
+              >
+                <Trash2 size={11} /> Limpiar
+              </button>
+            )}
+          </div>
+
+          <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <textarea
+              value={textoPegar}
+              onChange={(e) => setTextoPegar(e.target.value)}
+              placeholder="Pega nombres de países (uno por línea o separados por coma):&#10;España&#10;Francia&#10;Estados Unidos&#10;Reino Unido&#10;China&#10;Japón..."
+              style={{
+                flex: 1,
+                minHeight: '120px',
+                padding: '0.65rem',
+                backgroundColor: 'var(--input-bg, rgba(255,255,255,0.04))',
+                border: '1px solid var(--border-color)',
+                borderRadius: '8px',
+                color: 'var(--text-color)',
+                fontSize: '0.78rem',
+                fontFamily: 'monospace',
+                resize: 'none',
+                outline: 'none',
+                lineHeight: '1.4'
+              }}
+            />
+            {textoPegar && (
+              <div style={{
+                position: 'absolute',
+                bottom: '8px',
+                right: '8px',
+                backgroundColor: 'rgba(0,0,0,0.6)',
+                padding: '2px 6px',
+                borderRadius: '4px',
+                fontSize: '0.65rem',
+                color: 'var(--muted-text)'
+              }}>
+                {textoPegar.split(/\r?\n/).filter(Boolean).length} líneas
+              </div>
+            )}
+          </div>
+
           <button
+            type="button"
             onClick={handleProcesarPegado}
             style={{
-              padding: '0.45rem',
-              backgroundColor: '#eab308',
-              color: '#000000',
-              fontWeight: '700',
+              padding: '0.55rem',
+              backgroundColor: '#3b82f6',
+              color: '#ffffff',
+              fontWeight: '800',
               border: 'none',
-              borderRadius: '5px',
+              borderRadius: '6px',
               cursor: 'pointer',
-              fontSize: '0.75rem',
+              fontSize: '0.78rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '0.35rem'
+              gap: '0.4rem',
+              boxShadow: '0 2px 6px rgba(59, 130, 246, 0.25)'
             }}
           >
-            <Sparkles size={13} />
-            Analizar y Previsualizar
+            <Sparkles size={14} />
+            <span>Interpretar y Previsualizar</span>
           </button>
         </div>
       )}
 
-      {/* ── MODO 3: INDIVIDUAL CON SOPORTE DE IMAGEN / CTRL+V ── */}
+      {/* ── CONTENIDO PRINCIPAL: MODO 3 - INDIVIDUAL (SIN STATUS) ─────────────── */}
       {tab === 'individual' && !preview && (
-        <form onSubmit={handleAñadirIndividual} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.7rem', opacity: 0.7, marginBottom: '0.2rem' }}>
-              Nombre de la Delegación:
+        <form onSubmit={handleAñadirIndividual} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.6rem', minHeight: 0, overflowY: 'auto' }}>
+          {/* Tarjeta de previsualización en tiempo real */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0.65rem 0.85rem',
+            backgroundColor: 'var(--card-header-bg)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '8px',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+              <CountryFlag
+                bandera={banderaDetectadaIndividual}
+                nombre={nuevoNombre || 'Delegación'}
+                size="lg"
+              />
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <span style={{ fontWeight: '800', fontSize: '0.92rem', color: 'var(--text-color)' }}>
+                    {nuevoNombre.trim() || 'Nombre de la Delegación'}
+                  </span>
+                  {nuevoVeto && <Crown size={14} color="#3b82f6" fill="#3b82f6" title="Miembro Permanente con Veto" />}
+                </div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--muted-text)', display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '2px' }}>
+                  <span style={{ color: '#22c55e', fontWeight: '700' }}>
+                    {nuevaBandera ? 'Imagen Personalizada' : `Bandera: ${banderaDetectadaIndividual.toUpperCase()}`}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+              <span style={{ fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--muted-text)' }}>
+                Vista Previa
+              </span>
+              {nuevoVeto ? (
+                <span style={{ fontSize: '0.68rem', color: '#3b82f6', fontWeight: '700' }}>
+                  Con Veto (P5)
+                </span>
+              ) : (
+                <span style={{ fontSize: '0.68rem', color: 'var(--muted-text)' }}>
+                  Miembro Regular
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Campo Nombre con Autocompletado */}
+          <div style={{ position: 'relative' }}>
+            <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', marginBottom: '0.25rem', color: 'var(--text-color)' }}>
+              Nombre de la Delegación / País:
             </label>
             <input
               type="text"
               value={nuevoNombre}
               onChange={(e) => setNuevoNombre(e.target.value)}
-              placeholder="Ej. Japón, Médicos Sin Fronteras, URSS..."
+              placeholder="Ej: España, Japón, Unión Europea, Cruz Roja..."
               style={{
                 width: '100%',
-                padding: '0.45rem 0.6rem',
+                padding: '0.5rem 0.65rem',
                 backgroundColor: 'var(--input-bg, rgba(255,255,255,0.04))',
                 border: '1px solid var(--border-color)',
-                borderRadius: '5px',
+                borderRadius: '6px',
                 color: 'var(--text-color)',
-                fontSize: '0.78rem',
-                fontWeight: '600'
+                fontSize: '0.82rem',
+                fontWeight: '600',
+                outline: 'none'
               }}
             />
+
+            {/* Sugerencias Rápidas */}
+            {sugerenciasNombres.length > 0 && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                zIndex: 30,
+                backgroundColor: 'var(--panel-color)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '6px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                marginTop: '3px',
+                overflow: 'hidden'
+              }}>
+                {sugerenciasNombres.map(sug => (
+                  <div
+                    key={sug.nombre}
+                    onClick={() => {
+                      setNuevoNombre(sug.nombre);
+                      setNuevaBandera('');
+                    }}
+                    style={{
+                      padding: '0.35rem 0.65rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer',
+                      borderBottom: '1px solid var(--subborder-color, rgba(255,255,255,0.05))',
+                      transition: 'background 0.15s ease'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.12)'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <CountryFlag bandera={sug.iso} nombre={sug.nombre} size="xs" />
+                    <span style={{ fontWeight: '600' }}>{sug.nombre}</span>
+                    <span style={{ fontSize: '0.65rem', color: 'var(--muted-text)', marginLeft: 'auto' }}>
+                      ({sug.iso.toUpperCase()})
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Selector / Subir Bandera o Pegar Ctrl+V */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            padding: '0.45rem',
-            backgroundColor: 'var(--card-header-bg)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '6px'
-          }}>
-            <CountryFlag
-              bandera={nuevaBandera || normalizarBandera('', nuevoNombre)}
-              nombre={nuevoNombre || 'Delegación'}
-              size="md"
-            />
-            <div style={{ flex: 1, fontSize: '0.7rem', color: 'var(--muted-text)' }}>
-              {nuevaBandera ? 'Imagen asignada' : 'Autodetectada o pega con Ctrl+V'}
+          {/* Opciones de Bandera / Imagen y Veto */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '0.5rem', alignItems: 'center' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '0.4rem',
+              padding: '0.45rem 0.6rem',
+              backgroundColor: 'var(--card-header-bg)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <ImageIcon size={13} color="#3b82f6" />
+                <span style={{ fontSize: '0.7rem', fontWeight: '600' }}>
+                  {nuevaBandera ? 'Imagen lista' : 'Bandera ISO'}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                {nuevaBandera && (
+                  <button
+                    type="button"
+                    onClick={() => setNuevaBandera('')}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#ef4444',
+                      fontSize: '0.66rem',
+                      cursor: 'pointer',
+                      textDecoration: 'underline'
+                    }}
+                  >
+                    Limpiar
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => individualFileInputRef.current?.click()}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.2rem',
+                    padding: '0.2rem 0.45rem',
+                    backgroundColor: 'rgba(255,255,255,0.06)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '4px',
+                    color: 'var(--text-color)',
+                    fontSize: '0.68rem',
+                    cursor: 'pointer',
+                    fontWeight: '600'
+                  }}
+                >
+                  <Upload size={11} /> Subir
+                </button>
+                <input
+                  ref={individualFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleSubirImagenIndividual}
+                  style={{ display: 'none' }}
+                />
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => individualFileInputRef.current?.click()}
-              style={{
-                padding: '0.25rem 0.5rem',
-                backgroundColor: 'var(--border-color)',
-                color: 'var(--text-color)',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '0.7rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.25rem'
-              }}
-            >
-              <Upload size={11} /> Imagen
-            </button>
-            <input
-              ref={individualFileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleSubirImagenIndividual}
-              style={{ display: 'none' }}
-            />
-          </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.2rem 0' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.72rem', cursor: 'pointer' }}>
+            {/* Toggle de Veto P5 */}
+            <label style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.45rem 0.6rem',
+              backgroundColor: nuevoVeto ? 'rgba(59, 130, 246, 0.15)' : 'var(--card-header-bg)',
+              border: nuevoVeto ? '1px solid #3b82f6' : '1px solid var(--border-color)',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '0.73rem',
+              fontWeight: '700',
+              color: nuevoVeto ? '#60a5fa' : 'var(--text-color)',
+              transition: 'all 0.15s ease'
+            }}>
               <input
                 type="checkbox"
                 checked={nuevoVeto}
                 onChange={(e) => setNuevoVeto(e.target.checked)}
-                style={{ accentColor: '#eab308' }}
+                style={{ accentColor: '#3b82f6' }}
               />
-              <span>Derecho a Veto (P5)</span>
+              <Crown size={13} color={nuevoVeto ? '#3b82f6' : 'var(--muted-text)'} />
+              <span>Veto / P5</span>
             </label>
-
-            <button
-              type="submit"
-              style={{
-                padding: '0.45rem 0.9rem',
-                backgroundColor: '#22c55e',
-                color: '#ffffff',
-                fontWeight: '700',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontSize: '0.75rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.3rem'
-              }}
-            >
-              <Plus size={14} />
-              Añadir
-            </button>
           </div>
+
+          {/* Botón Submit Verde */}
+          <button
+            type="submit"
+            style={{
+              marginTop: 'auto',
+              padding: '0.55rem',
+              backgroundColor: '#22c55e',
+              color: '#ffffff',
+              fontWeight: '800',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '0.78rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.35rem',
+              boxShadow: '0 2px 6px rgba(34, 197, 94, 0.25)'
+            }}
+          >
+            <Plus size={15} />
+            <span>Añadir Delegación a la Sesión</span>
+          </button>
         </form>
       )}
 
-      {/* ── MODO 4: PRESETS ── */}
+      {/* ── CONTENIDO PRINCIPAL: MODO 4 - PLANTILLAS (.JSON) ──────────────────── */}
       {tab === 'presets' && !preview && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.4rem', overflowY: 'auto' }}>
-          {PRESETS.map(p => (
-            <div
-              key={p.id}
-              onClick={() => handleCargarPreset(p)}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.45rem', minHeight: 0 }}>
+          {/* Buscador de plantillas */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            backgroundColor: 'var(--card-header-bg)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '6px',
+            padding: '0.3rem 0.6rem',
+            gap: '0.4rem'
+          }}>
+            <Search size={13} style={{ color: 'var(--muted-text)', flexShrink: 0 }} />
+            <input
+              type="text"
+              placeholder="Buscar plantilla de comité (.json)..."
+              value={busquedaPreset}
+              onChange={e => setBusquedaPreset(e.target.value)}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0.45rem 0.65rem',
-                backgroundColor: 'var(--card-header-bg)',
-                border: '1px solid var(--border-color)',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-color)',
+                outline: 'none',
+                fontSize: '0.76rem',
+                width: '100%'
               }}
-            >
-              <div>
-                <div style={{ fontWeight: '700', fontSize: '0.78rem' }}>{p.nombre}</div>
-                <div style={{ fontSize: '0.68rem', opacity: 0.55 }}>{p.paises.length} delegaciones oficiales</div>
-              </div>
+            />
+            {busquedaPreset && (
               <button
-                style={{
-                  padding: '0.25rem 0.5rem',
-                  backgroundColor: '#eab308',
-                  color: '#000',
-                  border: 'none',
-                  borderRadius: '4px',
-                  fontWeight: '700',
-                  fontSize: '0.7rem',
-                  cursor: 'pointer'
-                }}
+                type="button"
+                onClick={() => setBusquedaPreset('')}
+                style={{ background: 'transparent', border: 'none', color: 'var(--muted-text)', cursor: 'pointer' }}
               >
-                Cargar
+                <X size={12} />
               </button>
-            </div>
-          ))}
+            )}
+          </div>
+
+          {/* Lista de Presets JSON */}
+          <div style={{
+            flex: 1,
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.45rem',
+            paddingRight: '2px'
+          }}>
+            {presetsFiltrados.map(p => {
+              const vetosCount = p.paises.filter(x => x.veto).length;
+              return (
+                <div
+                  key={p.id}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.35rem',
+                    padding: '0.55rem 0.65rem',
+                    backgroundColor: 'var(--card-header-bg)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {/* Encabezado del preset */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
+                    <div>
+                      <div style={{ fontWeight: '800', fontSize: '0.82rem', color: 'var(--text-color)' }}>
+                        {p.nombre}
+                      </div>
+                      <div style={{ fontSize: '0.67rem', color: 'var(--muted-text)', lineHeight: '1.25', marginTop: '1px' }}>
+                        {p.descripcion}
+                      </div>
+                    </div>
+                    <span style={{
+                      fontSize: '0.62rem',
+                      fontWeight: '700',
+                      padding: '0.1rem 0.35rem',
+                      borderRadius: '4px',
+                      backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                      border: '1px solid rgba(59, 130, 246, 0.25)',
+                      color: '#60a5fa',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {p.categoria}
+                    </span>
+                  </div>
+
+                  {/* Banderas muestra & Badges */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', overflowX: 'hidden' }}>
+                      {p.paises.slice(0, 6).map((c, i) => (
+                        <CountryFlag key={i} bandera={c.bandera} nombre={c.nombre} size="xs" />
+                      ))}
+                      {p.paises.length > 6 && (
+                        <span style={{ fontSize: '0.64rem', color: 'var(--muted-text)', marginLeft: '2px', fontWeight: '700' }}>
+                          +{p.paises.length - 6}
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <span style={{ fontSize: '0.68rem', fontWeight: '700', color: '#3b82f6' }}>
+                        {p.paises.length} delegaciones
+                      </span>
+                      {vetosCount > 0 && (
+                        <span style={{ fontSize: '0.64rem', color: '#22c55e', display: 'inline-flex', alignItems: 'center', gap: '1px', fontWeight: '700' }}>
+                          • <Crown size={10} /> {vetosCount} Veto
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Botones de acción del preset */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem', marginTop: '0.15rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleCargarPreset(p, false)}
+                      style={{
+                        padding: '0.3rem',
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '5px',
+                        color: 'var(--text-color)',
+                        fontWeight: '700',
+                        fontSize: '0.7rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.25rem'
+                      }}
+                    >
+                      <Edit2 size={11} />
+                      <span>Revisar / Editar</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleCargarPreset(p, true)}
+                      style={{
+                        padding: '0.3rem',
+                        backgroundColor: '#22c55e',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '5px',
+                        fontWeight: '800',
+                        fontSize: '0.7rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.25rem'
+                      }}
+                    >
+                      <Check size={12} />
+                      <span>Cargar Inmediato</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      {/* ── VISTA PREVIA INTERACTIVA (Paso de revisión con cambio de bandera y Ctrl+V) ── */}
+      {/* ── PASO DE REVISIÓN / PREVISUALIZACIÓN INTERACTIVA ───────────────────── */}
       {preview && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.4rem', minHeight: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontWeight: '700', fontSize: '0.78rem' }}>
-              Detectados: <strong style={{ color: '#eab308' }}>{preview.length} países</strong>
-              <span style={{ fontSize: '0.68rem', color: 'var(--muted-text)', marginLeft: '0.4rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                (Haz clic en <Camera size={12} style={{ display: 'inline' }} /> o presiona <strong>Ctrl+V</strong> para asignar imagen)
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.45rem', minHeight: 0 }}>
+          {/* Header de Previsualización */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0.4rem 0.6rem',
+            backgroundColor: 'var(--card-header-bg)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '6px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Sparkles size={14} color="#3b82f6" />
+              <span style={{ fontWeight: '800', fontSize: '0.8rem' }}>
+                Revisión: <strong style={{ color: '#3b82f6' }}>{preview.length} delegaciones</strong>
               </span>
-            </span>
-            <button
-              onClick={() => { setPreview(null); setSelectedPreviewIndex(null); }}
-              style={{ background: 'transparent', border: 'none', color: 'var(--muted-text)', cursor: 'pointer', padding: '2px' }}
-              title="Cancelar"
-            >
-              <X size={14} />
-            </button>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+              <button
+                type="button"
+                onClick={handleOrdenarPreviewAZ}
+                title="Ordenar alfabéticamente A-Z"
+                style={{
+                  padding: '0.2rem 0.45rem',
+                  fontSize: '0.68rem',
+                  fontWeight: '600',
+                  borderRadius: '4px',
+                  backgroundColor: 'rgba(255,255,255,0.06)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-color)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem'
+                }}
+              >
+                <ArrowUpDown size={11} /> A-Z
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setPreview(null); setSelectedPreviewIndex(null); }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--muted-text)',
+                  cursor: 'pointer',
+                  padding: '2px'
+                }}
+                title="Cancelar y volver"
+              >
+                <X size={14} />
+              </button>
+            </div>
           </div>
 
+          {/* Barra de Filtro en Previsualización */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem', flexWrap: 'wrap' }}>
+            <div style={{
+              flex: '1 1 140px',
+              display: 'flex',
+              alignItems: 'center',
+              backgroundColor: 'var(--card-header-bg)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '5px',
+              padding: '0.25rem 0.5rem',
+              gap: '0.35rem'
+            }}>
+              <Search size={12} style={{ color: 'var(--muted-text)' }} />
+              <input
+                type="text"
+                placeholder="Filtrar delegación..."
+                value={busquedaPreview}
+                onChange={(e) => setBusquedaPreview(e.target.value)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-color)',
+                  outline: 'none',
+                  fontSize: '0.72rem',
+                  width: '100%'
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.25rem' }}>
+              <button
+                type="button"
+                onClick={() => setFiltroPreview(filtroPreview === 'VETO' ? 'TODOS' : 'VETO')}
+                style={{
+                  padding: '0.2rem 0.45rem',
+                  fontSize: '0.68rem',
+                  borderRadius: '4px',
+                  border: filtroPreview === 'VETO' ? '1px solid #3b82f6' : '1px solid var(--border-color)',
+                  backgroundColor: filtroPreview === 'VETO' ? 'rgba(59, 130, 246, 0.18)' : 'transparent',
+                  color: filtroPreview === 'VETO' ? '#60a5fa' : 'var(--muted-text)',
+                  cursor: 'pointer',
+                  fontWeight: '700'
+                }}
+              >
+                <Crown size={11} style={{ display: 'inline', marginRight: '2px' }} /> Solo Veto
+              </button>
+            </div>
+          </div>
+
+          {/* Hint de personalización de imagen */}
+          <div style={{
+            fontSize: '0.66rem',
+            color: 'var(--muted-text)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.3rem',
+            padding: '0.15rem 0.2rem'
+          }}>
+            <Camera size={12} color="#3b82f6" />
+            <span>Haz clic en una fila y presiona <strong>Ctrl+V</strong> o el icono de cámara para cambiar la bandera.</span>
+          </div>
+
+          {/* Lista de Delegaciones en Previsualización (Sin selector de estatus, siempre Ausente de base) */}
           <div style={{
             flex: 1,
             overflowY: 'auto',
@@ -874,111 +1633,170 @@ const ImportarPaises = () => {
             backgroundColor: 'var(--card-header-bg)',
             border: '1px solid var(--border-color)',
             borderRadius: '6px',
-            padding: '0.4rem',
-            maxHeight: '180px'
+            padding: '0.35rem',
+            minHeight: '120px'
           }}>
-            {preview.map((p, i) => {
-              const isSelected = selectedPreviewIndex === i;
-              return (
-                <div
-                  key={i}
-                  onClick={() => setSelectedPreviewIndex(i)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.45rem',
-                    fontSize: '0.74rem',
-                    padding: '0.2rem 0.4rem',
-                    borderRadius: '4px',
-                    backgroundColor: isSelected ? 'rgba(59, 130, 246, 0.18)' : 'transparent',
-                    border: isSelected ? '1px solid #3b82f6' : '1px solid transparent',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <CountryFlag bandera={p.bandera} nombre={p.nombre} size="sm" />
-                  
-                  {/* Botón rápido para subir imagen a esta delegación */}
-                  <button
-                    type="button"
-                    title="Subir imagen personalizada para esta delegación"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedPreviewIndex(i);
-                      rowFileInputRef.current?.click();
-                    }}
+            {previewFiltrada.length === 0 ? (
+              <div style={{ margin: 'auto', textAlign: 'center', color: 'var(--muted-text)', fontSize: '0.75rem', padding: '1rem' }}>
+                No se encontraron delegaciones con el filtro actual.
+              </div>
+            ) : (
+              previewFiltrada.map((p, idx) => {
+                const originalIndex = preview.findIndex(item => item === p);
+                const isSelected = selectedPreviewIndex === originalIndex;
+
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => setSelectedPreviewIndex(originalIndex)}
                     style={{
-                      background: 'transparent',
-                      border: 'none',
-                      padding: '2px',
-                      color: isSelected ? '#3b82f6' : 'var(--muted-text)',
-                      cursor: 'pointer',
                       display: 'flex',
-                      alignItems: 'center'
-                    }}
-                  >
-                    <Camera size={12} />
-                  </button>
-
-                  <span style={{ flex: 1, fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {p.nombre}
-                  </span>
-
-                  {p.veto && <Crown size={12} color="#eab308" title="Miembro Veto" />}
-
-                  {/* Eliminar fila del preview */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setPreview(prev => prev.filter((_, idx) => idx !== i));
-                      if (selectedPreviewIndex === i) setSelectedPreviewIndex(null);
-                    }}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: 'var(--muted-text)',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      fontSize: '0.75rem',
+                      padding: '0.25rem 0.45rem',
+                      borderRadius: '5px',
+                      backgroundColor: isSelected ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                      border: isSelected ? '1px solid #3b82f6' : '1px solid transparent',
                       cursor: 'pointer',
-                      padding: '2px'
+                      transition: 'all 0.15s ease'
                     }}
-                    title="Eliminar de la lista"
                   >
-                    <X size={12} />
-                  </button>
-                </div>
-              );
-            })}
+                    {/* Bandera */}
+                    <CountryFlag bandera={p.bandera} nombre={p.nombre} size="sm" />
+
+                    {/* Botón rápido de cámara para imagen */}
+                    <button
+                      type="button"
+                      title="Cambiar imagen de bandera"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedPreviewIndex(originalIndex);
+                        rowFileInputRef.current?.click();
+                      }}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        padding: '2px',
+                        color: isSelected ? '#3b82f6' : 'var(--muted-text)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <Camera size={12} />
+                    </button>
+
+                    {/* Input inline de nombre */}
+                    <input
+                      type="text"
+                      value={p.nombre}
+                      onChange={(e) => {
+                        const nuevo = e.target.value;
+                        setPreview(prev => {
+                          const copy = [...prev];
+                          copy[originalIndex] = { ...copy[originalIndex], nombre: nuevo };
+                          return copy;
+                        });
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        flex: 1,
+                        background: 'transparent',
+                        border: 'none',
+                        borderBottom: '1px dashed rgba(255,255,255,0.15)',
+                        color: 'var(--text-color)',
+                        fontWeight: '700',
+                        fontSize: '0.76rem',
+                        outline: 'none'
+                      }}
+                    />
+
+                    {/* Botón Veto (P5) */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPreview(prev => {
+                          const copy = [...prev];
+                          copy[originalIndex] = { ...copy[originalIndex], veto: !copy[originalIndex].veto };
+                          return copy;
+                        });
+                      }}
+                      title={p.veto ? 'Tiene derecho a veto (P5)' : 'Sin derecho a veto'}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '2px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        opacity: p.veto ? 1 : 0.25
+                      }}
+                    >
+                      <Crown size={14} color="#3b82f6" fill={p.veto ? '#3b82f6' : 'none'} />
+                    </button>
+
+                    {/* Eliminar fila */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPreview(prev => prev.filter((_, idx) => idx !== originalIndex));
+                        if (selectedPreviewIndex === originalIndex) setSelectedPreviewIndex(null);
+                      }}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--muted-text)',
+                        cursor: 'pointer',
+                        padding: '2px'
+                      }}
+                      title="Eliminar de la lista"
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
+                );
+              })
+            )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem' }}>
+          {/* Botonera de Aplicación con Azul y Verde */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
             <button
+              type="button"
               onClick={() => handleAplicar('reemplazar')}
               style={{
-                padding: '0.45rem',
-                backgroundColor: '#eab308',
-                color: '#000000',
-                fontWeight: '700',
+                padding: '0.55rem',
+                backgroundColor: '#3b82f6',
+                color: '#ffffff',
+                fontWeight: '800',
                 border: 'none',
-                borderRadius: '5px',
+                borderRadius: '6px',
                 cursor: 'pointer',
-                fontSize: '0.74rem'
+                fontSize: '0.76rem',
+                boxShadow: '0 2px 6px rgba(59, 130, 246, 0.25)'
               }}
             >
-              Reemplazar Lista
+              Reemplazar Lista Actual
             </button>
             <button
+              type="button"
               onClick={() => handleAplicar('fusionar')}
               style={{
-                padding: '0.45rem',
-                backgroundColor: 'transparent',
-                color: '#eab308',
-                fontWeight: '700',
-                border: '1px solid #eab308',
-                borderRadius: '5px',
+                padding: '0.55rem',
+                backgroundColor: '#22c55e',
+                color: '#ffffff',
+                fontWeight: '800',
+                border: 'none',
+                borderRadius: '6px',
                 cursor: 'pointer',
-                fontSize: '0.74rem'
+                fontSize: '0.76rem',
+                boxShadow: '0 2px 6px rgba(34, 197, 94, 0.25)'
               }}
             >
-              Añadir a Actual
+              Añadir a la Actual (Fusionar)
             </button>
           </div>
         </div>
