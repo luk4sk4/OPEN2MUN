@@ -77,7 +77,7 @@ const BackroomView = ({ isLight, onExit }) => {
     });
 
     // Enviar también como nota a TODOS
-    sendNote('TODOS', `🚨 DIRECTIVA DE CRISIS: ${nuevaAlerta.title} - ${nuevaAlerta.description}`, 'crisis');
+    sendNote('TODOS', `DIRECTIVA DE CRISIS: ${nuevaAlerta.title} - ${nuevaAlerta.description}`, 'crisis');
 
     setHistorialCrisis(prev => [nuevaAlerta, ...prev]);
     setTituloCrisis('');
@@ -380,8 +380,8 @@ const BackroomView = ({ isLight, onExit }) => {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontWeight: '800', fontSize: '0.9rem', color: '#f97316' }}>
-                          🚨 {c.title}
+                        <span style={{ fontWeight: '800', fontSize: '0.9rem', color: '#f97316', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <AlertTriangle size={15} /> {c.title}
                         </span>
                         <span style={{ fontSize: '0.7rem', color: 'var(--muted-text)' }}>
                           {new Date(c.timestamp).toLocaleTimeString()}
@@ -436,7 +436,7 @@ const BackroomView = ({ isLight, onExit }) => {
                       fontWeight: '700'
                     }}
                   >
-                    <option value="TODOS">📢 TODA LA SALA (Público)</option>
+                    <option value="TODOS">TODA LA SALA (Público)</option>
                     <optgroup label="Delegaciones">
                       {paises.map(p => (
                         <option key={p.nombre} value={p.nombre}>{p.bandera || '🇺🇳'} {p.nombre}</option>
@@ -517,7 +517,7 @@ const BackroomView = ({ isLight, onExit }) => {
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem' }}>
                       <span style={{ fontWeight: '800', color: '#f97316' }}>
-                        {n.from} ➔ {n.to}
+                        {n.from} → {n.to}
                       </span>
                       <span style={{ fontSize: '0.7rem', color: 'var(--muted-text)' }}>
                         {new Date(n.timestamp || Date.now()).toLocaleTimeString()}

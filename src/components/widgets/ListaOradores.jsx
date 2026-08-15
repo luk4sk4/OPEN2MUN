@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Trash2, Plus, ArrowUpDown, GripVertical } from 'lucide-react';
+import { Search, Trash2, Plus, ArrowUpDown, GripVertical, Users } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
 
@@ -48,8 +48,9 @@ const ListaOradores = () => {
     }}>
       {/* Header y Acción Principal */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-        <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '700', letterSpacing: '0.03em' }}>
-          📋 Lista de Oradores GSL ({oradoresCola.length})
+        <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '700', letterSpacing: '0.03em', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <Users size={16} />
+          <span>Lista de Oradores GSL ({oradoresCola.length})</span>
         </h3>
         
         {/* Botones de acción masiva */}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, Plus, Square, Download, Clock, CheckCircle2, ArrowRightLeft, Shield, HelpCircle, SkipForward } from 'lucide-react';
+import { Play, Pause, RotateCcw, Plus, Square, Download, Clock, CheckCircle2, ArrowRightLeft, Shield, HelpCircle, SkipForward, AlertTriangle } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
 
@@ -248,8 +248,15 @@ const CronometroPrincipal = () => {
           }}>
             {formatTimeWithNegative(segundosRestantes)}
           </div>
-          <div style={{ fontSize: '0.82rem', opacity: 0.75, marginTop: '0.4rem', fontWeight: '700', letterSpacing: '0.02em' }}>
-            {segundosRestantes < 0 ? '⚠️ TIEMPO EXCEDIDO (OVERTIME)' : `Tiempo Asignado: ${tiempoInicial}s`}
+          <div style={{ fontSize: '0.82rem', opacity: 0.75, marginTop: '0.4rem', fontWeight: '700', letterSpacing: '0.02em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}>
+            {segundosRestantes < 0 ? (
+              <>
+                <AlertTriangle size={14} color="#ef4444" />
+                <span>TIEMPO EXCEDIDO (OVERTIME)</span>
+              </>
+            ) : (
+              `Tiempo Asignado: ${tiempoInicial}s`
+            )}
           </div>
         </div>
 

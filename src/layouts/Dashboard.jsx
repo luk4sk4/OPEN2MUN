@@ -16,7 +16,14 @@ import {
   Home,
   ChevronRight,
   Radio,
-  MessageSquare
+  MessageSquare,
+  Mic,
+  Timer,
+  Vote,
+  BarChart2,
+  FlaskConical,
+  Landmark,
+  Scroll
 } from 'lucide-react';
 import configMaster from '../config/config_master.json';
 import WidgetRegistry from '../components/widgets/WidgetRegistry';
@@ -42,15 +49,15 @@ function getCellSize(containerWidth) {
   return { cellW, cellH };
 }
 
-// ─── Menú flotante para pantalla completa ─────────────────────────────────────
-const TAB_LABELS = {
-  HOME: '🏠 Inicio',
-  COMIENZO: '⚙️ Comienzo',
-  GSL: '🎙️ GSL',
-  DEBATE: '⏱️ Debate',
-  VOTING: '🗳️ Voting',
-  INFO: '📊 Info',
-  LAB: '🧪 Lab',
+// ─── Configuración de pestañas con iconos SVG ────────────────────────────────
+const TAB_CONFIG = {
+  HOME: { label: 'Inicio', Icon: Home },
+  COMIENZO: { label: 'Comienzo', Icon: Settings },
+  GSL: { label: 'GSL', Icon: Mic },
+  DEBATE: { label: 'Debate', Icon: Timer },
+  VOTING: { label: 'Voting', Icon: Vote },
+  INFO: { label: 'Info', Icon: BarChart2 },
+  LAB: { label: 'Lab', Icon: FlaskConical },
 };
 
 const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight, nombreComite }) => {
@@ -64,6 +71,8 @@ const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight
   const cancelClose = () => {
     clearTimeout(closeTimer.current);
   };
+
+  const ActiveIcon = TAB_CONFIG[activeTab]?.Icon || Home;
 
   return (
     <div
@@ -98,13 +107,14 @@ const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight
           pointerEvents: 'auto'  // solo la pastilla captura eventos
         }}>
         <Minimize2 size={15} color={isLight ? '#0f172a' : '#ffffff'} />
+        <ActiveIcon size={14} color={isLight ? '#0f172a' : '#ffffff'} />
         <span style={{
           fontSize: '0.72rem',
           fontWeight: '700',
           color: isLight ? '#0f172a' : '#ffffff',
           transition: 'color 0.2s ease'
         }}>
-          {TAB_LABELS[activeTab] || activeTab}
+          {TAB_CONFIG[activeTab]?.label || activeTab}
         </span>
         <ChevronRight
           size={13}
@@ -139,9 +149,13 @@ const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight
             fontWeight: '800',
             color: 'var(--text-color)',
             letterSpacing: '0.04em',
-            textTransform: 'uppercase'
+            textTransform: 'uppercase',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem'
           }}>
-            🏛️ {nombreComite}
+            <Landmark size={13} />
+            <span>{nombreComite}</span>
           </div>
         )}
 
@@ -149,6 +163,8 @@ const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight
         <div style={{ padding: '0.35rem' }}>
           {tabs.map(tab => {
             const isActive = activeTab === tab;
+            const TabIcon = TAB_CONFIG[tab]?.Icon || Home;
+            const tabLabel = TAB_CONFIG[tab]?.label || tab;
             return (
               <button
                 key={tab}
@@ -172,7 +188,8 @@ const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight
                 onMouseEnter={e => { if (!isActive) e.currentTarget.style.backgroundColor = isLight ? '#f1f5f9' : '#18181b'; }}
                 onMouseLeave={e => { if (!isActive) e.currentTarget.style.backgroundColor = 'transparent'; }}
               >
-                <span>{TAB_LABELS[tab] || tab}</span>
+                <TabIcon size={14} />
+                <span>{tabLabel}</span>
                 {isActive && <span style={{ marginLeft: 'auto', fontSize: '0.65rem', opacity: 0.7 }}>◀ actual</span>}
               </button>
             );
@@ -813,26 +830,34 @@ const Dashboard = () => {
               border: '1px solid var(--subborder-color)',
               transition: 'background-color 0.3s ease'
             }}>
-              {tabs.map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  style={{
-                    padding: '0.4rem 1.1rem',
-                    backgroundColor: activeTab === tab ? 'var(--btn-bg)' : 'transparent',
-                    color: activeTab === tab ? 'var(--btn-text)' : 'var(--muted-text)',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: activeTab === tab ? '800' : '500',
-                    fontSize: '0.85rem',
-                    letterSpacing: '0.03em',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  {tab}
-                </button>
-              ))}
+              {tabs.map(tab => {
+                const TabIcon = TAB_CONFIG[tab]?.Icon;
+                const label = TAB_CONFIG[tab]?.label || tab;
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    style={{
+                      padding: '0.4rem 0.95rem',
+                      backgroundColor: activeTab === tab ? 'var(--btn-bg)' : 'transparent',
+                      color: activeTab === tab ? 'var(--btn-text)' : 'var(--muted-text)',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontWeight: activeTab === tab ? '800' : '500',
+                      fontSize: '0.85rem',
+                      letterSpacing: '0.03em',
+                      transition: 'all 0.15s ease',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.4rem'
+                    }}
+                  >
+                    {TabIcon && <TabIcon size={15} />}
+                    <span>{label}</span>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Acciones de Sesión JSON, Modo Claro/Oscuro y Opciones */}
@@ -1013,9 +1038,12 @@ const Dashboard = () => {
                     borderRadius: '4px',
                     letterSpacing: '0.04em',
                     whiteSpace: 'nowrap',
-                    flexShrink: 0
+                    flexShrink: 0,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem'
                   }}>
-                    🏛️ {nombreComite}
+                    <Landmark size={12} /> {nombreComite}
                   </span>
                 ) : (
                   <span style={{
@@ -1027,9 +1055,12 @@ const Dashboard = () => {
                     padding: '0.15rem 0.5rem',
                     borderRadius: '4px',
                     whiteSpace: 'nowrap',
-                    flexShrink: 0
+                    flexShrink: 0,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem'
                   }}>
-                    🏛️ Sin comité
+                    <Landmark size={12} /> Sin comité
                   </span>
                 )}
 
@@ -1039,7 +1070,7 @@ const Dashboard = () => {
                 {/* Tema de Agenda */}
                 {agendaSesion?.temaActual ? (
                   <>
-                    <span style={{ fontSize: '0.65rem', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>📜</span>
+                    <Scroll size={13} style={{ opacity: 0.7, flexShrink: 0 }} />
                     <span style={{ fontWeight: '600', opacity: 0.9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {agendaSesion.temaActual}
                     </span>

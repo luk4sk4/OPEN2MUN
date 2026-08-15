@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { CheckCircle2, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import peerService, { MSG_TYPES, generateRoomCode, DEFAULT_ROOM_SETTINGS } from '../services/peerService';
 
 const P2PContext = createContext();
@@ -119,7 +120,7 @@ export const P2PProvider = ({ children }) => {
         setRoomId(data.roomId);
         if (data.roomSettings) setRoomSettings(data.roomSettings);
         localStorage.setItem('openmun_last_room_id', data.roomId);
-        addNotification(`🟢 Sala P2P iniciada con éxito (${data.roomId})`, 'success');
+        addNotification(`Sala P2P iniciada con éxito (${data.roomId})`, 'success');
       }
 
       if (event === 'connected') {
@@ -130,7 +131,7 @@ export const P2PProvider = ({ children }) => {
         if (data.sessionState) setRemoteSessionState(data.sessionState);
         if (data.roomSettings) setRoomSettings(data.roomSettings);
         if (data.speakingRequests) setSpeakingRequests(data.speakingRequests);
-        addNotification(`✅ Conectado a la sala como ${data.country || data.role}`, 'success');
+        addNotification(`Conectado a la sala como ${data.country || data.role}`, 'success');
       }
 
       if (event === 'disconnected') {
@@ -141,7 +142,7 @@ export const P2PProvider = ({ children }) => {
       if (event === 'error') {
         setError(data.error);
         setConnectionStatus('error');
-        addNotification(`❌ ${data.error}`, 'error');
+        addNotification(`${data.error}`, 'error');
       }
 
       if (event === 'peer_list_updated') {
@@ -149,19 +150,19 @@ export const P2PProvider = ({ children }) => {
       }
 
       if (event === 'peer_authenticated') {
-        addNotification(`👋 ${data.meta.country || data.meta.role} se ha unido a la sala`, 'info');
+        addNotification(`${data.meta.country || data.meta.role} se ha unido a la sala`, 'info');
       }
 
       if (event === 'peer_disconnected') {
         if (data.meta) {
-          addNotification(`🚪 ${data.meta.country || data.meta.role} se ha desconectado`, 'info');
+          addNotification(`${data.meta.country || data.meta.role} se ha desconectado`, 'info');
         }
       }
 
       if (event === 'room_settings_updated') {
         setRoomSettings(data);
         localStorage.setItem('openmun_room_settings', JSON.stringify(data));
-        addNotification('⚙️ Ajustes de sala y permisos actualizados', 'info');
+        addNotification('Ajustes de sala y permisos actualizados', 'info');
       }
 
       // Solicitud directa de orador (Host auto-adiciona a la sesión)
@@ -171,12 +172,12 @@ export const P2PProvider = ({ children }) => {
           if (sessionActionHandlersRef.current.onAddSpeakerGSL) {
             sessionActionHandlersRef.current.onAddSpeakerGSL({ nombre: country, bandera: '🇺🇳' });
           }
-          addNotification(`⚡ ${country} se ha añadido a la Lista de Oradores (Directo)`, 'success');
+          addNotification(`${country} se ha añadido a la Lista de Oradores (Directo)`, 'success');
         } else if (speechType === 'CAUCUS') {
           if (sessionActionHandlersRef.current.onAddSpeakerCaucus) {
             sessionActionHandlersRef.current.onAddSpeakerCaucus({ nombre: country, bandera: '🇺🇳' });
           }
-          addNotification(`⚡ ${country} se ha añadido al Caucus Moderado (Directo)`, 'success');
+          addNotification(`${country} se ha añadido al Caucus Moderado (Directo)`, 'success');
         }
       }
 
@@ -202,9 +203,9 @@ export const P2PProvider = ({ children }) => {
               tiempoOrador: requestData.details?.tiempoOrador || 0
             });
           }
-          addNotification(`✅ Solicitud de ${requestData.country} aprobada por Secretaría`, 'success');
+          addNotification(`Solicitud de ${requestData.country} aprobada por Secretaría`, 'success');
         } else if (action === 'reject') {
-          addNotification(`❌ Solicitud rechazada por Secretaría`, 'info');
+          addNotification(`Solicitud rechazada por Secretaría`, 'info');
         }
       }
 
@@ -214,14 +215,14 @@ export const P2PProvider = ({ children }) => {
         if (sessionActionHandlersRef.current.onCastVote) {
           sessionActionHandlersRef.current.onCastVote(country, vote);
         }
-        addNotification(`🗳️ Voto registrado de ${country}: ${vote}`, 'info');
+        addNotification(`Voto registrado de ${country}: ${vote}`, 'info');
       }
 
       // Recepción de Notas
       if (event === 'note_for_chair') {
         setNotes(prev => [data, ...prev]);
         setUnreadNotesCount(prev => prev + 1);
-        addNotification(`✉️ Nota de ${data.from} para ${data.to}`, 'info');
+        addNotification(`Nota de ${data.from} para ${data.to}`, 'info');
       }
 
       // Mensajes recibidos en Host desde clientes
@@ -240,7 +241,7 @@ export const P2PProvider = ({ children }) => {
             peerService.broadcastSpeakingRequests(next);
             return next;
           });
-          addNotification(`🗣️ ${senderMeta.country} ha solicitado turno (${message.payload.speechType})`, 'info');
+          addNotification(`${senderMeta.country} ha solicitado turno (${message.payload.speechType})`, 'info');
         }
       }
 
@@ -259,16 +260,16 @@ export const P2PProvider = ({ children }) => {
           setSpeakingRequests(message.payload || []);
         } else if (message.type === MSG_TYPES.ROOM_SETTINGS_UPDATED) {
           setRoomSettings(message.payload);
-          addNotification('⚙️ Ajustes de sala y permisos actualizados por la Mesa', 'info');
+          addNotification('Ajustes de sala y permisos actualizados por la Mesa', 'info');
         } else if (message.type === MSG_TYPES.SPEAKING_PROCESSED) {
           const { success, mode, message: msgText } = message.payload || {};
           addNotification(msgText || (success ? 'Solicitud procesada' : 'No se pudo procesar'), success ? 'success' : 'warning');
         } else if (message.type === MSG_TYPES.NOTE_RECEIVED) {
           setNotes(prev => [message.payload, ...prev]);
           setUnreadNotesCount(prev => prev + 1);
-          addNotification(`✉️ Nueva nota de ${message.payload.from}`, 'info');
+          addNotification(`Nueva nota de ${message.payload.from}`, 'info');
         } else if (message.type === MSG_TYPES.CRISIS_ALERT) {
-          addNotification(`🚨 AVISO DE CRISIS: ${message.payload.title || 'Comunicado oficial'}`, 'error');
+          addNotification(`AVISO DE CRISIS: ${message.payload.title || 'Comunicado oficial'}`, 'error');
         } else if (message.type === MSG_TYPES.KICK) {
           peerService.destroy();
           setConnectionStatus('disconnected');
@@ -416,7 +417,7 @@ export const P2PProvider = ({ children }) => {
         peerService.broadcastSpeakingRequests(next);
         return next;
       });
-      addNotification(`✅ Aceptada solicitud de ${req.country}`, 'success');
+      addNotification(`Aceptada solicitud de ${req.country}`, 'success');
     } else {
       // Si somos Secretaría (cliente remoto o local), enviamos el comando al host
       peerService.processSpeakingRequestAsClient(req.id, 'accept', req);
@@ -442,7 +443,7 @@ export const P2PProvider = ({ children }) => {
   const castVote = useCallback((voteOption) => {
     if (connectionStatus === 'connected' && role === 'delegate') {
       peerService.castVoteAsClient(clientCountry, voteOption);
-      addNotification(`🗳️ Voto emitido: ${voteOption}`, 'success');
+      addNotification(`Voto emitido: ${voteOption}`, 'success');
     }
   }, [connectionStatus, role, clientCountry, addNotification]);
 
@@ -525,28 +526,34 @@ export const P2PProvider = ({ children }) => {
           gap: '0.5rem',
           pointerEvents: 'none'
         }}>
-          {notifications.map(n => (
-            <div
-              key={n.id}
-              style={{
-                backgroundColor: n.type === 'error' ? '#450a0a' : (n.type === 'success' ? '#052e16' : '#18181b'),
-                border: `1px solid ${n.type === 'error' ? '#ef4444' : (n.type === 'success' ? '#22c55e' : '#3f3f46')}`,
-                color: '#ffffff',
-                padding: '0.65rem 1rem',
-                borderRadius: '8px',
-                fontSize: '0.85rem',
-                fontWeight: '600',
-                boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-                animation: 'slideInRight 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                maxWidth: '380px'
-              }}
-            >
-              {n.text}
-            </div>
-          ))}
+          {notifications.map(n => {
+            const IconComponent = n.type === 'error' ? AlertCircle : (n.type === 'success' ? CheckCircle2 : (n.type === 'warning' ? AlertTriangle : Info));
+            const iconColor = n.type === 'error' ? '#ef4444' : (n.type === 'success' ? '#22c55e' : (n.type === 'warning' ? '#f59e0b' : '#3b82f6'));
+
+            return (
+              <div
+                key={n.id}
+                style={{
+                  backgroundColor: n.type === 'error' ? '#450a0a' : (n.type === 'success' ? '#052e16' : '#18181b'),
+                  border: `1px solid ${n.type === 'error' ? '#ef4444' : (n.type === 'success' ? '#22c55e' : '#3f3f46')}`,
+                  color: '#ffffff',
+                  padding: '0.65rem 1rem',
+                  borderRadius: '8px',
+                  fontSize: '0.85rem',
+                  fontWeight: '600',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                  animation: 'slideInRight 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  maxWidth: '380px'
+                }}
+              >
+                <IconComponent size={16} color={iconColor} style={{ flexShrink: 0 }} />
+                <span>{n.text}</span>
+              </div>
+            );
+          })}
         </div>
       )}
     </P2PContext.Provider>

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Check, X, Clock, MessageSquare, Users, Mic, Sparkles, RotateCcw, AlertCircle, ArrowUpDown, GripVertical } from 'lucide-react';
+import { Plus, Check, X, Clock, MessageSquare, Users, Mic, Sparkles, RotateCcw, AlertCircle, ArrowUpDown, GripVertical, Pin, Hourglass, BarChart2, Timer } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 
 const PizarraMociones = () => {
@@ -24,6 +24,12 @@ const PizarraMociones = () => {
 
   const mayoriaSimple = totalAsistentes > 0 ? Math.floor(totalAsistentes / 2) + 1 : 0;
   const mayoriaCalificada = totalAsistentes > 0 ? Math.ceil((totalAsistentes * 2) / 3) : 0;
+  const mayoriaDosTercios = mayoriaCalificada;
+
+  // Filtrar países registrados
+  const listaPaises = useMemo(() => {
+    return paises.map(p => p.nombre);
+  }, [paises]);
 
   const handleSubmitMocion = (e) => {
     e.preventDefault();
@@ -132,7 +138,7 @@ const PizarraMociones = () => {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-          <span style={{ fontSize: '1.15rem' }}>📌</span>
+          <Pin size={18} color="var(--btn-bg)" />
           <div>
             <h3 style={{ margin: 0, fontSize: '0.98rem', fontWeight: '800', letterSpacing: '-0.01em' }}>
               Pizarra de Mociones
@@ -457,11 +463,12 @@ const PizarraMociones = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '0.3rem',
+                    gap: '0.35rem',
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  🎙️ Hablar <strong>Primero</strong>
+                  <Mic size={13} />
+                  <span>Hablar <strong>Primero</strong></span>
                 </button>
                 <button
                   type="button"
@@ -479,11 +486,12 @@ const PizarraMociones = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '0.3rem',
+                    gap: '0.35rem',
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  ⏳ Hablar <strong>Al Final</strong>
+                  <Hourglass size={13} />
+                  <span>Hablar <strong>Al Final</strong></span>
                 </button>
               </div>
             </div>
@@ -782,7 +790,7 @@ const PizarraMociones = () => {
               fontSize: '0.72rem',
               color: '#bae6fd'
             }}>
-              <span>📊 Capacidad estimada:</span>
+              <span><BarChart2 size={13} style={{ display: 'inline', marginRight: '0.35rem', verticalAlign: '-1px' }} />Capacidad estimada:</span>
               <strong style={{ fontSize: '0.76rem', color: '#38bdf8' }}>
                 ~{intervencionesEstimadas} intervenciones
               </strong>
@@ -976,9 +984,13 @@ const PizarraMociones = () => {
 
                   {/* Fila 3: Tiempos (Sutiles y limpios) */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', fontSize: '0.73rem', opacity: 0.65, marginTop: '2px', paddingLeft: '1.55rem' }}>
-                    <span>⏱ Total: <strong style={{ fontFamily: 'monospace', opacity: 1, color: 'var(--text-color)' }}>{formatMinutos(m.tiempoTotal)}</strong></span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <Timer size={12} /> Total: <strong style={{ fontFamily: 'monospace', opacity: 1, color: 'var(--text-color)' }}>{formatMinutos(m.tiempoTotal)}</strong>
+                    </span>
                     {m.tiempoOrador > 0 && (
-                      <span>🎙 Por orador: <strong style={{ fontFamily: 'monospace', opacity: 1, color: 'var(--text-color)' }}>{m.tiempoOrador}s</strong></span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <Mic size={12} /> Por orador: <strong style={{ fontFamily: 'monospace', opacity: 1, color: 'var(--text-color)' }}>{m.tiempoOrador}s</strong>
+                      </span>
                     )}
                   </div>
                 </div>

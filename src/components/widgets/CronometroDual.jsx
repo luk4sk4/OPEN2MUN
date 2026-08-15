@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, SkipForward, Clock, Trash2, ArrowUpDown, GripVertical } from 'lucide-react';
+import { Play, Pause, RotateCcw, SkipForward, Clock, Trash2, ArrowUpDown, GripVertical, Mic } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
 
@@ -876,8 +876,8 @@ const CronometroDual = ({ modoInicial = null }) => {
           {/* LISTA DE SIGUIENTES ORADORES DEL CAUCUS */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '0.45rem', backgroundColor: 'var(--card-header-bg)', gap: '0.35rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.35rem' }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: '700', opacity: 0.8 }}>
-                🎤 Oradores Debate ({oradoresCaucus.length})
+              <span style={{ fontSize: '0.72rem', fontWeight: '700', opacity: 0.8, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                <Mic size={13} /> Oradores Debate ({oradoresCaucus.length})
               </span>
               
               {/* Botones de orden alfabético y eliminar todos de debate */}

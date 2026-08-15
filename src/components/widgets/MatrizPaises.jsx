@@ -11,7 +11,8 @@ import {
   RotateCcw,
   ArrowUpDown,
   GripVertical,
-  Edit2
+  Edit2,
+  Check
 } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
@@ -368,8 +369,9 @@ const MatrizPaises = () => {
                   <div style={{ fontSize: '0.68rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     Estatus actual: {paisActualRollCall.estatus}
                   </div>
-                  <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-color)' }}>
-                    {paisActualRollCall.nombre} {paisActualRollCall.veto && '👑'}
+                  <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-color)', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span>{paisActualRollCall.nombre}</span>
+                    {paisActualRollCall.veto && <Crown size={16} color="#facc15" fill="#facc15" title="Veto P5" />}
                   </div>
                 </div>
               </div>
@@ -379,14 +381,14 @@ const MatrizPaises = () => {
                 <button
                   onClick={() => registrarYAvanzarRollCall('Presente')}
                   style={{
-                    padding: '0.5rem 0.85rem',
                     backgroundColor: '#22c55e',
-                    color: '#000000',
-                    fontWeight: '800',
+                    color: '#ffffff',
                     border: 'none',
-                    borderRadius: '5px',
-                    cursor: 'pointer',
-                    fontSize: '0.82rem'
+                    borderRadius: '6px',
+                    padding: '0.45rem 0.75rem',
+                    fontSize: '0.78rem',
+                    fontWeight: '700',
+                    cursor: 'pointer'
                   }}
                 >
                   Presente
@@ -395,48 +397,30 @@ const MatrizPaises = () => {
                 <button
                   onClick={() => registrarYAvanzarRollCall('Presente y Votando')}
                   style={{
-                    padding: '0.5rem 0.85rem',
                     backgroundColor: '#3b82f6',
                     color: '#ffffff',
-                    fontWeight: '800',
                     border: 'none',
-                    borderRadius: '5px',
-                    cursor: 'pointer',
-                    fontSize: '0.82rem'
+                    borderRadius: '6px',
+                    padding: '0.45rem 0.75rem',
+                    fontSize: '0.78rem',
+                    fontWeight: '700',
+                    cursor: 'pointer'
                   }}
                 >
-                  P. y Votando
+                  Pres. y Votando
                 </button>
-
-                {rondaRollCall === 1 && (
-                  <button
-                    onClick={() => registrarYAvanzarRollCall('pasar')}
-                    style={{
-                      padding: '0.5rem 0.85rem',
-                      backgroundColor: '#f59e0b',
-                      color: '#000000',
-                      fontWeight: '800',
-                      border: 'none',
-                      borderRadius: '5px',
-                      cursor: 'pointer',
-                      fontSize: '0.82rem'
-                    }}
-                  >
-                    Pasar
-                  </button>
-                )}
 
                 <button
                   onClick={() => registrarYAvanzarRollCall('Ausente')}
                   style={{
-                    padding: '0.5rem 0.85rem',
                     backgroundColor: '#ef4444',
                     color: '#ffffff',
-                    fontWeight: '800',
                     border: 'none',
-                    borderRadius: '5px',
-                    cursor: 'pointer',
-                    fontSize: '0.82rem'
+                    borderRadius: '6px',
+                    padding: '0.45rem 0.75rem',
+                    fontSize: '0.78rem',
+                    fontWeight: '700',
+                    cursor: 'pointer'
                   }}
                 >
                   Ausente
@@ -444,8 +428,9 @@ const MatrizPaises = () => {
               </div>
             </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: '0.75rem', color: '#22c55e', fontWeight: '700' }}>
-              ✓ Paso de lista nominal completado para todas las delegaciones.
+            <div style={{ textAlign: 'center', padding: '0.75rem', color: '#22c55e', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+              <Check size={16} />
+              <span>Paso de lista nominal completado para todas las delegaciones.</span>
             </div>
           )}
         </div>
@@ -546,7 +531,7 @@ const MatrizPaises = () => {
                       alignItems: 'center',
                       opacity: p.veto ? 1 : 0.2
                     }}
-                    title={p.veto ? 'Tiene derecho a Veto (👑 P5)' : 'Sin derecho a Veto'}
+                    title={p.veto ? 'Tiene derecho a Veto (P5)' : 'Sin derecho a Veto'}
                   >
                     <Crown size={14} color={p.veto ? '#facc15' : '#888888'} fill={p.veto ? '#facc15' : 'none'} />
                   </button>

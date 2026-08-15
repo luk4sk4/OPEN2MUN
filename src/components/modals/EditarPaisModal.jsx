@@ -10,7 +10,8 @@ import {
   Globe2,
   Image as ImageIcon,
   RotateCcw,
-  Sparkles
+  Sparkles,
+  CheckCircle2
 } from 'lucide-react';
 import CountryFlag from '../common/CountryFlag';
 import {
@@ -24,66 +25,69 @@ const PAISES_POPULARES_ISO = [
   { nombre: 'Estados Unidos', iso: 'us' },
   { nombre: 'Reino Unido', iso: 'gb' },
   { nombre: 'Francia', iso: 'fr' },
-  { nombre: 'Federación Rusa', iso: 'ru' },
+  { nombre: 'Rusia', iso: 'ru' },
   { nombre: 'China', iso: 'cn' },
+  { nombre: 'Alemania', iso: 'de' },
+  { nombre: 'Japón', iso: 'jp' },
+  { nombre: 'Brasil', iso: 'br' },
+  { nombre: 'India', iso: 'in' },
   { nombre: 'España', iso: 'es' },
   { nombre: 'México', iso: 'mx' },
   { nombre: 'Argentina', iso: 'ar' },
   { nombre: 'Colombia', iso: 'co' },
-  { nombre: 'Brasil', iso: 'br' },
   { nombre: 'Chile', iso: 'cl' },
-  { nombre: 'Alemania', iso: 'de' },
+  { nombre: 'Perú', iso: 'pe' },
   { nombre: 'Italia', iso: 'it' },
-  { nombre: 'Japón', iso: 'jp' },
   { nombre: 'Canadá', iso: 'ca' },
-  { nombre: 'Unión Europea', iso: 'eu' }
+  { nombre: 'Australia', iso: 'au' },
+  { nombre: 'Sudáfrica', iso: 'za' }
 ];
 
-const EditarPaisModal = ({ isOpen, onClose, pais, onGuardar, onEliminar }) => {
+const EditarPaisModal = ({ isOpen, onClose, pais, onGuardar }) => {
   const [nombre, setNombre] = useState('');
   const [bandera, setBandera] = useState('');
   const [veto, setVeto] = useState(false);
+  const [estatus, setEstatus] = useState('Presente');
   const [urlInput, setUrlInput] = useState('');
-  const [mostrarBuscadorIso, setMostrarBuscadorIso] = useState(false);
-  const [filtroIso, setFiltroIso] = useState('');
+  const [busquedaBandera, setBusquedaBandera] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [mensajeFeedback, setMensajeFeedback] = useState('');
-  
-  const fileInputRef = useRef(null);
-  const modalRef = useRef(null);
 
+  const fileInputRef = useRef(null);
+
+  // Cargar datos del país seleccionado al abrir
   useEffect(() => {
     if (pais) {
       setNombre(pais.nombre || '');
       setBandera(pais.bandera || 'un');
-      setVeto(!!pais.veto);
-      setUrlInput(pais.bandera?.startsWith('http') ? pais.bandera : '');
+      setVeto(pais.veto || false);
+      setEstatus(pais.estatus || 'Presente');
+      setUrlInput('');
+      setBusquedaBandera('');
       setMensajeFeedback('');
     }
   }, [pais, isOpen]);
 
-  // Listener global de Pegado (Ctrl + V) mientras el modal está abierto
+  // Listener para Ctrl+V (pegar imagen directa)
   useEffect(() => {
     if (!isOpen) return;
 
     const handlePaste = async (e) => {
-      // Si el usuario está escribiendo texto en un input normal, no interceptar a menos que sea imagen
       const items = e.clipboardData?.items;
       if (!items) return;
 
       for (let i = 0; i < items.length; i++) {
         if (items[i].type.indexOf('image') !== -1) {
-          e.preventDefault();
           const file = items[i].getAsFile();
           if (file) {
             try {
               const base64 = await procesarImagenBandera(file);
               setBandera(base64);
-              setMensajeFeedback('✨ ¡Imagen pegada del portapapeles con éxito!');
+              setMensajeFeedback('¡Imagen pegada del portapapeles con éxito!');
               setTimeout(() => setMensajeFeedback(''), 3000);
             } catch (err) {
               console.error('Error al procesar imagen del portapapeles:', err);
-              setMensajeFeedback('❌ Error al procesar imagen');
+              setMensajeFeedback('Error al procesar imagen');
             }
           }
           break;
@@ -104,7 +108,7 @@ const EditarPaisModal = ({ isOpen, onClose, pais, onGuardar, onEliminar }) => {
     try {
       const base64 = await procesarImagenBandera(file);
       setBandera(base64);
-      setMensajeFeedback('✨ Imagen cargada correctamente');
+      setMensajeFeedback('Imagen cargada correctamente');
       setTimeout(() => setMensajeFeedback(''), 3000);
     } catch (err) {
       console.error('Error al subir imagen:', err);
@@ -120,7 +124,7 @@ const EditarPaisModal = ({ isOpen, onClose, pais, onGuardar, onEliminar }) => {
       try {
         const base64 = await procesarImagenBandera(file);
         setBandera(base64);
-        setMensajeFeedback('✨ Imagen arrastrada y procesada');
+        setMensajeFeedback('Imagen arrastrada y procesada');
         setTimeout(() => setMensajeFeedback(''), 3000);
       } catch (err) {
         console.error('Error al procesar drop:', err);
@@ -131,7 +135,7 @@ const EditarPaisModal = ({ isOpen, onClose, pais, onGuardar, onEliminar }) => {
   const handleAplicarUrl = () => {
     if (urlInput.trim()) {
       setBandera(urlInput.trim());
-      setMensajeFeedback('✨ URL de imagen aplicada');
+      setMensajeFeedback('URL de imagen aplicada');
       setTimeout(() => setMensajeFeedback(''), 3000);
     }
   };
@@ -139,7 +143,7 @@ const EditarPaisModal = ({ isOpen, onClose, pais, onGuardar, onEliminar }) => {
   const handleAutoDetectar = () => {
     const autoIso = normalizarBandera('', nombre);
     setBandera(autoIso || 'un');
-    setMensajeFeedback('✨ Bandera autodetectada');
+    setMensajeFeedback('Bandera autodetectada');
     setTimeout(() => setMensajeFeedback(''), 3000);
   };
 
@@ -283,7 +287,8 @@ const EditarPaisModal = ({ isOpen, onClose, pais, onGuardar, onEliminar }) => {
                 Bandera / Escudo en Imagen
               </label>
               {mensajeFeedback && (
-                <span style={{ fontSize: '0.72rem', color: '#22c55e', fontWeight: '600' }}>
+                <span style={{ fontSize: '0.72rem', color: '#22c55e', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <CheckCircle2 size={13} />
                   {mensajeFeedback}
                 </span>
               )}
@@ -469,7 +474,7 @@ const EditarPaisModal = ({ isOpen, onClose, pais, onGuardar, onEliminar }) => {
                         onClick={() => {
                           setBandera(p.iso);
                           setMostrarBuscadorIso(false);
-                          setMensajeFeedback(`✨ Bandera de ${p.nombre} seleccionada`);
+                          setMensajeFeedback(`Bandera de ${p.nombre} seleccionada`);
                           setTimeout(() => setMensajeFeedback(''), 3000);
                         }}
                         style={{

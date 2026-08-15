@@ -134,7 +134,7 @@ const VotacionOficial = () => {
   } else if (vetoEjercido) {
     estadoVotacion = 'VETADA';
     const nombresVeto = paisesConVetoEfectuado.map(p => p.nombre).join(', ');
-    mensajeDictamen = `REPROBADA POR VETO 👑 (Veto ejercido por: ${nombresVeto})`;
+    mensajeDictamen = `REPROBADA POR VETO (Veto ejercido por: ${nombresVeto})`;
   } else if (votosPendientes === 0 || (favor >= requeridos && tipoMayoria !== 'consensus')) {
     if (pasaSuperaMayoria) {
       estadoVotacion = 'APROBADA';
@@ -542,8 +542,9 @@ const VotacionOficial = () => {
                   <div style={{ fontSize: '0.68rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     {paisActualRollCall.estatus}
                   </div>
-                  <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-color)' }}>
-                    {paisActualRollCall.nombre} {paisActualRollCall.veto && '👑'}
+                  <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-color)', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span>{paisActualRollCall.nombre}</span>
+                    {paisActualRollCall.veto && <Crown size={16} color="#facc15" fill="#facc15" title="Veto P5" />}
                   </div>
                 </div>
               </div>
@@ -752,7 +753,7 @@ const VotacionOficial = () => {
             <option value="alphabetical_asc">Orden A - Z</option>
             <option value="alphabetical_desc">Orden Z - A</option>
             <option value="vote_status">Por Estado de Voto</option>
-            <option value="p5_veto">👑 Veto P5 Primero</option>
+            <option value="p5_veto">Veto P5 Primero</option>
             <option value="roll_call">Por Estatus de Asistencia</option>
           </select>
         </div>
@@ -805,7 +806,7 @@ const VotacionOficial = () => {
                     {p.nombre}
                   </span>
                   {p.veto && (
-                    <span title="Miembro Permanente con Derecho a Veto (P5)">👑</span>
+                    <Crown size={14} color="#facc15" fill="#facc15" title="Miembro Permanente con Derecho a Veto (P5)" />
                   )}
                   <span style={{
                     fontSize: '0.62rem',
@@ -827,18 +828,18 @@ const VotacionOficial = () => {
                 <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center', flexShrink: 0 }}>
                   {/* Badge Prominente de Estado de Voto */}
                   {votoActual === 'favor' && (
-                    <span style={{ fontSize: '0.68rem', fontWeight: '800', backgroundColor: '#15803d', color: '#ffffff', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
-                      ✓ A FAVOR
+                    <span style={{ fontSize: '0.68rem', fontWeight: '800', backgroundColor: '#15803d', color: '#ffffff', padding: '0.15rem 0.45rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <Check size={12} /> A FAVOR
                     </span>
                   )}
                   {votoActual === 'contra' && (
-                    <span style={{ fontSize: '0.68rem', fontWeight: '800', backgroundColor: '#b91c1c', color: '#ffffff', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
-                      ✕ EN CONTRA
+                    <span style={{ fontSize: '0.68rem', fontWeight: '800', backgroundColor: '#b91c1c', color: '#ffffff', padding: '0.15rem 0.45rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <X size={12} /> EN CONTRA
                     </span>
                   )}
                   {votoActual === 'abstencion' && (
-                    <span style={{ fontSize: '0.68rem', fontWeight: '800', backgroundColor: '#b45309', color: '#ffffff', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
-                      ⊘ ABSTENCIÓN
+                    <span style={{ fontSize: '0.68rem', fontWeight: '800', backgroundColor: '#b45309', color: '#ffffff', padding: '0.15rem 0.45rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <RotateCcw size={11} /> ABSTENCIÓN
                     </span>
                   )}
                   {!votoActual && (

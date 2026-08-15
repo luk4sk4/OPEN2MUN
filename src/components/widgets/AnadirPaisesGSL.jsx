@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Users, Check, Plus, X, Crown, Sparkles, UserPlus, Trash2, ArrowUpDown, GripVertical } from 'lucide-react';
+import { Search, Users, Check, Plus, X, Crown, Sparkles, UserPlus, Trash2, ArrowUpDown, GripVertical, Globe } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
 
@@ -383,7 +383,8 @@ const AnadirPaisesGSL = () => {
                 transition: 'all 0.15s ease'
               }}
             >
-              🇺🇳 Cargar Consejo de Seguridad (15)
+              <Globe size={14} />
+              <span>Cargar Consejo de Seguridad (15)</span>
             </button>
           </div>
         ) : paisesFiltrados.length === 0 ? (

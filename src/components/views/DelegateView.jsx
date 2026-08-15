@@ -274,9 +274,20 @@ const DelegateView = ({ isLight, onExit }) => {
                   fontWeight: '800',
                   color: caucusActivo.activo ? '#a855f7' : '#3b82f6',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
+                  letterSpacing: '0.05em',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem'
                 }}>
-                  {caucusActivo.activo ? '⏱️ Caucus Moderado Activo' : '📋 Lista General de Oradores (GSL)'}
+                  {caucusActivo.activo ? (
+                    <>
+                      <Clock size={12} /> Caucus Moderado Activo
+                    </>
+                  ) : (
+                    <>
+                      <FileText size={12} /> Lista General de Oradores (GSL)
+                    </>
+                  )}
                 </span>
                 <span style={{ fontSize: '0.72rem', color: 'var(--muted-text)' }}>
                   Sincronizado
@@ -340,8 +351,8 @@ const DelegateView = ({ isLight, onExit }) => {
                     <Vote size={18} /> Votación Telemática en Vivo
                   </div>
                   {miVotoEmitido && (
-                    <span style={{ fontSize: '0.72rem', fontWeight: '700', color: '#22c55e' }}>
-                      ✓ Voto Registrado: {miVotoEmitido}
+                    <span style={{ fontSize: '0.72rem', fontWeight: '700', color: '#22c55e', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <Check size={13} /> Voto Registrado: {miVotoEmitido}
                     </span>
                   )}
                 </div>
@@ -437,10 +448,10 @@ const DelegateView = ({ isLight, onExit }) => {
                   </div>
                   <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)', marginTop: '3px' }}>
                     {settings.speakerRequestMode === 'direct'
-                      ? '⚡ Modo Directo: Ingreso inmediato'
+                      ? 'Modo Directo: Ingreso inmediato'
                       : (settings.speakerRequestMode === 'approval'
-                          ? '✋ Requiere validación de la Mesa'
-                          : '🔒 Solicitudes cerradas por la Mesa')}
+                          ? 'Requiere validación de la Mesa'
+                          : 'Solicitudes cerradas por la Mesa')}
                   </div>
                 </div>
 
@@ -510,10 +521,10 @@ const DelegateView = ({ isLight, onExit }) => {
                   </div>
                   <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)', marginTop: '3px' }}>
                     {settings.caucusRequestMode === 'direct'
-                      ? '⚡ Modo Directo: Ingreso inmediato'
+                      ? 'Modo Directo: Ingreso inmediato'
                       : (settings.caucusRequestMode === 'approval'
-                          ? '✋ Requiere validación de la Mesa'
-                          : '🔒 Solicitudes cerradas')}
+                          ? 'Requiere validación de la Mesa'
+                          : 'Solicitudes cerradas')}
                   </div>
                 </div>
 
@@ -782,7 +793,7 @@ const DelegateView = ({ isLight, onExit }) => {
                     }}
                   >
                     {settings.allowChairNotes !== false && (
-                      <option value="CHAIR">🏛️ Mesa Directiva (Chair)</option>
+                      <option value="CHAIR">Mesa Directiva (Chair)</option>
                     )}
                     {settings.allowDelegateNotes !== false && (
                       <optgroup label="Delegaciones">

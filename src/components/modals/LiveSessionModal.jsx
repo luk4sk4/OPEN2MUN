@@ -25,7 +25,10 @@ import {
   Clock,
   Shield,
   Zap,
-  HelpCircle
+  HelpCircle,
+  Hand,
+  Mail,
+  Landmark
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useP2P } from '../../context/P2PContext';
@@ -551,8 +554,8 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '0.85rem', fontWeight: '800', color: roomSettings.speakerRequestMode === 'direct' ? '#22c55e' : 'var(--text-color)' }}>
-                        ⚡ Directas
+                      <span style={{ fontSize: '0.85rem', fontWeight: '800', color: roomSettings.speakerRequestMode === 'direct' ? '#22c55e' : 'var(--text-color)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <Zap size={14} /> Directas
                       </span>
                       {roomSettings.speakerRequestMode === 'direct' && <CheckCircle2 size={16} color="#22c55e" />}
                     </div>
@@ -577,8 +580,8 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '0.85rem', fontWeight: '800', color: roomSettings.speakerRequestMode === 'approval' ? '#eab308' : 'var(--text-color)' }}>
-                        ✋ Con Aprobación
+                      <span style={{ fontSize: '0.85rem', fontWeight: '800', color: roomSettings.speakerRequestMode === 'approval' ? '#eab308' : 'var(--text-color)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <Hand size={14} /> Con Aprobación
                       </span>
                       {roomSettings.speakerRequestMode === 'approval' && <CheckCircle2 size={16} color="#eab308" />}
                     </div>
@@ -603,8 +606,8 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '0.85rem', fontWeight: '800', color: roomSettings.speakerRequestMode === 'disabled' ? '#ef4444' : 'var(--text-color)' }}>
-                        🔒 Deshabilitadas
+                      <span style={{ fontSize: '0.85rem', fontWeight: '800', color: roomSettings.speakerRequestMode === 'disabled' ? '#ef4444' : 'var(--text-color)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <Lock size={14} /> Deshabilitadas
                       </span>
                       {roomSettings.speakerRequestMode === 'disabled' && <CheckCircle2 size={16} color="#ef4444" />}
                     </div>
@@ -651,8 +654,8 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '0.85rem', fontWeight: '800', color: roomSettings.caucusRequestMode === 'direct' ? '#22c55e' : 'var(--text-color)' }}>
-                        ⚡ Directas
+                      <span style={{ fontSize: '0.85rem', fontWeight: '800', color: roomSettings.caucusRequestMode === 'direct' ? '#22c55e' : 'var(--text-color)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <Zap size={14} /> Directas
                       </span>
                       {roomSettings.caucusRequestMode === 'direct' && <CheckCircle2 size={16} color="#22c55e" />}
                     </div>
@@ -677,8 +680,8 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '0.85rem', fontWeight: '800', color: roomSettings.caucusRequestMode === 'approval' ? '#eab308' : 'var(--text-color)' }}>
-                        ✋ Con Aprobación
+                      <span style={{ fontSize: '0.85rem', fontWeight: '800', color: roomSettings.caucusRequestMode === 'approval' ? '#eab308' : 'var(--text-color)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <Hand size={14} /> Con Aprobación
                       </span>
                       {roomSettings.caucusRequestMode === 'approval' && <CheckCircle2 size={16} color="#eab308" />}
                     </div>
@@ -703,8 +706,8 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '0.85rem', fontWeight: '800', color: roomSettings.caucusRequestMode === 'disabled' ? '#ef4444' : 'var(--text-color)' }}>
-                        🔒 Deshabilitadas
+                      <span style={{ fontSize: '0.85rem', fontWeight: '800', color: roomSettings.caucusRequestMode === 'disabled' ? '#ef4444' : 'var(--text-color)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <Lock size={14} /> Deshabilitadas
                       </span>
                       {roomSettings.caucusRequestMode === 'disabled' && <CheckCircle2 size={16} color="#ef4444" />}
                     </div>
@@ -741,7 +744,9 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                     justifyContent: 'space-between'
                   }}>
                     <div>
-                      <div style={{ fontSize: '0.82rem', fontWeight: '700' }}>✉️ Notas entre Delegaciones</div>
+                      <div style={{ fontSize: '0.82rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <Mail size={15} /> Notas entre Delegaciones
+                      </div>
                       <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)' }}>Permite pajes privados entre delegados</div>
                     </div>
                     <input
@@ -763,7 +768,9 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                     justifyContent: 'space-between'
                   }}>
                     <div>
-                      <div style={{ fontSize: '0.82rem', fontWeight: '700' }}>🏛️ Notas a la Mesa (Chair)</div>
+                      <div style={{ fontSize: '0.82rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <Landmark size={15} /> Notas a la Mesa (Chair)
+                      </div>
                       <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)' }}>Permite mensajes directos a la Mesa</div>
                     </div>
                     <input
@@ -785,7 +792,9 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                     justifyContent: 'space-between'
                   }}>
                     <div>
-                      <div style={{ fontSize: '0.82rem', fontWeight: '700' }}>📑 Proponer Mociones y Puntos</div>
+                      <div style={{ fontSize: '0.82rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <FileText size={15} /> Proponer Mociones y Puntos
+                      </div>
                       <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)' }}>Permite formular mociones desde su panel</div>
                     </div>
                     <input
@@ -807,7 +816,9 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                     justifyContent: 'space-between'
                   }}>
                     <div>
-                      <div style={{ fontSize: '0.82rem', fontWeight: '700' }}>🗳️ Votación Telemática en Vivo</div>
+                      <div style={{ fontSize: '0.82rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <Vote size={15} /> Votación Telemática en Vivo
+                      </div>
                       <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)' }}>Permite emitir voto en votaciones activas</div>
                     </div>
                     <input

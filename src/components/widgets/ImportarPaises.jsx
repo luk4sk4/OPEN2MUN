@@ -15,7 +15,8 @@ import {
   Camera,
   Image as ImageIcon,
   Edit2,
-  Plus
+  Plus,
+  Clock
 } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
@@ -251,12 +252,12 @@ const ImportarPaises = () => {
                   copy[selectedPreviewIndex] = { ...copy[selectedPreviewIndex], bandera: base64 };
                   return copy;
                 });
-                setExito(`✨ Imagen pegada a "${preview[selectedPreviewIndex].nombre}"`);
+                setExito(`Imagen pegada a "${preview[selectedPreviewIndex].nombre}"`);
                 setTimeout(() => setExito(''), 3000);
               } else if (tab === 'individual') {
                 e.preventDefault();
                 setNuevaBandera(base64);
-                setExito('✨ Imagen personalizada pegada');
+                setExito('Imagen personalizada pegada');
                 setTimeout(() => setExito(''), 3000);
               }
             } catch (err) {
@@ -375,7 +376,7 @@ const ImportarPaises = () => {
         copy[selectedPreviewIndex] = { ...copy[selectedPreviewIndex], bandera: base64 };
         return copy;
       });
-      setExito(`✨ Imagen asignada a "${preview[selectedPreviewIndex].nombre}"`);
+      setExito(`Imagen asignada a "${preview[selectedPreviewIndex].nombre}"`);
       setTimeout(() => setExito(''), 3000);
     } catch (err) {
       console.error(err);
@@ -393,7 +394,7 @@ const ImportarPaises = () => {
     try {
       const base64 = await procesarImagenBandera(file);
       setNuevaBandera(base64);
-      setExito('✨ Imagen cargada');
+      setExito('Imagen cargada');
       setTimeout(() => setExito(''), 3000);
     } catch (err) {
       console.error(err);
@@ -605,8 +606,9 @@ const ImportarPaises = () => {
               Excel (.xlsx), CSV, JSON, TXT
             </div>
             {cargando && (
-              <div style={{ fontSize: '0.68rem', color: '#eab308', marginTop: '0.2rem' }}>
-                ⏳ Analizando...
+              <div style={{ fontSize: '0.68rem', color: '#eab308', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <Clock size={12} className="animate-spin" />
+                <span>Analizando...</span>
               </div>
             )}
           </div>
@@ -621,8 +623,9 @@ const ImportarPaises = () => {
             justifyContent: 'flex-start',
             gap: '0.25rem'
           }}>
-            <div style={{ fontSize: '0.67rem', fontWeight: '700', opacity: 0.7, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-              📋 Columnas esperadas:
+            <div style={{ fontSize: '0.67rem', fontWeight: '700', opacity: 0.7, textTransform: 'uppercase', letterSpacing: '0.03em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <FileSpreadsheet size={13} />
+              <span>Columnas esperadas:</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
               {[
@@ -849,8 +852,8 @@ const ImportarPaises = () => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontWeight: '700', fontSize: '0.78rem' }}>
               Detectados: <strong style={{ color: '#eab308' }}>{preview.length} países</strong>
-              <span style={{ fontSize: '0.68rem', color: 'var(--muted-text)', marginLeft: '0.4rem' }}>
-                (Haz clic en 📷 o presiona <strong>Ctrl+V</strong> para asignar imagen)
+              <span style={{ fontSize: '0.68rem', color: 'var(--muted-text)', marginLeft: '0.4rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                (Haz clic en <Camera size={12} style={{ display: 'inline' }} /> o presiona <strong>Ctrl+V</strong> para asignar imagen)
               </span>
             </span>
             <button

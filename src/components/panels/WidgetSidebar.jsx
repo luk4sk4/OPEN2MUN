@@ -422,7 +422,7 @@ const WidgetSidebar = ({
     return RECOMMENDED_BY_TAB[activeTab] || defaultWidgetIdsForTab;
   }, [activeTab, defaultWidgetIdsForTab]);
 
-  const categories = ['TODOS', '⭐ Recomendados', 'Tiempo', 'Debate', 'Mociones', 'Votaciones', 'Estadísticas', 'Configuración', 'Laboratorio'];
+  const categories = ['TODOS', 'Recomendados', 'Tiempo', 'Debate', 'Mociones', 'Votaciones', 'Estadísticas', 'Configuración', 'Laboratorio'];
   const templateCategories = ['TODAS', 'Debate', 'Votaciones', 'Configuración', 'Estadísticas', 'Tiempo', 'Laboratorio'];
 
   // Ordenar los widgets colocando ARRIBA DE TODO los que son default y recomendados en el aspecto actual
@@ -437,7 +437,7 @@ const WidgetSidebar = ({
                             id.toLowerCase().includes(searchTerm.toLowerCase());
       
       let matchesCategory = true;
-      if (filterCategory === '⭐ Recomendados') {
+      if (filterCategory === 'Recomendados') {
         matchesCategory = isRec || isDef;
       } else if (filterCategory !== 'TODOS') {
         matchesCategory = meta.category === filterCategory;
@@ -745,11 +745,11 @@ const WidgetSidebar = ({
                 />
               </div>
 
-              {/* Categorías (Pills) con opción destacada "⭐ Recomendados" */}
+              {/* Categorías (Pills) con opción destacada "Recomendados" */}
               <div style={{ display: 'flex', gap: '0.35rem', overflowX: 'auto', paddingBottom: '0.25rem', scrollbarWidth: 'none' }}>
                 {categories.map(cat => {
                   const isSelected = filterCategory === cat;
-                  const isRecPill = cat === '⭐ Recomendados';
+                  const isRecPill = cat === 'Recomendados';
                   return (
                     <button
                       key={cat}
@@ -773,10 +773,11 @@ const WidgetSidebar = ({
                         transition: 'all 0.15s ease',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.25rem'
+                        gap: '0.3rem'
                       }}
                     >
-                      {cat}
+                      {isRecPill && <Star size={12} fill={isSelected ? 'currentColor' : 'none'} />}
+                      <span>{cat}</span>
                     </button>
                   );
                 })}
