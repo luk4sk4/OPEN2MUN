@@ -23,7 +23,9 @@ import {
   HelpCircle,
   Code2,
   ShieldCheck,
-  Coffee
+  Coffee,
+  Heart,
+  X
 } from 'lucide-react';
 import OpenMunLogo from '../common/OpenMunLogo';
 import KineticGrid from '../../assets/Kinetic';
@@ -33,13 +35,13 @@ const FAQ_ITEMS = [
     id: 'que-es',
     categoria: 'General',
     pregunta: '¿Qué es OpenMUN y para qué sirve?',
-    respuesta: 'OpenMUN es una plataforma web integral y de código abierto diseñada para facilitar la moderación y gestión de simulaciones de Modelos de Naciones Unidas (MUN). Permite a las Mesas de Presidencia llevar el control de oradores, cronómetros, mociones, votaciones, cálculo de quorum y transmitir el estado de la sesión en vivo a delegados y pantallas de proyección.'
+    respuesta: 'OpenMUN es una plataforma web de código abierto diseñada para facilitar la moderación y gestión de simulaciones de Modelos de Naciones Unidas (MUN). Permite a las Mesas de Presidencia llevar el control de oradores, cronómetros, mociones, votaciones, cálculo de quorum y transmitir el estado de la sesión en vivo a delegados y pantallas de proyección.'
   },
   {
     id: 'gratuito',
     categoria: 'Licencia',
     pregunta: '¿Es realmente 100% gratuito y de código abierto?',
-    respuesta: 'Sí, totalmente. OpenMUN es software libre bajo licencia abierta. No incluye pagos, suscripciones premium ni publicidad. Todo el código fuente está disponible públicamente en GitHub para ser auditado, utilizado o modificado por cualquier comité o institución.'
+    respuesta: 'Sí, totalmente. OpenMUN es software libre bajo licencia GNU AGPLv3. No incluye pagos, suscripciones premium ni publicidad. Todo el código fuente está disponible públicamente en GitHub para ser auditado, utilizado o modificado por cualquier comité o institución.'
   },
   {
     id: 'p2p-sync',
@@ -51,25 +53,32 @@ const FAQ_ITEMS = [
     id: 'instalacion-cuenta',
     categoria: 'Uso',
     pregunta: '¿Necesito instalar programas o registrar una cuenta?',
-    respuesta: 'No. Funciona de manera inmediata desde cualquier navegador web moderno (Chrome, Firefox, Safari, Edge) en computadoras, tablets o smartphones.'
+    respuesta: 'No. Funciona de manera inmediata desde cualquier navegador web moderno (Chrome, Firefox, Safari, Edge) en computadoras, tablets o smartphones. Puedes conectar tu cuenta de Google para sincronizar el Drive y no tener que mover los archivos manualmente.'
   },
   {
     id: 'persistencia-datos',
     categoria: 'Datos',
     pregunta: '¿Se guardan mis configuraciones si cierro el navegador?',
-    respuesta: 'Sí. Todo el progreso de la sesión (oradores, votaciones, quorum y notas) se guarda automáticamente de forma local en tu navegador (LocalStorage). También puedes exportar e importar tu configuración completa en archivos JSON o Excel.'
+    respuesta: 'Sí. Todo el progreso de la sesión (oradores, votaciones, quorum y notas) se guarda automáticamente de forma local en tu navegador (LocalStorage). También puedes exportar e importar tu configuración completa en archivos JSON o Excel. Si conectas tu Google Drive, se guardará y cargará desde este.'
   },
   {
     id: 'importar-paises',
     categoria: 'Comité',
     pregunta: '¿Cómo puedo importar mi lista de países o delegaciones?',
-    respuesta: 'En la pestaña "Comienzo" o mediante el widget de "Importar Países", puedes cargar archivos Excel (.xlsx/.xls) o pegar una lista en formato de texto. El sistema genera automáticamente la matriz de países y el quorum de la sesión.'
+    respuesta: 'En la pestaña "Comienzo" o mediante el widget de "Importar Países", puedes cargar archivos Excel (.xlsx/.xls) o pegar una lista en formato de texto. El sistema genera automáticamente la matriz de países y el quorum de la sesión. Para tener banderas personalizadas puedes usar imágenes, emojis o SVG. Si son de países actuales, nosotros te crubrimos automáticamente.'
   },
   {
     id: 'modo-offline',
     categoria: 'Tecnología',
     pregunta: '¿Puedo usar OpenMUN sin conexión a internet (offline)?',
-    respuesta: 'Sí. Una vez cargada la página, las herramientas de la Mesa (cronómetros, GSL, mociones, votaciones) funcionan 100% sin conexión a internet. Para proyectar en segunda pantalla offline, puedes abrir la vista de Secretaría en una ventana adicional.'
+    respuesta: 'Sí. Una vez cargada la página, las herramientas de la Mesa (cronómetros, GSL, mociones, votaciones) funcionan 100% sin conexión a internet. Para proyectar en segunda pantalla offline, puedes abrir la vista de Secretaría en una ventana adicional. Perderás la función de conectarte con Backroom y delegaciones.'
+  },
+  {
+
+    id: 'donar',
+    categoria: 'Comunidad',
+    pregunta: '¿Cómo se mantiene OpenMUN?',
+    respuesta: 'Para vosotros, OpenMUN es gratuito. Para nosotros no. Desarrollarla llevó esfuerzo, tiempo y dinero, y mantenerla otro tanto. No cobramos porque creemos que aquellos que puedan, algo nos donarán, mientras que los que no se lo puedan permitir podrán disfrutar de la herramienta igualmente.'
   },
   {
     id: 'colaborar',
@@ -113,6 +122,9 @@ const FEATURES = [
 ];
 
 const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
+  // Estado para visibilidad del banner de donaciones
+  const [showDonationBanner, setShowDonationBanner] = useState(true);
+
   // Estado para notas de presidencia
   const [notasUsuario, setNotasUsuario] = useState(() => {
     return localStorage.getItem('openmun_home_notes') || '';
@@ -235,6 +247,136 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
         gap: '2.5rem'
       }}>
 
+        {/* ── BANNER DE DONACIONES PARA MANTENER LA PLATAFORMA ── */}
+        {showDonationBanner && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1.25rem',
+            padding: '1rem 1.25rem',
+            borderRadius: '14px',
+            background: isLight 
+              ? 'linear-gradient(135deg, rgba(254, 243, 199, 0.95) 0%, rgba(253, 230, 138, 0.75) 100%)' 
+              : 'linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(180, 83, 9, 0.1) 100%)',
+            border: isLight 
+              ? '1px solid rgba(245, 158, 11, 0.4)' 
+              : '1px solid rgba(245, 158, 11, 0.3)',
+            boxShadow: isLight 
+              ? '0 4px 16px rgba(245, 158, 11, 0.12)' 
+              : '0 4px 20px rgba(0, 0, 0, 0.25)',
+            backdropFilter: 'blur(10px)',
+            position: 'relative',
+            flexWrap: 'wrap'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.85rem',
+              flex: '1 1 320px'
+            }}>
+              <div style={{
+                width: '42px',
+                height: '42px',
+                minWidth: '42px',
+                borderRadius: '10px',
+                backgroundColor: isLight ? '#f59e0b' : 'rgba(245, 158, 11, 0.25)',
+                color: isLight ? '#ffffff' : '#fbbf24',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: isLight ? '0 2px 8px rgba(245, 158, 11, 0.3)' : 'none'
+              }}>
+                <Heart size={20} fill={isLight ? '#ffffff' : '#fbbf24'} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                <div style={{
+                  fontSize: '0.95rem',
+                  fontWeight: '700',
+                  color: isLight ? '#92400e' : '#fef3c7',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem'
+                }}>
+                  <span>¡Apoya el mantenimiento de OpenMUN!</span>
+                </div>
+                <div style={{
+                  fontSize: '0.84rem',
+                  color: isLight ? '#78350f' : '#d1d5db',
+                  lineHeight: '1.4'
+                }}>
+                  OpenMUN es 100% gratuito, libre y sin publicidad. Tu donación nos ayuda a costear los servidores y mantener la plataforma activa para todas las delegaciones.
+                </div>
+              </div>
+            </div>
+
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              marginLeft: 'auto'
+            }}>
+              <a
+                href="https://buymeacoffee.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.55rem 1.15rem',
+                  borderRadius: '8px',
+                  backgroundColor: '#ffdd00',
+                  color: '#000000',
+                  fontSize: '0.85rem',
+                  fontWeight: '800',
+                  textDecoration: 'none',
+                  boxShadow: '0 3px 10px rgba(255, 221, 0, 0.3)',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 5px 14px rgba(255, 221, 0, 0.45)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 3px 10px rgba(255, 221, 0, 0.3)';
+                }}
+              >
+                <Coffee size={16} /> Invítanos a un café
+              </a>
+              <button
+                onClick={() => setShowDonationBanner(false)}
+                title="Cerrar banner"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: isLight ? '#92400e' : '#9ca3af',
+                  padding: '0.35rem',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  opacity: 0.75,
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.opacity = '1';
+                  e.currentTarget.style.backgroundColor = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.opacity = '0.75';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ── 1. HERO SECTION PRINCIPAL ── */}
         <section style={{
           display: 'flex',
@@ -272,7 +414,6 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
             lineHeight: '1.6',
             maxWidth: '680px',
             color: textMuted,
-            margin: '0 0 2rem 0',
             fontWeight: '400'
           }}>
             Plataforma libre y de código abierto para Mesas de Presidencia, Caucuses, Oradores, Mociones y Votaciones. Sin cuentas ni descargas.
@@ -473,472 +614,475 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
           </div>
         </section>
 
-      {/* ── 2. MOSTRADOR DE HERRAMIENTAS (GRID LIMPIO Y HOMOGÉNEO) ── */}
-      <section style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-          <h2 style={{
-            fontSize: '1.35rem',
-            fontWeight: '800',
-            margin: 0,
-            color: textPrimary,
-            letterSpacing: '-0.01em'
-          }}>
-            Herramientas del Sistema
-          </h2>
-          <p style={{ fontSize: '0.9rem', color: textMuted, margin: 0 }}>
-            Módulos integrados para la moderación eficiente del debate parlamentario.
-          </p>
-        </div>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '1rem'
-        }}>
-          {FEATURES.map((feat, index) => {
-            const IconComponent = feat.icon;
-            return (
-              <div
-                key={index}
-                style={{
-                  backgroundColor: surfaceBg,
-                  border: `1px solid ${borderColor}`,
-                  borderRadius: '12px',
-                  padding: '1.25rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.65rem'
-                }}
-              >
-                <div style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '8px',
-                  backgroundColor: isLight ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.15)',
-                  color: accentColor
-                }}>
-                  <IconComponent size={20} />
-                </div>
-
-                <h3 style={{
-                  fontSize: '1rem',
-                  fontWeight: '700',
-                  margin: 0,
-                  color: textPrimary
-                }}>
-                  {feat.title}
-                </h3>
-
-                <p style={{
-                  fontSize: '0.86rem',
-                  lineHeight: '1.5',
-                  color: textMuted,
-                  margin: 0
-                }}>
-                  {feat.desc}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* ── 3. FLUJO DE TRABAJO RÁPIDO ── */}
-      <section style={{
-        backgroundColor: headerBg,
-        border: `1px solid ${subBorderColor}`,
-        borderRadius: '16px',
-        padding: '1.75rem 1.5rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1.25rem'
-      }}>
-        <div>
-          <h2 style={{
-            fontSize: '1.25rem',
-            fontWeight: '800',
-            margin: '0 0 0.25rem 0',
-            color: textPrimary
-          }}>
-            ¿Cómo iniciar una simulación?
-          </h2>
-          <p style={{ fontSize: '0.88rem', color: textMuted, margin: 0 }}>
-            Pasos recomendados para comenzar a operar la Mesa de Presidencia.
-          </p>
-        </div>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-          gap: '1rem'
-        }}>
-          {/* Paso 1 */}
-          <div style={{
-            backgroundColor: surfaceBg,
-            border: `1px solid ${borderColor}`,
-            borderRadius: '10px',
-            padding: '1.15rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.5rem'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.8rem', fontWeight: '800', color: accentColor, fontFamily: 'monospace' }}>
-                PASO 01
-              </span>
-              <span style={{ fontSize: '0.72rem', color: textMuted, fontWeight: '600' }}>Pestaña Comienzo</span>
-            </div>
-            <h4 style={{ fontSize: '0.95rem', fontWeight: '700', margin: 0, color: textPrimary }}>
-              Configurar Comité y Países
-            </h4>
-            <p style={{ fontSize: '0.84rem', color: textMuted, margin: 0, lineHeight: '1.45' }}>
-              Establece el nombre del comité, el tema e importa la lista de delegaciones desde Excel o texto.
-            </p>
-          </div>
-
-          {/* Paso 2 */}
-          <div style={{
-            backgroundColor: surfaceBg,
-            border: `1px solid ${borderColor}`,
-            borderRadius: '10px',
-            padding: '1.15rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.5rem'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.8rem', fontWeight: '800', color: '#10b981', fontFamily: 'monospace' }}>
-                PASO 02
-              </span>
-              <span style={{ fontSize: '0.72rem', color: textMuted, fontWeight: '600' }}>Tablero de Mesa</span>
-            </div>
-            <h4 style={{ fontSize: '0.95rem', fontWeight: '700', margin: 0, color: textPrimary }}>
-              Pase de Lista y Debate
-            </h4>
-            <p style={{ fontSize: '0.84rem', color: textMuted, margin: 0, lineHeight: '1.45' }}>
-              Registra presentes para fijar el quorum, gestiona oradores en la GSL y toma notas de mociones.
-            </p>
-          </div>
-
-          {/* Paso 3 */}
-          <div style={{
-            backgroundColor: surfaceBg,
-            border: `1px solid ${borderColor}`,
-            borderRadius: '10px',
-            padding: '1.15rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.5rem'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.8rem', fontWeight: '800', color: '#8b5cf6', fontFamily: 'monospace' }}>
-                PASO 03
-              </span>
-              <span style={{ fontSize: '0.72rem', color: textMuted, fontWeight: '600' }}>Transmisión P2P</span>
-            </div>
-            <h4 style={{ fontSize: '0.95rem', fontWeight: '700', margin: 0, color: textPrimary }}>
-              Conectar Pantallas en Vivo
-            </h4>
-            <p style={{ fontSize: '0.84rem', color: textMuted, margin: 0, lineHeight: '1.45' }}>
-              Abre la vista de Secretaría para proyectar en aula o comparte la clave de sala con los delegados.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 5. PREGUNTAS FRECUENTES (FAQ) ── */}
-      <section style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1.25rem',
-        backgroundColor: surfaceBg,
-        border: `1px solid ${borderColor}`,
-        borderRadius: '16px',
-        padding: '1.75rem 1.5rem'
-      }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <HelpCircle size={18} style={{ color: accentColor }} />
-            <h2 style={{ fontSize: '1.35rem', fontWeight: '800', margin: 0, color: textPrimary }}>
-              Preguntas Frecuentes
+        {/* ── 2. MOSTRADOR DE HERRAMIENTAS (GRID LIMPIO Y HOMOGÉNEO) ── */}
+        <section style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+            <h2 style={{
+              fontSize: '1.35rem',
+              fontWeight: '800',
+              margin: 0,
+              color: textPrimary,
+              letterSpacing: '-0.01em'
+            }}>
+              Herramientas del Sistema
             </h2>
-          </div>
-          <p style={{ fontSize: '0.88rem', color: textMuted, margin: 0 }}>
-            Respuestas a las dudas habituales sobre el funcionamiento y privacidad de OpenMUN.
-          </p>
-        </div>
-
-        {/* Buscador y Filtros */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <div style={{ position: 'relative', width: '100%' }}>
-            <Search
-              size={16}
-              style={{
-                position: 'absolute',
-                left: '0.85rem',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: textMuted,
-                pointerEvents: 'none'
-              }}
-            />
-            <input
-              type="text"
-              placeholder="Buscar en preguntas frecuentes (ej. P2P, Excel, offline...)"
-              value={busquedaFaq}
-              onChange={(e) => setBusquedaFaq(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.65rem 0.85rem 0.65rem 2.4rem',
-                borderRadius: '8px',
-                border: `1px solid ${borderColor}`,
-                backgroundColor: 'var(--bg-color)',
-                color: textPrimary,
-                fontSize: '0.88rem',
-                outline: 'none'
-              }}
-            />
-            {busquedaFaq && (
-              <button
-                onClick={() => setBusquedaFaq('')}
-                style={{
-                  position: 'absolute',
-                  right: '0.85rem',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  color: textMuted,
-                  cursor: 'pointer',
-                  fontSize: '0.78rem',
-                  fontWeight: '600'
-                }}
-              >
-                Limpiar
-              </button>
-            )}
+            <p style={{ fontSize: '0.9rem', color: textMuted, margin: 0 }}>
+              Módulos integrados para la moderación eficiente del debate parlamentario.
+            </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-            {categorias.map((cat) => {
-              const activa = categoriaFaq === cat;
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '1rem'
+          }}>
+            {FEATURES.map((feat, index) => {
+              const IconComponent = feat.icon;
               return (
-                <button
-                  key={cat}
-                  onClick={() => setCategoriaFaq(cat)}
+                <div
+                  key={index}
                   style={{
-                    padding: '0.3rem 0.7rem',
-                    borderRadius: '6px',
-                    fontSize: '0.78rem',
-                    fontWeight: activa ? '700' : '500',
-                    border: `1px solid ${activa ? accentColor : borderColor}`,
-                    backgroundColor: activa ? accentColor : 'transparent',
-                    color: activa ? '#ffffff' : textPrimary,
-                    cursor: 'pointer'
+                    backgroundColor: surfaceBg,
+                    border: `1px solid ${borderColor}`,
+                    borderRadius: '12px',
+                    padding: '1.25rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.65rem'
                   }}
                 >
-                  {cat}
-                </button>
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '8px',
+                    backgroundColor: isLight ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.15)',
+                    color: accentColor
+                  }}>
+                    <IconComponent size={20} />
+                  </div>
+
+                  <h3 style={{
+                    fontSize: '1rem',
+                    fontWeight: '700',
+                    margin: 0,
+                    color: textPrimary
+                  }}>
+                    {feat.title}
+                  </h3>
+
+                  <p style={{
+                    fontSize: '0.86rem',
+                    lineHeight: '1.5',
+                    color: textMuted,
+                    margin: 0
+                  }}>
+                    {feat.desc}
+                  </p>
+                </div>
               );
             })}
           </div>
-        </div>
+        </section>
 
-        {/* Lista de Acordeones */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          {faqsFiltrados.length === 0 ? (
-            <div style={{ padding: '1.5rem', textAlign: 'center', color: textMuted, fontSize: '0.88rem' }}>
-              No se encontraron resultados para "<strong>{busquedaFaq}</strong>".
-            </div>
-          ) : (
-            faqsFiltrados.map((faq) => {
-              const estaAbierto = faqAbierto === faq.id;
-              return (
-                <div
-                  key={faq.id}
-                  style={{
-                    backgroundColor: headerBg,
-                    border: `1px solid ${estaAbierto ? accentColor : subBorderColor}`,
-                    borderRadius: '8px',
-                    overflow: 'hidden'
-                  }}
-                >
-                  <button
-                    onClick={() => setFaqAbierto(estaAbierto ? null : faq.id)}
-                    style={{
-                      width: '100%',
-                      padding: '0.85rem 1rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: '0.75rem',
-                      background: 'none',
-                      border: 'none',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      color: textPrimary
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                      <span style={{
-                        padding: '0.15rem 0.45rem',
-                        borderRadius: '4px',
-                        backgroundColor: isLight ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.18)',
-                        color: accentColor,
-                        fontSize: '0.7rem',
-                        fontWeight: '700'
-                      }}>
-                        {faq.categoria}
-                      </span>
-                      <span style={{ fontSize: '0.92rem', fontWeight: '600' }}>
-                        {faq.pregunta}
-                      </span>
-                    </div>
-                    {estaAbierto ? <ChevronUp size={18} style={{ color: accentColor }} /> : <ChevronDown size={18} style={{ color: textMuted }} />}
-                  </button>
-
-                  {estaAbierto && (
-                    <div style={{
-                      padding: '0 1rem 0.9rem 1rem',
-                      fontSize: '0.86rem',
-                      lineHeight: '1.55',
-                      color: textMuted,
-                      borderTop: `1px solid ${subBorderColor}`,
-                      paddingTop: '0.75rem'
-                    }}>
-                      {faq.respuesta}
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          )}
-        </div>
-      </section>
-
-      {/* ── 6. SUGERENCIAS Y COMUNIDAD ── */}
-      <section style={{
-        backgroundColor: headerBg,
-        border: `1px solid ${subBorderColor}`,
-        borderRadius: '16px',
-        padding: '1.75rem 1.5rem',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        textAlign: 'center',
-        gap: '1rem'
-      }}>
-        <div>
-          <h3 style={{ fontSize: '1.15rem', fontWeight: '800', margin: '0 0 0.35rem 0', color: textPrimary }}>
-            Sugerencias y Comunidad
-          </h3>
-          <p style={{ fontSize: '0.88rem', color: textMuted, margin: 0, maxWidth: '620px', lineHeight: '1.5' }}>
-            OpenMUN se mantiene en constante evolución. Si deseas reportar un error o sugerir una mejora, contáctanos directamente.
-          </p>
-        </div>
-
-        <div style={{
+        {/* ── 3. FLUJO DE TRABAJO RÁPIDO ── */}
+        <section style={{
+          backgroundColor: headerBg,
+          border: `1px solid ${subBorderColor}`,
+          borderRadius: '16px',
+          padding: '1.75rem 1.5rem',
           display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem',
+          flexDirection: 'column',
+          gap: '1.25rem'
+        }}>
+          <div>
+            <h2 style={{
+              fontSize: '1.25rem',
+              fontWeight: '800',
+              margin: '0 0 0.25rem 0',
+              color: textPrimary
+            }}>
+              ¿Cómo iniciar una simulación?
+            </h2>
+            <p style={{ fontSize: '0.88rem', color: textMuted, margin: 0 }}>
+              Pasos recomendados para comenzar a operar la Mesa de Presidencia.
+            </p>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: '1rem'
+          }}>
+            {/* Paso 1 */}
+            <div style={{
+              backgroundColor: surfaceBg,
+              border: `1px solid ${borderColor}`,
+              borderRadius: '10px',
+              padding: '1.15rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: '800', color: accentColor, fontFamily: 'monospace' }}>
+                  PASO 01
+                </span>
+                <span style={{ fontSize: '0.72rem', color: textMuted, fontWeight: '600' }}>Pestaña Comienzo</span>
+              </div>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: '700', margin: 0, color: textPrimary }}>
+                Configurar Comité y Países
+              </h4>
+              <p style={{ fontSize: '0.84rem', color: textMuted, margin: 0, lineHeight: '1.45' }}>
+                Establece el nombre del comité, el tema e importa la lista de delegaciones desde Excel o texto.
+              </p>
+            </div>
+
+            {/* Paso 2 */}
+            <div style={{
+              backgroundColor: surfaceBg,
+              border: `1px solid ${borderColor}`,
+              borderRadius: '10px',
+              padding: '1.15rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: '800', color: '#10b981', fontFamily: 'monospace' }}>
+                  PASO 02
+                </span>
+                <span style={{ fontSize: '0.72rem', color: textMuted, fontWeight: '600' }}>Tablero de Mesa</span>
+              </div>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: '700', margin: 0, color: textPrimary }}>
+                Pase de Lista y Debate
+              </h4>
+              <p style={{ fontSize: '0.84rem', color: textMuted, margin: 0, lineHeight: '1.45' }}>
+                Registra presentes para fijar el quorum, gestiona oradores en la GSL y toma notas de mociones.
+              </p>
+            </div>
+
+            {/* Paso 3 */}
+            <div style={{
+              backgroundColor: surfaceBg,
+              border: `1px solid ${borderColor}`,
+              borderRadius: '10px',
+              padding: '1.15rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: '800', color: '#8b5cf6', fontFamily: 'monospace' }}>
+                  PASO 03
+                </span>
+                <span style={{ fontSize: '0.72rem', color: textMuted, fontWeight: '600' }}>Transmisión P2P</span>
+              </div>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: '700', margin: 0, color: textPrimary }}>
+                Conectar Pantallas en Vivo
+              </h4>
+              <p style={{ fontSize: '0.84rem', color: textMuted, margin: 0, lineHeight: '1.45' }}>
+                Abre la vista de Secretaría para proyectar en aula o comparte la clave de sala con los delegados.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* ── 5. PREGUNTAS FRECUENTES (FAQ) ── */}
+        <section style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1.25rem',
           backgroundColor: surfaceBg,
           border: `1px solid ${borderColor}`,
-          borderRadius: '10px',
-          padding: '0.6rem 1rem',
-          flexWrap: 'wrap',
-          justifyContent: 'center'
+          borderRadius: '16px',
+          padding: '1.75rem 1.5rem'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Mail size={18} style={{ color: accentColor }} />
-            <span style={{ fontSize: '0.92rem', fontWeight: '700', fontFamily: 'monospace', color: textPrimary }}>
-              {emailPlaceholder}
-            </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <HelpCircle size={18} style={{ color: accentColor }} />
+              <h2 style={{ fontSize: '1.35rem', fontWeight: '800', margin: 0, color: textPrimary }}>
+                Preguntas Frecuentes
+              </h2>
+            </div>
+            <p style={{ fontSize: '0.88rem', color: textMuted, margin: 0 }}>
+              Respuestas a las dudas habituales sobre el funcionamiento y privacidad de OpenMUN.
+            </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button
-              onClick={handleCopyEmail}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.35rem',
-                padding: '0.4rem 0.75rem',
-                borderRadius: '6px',
-                border: 'none',
-                backgroundColor: copiado ? '#22c55e' : 'var(--btn-bg)',
-                color: 'var(--btn-text)',
-                fontSize: '0.8rem',
-                fontWeight: '600',
-                cursor: 'pointer'
-              }}
-            >
-              {copiado ? <Check size={14} /> : <Copy size={14} />}
-              {copiado ? 'Copiado' : 'Copiar'}
-            </button>
+          {/* Buscador y Filtros */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div style={{ position: 'relative', width: '100%' }}>
+              <Search
+                size={16}
+                style={{
+                  position: 'absolute',
+                  left: '0.85rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: textMuted,
+                  pointerEvents: 'none'
+                }}
+              />
+              <input
+                type="text"
+                placeholder="Buscar en preguntas frecuentes (ej. P2P, Excel, offline...)"
+                value={busquedaFaq}
+                onChange={(e) => setBusquedaFaq(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.65rem 0.85rem 0.65rem 2.4rem',
+                  borderRadius: '8px',
+                  border: `1px solid ${borderColor}`,
+                  backgroundColor: 'var(--bg-color)',
+                  color: textPrimary,
+                  fontSize: '0.88rem',
+                  outline: 'none'
+                }}
+              />
+              {busquedaFaq && (
+                <button
+                  onClick={() => setBusquedaFaq('')}
+                  style={{
+                    position: 'absolute',
+                    right: '0.85rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: textMuted,
+                    cursor: 'pointer',
+                    fontSize: '0.78rem',
+                    fontWeight: '600'
+                  }}
+                >
+                  Limpiar
+                </button>
+              )}
+            </div>
 
+            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+              {categorias.map((cat) => {
+                const activa = categoriaFaq === cat;
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setCategoriaFaq(cat)}
+                    style={{
+                      padding: '0.3rem 0.7rem',
+                      borderRadius: '6px',
+                      fontSize: '0.78rem',
+                      fontWeight: activa ? '700' : '500',
+                      border: `1px solid ${activa ? accentColor : borderColor}`,
+                      backgroundColor: activa ? accentColor : 'transparent',
+                      color: activa ? '#ffffff' : textPrimary,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {cat}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Lista de Acordeones */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {faqsFiltrados.length === 0 ? (
+              <div style={{ padding: '1.5rem', textAlign: 'center', color: textMuted, fontSize: '0.88rem' }}>
+                No se encontraron resultados para "<strong>{busquedaFaq}</strong>".
+              </div>
+            ) : (
+              faqsFiltrados.map((faq) => {
+                const estaAbierto = faqAbierto === faq.id;
+                return (
+                  <div
+                    key={faq.id}
+                    style={{
+                      backgroundColor: headerBg,
+                      border: `1px solid ${estaAbierto ? accentColor : subBorderColor}`,
+                      borderRadius: '8px',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    <button
+                      onClick={() => setFaqAbierto(estaAbierto ? null : faq.id)}
+                      style={{
+                        width: '100%',
+                        padding: '0.85rem 1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '0.75rem',
+                        background: 'none',
+                        border: 'none',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        color: textPrimary
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                        <span style={{
+                          padding: '0.15rem 0.45rem',
+                          borderRadius: '4px',
+                          backgroundColor: isLight ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.18)',
+                          color: accentColor,
+                          fontSize: '0.7rem',
+                          fontWeight: '700'
+                        }}>
+                          {faq.categoria}
+                        </span>
+                        <span style={{ fontSize: '0.92rem', fontWeight: '600' }}>
+                          {faq.pregunta}
+                        </span>
+                      </div>
+                      {estaAbierto ? <ChevronUp size={18} style={{ color: accentColor }} /> : <ChevronDown size={18} style={{ color: textMuted }} />}
+                    </button>
+
+                    {estaAbierto && (
+                      <div style={{
+                        padding: '0 1rem 0.9rem 1rem',
+                        fontSize: '0.86rem',
+                        lineHeight: '1.55',
+                        color: textMuted,
+                        borderTop: `1px solid ${subBorderColor}`,
+                        paddingTop: '0.75rem'
+                      }}>
+                        {faq.respuesta}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </section>
+
+        {/* ── 6. SUGERENCIAS Y COMUNIDAD ── */}
+        <section style={{
+          backgroundColor: headerBg,
+          border: `1px solid ${subBorderColor}`,
+          borderRadius: '16px',
+          padding: '1.75rem 1.5rem',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          textAlign: 'center',
+          gap: '1rem'
+        }}>
+          <div>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: '800', margin: '0 0 0.35rem 0', color: textPrimary }}>
+              Sugerencias y Comunidad
+            </h3>
+            <p style={{ fontSize: '0.88rem', color: textMuted, margin: 0, maxWidth: '620px', lineHeight: '1.5' }}>
+              OpenMUN se mantiene en constante evolución. Si deseas reportar un error o sugerir una mejora, contáctanos directamente.
+            </p>
+          </div>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            backgroundColor: surfaceBg,
+            border: `1px solid ${borderColor}`,
+            borderRadius: '10px',
+            padding: '0.6rem 1rem',
+            flexWrap: 'wrap',
+            justifyContent: 'center'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Mail size={18} style={{ color: accentColor }} />
+              <span style={{ fontSize: '0.92rem', fontWeight: '700', fontFamily: 'monospace', color: textPrimary }}>
+                {emailPlaceholder}
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                onClick={handleCopyEmail}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  padding: '0.4rem 0.75rem',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: copiado ? '#22c55e' : 'var(--btn-bg)',
+                  color: 'var(--btn-text)',
+                  fontSize: '0.8rem',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                {copiado ? <Check size={14} /> : <Copy size={14} />}
+                {copiado ? 'Copiado' : 'Copiar'}
+              </button>
+
+              <a
+                href="https://github.com/luk4sk4/OPEN2MUN"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  padding: '0.4rem 0.75rem',
+                  borderRadius: '6px',
+                  border: `1px solid ${borderColor}`,
+                  backgroundColor: 'transparent',
+                  color: textPrimary,
+                  fontSize: '0.8rem',
+                  fontWeight: '600',
+                  textDecoration: 'none'
+                }}
+              >
+                <Code2 size={14} /> GitHub <ExternalLink size={12} style={{ opacity: 0.6 }} />
+              </a>
+            </div>
+          </div>
+        </section>
+
+        {/* ── 7. FOOTER SOBRIO Y ELEGANTE ── */}
+        <footer style={{
+          paddingTop: '1.25rem',
+          borderTop: `1px solid ${subBorderColor}`,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '0.75rem',
+          fontSize: '0.82rem',
+          color: textMuted,
+          textAlign: 'center'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <span>Desarrollado por <strong>Lucas R. Kowalski</strong></span>
             <a
-              href="https://github.com/luk4sk4/OPEN2MUN"
+              href="https://github.com/luk4sk4"
               target="_blank"
               rel="noopener noreferrer"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.35rem',
-                padding: '0.4rem 0.75rem',
-                borderRadius: '6px',
-                border: `1px solid ${borderColor}`,
-                backgroundColor: 'transparent',
-                color: textPrimary,
-                fontSize: '0.8rem',
-                fontWeight: '600',
-                textDecoration: 'none'
-              }}
+              style={{ color: textPrimary, textDecoration: 'none', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
             >
-              <Code2 size={14} /> GitHub <ExternalLink size={12} style={{ opacity: 0.6 }} />
+              GitHub
+            </a>
+            <span>•</span>
+            <a
+              href="https://linkedin.com/in/lucas-kowalski"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: textPrimary, textDecoration: 'none', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+            >
+              LinkedIn
             </a>
           </div>
-        </div>
-      </section>
-
-      {/* ── 7. FOOTER SOBRIO Y ELEGANTE ── */}
-      <footer style={{
-        paddingTop: '1.25rem',
-        borderTop: `1px solid ${subBorderColor}`,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '0.75rem',
-        fontSize: '0.82rem',
-        color: textMuted,
-        textAlign: 'center'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-          <span>Desarrollado por <strong>Lucas R. Kowalski</strong></span>
-          <a
-            href="https://github.com/luk4sk4"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: textPrimary, textDecoration: 'none', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
-          >
-            GitHub
-          </a>
-          <span>•</span>
-          <a
-            href="https://linkedin.com/in/lucas-kowalski"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: textPrimary, textDecoration: 'none', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
-          >
-            LinkedIn
-          </a>
-        </div>
-        <div>
-          OpenMUN © {new Date().getFullYear()} — Software Libre para Modelos de Naciones Unidas
-        </div>
-      </footer>
+          <div>
+            OpenMUN © {new Date().getFullYear()} — Software Libre para Modelos de Naciones Unidas
+          </div>
+          <div>
+            Por una cultura accesible para todos
+          </div>
+        </footer>
       </div>
     </div>
   );

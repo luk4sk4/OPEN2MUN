@@ -585,7 +585,8 @@ export const SessionProvider = ({ children }) => {
       ...mocionData,
       estado: 'Pendiente',
       votosFavor: 0,
-      votosContra: 0
+      votosContra: 0,
+      fecha: mocionData.fecha || new Date().toISOString()
     };
     setMociones(prev => [...prev, nueva].sort(compararMocionesDisruptividad));
     setHistoricoMociones(prev => [nueva, ...prev]);

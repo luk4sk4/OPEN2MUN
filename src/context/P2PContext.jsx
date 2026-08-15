@@ -237,7 +237,7 @@ export const P2PProvider = ({ children }) => {
             timestamp: Date.now()
           };
           setSpeakingRequests(prev => {
-            const next = [req, ...prev];
+            const next = [req, ...prev.filter(r => !(r.country === req.country && r.speechType === req.speechType))];
             peerService.broadcastSpeakingRequests(next);
             return next;
           });
@@ -248,7 +248,22 @@ export const P2PProvider = ({ children }) => {
       // Mensajes recibidos en Cliente desde Host
       if (event === 'message') {
         const message = data;
-        if (message.type === MSG_TYPES.SYNC_STATE) {
+        if (message.type === MSG_TYPES.AUTH_RESULT) {
+          if (message.payload?.success) {
+            setConnectionStatus('connected');
+            if (message.payload.role) setRole(message.payload.role);
+            if (message.payload.country) setClientCountry(message.payload.country);
+            if (message.payload.roomSettings) {
+              setRoomSettings(message.payload.roomSettings);
+            }
+            if (message.payload.speakingRequests) {
+              setSpeakingRequests(message.payload.speakingRequests);
+            }
+            if (message.payload.sessionState) {
+              setRemoteSessionState(message.payload.sessionState);
+            }
+          }
+        } else if (message.type === MSG_TYPES.SYNC_STATE) {
           setRemoteSessionState(message.payload);
           if (message.payload?.roomSettings) {
             setRoomSettings(message.payload.roomSettings);

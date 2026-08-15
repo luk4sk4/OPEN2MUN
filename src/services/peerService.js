@@ -82,9 +82,11 @@ class PeerService {
   // INICIALIZACIÓN DEL HOST (CHAIR)
   // ─────────────────────────────────────────────────────────────
   async initHost(roomId, options = {}) {
+    // Normalizar ID de sala
+    const cleanRoomId = (roomId || generateRoomCode()).trim().toUpperCase();
     this.destroy();
     this.isHost = true;
-    this.roomId = roomId || generateRoomCode();
+    this.roomId = cleanRoomId;
     this.secretPassword = options.secretPassword || 'secreto123';
     this.backroomPassword = options.backroomPassword || 'crisis123';
     if (options.roomSettings) {
@@ -110,7 +112,12 @@ class PeerService {
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' }
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' },
+            { urls: 'stun:stun.cloudflare.com:3478' },
+            { urls: 'stun:openrelay.metered.ca:80' },
+            { urls: 'stun:global.stun.twilio.com:3478' }
           ]
         }
       });
@@ -128,12 +135,13 @@ class PeerService {
         console.error('Error en PeerJS Host:', err);
         this.emit('error', { error: err.message || 'Error en conexión P2P' });
         if (err.type === 'unavailable-id') {
-          reject(new Error(`El código de sala "${this.roomId}" ya está en uso. Por favor genera otro.`));
+          reject(new Error(`El código de sala "${this.roomId}" ya está en uso. Por favor genera otro o reinicia la sala.`));
         }
       });
 
       this.peer.on('disconnected', () => {
-        this.emit('disconnected', {});
+        // No destruir la sala si solo se desconectó el socket de señalización momentáneamente
+        console.warn('Host desconectado del servidor de señalización. Intentando reconexión silenciosa...');
         if (this.peer && !this.peer.destroyed) {
           try { this.peer.reconnect(); } catch (e) { }
         }
@@ -168,9 +176,10 @@ class PeerService {
   // INICIALIZACIÓN DEL CLIENTE (DELEGADO / SECRETO / BACKROOM)
   // ─────────────────────────────────────────────────────────────
   async initClient({ roomId, role, password, country, isLocalBroadcast = false }) {
+    const cleanRoomId = (roomId || '').trim().toUpperCase();
     this.destroy();
     this.isHost = false;
-    this.roomId = roomId;
+    this.roomId = cleanRoomId;
 
     // Modo Secreto Local mediante BroadcastChannel
     if (isLocalBroadcast) {
@@ -199,18 +208,23 @@ class PeerService {
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' }
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' },
+            { urls: 'stun:stun.cloudflare.com:3478' },
+            { urls: 'stun:openrelay.metered.ca:80' },
+            { urls: 'stun:global.stun.twilio.com:3478' }
           ]
         }
       });
 
       const connectTimeout = setTimeout(() => {
         if (this.peer) this.peer.destroy();
-        reject(new Error('Tiempo de espera agotado al conectar con la sala. Verifica el código.'));
-      }, 12000);
+        reject(new Error(`Tiempo de espera agotado al conectar con la sala "${cleanRoomId}". Asegúrate de que el Chair haya iniciado la sala en vivo.`));
+      }, 15000);
 
       this.peer.on('open', () => {
-        const conn = this.peer.connect(roomId, {
+        const conn = this.peer.connect(cleanRoomId, {
           reliable: true
         });
 
@@ -230,11 +244,15 @@ class PeerService {
               if (data.payload.roomSettings) {
                 this.roomSettings = data.payload.roomSettings;
               }
+              if (data.payload.speakingRequests) {
+                this.latestSpeakingRequests = data.payload.speakingRequests;
+              }
               this.emit('connected', {
                 role: data.payload.role,
                 country: data.payload.country,
                 sessionState: data.payload.sessionState,
-                roomSettings: data.payload.roomSettings
+                roomSettings: data.payload.roomSettings,
+                speakingRequests: data.payload.speakingRequests || []
               });
               resolve(data.payload);
             } else {
@@ -259,7 +277,11 @@ class PeerService {
       this.peer.on('error', (err) => {
         clearTimeout(connectTimeout);
         console.error('Error en PeerJS Cliente:', err);
-        reject(new Error(`No se pudo conectar a la sala: ${err.message || 'Error de red'}`));
+        if (err.type === 'peer-unavailable') {
+          reject(new Error(`La sala "${cleanRoomId}" no se encuentra activa. Verifica el código o pídele al Chair que inicie la sala.`));
+        } else {
+          reject(new Error(`No se pudo conectar a la sala: ${err.message || 'Error de red'}`));
+        }
       });
     });
   }
