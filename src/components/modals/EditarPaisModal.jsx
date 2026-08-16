@@ -313,9 +313,9 @@ const EditarPaisModal = ({ isOpen, onClose, pais, onGuardar, onEliminar }) => {
                 
                 <div style={{ flex: 1, fontSize: '0.74rem', color: 'var(--muted-text)' }}>
                   <div style={{ fontWeight: '600', color: 'var(--text-color)', marginBottom: '0.2rem' }}>
-                    Sube un archivo o haz <strong style={{ color: '#3b82f6' }}>Ctrl + V</strong>
+                    {t('editCountry.uploadOrPaste', 'Sube un archivo o haz')} <strong style={{ color: '#3b82f6' }}>Ctrl + V</strong>
                   </div>
-                  <div>Arrastra cualquier imagen PNG, JPG o SVG aquí, o copia y pega directamente de internet.</div>
+                  <div>{t('editCountry.dragDropHint', 'Arrastra cualquier imagen PNG, JPG o SVG aquí, o copia y pega directamente de internet.')}</div>
                 </div>
 
                 <button
@@ -355,7 +355,7 @@ const EditarPaisModal = ({ isOpen, onClose, pais, onGuardar, onEliminar }) => {
                     type="text"
                     value={urlInput}
                     onChange={(e) => setUrlInput(e.target.value)}
-                    placeholder="O pega una URL de imagen (https://...)"
+                    placeholder={t('editCountry.urlPlaceholder', 'O pega una URL de imagen (https://...)')}
                     style={{
                       flex: 1,
                       padding: '0.4rem 0.6rem',
@@ -405,7 +405,7 @@ const EditarPaisModal = ({ isOpen, onClose, pais, onGuardar, onEliminar }) => {
                     }}
                   >
                     <Globe2 size={13} />
-                    {mostrarBuscadorIso ? 'Ocultar catálogo oficial' : 'Elegir del catálogo oficial'}
+                    {mostrarBuscadorIso ? t('editCountry.hideCatalog', 'Ocultar catálogo oficial') : t('editCountry.showCatalog', 'Elegir del catálogo oficial')}
                   </button>
                   <button
                     type="button"
@@ -448,7 +448,7 @@ const EditarPaisModal = ({ isOpen, onClose, pais, onGuardar, onEliminar }) => {
                     {t('editCountry.vetoPower', 'Derecho a Veto (P5 / Permanente)')}
                   </div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--muted-text)' }}>
-                    Habilita el poder de veto en votaciones sustantivas
+                    {t('editCountry.vetoPowerDesc', 'Habilita el poder de veto en votaciones sustantivas')}
                   </div>
                 </div>
               </div>
@@ -471,7 +471,7 @@ const EditarPaisModal = ({ isOpen, onClose, pais, onGuardar, onEliminar }) => {
                 <button
                   type="button"
                   onClick={() => {
-                    if (confirm(`¿Eliminar definitivamente la delegación de "${nombre}" del comité?`)) {
+                    if (confirm(t('editCountry.confirmDelete', `¿Eliminar definitivamente la delegación de "${nombre}" del comité?`))) {
                       onEliminar(pais.id);
                       onClose();
                     }

@@ -52,6 +52,8 @@
     "active": "Activo",
     "inactive": "Inactivo",
     "activePlural": "activos",
+    "activeOn": "ON",
+    "inactiveOff": "OFF",
     "areYouSure": "¿Estás seguro?",
     "file": "Archivo",
     "default": "Default",
@@ -61,6 +63,7 @@
     "sortAZ": "Ordenar A-Z",
     "sortZA": "Ordenar Z-A",
     "importJson": "Importar JSON",
+    "add": "Añadir",
     "clearAll": "Eliminar todos",
     "next": "Siguiente",
     "of": "de"
@@ -231,104 +234,6 @@
     "license": "Licencia GNU AGPLv3",
     "madeWithLove": "Desarrollado para la comunidad MUN internacional"
   },
-  "sidebar": {
-    "title": "Gestor de Widgets",
-    "searchPlaceholder": "Buscar widget por nombre o categoría...",
-    "presetsTitle": "Plantillas Rápidas",
-    "availableWidgets": "Widgets Disponibles",
-    "added": "Añadido",
-    "add": "Añadir",
-    "categories": {
-      "all": "Todos",
-      "debate": "Debate",
-      "votaciones": "Votaciones",
-      "configuracion": "Configuración",
-      "tiempo": "Tiempo",
-      "utilidades": "Utilidades"
-    },
-    "widgets": {
-      "mapa_votacion": {
-        "title": "Mapa Mundial de Votación",
-        "category": "Votaciones",
-        "description": "Mapa geopolítico interactivo que colorea en tiempo real cada país según su voto con zoom y tooltips."
-      },
-      "pizarra_interactiva": {
-        "title": "Pizarra Interactiva & Mapas",
-        "category": "Debate",
-        "description": "Lienzo táctico para dibujar, marcar posiciones geopolíticas y hacer anotaciones sobre mapas mundiales."
-      },
-      "tele_noticias": {
-        "title": "Televisión de Noticias (En Vivo)",
-        "category": "Debate",
-        "description": "Monitor con estilo TV que emite exclusivamente la alerta de crisis o noticia proyectada en directo."
-      },
-      "selector_aleatorio": {
-        "title": "Selector Aleatorio (Ruleta)",
-        "category": "Debate",
-        "description": "Ruleta animada y sorteo de delegaciones para dinamizar el debate e intervenciones."
-      },
-      "gestor_crisis": {
-        "title": "Gestor de Crisis & Noticiero",
-        "category": "Debate",
-        "description": "Titulares en vivo estilo noticiero TV ('Última Hora'), reloj de simulación y línea de crisis."
-      },
-      "anadir_paises_gsl": {
-        "title": "Añadir Países GSL",
-        "category": "Debate",
-        "description": "Búsqueda rápida y selección de países para la Lista General de Oradores (GSL)."
-      },
-      "anadir_paises_debate": {
-        "title": "Añadir Países Debate",
-        "category": "Debate",
-        "description": "Búsqueda rápida y selección de países para Caucus Moderado y Debate."
-      },
-      "establecer_agenda": {
-        "title": "Comité y Agenda",
-        "category": "Configuración",
-        "description": "Configuración del nombre del comité y gestión ordenada de los puntos de agenda."
-      },
-      "matriz_paises": {
-        "title": "Matriz de Delegaciones",
-        "category": "Configuración",
-        "description": "Lista y cuadrícula de países presentes, quorum, derecho a veto y asignación de banderas."
-      },
-      "pizarra_mociones": {
-        "title": "Pizarra de Mociones",
-        "category": "Debate",
-        "description": "Registro, orden de precedencia y votación de mociones de caucus moderado y no moderado."
-      },
-      "cronometro_dual": {
-        "title": "Cronómetro Dual (Total + Orador)",
-        "category": "Tiempo",
-        "description": "Temporizador sincronizado con tiempo total de caucus y tiempo individual por orador."
-      },
-      "cronometro_principal": {
-        "title": "Cronómetro GSL",
-        "category": "Tiempo",
-        "description": "Cronómetro optimizado para la Lista General de Oradores con semáforo y control de cesión."
-      },
-      "cronometro_only_time": {
-        "title": "Cronómetro Simple",
-        "category": "Tiempo",
-        "description": "Temporizador digital compacto para caucuses simples o recesos."
-      },
-      "votacion_oficial": {
-        "title": "Panel de Votación Oficial",
-        "category": "Votaciones",
-        "description": "Votación nominal por lista de países, cómputo de mayorías y registro de resultados."
-      },
-      "historico_delegaciones": {
-        "title": "Historial de Participación",
-        "category": "Utilidades",
-        "description": "Estadísticas y contador de intervenciones por delegación durante la sesión."
-      },
-      "importar_paises": {
-        "title": "Importar Delegaciones",
-        "category": "Configuración",
-        "description": "Carga de delegaciones desde archivos Excel o listas en texto con autodetección de banderas."
-      }
-    }
-  },
   "accessibility": {
     "title": "Accesibilidad y Tema",
     "languageSelect": "Idioma de la Aplicación",
@@ -361,7 +266,7 @@
     "status": "Estado de Conexión",
     "roomCode": "Código de Sala",
     "qrCode": "Código QR para Conexión",
-    "copyLink": "Copiar Enlace",
+    "copyLink": "Copiar Link",
     "copiedLink": "¡Enlace copiado al portapapeles!",
     "connectedClients": "Dispositivos Conectados",
     "openSecretariat": "Abrir Vista Secretaría (Proyector)",
@@ -371,6 +276,22 @@
     "allowNotes": "Permitir notas y mensajería entre delegaciones",
     "moderateNotes": "Revisar notas por Mesa antes de entregar",
     "disconnectSession": "Cerrar Sesión en Vivo",
+    "onAir": "En Directo",
+    "offline": "Apagado",
+    "broadcastingRoom": "Transmitiendo sala",
+    "connectedDevices": "delegaciones y mesas conectadas",
+    "configureToStart": "Configura las opciones de la sala e inicia la transmisión P2P",
+    "broadcastControl": "Control de Emisión",
+    "settingsAndPermissions": "Ajustes y Permisos",
+    "connections": "Conexiones",
+    "requests": "Solicitudes",
+    "p2pServerActive": "Servidor P2P Activo y Emitiendo",
+    "p2pServerOff": "Servidor P2P Desconectado",
+    "joinByQR": "Los delegados pueden unirse escaneando el código QR o introduciendo el código de sala.",
+    "startServer": "Inicia el servidor para permitir conexiones en tiempo real de delegados, secretaría y backroom.",
+    "stopRoom": "Detener Sala",
+    "starting": "Iniciando...",
+    "startRoom": "Iniciar Sala P2P",
     "roles": {
       "chair": "Mesa de Presidencia",
       "delegate": "Delegado",
@@ -383,9 +304,16 @@
     "name": "Nombre del País",
     "flag": "Bandera",
     "vetoPower": "Derecho a Veto (P5 / Permanente)",
+    "vetoPowerDesc": "Habilita el poder de veto en votaciones sustantivas",
     "present": "Presente",
     "presentAndVoting": "Presente y Votando",
-    "votesCount": "Número de Votos"
+    "votesCount": "Número de Votos",
+    "uploadOrPaste": "Sube un archivo o haz",
+    "dragDropHint": "Arrastra cualquier imagen PNG, JPG o SVG aquí, o copia y pega directamente de internet.",
+    "urlPlaceholder": "O pega una URL de imagen (https://...)",
+    "hideCatalog": "Ocultar catálogo oficial",
+    "showCatalog": "Elegir del catálogo oficial",
+    "confirmDelete": "¿Eliminar definitivamente la delegación de \"{{name}}\" del comité?"
   },
   "views": {
     "delegate": {
@@ -416,12 +344,28 @@
     },
     "secretariat": {
       "title": "Secretaría & Proyección",
+      "consoleTitle": "Consola de Secretaría y Pajes",
+      "exportCsv": "Exportar CSV",
       "liveBadge": "EN VIVO",
       "activeCrisis": "ALERTA DE CRISIS",
       "speakersQueue": "Lista de Oradores",
       "currentSpeaker": "Orador Actual",
       "timeRemaining": "Tiempo Restante",
       "votingInProgress": "Votación en Curso",
+      "noVotesYet": "Sin votaciones registradas aún.",
+      "noDelegationsYet": "Sin delegaciones registradas ni votaciones aún.",
+      "noVotesRegistered": "No se han registrado votos todavía.",
+      "requires": "Requiere",
+      "toApprove": "para aprobar.",
+      "startRollCall": "Inicia el Roll Call o vota manualmente.",
+      "vetoedBy": "REPROBADA POR VETO (Veto ejercido por:",
+      "passedExclamation": "¡APROBADA!",
+      "rejectedLabel": "REPROBADA",
+      "inProgress": "Votación en proceso...",
+      "needed": "necesarios",
+      "missing": "faltan",
+      "validVotes": "votos válidos emitidos",
+      "delegationsInRoom": "delegaciones en sala",
       "inFavor": "A Favor",
       "against": "En Contra",
       "abstentions": "Abstenciones",
@@ -714,6 +658,7 @@
     "activeTopic": "Tópico Activo",
     "speakersOpening": "Oradores de Apertura",
     "inDebate": "En Debate",
+    "discussion": "En Discusión",
     "pending": "Pendiente",
     "completed": "Concluido",
     "paused": "Pausado",
@@ -825,6 +770,10 @@
   "sidebar": {
     "title": "Gestor de Widgets",
     "searchPlaceholder": "Buscar widget por nombre o categoría...",
+    "presetsTitle": "Plantillas Rápidas",
+    "availableWidgets": "Widgets Disponibles",
+    "added": "Añadido",
+    "add": "Añadir",
     "tabAspect": "Pestaña / Aspecto",
     "activateAll": "Activar Todos",
     "deactivateAll": "Desactivar Todos",
@@ -834,6 +783,96 @@
     "templates": "Plantillas",
     "viewWidgets": "Ver Widgets",
     "loadIn": "Cargar en",
-    "customTemplatesJson": "Plantillas Personalizadas JSON"
+    "customTemplatesJson": "Plantillas Personalizadas JSON",
+    "categories": {
+      "all": "Todos",
+      "debate": "Debate",
+      "votaciones": "Votaciones",
+      "configuracion": "Configuración",
+      "tiempo": "Tiempo",
+      "utilidades": "Utilidades"
+    },
+    "widgets": {
+      "mapa_votacion": {
+        "title": "Mapa Mundial de Votación",
+        "category": "Votaciones",
+        "description": "Mapa geopolitítico interactivo que colorea en tiempo real cada país según su voto con zoom y tooltips."
+      },
+      "pizarra_interactiva": {
+        "title": "Pizarra Interactiva & Mapas",
+        "category": "Debate",
+        "description": "Lienzo táctico para dibujar, marcar posiciones geopolitíticas y hacer anotaciones sobre mapas mundiales."
+      },
+      "tele_noticias": {
+        "title": "Televisión de Noticias (En Vivo)",
+        "category": "Debate",
+        "description": "Monitor con estilo TV que emite exclusivamente la alerta de crisis o noticia proyectada en directo."
+      },
+      "selector_aleatorio": {
+        "title": "Selector Aleatorio (Ruleta)",
+        "category": "Debate",
+        "description": "Ruleta animada y sorteo de delegaciones para dinamizar el debate e intervenciones."
+      },
+      "gestor_crisis": {
+        "title": "Gestor de Crisis & Noticiero",
+        "category": "Debate",
+        "description": "Titulares en vivo estilo noticiero TV ('\u00daltima Hora'), reloj de simulación y línea de crisis."
+      },
+      "anadir_paises_gsl": {
+        "title": "Añadir Países GSL",
+        "category": "Debate",
+        "description": "Búsqueda rápida y selección de países para la Lista General de Oradores (GSL)."
+      },
+      "anadir_paises_debate": {
+        "title": "Añadir Países Debate",
+        "category": "Debate",
+        "description": "Búsqueda rápida y selección de países para Caucus Moderado y Debate."
+      },
+      "establecer_agenda": {
+        "title": "Comité y Agenda",
+        "category": "Configuración",
+        "description": "Configuración del nombre del comité y gestión ordenada de los puntos de agenda."
+      },
+      "matriz_paises": {
+        "title": "Matriz de Delegaciones",
+        "category": "Configuración",
+        "description": "Lista y cuadrícula de países presentes, quorum, derecho a veto y asignación de banderas."
+      },
+      "pizarra_mociones": {
+        "title": "Pizarra de Mociones",
+        "category": "Debate",
+        "description": "Registro, orden de precedencia y votación de mociones de caucus moderado y no moderado."
+      },
+      "cronometro_dual": {
+        "title": "Cronómetro Dual (Total + Orador)",
+        "category": "Tiempo",
+        "description": "Temporizador sincronizado con tiempo total de caucus y tiempo individual por orador."
+      },
+      "cronometro_principal": {
+        "title": "Cronómetro GSL",
+        "category": "Tiempo",
+        "description": "Cronómetro optimizado para la Lista General de Oradores con semáforo y control de cesión."
+      },
+      "cronometro_only_time": {
+        "title": "Cronómetro Simple",
+        "category": "Tiempo",
+        "description": "Temporizador digital compacto para caucuses simples o recesos."
+      },
+      "votacion_oficial": {
+        "title": "Panel de Votación Oficial",
+        "category": "Votaciones",
+        "description": "Votación nominal por lista de países, cómputo de mayorías y registro de resultados."
+      },
+      "historico_delegaciones": {
+        "title": "Historial de Participación",
+        "category": "Utilidades",
+        "description": "Estadísticas y contador de intervenciones por delegación durante la sesión."
+      },
+      "importar_paises": {
+        "title": "Importar Delegaciones",
+        "category": "Configuración",
+        "description": "Carga de delegaciones desde archivos Excel o listas en texto con autodetección de banderas."
+      }
+    }
   }
 }

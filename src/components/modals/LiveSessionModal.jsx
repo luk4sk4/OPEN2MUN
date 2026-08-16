@@ -156,7 +156,7 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '800', letterSpacing: '-0.01em' }}>
-                  Sesión en Vivo P2P (Mesa / Chair)
+                  {t('liveSession.title', 'Sesión en Vivo P2P')} (Mesa / Chair)
                 </h3>
                 <span style={{
                   fontSize: '0.7rem',
@@ -169,13 +169,13 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                   color: isHostActive ? '#22c55e' : '#a1a1aa',
                   border: `1px solid ${isHostActive ? '#22c55e44' : '#71717a44'}`
                 }}>
-                  {isHostActive ? 'En Directo' : 'Apagado'}
+                  {isHostActive ? t('liveSession.onAir', 'En Directo') : t('liveSession.offline', 'Apagado')}
                 </span>
               </div>
               <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--muted-text)', marginTop: '2px' }}>
                 {isHostActive
-                  ? `Transmitiendo sala • ${connectedPeers.length} delegaciones y mesas conectadas`
-                  : 'Configura las opciones de la sala e inicia la transmisión P2P'}
+                  ? `${t('liveSession.broadcastingRoom', 'Transmitiendo sala')} • ${connectedPeers.length} ${t('liveSession.connectedDevices', 'delegaciones y mesas conectadas')}`
+                  : t('liveSession.configureToStart', 'Configura las opciones de la sala e inicia la transmisión P2P')}
               </p>
             </div>
           </div>
@@ -225,7 +225,7 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
               transition: 'all 0.15s ease'
             }}
           >
-            <Radio size={15} /> Control de Emisión
+            <Radio size={15} /> {t('liveSession.broadcastControl', 'Control de Emisión')}
           </button>
 
           <button
@@ -245,7 +245,7 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
               transition: 'all 0.15s ease'
             }}
           >
-            <Sliders size={15} /> Ajustes y Permisos
+            <Sliders size={15} /> {t('liveSession.settingsAndPermissions', 'Ajustes y Permisos')}
           </button>
 
           <button
@@ -265,7 +265,7 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
               transition: 'all 0.15s ease'
             }}
           >
-            <Users size={15} /> Conexiones ({connectedPeers.length})
+            <Users size={15} /> {t('liveSession.connections', 'Conexiones')} ({connectedPeers.length})
           </button>
 
           <button
@@ -286,7 +286,7 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
               transition: 'all 0.15s ease'
             }}
           >
-            <MessageSquare size={15} /> Solicitudes ({speakingRequests.length})
+            <MessageSquare size={15} /> {t('liveSession.requests', 'Solicitudes')} ({speakingRequests.length})
             {speakingRequests.length > 0 && (
               <span style={{
                 width: '8px',
@@ -328,13 +328,13 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                       boxShadow: isHostActive ? '0 0 12px #22c55e' : 'none'
                     }} />
                     <span style={{ fontWeight: '800', fontSize: '1.05rem' }}>
-                      {isHostActive ? 'Servidor P2P Activo y Emitiendo' : 'Servidor P2P Desconectado'}
+                      {isHostActive ? t('liveSession.p2pServerActive', 'Servidor P2P Activo y Emitiendo') : t('liveSession.p2pServerOff', 'Servidor P2P Desconectado')}
                     </span>
                   </div>
                   <p style={{ margin: '0.35rem 0 0 0', fontSize: '0.82rem', color: 'var(--muted-text)', maxWidth: '440px' }}>
                     {isHostActive
-                      ? 'Los delegados pueden unirse escaneando el código QR o introduciendo el código de sala.'
-                      : 'Inicia el servidor para permitir conexiones en tiempo real de delegados, secretaría y backroom.'}
+                      ? t('liveSession.joinByQR', 'Los delegados pueden unirse escaneando el código QR o introduciendo el código de sala.')
+                      : t('liveSession.startServer', 'Inicia el servidor para permitir conexiones en tiempo real de delegados, secretaría y backroom.')}
                   </p>
                 </div>
 
@@ -358,7 +358,7 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                         transition: 'all 0.2s ease'
                       }}
                     >
-                      <Radio size={16} /> Detener Sala
+                      <Radio size={16} /> {t('liveSession.stopRoom', 'Detener Sala')}
                     </button>
                   ) : (
                     <button
@@ -380,7 +380,7 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                         transition: 'all 0.2s ease'
                       }}
                     >
-                      <Radio size={16} /> {isConnecting ? 'Iniciando...' : 'Iniciar Sala P2P'}
+                      <Radio size={16} /> {isConnecting ? t('liveSession.starting', 'Iniciando...') : t('liveSession.startRoom', 'Iniciar Sala P2P')}
                     </button>
                   )}
                 </div>
@@ -397,7 +397,7 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                   {/* Input Código de Sala */}
                   <div>
                     <label style={{ fontSize: '0.76rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Código de Sala (Peer ID)
+                      {t('liveSession.roomCode', 'Código de Sala')} (Peer ID)
                     </label>
                     <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.4rem' }}>
                       <input
@@ -438,7 +438,7 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                           title="Copiar enlace de invitación para delegados"
                         >
                           {copiado ? <Check size={16} /> : <Copy size={16} />}
-                          {copiado ? 'Copiado' : 'Copiar Link'}
+                          {copiado ? t('common.copied', '¡Copiado!') : t('liveSession.copyLink', 'Copiar Link')}
                         </button>
                       )}
                     </div>

@@ -192,7 +192,7 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
               <span style={{ fontWeight: '800', fontSize: '1.05rem', letterSpacing: '-0.01em' }}>
-                Consola de Secretaría y Pajes
+                {t('views.secretariat.consoleTitle', 'Consola de Secretaría y Pajes')}
               </span>
               <span style={{
                 fontSize: '0.7rem',
@@ -207,13 +207,13 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
                 border: '1px solid rgba(59, 130, 246, 0.3)'
               }}>
                 <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#60a5fa' }} />
-                Sala: {roomId || 'Local'}
+                {t('liveSession.roomCode', 'Sala')}: {roomId || 'Local'}
               </span>
             </div>
             <div style={{ fontSize: '0.74rem', color: 'var(--muted-text)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span>{nombreComite}</span>
               <span>•</span>
-              <span style={{ color: 'var(--text-color)', fontWeight: '600' }}>Tema: {temaActual}</span>
+              <span style={{ color: 'var(--text-color)', fontWeight: '600' }}>{t('header.agenda', 'Tema')}: {temaActual}</span>
             </div>
           </div>
         </div>
@@ -230,7 +230,7 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
             gap: '0.5rem',
             fontSize: '0.75rem'
           }}>
-            <span style={{ color: 'var(--muted-text)' }}>Orador Actual:</span>
+            <span style={{ color: 'var(--muted-text)' }}>{t('timers.currentSpeaker', 'Orador Actual')}:</span>
             <span style={{ fontWeight: '800', color: '#22c55e' }}>{oradorActual}</span>
           </div>
 
@@ -253,7 +253,7 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
             }}
             title="Accesibilidad y Tema (Dislexia, Tamaño de Letra, Daltonismo)"
           >
-            <Eye size={14} /> Accesibilidad
+            <Eye size={14} /> {t('header.accessibility', 'Accesibilidad')}
           </button>
 
           {/* Botón Rápido Modo Claro / Oscuro */}
@@ -298,7 +298,7 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
             }}
             title="Exportar archivo de notas en CSV para Excel"
           >
-            <Download size={14} /> Exportar CSV
+            <Download size={14} /> {t('views.secretariat.exportCsv', 'Exportar CSV')}
           </button>
 
           <button
@@ -375,7 +375,7 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
             transition: 'all 0.15s ease'
           }}
         >
-          <Zap size={15} /> Solicitudes ({speakingRequests.length})
+          <Zap size={15} /> {t('liveSession.requests', 'Solicitudes')} ({speakingRequests.length})
           {speakingRequests.length > 0 && (
             <span style={{
               width: '8px',

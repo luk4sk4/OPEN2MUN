@@ -1,24 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Building2, 
-  Plus, 
-  ArrowUp, 
-  ArrowDown, 
-  X, 
-  Check, 
-  Edit3, 
-  Sparkles, 
-  CheckCircle2, 
-  Clock, 
-  PauseCircle, 
-  Play, 
-  ChevronDown, 
-  Layers, 
-  Shield, 
-  Globe, 
-  HeartPulse, 
-  Scale, 
-  Flame, 
+import {
+  Building2,
+  Plus,
+  ArrowUp,
+  ArrowDown,
+  X,
+  Check,
+  Edit3,
+  Sparkles,
+  CheckCircle2,
+  Clock,
+  PauseCircle,
+  Play,
+  ChevronDown,
+  Layers,
+  Shield,
+  Globe,
+  HeartPulse,
+  Scale,
+  Flame,
   ChevronRight,
   RotateCcw,
   Briefcase,
@@ -45,20 +45,20 @@ const COMITES_PREDEFINIDOS = [
 ];
 
 const ESTADOS_TEMA = [
-  { id: 'En Discusión', label: 'En Debate', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', border: '#3b82f6', icon: Play },
-  { id: 'Pendiente', label: 'Pendiente', color: '#a1a1aa', bg: 'rgba(161, 161, 170, 0.1)', border: '#3f3f46', icon: Clock },
-  { id: 'Concluido', label: 'Concluido', color: '#22c55e', bg: 'rgba(34, 197, 94, 0.12)', border: '#22c55e', icon: CheckCircle2 },
-  { id: 'Pausado', label: 'Pausado', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)', border: '#f59e0b', icon: PauseCircle },
+  { id: 'En Discusión', key: 'agenda.discussion', defaultLabel: 'En Discusión', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', border: '#3b82f6', icon: Play },
+  { id: 'Pendiente', key: 'agenda.pending', defaultLabel: 'Pendiente', color: '#a1a1aa', bg: 'rgba(161, 161, 170, 0.1)', border: '#3f3f46', icon: Clock },
+  { id: 'Concluido', key: 'agenda.completed', defaultLabel: 'Concluido', color: '#22c55e', bg: 'rgba(34, 197, 94, 0.12)', border: '#22c55e', icon: CheckCircle2 },
+  { id: 'Pausado', key: 'agenda.paused', defaultLabel: 'Pausado', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)', border: '#f59e0b', icon: PauseCircle },
 ];
 
 const EstablecerAgenda = () => {
   const { t } = useTranslation();
-  const { 
-    nombreComite, 
-    setNombreComite, 
-    agendaSesion, 
-    establecerAgenda, 
-    cambiarTemaActual 
+  const {
+    nombreComite,
+    setNombreComite,
+    agendaSesion,
+    establecerAgenda,
+    cambiarTemaActual
   } = useSession();
 
   const [comite, setComite] = useState(nombreComite || '');
@@ -128,10 +128,10 @@ const EstablecerAgenda = () => {
     const txt = nuevoTema.trim();
     if (!txt) return;
 
-    const item = { 
-      id: Date.now().toString(), 
-      titulo: txt, 
-      estado: temas.length === 0 ? 'En Discusión' : 'Pendiente' 
+    const item = {
+      id: Date.now().toString(),
+      titulo: txt,
+      estado: temas.length === 0 ? 'En Discusión' : 'Pendiente'
     };
     const nuevaLista = [...temas, item];
 
@@ -176,7 +176,7 @@ const EstablecerAgenda = () => {
     if (target && target.titulo === temaActual) {
       const proximo = nuevaLista[0]?.titulo || '';
       establecerAgenda(
-        proximo, 
+        proximo,
         nuevaLista.map((t, idx) => ({ ...t, estado: idx === 0 ? 'En Discusión' : t.estado }))
       );
     } else {
@@ -302,7 +302,7 @@ const EstablecerAgenda = () => {
           }}>
             <Building2 size={14} />
           </div>
-          
+
           <input
             type="text"
             value={comite}
@@ -646,8 +646,8 @@ const EstablecerAgenda = () => {
                 key={item.id || index}
                 style={{
                   padding: '0.45rem 0.55rem',
-                  backgroundColor: esActual 
-                    ? 'rgba(59, 130, 246, 0.1)' 
+                  backgroundColor: esActual
+                    ? 'rgba(59, 130, 246, 0.1)'
                     : (item.estado === 'Concluido' ? 'rgba(34, 197, 94, 0.05)' : 'var(--card-header-bg)'),
                   border: `1px solid ${esActual ? '#3b82f6' : (item.estado === 'Concluido' ? 'rgba(34, 197, 94, 0.3)' : 'var(--border-color)')}`,
                   borderRadius: '6px',
@@ -731,7 +731,7 @@ const EstablecerAgenda = () => {
                       </button>
                     </div>
                   ) : (
-                    <div 
+                    <div
                       onClick={() => handleActivarTema(item.titulo)}
                       style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
                       title="Clic para establecer como tema activo en debate"
@@ -778,7 +778,7 @@ const EstablecerAgenda = () => {
                       title="Cambiar estado del tema"
                     >
                       <EstadoIcon size={10} />
-                      <span>{estadoCfg.label}</span>
+                      <span>{t(estadoCfg.key, estadoCfg.defaultLabel)}</span>
                       <ChevronDown size={10} />
                     </button>
 
@@ -824,7 +824,7 @@ const EstablecerAgenda = () => {
                               onMouseLeave={e => e.currentTarget.style.backgroundColor = isSel ? est.bg : 'transparent'}
                             >
                               <Icono size={11} color={est.color} />
-                              <span>{est.label}</span>
+                              <span>{t(est.key, est.defaultLabel)}</span>
                             </button>
                           );
                         })}

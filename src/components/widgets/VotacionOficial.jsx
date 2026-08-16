@@ -101,54 +101,53 @@ const VotacionOficial = () => {
     if (tipoVotacion === 'substantive' && votosEmitidos > 0 && votosValidosSinAbstencion > 0) {
       requeridos = Math.floor(votosValidosSinAbstencion / 2) + 1;
       pasaSuperaMayoria = favor > contra && favor >= requeridos;
-      textoRequerido = `${requeridos} voto(s) A Favor (50%+1 de ${votosValidosSinAbstencion} votos válidos emitidos | Base quórum: ${reqSimpleQuorum})`;
+      textoRequerido = `${requeridos} ${t('voting.vote', 'voto')}(s) ${t('voting.inFavor', 'A Favor')} (50%+1 ${t('common.of', 'de')} ${votosValidosSinAbstencion} ${t('voting.validVotes', 'votos válidos emitidos')} | Base quórum: ${reqSimpleQuorum})`;
     } else {
       requeridos = reqSimpleQuorum;
       pasaSuperaMayoria = favor > contra && favor >= requeridos;
-      textoRequerido = `${requeridos} voto(s) A Favor (50% + 1 de ${totalAsistentes} delegaciones en sala)`;
+      textoRequerido = `${requeridos} ${t('voting.vote', 'voto')}(s) ${t('voting.inFavor', 'A Favor')} (50% + 1 ${t('common.of', 'de')} ${totalAsistentes} ${t('voting.delegationsInRoom', 'delegaciones en sala')})`;
     }
   } else if (tipoMayoria === '2/3') {
     if (tipoVotacion === 'substantive' && votosEmitidos > 0 && votosValidosSinAbstencion > 0) {
       requeridos = Math.ceil((votosValidosSinAbstencion * 2) / 3);
       pasaSuperaMayoria = favor >= requeridos && favor > 0;
-      textoRequerido = `${requeridos} voto(s) A Favor (2/3 de ${votosValidosSinAbstencion} votos válidos emitidos | Base quórum: ${reqDosTerciosQuorum})`;
+      textoRequerido = `${requeridos} ${t('voting.vote', 'voto')}(s) ${t('voting.inFavor', 'A Favor')} (2/3 ${t('common.of', 'de')} ${votosValidosSinAbstencion} ${t('voting.validVotes', 'votos válidos emitidos')} | Base quórum: ${reqDosTerciosQuorum})`;
     } else {
       requeridos = reqDosTerciosQuorum;
       pasaSuperaMayoria = favor >= requeridos && favor > 0;
-      textoRequerido = `${requeridos} voto(s) A Favor (2/3 de ${totalAsistentes} delegaciones en sala)`;
+      textoRequerido = `${requeridos} ${t('voting.vote', 'voto')}(s) ${t('voting.inFavor', 'A Favor')} (2/3 ${t('common.of', 'de')} ${totalAsistentes} ${t('voting.delegationsInRoom', 'delegaciones en sala')})`;
     }
   } else if (tipoMayoria === 'consensus') {
-    requeridos = 0; // 0 votos en contra
+    requeridos = 0;
     pasaSuperaMayoria = contra === 0 && favor > 0 && votosPendientes === 0;
-    textoRequerido = `0 votos En Contra (100% Consenso de ${totalAsistentes} delegaciones en sala)`;
+    textoRequerido = `0 ${t('voting.votes', 'votos')} ${t('voting.against', 'En Contra')} (100% ${t('voting.consensus', 'Consenso')} ${t('common.of', 'de')} ${totalAsistentes} ${t('voting.delegationsInRoom', 'delegaciones en sala')})`;
   }
 
-  // Dictamen de la Votación
-  let estadoVotacion = 'SIN_VOTOS'; // 'SIN_VOTOS' | 'APROBADA' | 'REPROBADA' | 'VETADA' | 'EN_PROCESO'
-  let mensajeDictamen = 'Sin votaciones registradas aún.';
+  let estadoVotacion = 'SIN_VOTOS';
+  let mensajeDictamen = t('voting.noVotesYet', 'Sin votaciones registradas aún.');
 
   if (votosEmitidos === 0 && totalAsistentes === 0) {
     estadoVotacion = 'SIN_VOTOS';
-    mensajeDictamen = 'Sin delegaciones registradas ni votaciones aún.';
+    mensajeDictamen = t('voting.noDelegationsYet', 'Sin delegaciones registradas ni votaciones aún.');
   } else if (votosEmitidos === 0) {
     estadoVotacion = 'SIN_VOTOS';
-    mensajeDictamen = `No se han registrado votos todavía. Requiere ${requeridos} voto(s) para aprobar. Inicia el Roll Call o vota manualmente.`;
+    mensajeDictamen = `${t('voting.noVotesRegistered', 'No se han registrado votos todavía.')} ${t('voting.requires', 'Requiere')} ${requeridos} ${t('voting.vote', 'voto')}(s) ${t('voting.toApprove', 'para aprobar.')} ${t('voting.startRollCall', 'Inicia el Roll Call o vota manualmente.')}`;
   } else if (vetoEjercido) {
     estadoVotacion = 'VETADA';
     const nombresVeto = paisesConVetoEfectuado.map(p => p.nombre).join(', ');
-    mensajeDictamen = `REPROBADA POR VETO (Veto ejercido por: ${nombresVeto})`;
+    mensajeDictamen = `${t('voting.vetoedBy', 'REPROBADA POR VETO (Veto ejercido por:')} ${nombresVeto})`;
   } else if (votosPendientes === 0 || (favor >= requeridos && tipoMayoria !== 'consensus')) {
     if (pasaSuperaMayoria) {
       estadoVotacion = 'APROBADA';
-      mensajeDictamen = `¡APROBADA! (${favor} A Favor vs ${contra} En Contra${tipoVotacion === 'substantive' ? `, ${abstencion} Abstenciones` : ''})`;
+      mensajeDictamen = `${t('voting.passedExclamation', '¡APROBADA!')} (${favor} ${t('voting.inFavor', 'A Favor')} vs ${contra} ${t('voting.against', 'En Contra')}${tipoVotacion === 'substantive' ? `, ${abstencion} ${t('voting.abstentions', 'Abstenciones')}` : ''})`;
     } else {
       estadoVotacion = 'REPROBADA';
-      mensajeDictamen = `REPROBADA (${favor} A Favor vs ${contra} En Contra — Requiere: ${textoRequerido})`;
+      mensajeDictamen = `${t('voting.rejectedLabel', 'REPROBADA')} (${favor} ${t('voting.inFavor', 'A Favor')} vs ${contra} ${t('voting.against', 'En Contra')} — ${t('voting.requires', 'Requiere')}: ${textoRequerido})`;
     }
   } else {
     estadoVotacion = 'EN_PROCESO';
     const votosFaltantes = Math.max(0, requeridos - favor);
-    mensajeDictamen = `Votación en proceso... (${favor}/${requeridos} necesarios, faltan ${votosFaltantes} a favor)`;
+    mensajeDictamen = `${t('voting.inProgress', 'Votación en proceso...')} (${favor}/${requeridos} ${t('voting.needed', 'necesarios')}, ${t('voting.missing', 'faltan')} ${votosFaltantes} ${t('voting.inFavor', 'a favor')})`;
   }
 
   // Lista de Países para la Ronda de Roll Call Actual
