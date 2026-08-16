@@ -1,15 +1,43 @@
-import React from 'react';
-import { X, Type, Eye, Palette, Sun, Moon } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Type, Eye, Palette, Sun, Moon, RotateCcw, Flame } from 'lucide-react';
+import { useAccessibility, defaultDark, defaultLight } from '../../context/AccessibilityContext';
 
-const AccessibilityModal = ({ isOpen, onClose, config, setConfig }) => {
-  if (!isOpen) return null;
+const AccessibilityModal = ({
+  isOpen: propIsOpen,
+  onClose: propOnClose,
+  config: propConfig,
+  setConfig: propSetConfig
+}) => {
+  const context = useAccessibility();
+  const isOpen = propIsOpen !== undefined ? propIsOpen : context?.isAccessOpen;
+  const onClose = propOnClose || context?.closeAccessibilityModal;
+  const config = propConfig || context?.config;
+  const setConfig = propSetConfig || context?.setConfig;
+
+  if (!isOpen || !config) return null;
+
+  const [bannerCrisisHabilitado, setBannerCrisisHabilitado] = useState(() => {
+    const saved = localStorage.getItem('openmun_permanent_banner_enabled');
+    return saved !== null ? saved === 'true' : true;
+  });
+
+  const handleToggleBannerCrisis = () => {
+    const nuevoValor = !bannerCrisisHabilitado;
+    setBannerCrisisHabilitado(nuevoValor);
+    localStorage.setItem('openmun_permanent_banner_enabled', String(nuevoValor));
+    window.dispatchEvent(new CustomEvent('openmun_crisis_update'));
+  };
+
+  const accConfig = config.accessibility || { dyslexiaMode: false, fontSizeScale: 1, colorblindMode: "none", themeMode: "dark" };
+  const isLight = accConfig.themeMode === 'light';
+  const currentTheme = config.theme || (isLight ? defaultLight : defaultDark);
 
   const handleToggleDyslexia = () => {
     setConfig(prev => ({
       ...prev,
       accessibility: {
         ...prev.accessibility,
-        dyslexiaMode: !prev.accessibility.dyslexiaMode
+        dyslexiaMode: !prev.accessibility?.dyslexiaMode
       }
     }));
   };
@@ -35,22 +63,8 @@ const AccessibilityModal = ({ isOpen, onClose, config, setConfig }) => {
   };
 
   const handleThemeModeChange = (mode) => {
-    const isLight = mode === 'light';
-    const newTheme = isLight ? {
-      backgroundColor: "#f1f5f9",
-      panelColor: "#ffffff",
-      textColor: "#0f172a",
-      primaryColor: "#0f172a",
-      fontFamily: "Inter, system-ui, -apple-system, sans-serif",
-      borderRadius: "6px"
-    } : {
-      backgroundColor: "#000000",
-      panelColor: "#0d0d0d",
-      textColor: "#ffffff",
-      primaryColor: "#ffffff",
-      fontFamily: "Inter, system-ui, -apple-system, sans-serif",
-      borderRadius: "6px"
-    };
+    const isNowLight = mode === 'light';
+    const newTheme = isNowLight ? { ...defaultLight } : { ...defaultDark };
 
     setConfig(prev => ({
       ...prev,
@@ -62,50 +76,93 @@ const AccessibilityModal = ({ isOpen, onClose, config, setConfig }) => {
     }));
   };
 
-  const accConfig = config.accessibility || { dyslexiaMode: false, fontSizeScale: 1, colorblindMode: "none", themeMode: "dark" };
+  const handleColorChange = (key, value) => {
+    setConfig(prev => ({
+      ...prev,
+      theme: {
+        ...(prev.theme || (isLight ? defaultLight : defaultDark)),
+        [key]: value
+      }
+    }));
+  };
+
+  const handleResetColors = () => {
+    const baseTheme = isLight ? { ...defaultLight } : { ...defaultDark };
+    setConfig(prev => ({
+      ...prev,
+      theme: baseTheme
+    }));
+  };
+
+  const colorItems = [
+    { key: 'subnavColor', label: 'Menú de Pestañas', desc: 'Fondo de la barra de menú superior' },
+    { key: 'headerColor', label: 'Barra Superior', desc: 'Fondo del encabezado superior' },
+    { key: 'backgroundColor', label: 'Fondo Principal', desc: 'Fondo general de la app' },
+    { key: 'panelColor', label: 'Paneles y Widgets', desc: 'Fondo de tarjetas y paneles' },
+    { key: 'cardHeaderColor', label: 'Cabecera Widgets', desc: 'Fondo superior de las tarjetas' },
+    { key: 'primaryColor', label: 'Color Primario', desc: 'Pestaña activa y botones' },
+    { key: 'textColor', label: 'Color de Texto', desc: 'Texto principal' }
+  ];
 
   return (
     <div style={{
       position: 'fixed',
       top: 0, left: 0, right: 0, bottom: 0,
       backgroundColor: 'rgba(0,0,0,0.7)',
-      backdropFilter: 'blur(3px)',
+      backdropFilter: 'blur(4px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 1000
+      zIndex: 1000,
+      padding: '1rem'
     }}>
       <div style={{
         backgroundColor: 'var(--panel-color)',
         border: '1px solid var(--border-color)',
         color: 'var(--text-color)',
-        padding: '2rem',
+        padding: '1.75rem',
         borderRadius: 'var(--border-radius)',
-        width: '450px',
-        maxWidth: '90%',
-        boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
+        width: '480px',
+        maxWidth: '100%',
+        maxHeight: '90vh',
+        overflowY: 'auto',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+        display: 'flex',
+        flexDirection: 'column'
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-          <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.25rem', fontWeight: '600' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexShrink: 0 }}>
+          <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.25rem', fontWeight: '700' }}>
             <Eye size={22} />
-            Accesibilidad
+            Accesibilidad y Tema
           </h2>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-color)', cursor: 'pointer', display: 'flex' }}>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-color)',
+              cursor: 'pointer',
+              display: 'flex',
+              padding: '4px',
+              borderRadius: '4px'
+            }}
+          >
             <X size={20} />
           </button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
           {/* Theme Mode (Light / Dark) */}
-          <div style={{ padding: '1rem', backgroundColor: 'var(--card-header-bg)', border: '1px solid var(--subborder-color)', borderRadius: '6px' }}>
-            <div style={{ marginBottom: '0.75rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600', fontSize: '0.95rem' }}>
-                {accConfig.themeMode === 'light' ? <Sun size={18} /> : <Moon size={18} />}
+          <div style={{ padding: '0.9rem', backgroundColor: 'var(--card-header-bg)', border: '1px solid var(--subborder-color)', borderRadius: '6px' }}>
+            <div style={{ marginBottom: '0.65rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600', fontSize: '0.92rem' }}>
+                {isLight ? <Sun size={17} /> : <Moon size={17} />}
                 Tema Visual (Claro / Oscuro)
               </div>
-              <div style={{ fontSize: '0.8rem', opacity: 0.6, marginTop: '0.25rem' }}>
-                Cambia el esquema de color del panel
+              <div style={{ fontSize: '0.78rem', opacity: 0.6, marginTop: '0.2rem' }}>
+                Cambia el esquema de color general
               </div>
             </div>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -115,8 +172,8 @@ const AccessibilityModal = ({ isOpen, onClose, config, setConfig }) => {
                   flex: 1,
                   padding: '0.5rem 0.75rem',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                  backgroundColor: accConfig.themeMode !== 'light' ? 'var(--btn-bg)' : 'transparent',
-                  color: accConfig.themeMode !== 'light' ? 'var(--btn-text)' : 'var(--text-color)',
+                  backgroundColor: !isLight ? 'var(--btn-bg)' : 'transparent',
+                  color: !isLight ? 'var(--btn-text)' : 'var(--text-color)',
                   border: '1px solid var(--border-color)',
                   borderRadius: '4px',
                   cursor: 'pointer',
@@ -133,8 +190,8 @@ const AccessibilityModal = ({ isOpen, onClose, config, setConfig }) => {
                   flex: 1,
                   padding: '0.5rem 0.75rem',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                  backgroundColor: accConfig.themeMode === 'light' ? 'var(--btn-bg)' : 'transparent',
-                  color: accConfig.themeMode === 'light' ? 'var(--btn-text)' : 'var(--text-color)',
+                  backgroundColor: isLight ? 'var(--btn-bg)' : 'transparent',
+                  color: isLight ? 'var(--btn-text)' : 'var(--text-color)',
                   border: '1px solid var(--border-color)',
                   borderRadius: '4px',
                   cursor: 'pointer',
@@ -148,57 +205,147 @@ const AccessibilityModal = ({ isOpen, onClose, config, setConfig }) => {
             </div>
           </div>
 
+          {/* Color Controls (Moved here from Settings) */}
+          <div style={{ padding: '0.9rem', backgroundColor: 'var(--card-header-bg)', border: '1px solid var(--subborder-color)', borderRadius: '6px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600', fontSize: '0.92rem' }}>
+                  <Palette size={17} />
+                  Controles de Color
+                </div>
+                <div style={{ fontSize: '0.78rem', opacity: 0.6, marginTop: '0.2rem' }}>
+                  Personaliza los tonos principales del tema
+                </div>
+              </div>
+              <button
+                onClick={handleResetColors}
+                title="Restablecer a colores predeterminados"
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--muted-text)',
+                  cursor: 'pointer',
+                  padding: '0.3rem 0.55rem',
+                  borderRadius: '4px',
+                  fontSize: '0.72rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  fontWeight: '500',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <RotateCcw size={12} /> Restablecer
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.55rem' }}>
+              {colorItems.map(({ key, label }) => {
+                const colorValue = currentTheme[key] || (isLight ? defaultLight[key] : defaultDark[key]);
+                return (
+                  <div
+                    key={key}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.5rem 0.65rem',
+                      backgroundColor: 'var(--bg-color)',
+                      border: '1px solid var(--subborder-color)',
+                      borderRadius: '5px'
+                    }}
+                  >
+                    <div style={{ minWidth: 0, marginRight: '0.4rem' }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {label}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', opacity: 0.65, fontFamily: 'monospace' }}>
+                        {colorValue}
+                      </div>
+                    </div>
+                    <div style={{
+                      position: 'relative',
+                      width: '26px',
+                      height: '26px',
+                      borderRadius: '50%',
+                      overflow: 'hidden',
+                      border: '2px solid var(--border-color)',
+                      flexShrink: 0,
+                      cursor: 'pointer'
+                    }}>
+                      <input
+                        type="color"
+                        value={colorValue}
+                        onChange={(e) => handleColorChange(key, e.target.value)}
+                        style={{
+                          position: 'absolute',
+                          top: '-50%',
+                          left: '-50%',
+                          width: '200%',
+                          height: '200%',
+                          cursor: 'pointer',
+                          border: 'none',
+                          padding: 0
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Dyslexia Mode */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', backgroundColor: 'var(--card-header-bg)', border: '1px solid var(--subborder-color)', borderRadius: '6px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.9rem', backgroundColor: 'var(--card-header-bg)', border: '1px solid var(--subborder-color)', borderRadius: '6px' }}>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600', fontSize: '0.95rem' }}>
-                <Type size={18} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600', fontSize: '0.92rem' }}>
+                <Type size={17} />
                 Modo Dislexia
               </div>
-              <div style={{ fontSize: '0.8rem', opacity: 0.6, marginTop: '0.25rem' }}>
-                Cambia la fuente a una más legible
+              <div style={{ fontSize: '0.78rem', opacity: 0.6, marginTop: '0.2rem' }}>
+                Fuente optimizada con mayor legibilidad
               </div>
             </div>
             <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-              <input 
-                type="checkbox" 
-                checked={accConfig.dyslexiaMode} 
-                onChange={handleToggleDyslexia} 
-                style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--text-color)' }} 
+              <input
+                type="checkbox"
+                checked={!!accConfig.dyslexiaMode}
+                onChange={handleToggleDyslexia}
+                style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--btn-bg)' }}
               />
             </label>
           </div>
 
           {/* Font Size */}
-          <div style={{ padding: '1rem', backgroundColor: 'var(--card-header-bg)', border: '1px solid var(--subborder-color)', borderRadius: '6px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600', fontSize: '0.95rem', marginBottom: '0.75rem' }}>
-              <Type size={18} />
+          <div style={{ padding: '0.9rem', backgroundColor: 'var(--card-header-bg)', border: '1px solid var(--subborder-color)', borderRadius: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600', fontSize: '0.92rem', marginBottom: '0.65rem' }}>
+              <Type size={17} />
               Tamaño de Letra ({accConfig.fontSizeScale}x)
             </div>
-            <input 
-              type="range" 
-              min="0.8" 
-              max="1.5" 
-              step="0.1"
-              value={accConfig.fontSizeScale} 
-              onChange={handleFontSizeChange} 
-              style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--text-color)' }}
+            <input
+              type="range"
+              min="0.8"
+              max="1.5"
+              step="0.05"
+              value={accConfig.fontSizeScale || 1}
+              onChange={handleFontSizeChange}
+              style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--btn-bg)' }}
             />
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', opacity: 0.6, marginTop: '0.35rem' }}>
-              <span>Pequeña</span>
-              <span>Normal</span>
-              <span>Grande</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', opacity: 0.6, marginTop: '0.3rem' }}>
+              <span>Pequeña (0.8x)</span>
+              <span>Normal (1.0x)</span>
+              <span>Grande (1.5x)</span>
             </div>
           </div>
 
           {/* Colorblindness */}
-          <div style={{ padding: '1rem', backgroundColor: 'var(--card-header-bg)', border: '1px solid var(--subborder-color)', borderRadius: '6px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600', fontSize: '0.95rem', marginBottom: '0.5rem' }}>
-              <Palette size={18} />
+          <div style={{ padding: '0.9rem', backgroundColor: 'var(--card-header-bg)', border: '1px solid var(--subborder-color)', borderRadius: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600', fontSize: '0.92rem', marginBottom: '0.45rem' }}>
+              <Palette size={17} />
               Filtro de Daltonismo
             </div>
-            <select 
-              value={accConfig.colorblindMode} 
+            <select
+              value={accConfig.colorblindMode || 'none'}
               onChange={handleColorblindChange}
               style={{
                 width: '100%',
@@ -217,6 +364,27 @@ const AccessibilityModal = ({ isOpen, onClose, config, setConfig }) => {
               <option value="tritanopia">Tritanopía (Azul-Amarillo)</option>
               <option value="achromatopsia">Acromatopsia (Escala de grises)</option>
             </select>
+          </div>
+
+          {/* Banner Permanente de Alerta de Crisis */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.9rem', backgroundColor: 'var(--card-header-bg)', border: '1px solid var(--subborder-color)', borderRadius: '6px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+              <span style={{ fontWeight: '600', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Flame size={17} color="#ef4444" />
+                Banner Permanente de Crisis
+              </span>
+              <span style={{ fontSize: '0.78rem', opacity: 0.7 }}>
+                Muestra la alerta activa en la parte superior de todas las pantallas del Chair
+              </span>
+            </div>
+            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={bannerCrisisHabilitado}
+                onChange={handleToggleBannerCrisis}
+                style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#ef4444' }}
+              />
+            </label>
           </div>
 
         </div>

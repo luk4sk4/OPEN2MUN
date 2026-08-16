@@ -12,24 +12,46 @@ import ConfigurarComite from './ConfigurarComite';
 import AnadirPaises from './AnadirPaises';
 import AnadirPaisesGSL from './AnadirPaisesGSL';
 import AnadirPaisesDebate from './AnadirPaisesDebate';
+import SelectorAleatorio from './SelectorAleatorio';
+import GestorCrisis from './GestorCrisis';
+import TeleNoticiasCrisis from './TeleNoticiasCrisis';
+import PizarraInteractiva from './PizarraInteractiva';
+import MapaVotacion from './MapaVotacion';
 
 const WidgetRegistry = {
+  // Widgets Canónicos Únicos
   "establecer_agenda": EstablecerAgenda,
-  "cronometro_principal": CronometroPrincipal,
+  "importar_paises": ImportarPaises,
   "lista_oradores": ListaOradores,
-  "pizarra_mociones": PizarraMociones,
+  "anadir_paises_gsl": AnadirPaisesGSL,
+  "cronometro_principal": CronometroPrincipal,
   "cronometro_dual": CronometroDual,
   "cronometro_only_time": CronometroOnlyTime,
+  "pizarra_mociones": PizarraMociones,
+  "anadir_paises_debate": AnadirPaisesDebate,
+  "votacion_oficial": VotacionOficial,
+  "mapa_votacion": MapaVotacion,
   "matriz_paises": MatrizPaises,
   "historico_delegaciones": HistoricoDelegaciones,
-  "votacion_oficial": VotacionOficial,
-  "importar_paises": ImportarPaises,
-  "configurar_comite": ConfigurarComite,
+  "selector_aleatorio": SelectorAleatorio,
+  "gestor_crisis": GestorCrisis,
+  "tele_noticias": TeleNoticiasCrisis,
+  "pizarra_interactiva": PizarraInteractiva,
+
+  // Alias y Compatibilidad Retroactiva
+  "configurar_comite": EstablecerAgenda,
   "comite_agenda": EstablecerAgenda,
-  "anadir_paises_gsl": AnadirPaisesGSL,
-  "anadir_paises_debate": AnadirPaisesDebate,
-  "anadir_paises": AnadirPaisesGSL,
-  "agregar_paises": AnadirPaisesGSL,
+  "anadir_paises": AnadirPaises,
+  "agregar_paises": AnadirPaises,
+  "ruleta_paises": SelectorAleatorio,
+  "breaking_news": GestorCrisis,
+  "tv_crisis": TeleNoticiasCrisis,
+  "noticiero_tv": TeleNoticiasCrisis,
+  "pizarra_dibujo": PizarraInteractiva,
+  "whiteboard": PizarraInteractiva,
+  "mapa_interactivo": PizarraInteractiva,
+  "voting_map": MapaVotacion,
+  "mapa_votos": MapaVotacion,
 };
 
 export default WidgetRegistry;

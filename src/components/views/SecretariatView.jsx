@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Radio, 
   Layers, 
@@ -31,17 +31,54 @@ import {
   Hand,
   Lock,
   Mail,
-  Landmark
+  Landmark,
+  Flame,
+  Tv,
+  Map,
+  Globe,
+  Dices,
+  Sparkles,
+  Sun,
+  Moon,
+  SkipForward
 } from 'lucide-react';
 import CountryFlag from '../common/CountryFlag';
+import { getFlagEmoji } from '../../utils/flags';
 import { useP2P } from '../../context/P2PContext';
+import { useSession } from '../../context/SessionContext';
+import { useAccessibility } from '../../context/AccessibilityContext';
+import AccessibilityModal from '../modals/AccessibilityModal';
 import OpenMunLogo from '../common/OpenMunLogo';
 import MatrizPaises from '../widgets/MatrizPaises';
 import HistoricoDelegaciones from '../widgets/HistoricoDelegaciones';
 import EstablecerAgenda from '../widgets/EstablecerAgenda';
 import ImportarPaises from '../widgets/ImportarPaises';
+import GestorCrisis from '../widgets/GestorCrisis';
+import VotacionOficial from '../widgets/VotacionOficial';
+import MapaVotacion from '../widgets/MapaVotacion';
+import AnadirPaises from '../widgets/AnadirPaises';
+import PizarraMociones from '../widgets/PizarraMociones';
+import SelectorAleatorio from '../widgets/SelectorAleatorio';
 
-const SecretariatView = ({ isLight, onExit }) => {
+const SecretariatView = ({ isLight: propIsLight, onExit }) => {
+  const { isLight: contextIsLight, toggleThemeMode } = useAccessibility();
+  const isLight = propIsLight !== undefined ? propIsLight : contextIsLight;
+  const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
+
+  const {
+    paises: sessionPaises,
+    oradoresCola: sessionOradoresCola,
+    oradoresCaucus: sessionOradoresCaucus,
+    caucusActivo: sessionCaucusActivo,
+    agendaSesion: sessionAgendaSesion,
+    nombreComite: sessionNombreComite,
+    removerOrador,
+    removerOradorCaucus,
+    avanzarOradorCaucus,
+    ejecutarAccion,
+    aplicarEstadoExterno
+  } = useSession();
+
   const {
     roomId,
     notes,
@@ -55,11 +92,22 @@ const SecretariatView = ({ isLight, onExit }) => {
     speakingRequests,
     approveSpeakingRequest,
     rejectSpeakingRequest,
-    kickPeer
+    kickPeer,
+    registerSessionHandlers
   } = useP2P();
 
-  const [activeTab, setActiveTab] = useState('NOTAS'); // 'NOTAS' | 'SOLICITUDES' | 'INFO' | 'AJUSTES' | 'CONEXIONES' | 'DEBATE'
-  const [subTabInfo, setSubTabInfo] = useState('MATRIZ'); // 'MATRIZ' | 'HISTORICO' | 'AGENDA' | 'IMPORTAR'
+  // Registrar sincronización bidireccional inmediata con el motor P2P / Host
+  useEffect(() => {
+    registerSessionHandlers({
+      onSyncState: (state) => aplicarEstadoExterno(state),
+      onSessionAction: (accion, payload) => ejecutarAccion(accion, payload)
+    });
+  }, [registerSessionHandlers, aplicarEstadoExterno, ejecutarAccion]);
+
+  const [activeTab, setActiveTab] = useState('NOTAS'); // 'NOTAS' | 'SOLICITUDES' | 'DEBATE' | 'VOTACION' | 'INFO' | 'CRISIS' | 'AJUSTES' | 'CONEXIONES'
+  const [subTabInfo, setSubTabInfo] = useState('MATRIZ'); // 'MATRIZ' | 'ANADIR' | 'HISTORICO' | 'AGENDA' | 'IMPORTAR' | 'MOCIONES' | 'RULETA'
+  const [subTabVotacion, setSubTabVotacion] = useState('OFICIAL'); // 'OFICIAL' | 'MAPA'
+  const [subTabDebate, setSubTabDebate] = useState('MONITOR'); // 'MONITOR' | 'ANADIR'
   const [filtroTexto, setFiltroTexto] = useState('');
   const [filtroTipo, setFiltroTipo] = useState('TODOS'); // 'TODOS' | 'CHAIR' | 'BACKROOM' | 'DELEGADOS'
   const [notaMesaTexto, setNotaMesaTexto] = useState('');
@@ -67,13 +115,13 @@ const SecretariatView = ({ isLight, onExit }) => {
   const [tipoNota, setTipoNota] = useState('general');
 
   const state = remoteSessionState || {};
-  const nombreComite = state.comision || state.nombreComite || 'Comité en Vivo';
-  const temaActual = state.agendaSesion?.temaActual || state.caucusActivo?.tema || 'En Discusión';
-  const oradoresGSL = state.oradoresCola || [];
-  const oradoresCaucus = state.oradoresCaucus || [];
-  const caucusActivo = state.caucusActivo || {};
+  const nombreComite = sessionNombreComite || state.comision || state.nombreComite || 'Comité en Vivo';
+  const temaActual = sessionAgendaSesion?.temaActual || sessionCaucusActivo?.tema || state.agendaSesion?.temaActual || state.caucusActivo?.tema || 'En Discusión';
+  const oradoresGSL = sessionOradoresCola?.length > 0 ? sessionOradoresCola : (state.oradoresCola || []);
+  const oradoresCaucus = sessionOradoresCaucus?.length > 0 ? sessionOradoresCaucus : (state.oradoresCaucus || []);
+  const caucusActivo = (sessionCaucusActivo && sessionCaucusActivo.activo !== undefined) ? sessionCaucusActivo : (state.caucusActivo || {});
   const oradorActual = caucusActivo.activo ? (oradoresCaucus[0]?.nombre || 'Sin orador') : (oradoresGSL[0]?.nombre || 'Sin orador');
-  const paises = state.paises || [];
+  const paises = sessionPaises?.length > 0 ? sessionPaises : (state.paises || []);
 
   // Filtrado de Notas
   const notasFiltradas = notes.filter(n => {
@@ -118,11 +166,13 @@ const SecretariatView = ({ isLight, onExit }) => {
       minHeight: '100vh',
       backgroundColor: 'var(--bg-color)',
       color: 'var(--text-color)',
-      fontFamily: 'Inter, system-ui, sans-serif',
+      fontFamily: 'var(--font-family, Inter, system-ui, sans-serif)',
       display: 'flex',
       flexDirection: 'column'
     }}>
-      {/* ── Header de Secretaría ── */}
+      <AccessibilityModal isOpen={isAccessModalOpen} onClose={() => setIsAccessModalOpen(false)} />
+
+      {/* ── Topbar de Secretaría ── */}
       <header style={{
         padding: '0.85rem 1.5rem',
         backgroundColor: 'var(--header-bg)',
@@ -180,6 +230,50 @@ const SecretariatView = ({ isLight, onExit }) => {
             <span style={{ color: 'var(--muted-text)' }}>Orador Actual:</span>
             <span style={{ fontWeight: '800', color: '#22c55e' }}>{oradorActual}</span>
           </div>
+
+          {/* Botón Accesibilidad y Tema */}
+          <button
+            onClick={() => setIsAccessModalOpen(true)}
+            style={{
+              backgroundColor: 'var(--card-header-bg)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '8px',
+              color: 'var(--text-color)',
+              padding: '0.45rem 0.8rem',
+              fontSize: '0.75rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              transition: 'all 0.15s ease'
+            }}
+            title="Accesibilidad y Tema (Dislexia, Tamaño de Letra, Daltonismo)"
+          >
+            <Eye size={14} /> Accesibilidad
+          </button>
+
+          {/* Botón Rápido Modo Claro / Oscuro */}
+          <button
+            onClick={toggleThemeMode}
+            style={{
+              backgroundColor: 'var(--card-header-bg)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '8px',
+              color: 'var(--text-color)',
+              padding: '0.45rem 0.65rem',
+              fontSize: '0.75rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              transition: 'all 0.15s ease'
+            }}
+            title={isLight ? "Cambiar a Modo Oscuro" : "Cambiar a Modo Claro"}
+          >
+            {isLight ? <Moon size={14} /> : <Sun size={14} />}
+          </button>
 
           <button
             onClick={handleExportarNotasCSV}
@@ -276,7 +370,7 @@ const SecretariatView = ({ isLight, onExit }) => {
             transition: 'all 0.15s ease'
           }}
         >
-          <Zap size={15} /> Solicitudes de Oradores ({speakingRequests.length})
+          <Zap size={15} /> Solicitudes ({speakingRequests.length})
           {speakingRequests.length > 0 && (
             <span style={{
               width: '8px',
@@ -286,6 +380,46 @@ const SecretariatView = ({ isLight, onExit }) => {
               boxShadow: '0 0 8px #ef4444'
             }} />
           )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab('DEBATE')}
+          style={{
+            padding: '0.5rem 0.95rem',
+            borderRadius: '8px',
+            border: 'none',
+            backgroundColor: activeTab === 'DEBATE' ? 'var(--btn-bg)' : 'transparent',
+            color: activeTab === 'DEBATE' ? 'var(--btn-text)' : 'var(--muted-text)',
+            fontWeight: '700',
+            fontSize: '0.82rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.45rem',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <Clock size={15} /> Monitor de Debate & Oradores
+        </button>
+
+        <button
+          onClick={() => setActiveTab('VOTACION')}
+          style={{
+            padding: '0.5rem 0.95rem',
+            borderRadius: '8px',
+            border: 'none',
+            backgroundColor: activeTab === 'VOTACION' ? 'var(--btn-bg)' : 'transparent',
+            color: activeTab === 'VOTACION' ? 'var(--btn-text)' : 'var(--muted-text)',
+            fontWeight: '700',
+            fontSize: '0.82rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.45rem',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <Vote size={15} /> Votaciones & Mapa
         </button>
 
         <button
@@ -305,7 +439,27 @@ const SecretariatView = ({ isLight, onExit }) => {
             transition: 'all 0.15s ease'
           }}
         >
-          <BarChart3 size={15} /> Info y Gestión de Comité
+          <BarChart3 size={15} /> Gestión de Comité & Widgets
+        </button>
+
+        <button
+          onClick={() => setActiveTab('CRISIS')}
+          style={{
+            padding: '0.5rem 0.95rem',
+            borderRadius: '8px',
+            border: 'none',
+            backgroundColor: activeTab === 'CRISIS' ? '#ef4444' : 'transparent',
+            color: activeTab === 'CRISIS' ? '#ffffff' : 'var(--muted-text)',
+            fontWeight: '700',
+            fontSize: '0.82rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.45rem',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <Flame size={15} color={activeTab === 'CRISIS' ? '#ffffff' : '#ef4444'} /> Gabinete de Crisis & Noticiero
         </button>
 
         <button
@@ -347,30 +501,28 @@ const SecretariatView = ({ isLight, onExit }) => {
         >
           <Users size={15} /> Conexiones ({connectedPeers.length})
         </button>
-
-        <button
-          onClick={() => setActiveTab('DEBATE')}
-          style={{
-            padding: '0.5rem 0.95rem',
-            borderRadius: '8px',
-            border: 'none',
-            backgroundColor: activeTab === 'DEBATE' ? 'var(--btn-bg)' : 'transparent',
-            color: activeTab === 'DEBATE' ? 'var(--btn-text)' : 'var(--muted-text)',
-            fontWeight: '700',
-            fontSize: '0.82rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.45rem',
-            transition: 'all 0.15s ease'
-          }}
-        >
-          <Clock size={15} /> Monitor de Debate
-        </button>
       </div>
 
       {/* ── Contenido Principal de Secretaría ── */}
       <main style={{ padding: '1.5rem', flex: 1, overflowY: 'auto' }}>
+        {/* ═══════════════════════════════════════════════════════ */}
+        {/* PESTAÑA: CRISIS & NOTICIERO                             */}
+        {/* ═══════════════════════════════════════════════════════ */}
+        {activeTab === 'CRISIS' && (
+          <div style={{
+            maxWidth: '1200px',
+            margin: '0 auto',
+            height: 'calc(100vh - 160px)',
+            backgroundColor: 'var(--panel-color)',
+            borderRadius: '16px',
+            border: '1px solid var(--border-color)',
+            overflow: 'hidden',
+            boxShadow: '0 8px 30px rgba(0,0,0,0.35)'
+          }}>
+            <GestorCrisis />
+          </div>
+        )}
+
         {/* ═══════════════════════════════════════════════════════ */}
         {/* PESTAÑA 1: BANDEJA DE NOTAS / PAJES                     */}
         {/* ═══════════════════════════════════════════════════════ */}
@@ -535,18 +687,32 @@ const SecretariatView = ({ isLight, onExit }) => {
                       backgroundColor: 'var(--card-header-bg)',
                       border: '1px solid var(--border-color)',
                       borderRadius: '8px',
-                      padding: '0.6rem',
+                      padding: '0.65rem 0.8rem',
                       color: 'var(--text-color)',
                       fontWeight: '700',
-                      fontSize: '0.85rem'
+                      fontSize: '0.86rem',
+                      cursor: 'pointer',
+                      outline: 'none'
                     }}
                   >
-                    <option value="TODOS">TODA LA SALA (General)</option>
-                    <option value="CHAIR">Mesa Directiva (Chair)</option>
-                    <option value="BACKROOM">Consola de Crisis (Backroom)</option>
-                    <optgroup label="Delegaciones">
+                    <option value="TODOS" style={{ backgroundColor: 'var(--panel-color)', color: 'var(--text-color)' }}>
+                      📢 TODA LA SALA (General)
+                    </option>
+                    <option value="CHAIR" style={{ backgroundColor: 'var(--panel-color)', color: 'var(--text-color)' }}>
+                      🏛️ Mesa Directiva (Chair)
+                    </option>
+                    <option value="BACKROOM" style={{ backgroundColor: 'var(--panel-color)', color: 'var(--text-color)' }}>
+                      🚨 Consola de Crisis (Backroom)
+                    </option>
+                    <optgroup label="── Delegaciones ──" style={{ backgroundColor: 'var(--panel-color)', color: 'var(--text-color)', fontWeight: 'bold' }}>
                       {paises.map(p => (
-                        <option key={p.nombre} value={p.nombre}>{p.bandera || '🇺🇳'} {p.nombre}</option>
+                        <option 
+                          key={p.id || p.nombre} 
+                          value={p.nombre}
+                          style={{ backgroundColor: 'var(--panel-color)', color: 'var(--text-color)' }}
+                        >
+                          {getFlagEmoji(p.bandera, p.nombre)} {p.nombre}
+                        </option>
                       ))}
                     </optgroup>
                   </select>
@@ -765,11 +931,78 @@ const SecretariatView = ({ isLight, onExit }) => {
         )}
 
         {/* ═══════════════════════════════════════════════════════ */}
-        {/* PESTAÑA 3: INFO Y WIDGETS DE COMITÉ (MATRIZ, HISTORICO) */}
+        {/* PESTAÑA: VOTACIONES (OFICIAL & MAPA MUNDIAL)            */}
+        {/* ═══════════════════════════════════════════════════════ */}
+        {activeTab === 'VOTACION' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            {/* Sub-selector de Votación */}
+            <div style={{
+              display: 'flex',
+              gap: '0.5rem',
+              borderBottom: '1px solid var(--border-color)',
+              paddingBottom: '0.75rem',
+              overflowX: 'auto'
+            }}>
+              <button
+                onClick={() => setSubTabVotacion('OFICIAL')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: subTabVotacion === 'OFICIAL' ? 'var(--btn-bg)' : 'var(--card-header-bg)',
+                  color: subTabVotacion === 'OFICIAL' ? 'var(--btn-text)' : 'var(--muted-text)',
+                  fontWeight: '700',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem'
+                }}
+              >
+                <Vote size={15} /> Sistema de Votación Oficial (Roll Call / Mayorías)
+              </button>
+
+              <button
+                onClick={() => setSubTabVotacion('MAPA')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: subTabVotacion === 'MAPA' ? 'var(--btn-bg)' : 'var(--card-header-bg)',
+                  color: subTabVotacion === 'MAPA' ? 'var(--btn-text)' : 'var(--muted-text)',
+                  fontWeight: '700',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem'
+                }}
+              >
+                <Map size={15} /> Mapa Mundial de Votación (Geopolítico)
+              </button>
+            </div>
+
+            {/* Renderizado de Votación */}
+            <div style={{
+              backgroundColor: 'var(--panel-color)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              minHeight: '580px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
+            }}>
+              {subTabVotacion === 'OFICIAL' && <VotacionOficial />}
+              {subTabVotacion === 'MAPA' && <MapaVotacion />}
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════ */}
+        {/* PESTAÑA: INFO Y GESTIÓN DE COMITÉ & WIDGETS             */}
         {/* ═══════════════════════════════════════════════════════ */}
         {activeTab === 'INFO' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            {/* Sub-selector de Widgets de Información */}
+            {/* Sub-selector de Widgets de Información y Gestión */}
             <div style={{
               display: 'flex',
               gap: '0.5rem',
@@ -790,10 +1023,31 @@ const SecretariatView = ({ isLight, onExit }) => {
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.45rem'
+                  gap: '0.45rem',
+                  whiteSpace: 'nowrap'
                 }}
               >
-                <Users size={15} /> Matriz de Países y Asistencia
+                <Globe size={15} /> Matriz de Asistencia & Quórum
+              </button>
+
+              <button
+                onClick={() => setSubTabInfo('ANADIR')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: subTabInfo === 'ANADIR' ? 'var(--btn-bg)' : 'var(--card-header-bg)',
+                  color: subTabInfo === 'ANADIR' ? 'var(--btn-text)' : 'var(--muted-text)',
+                  fontWeight: '700',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                <UserPlus size={15} /> Añadir Países a Oradores
               </button>
 
               <button
@@ -809,7 +1063,8 @@ const SecretariatView = ({ isLight, onExit }) => {
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.45rem'
+                  gap: '0.45rem',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 <BarChart3 size={15} /> Histórico de Delegaciones
@@ -828,7 +1083,8 @@ const SecretariatView = ({ isLight, onExit }) => {
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.45rem'
+                  gap: '0.45rem',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 <Calendar size={15} /> Establecer Agenda y Temas
@@ -847,10 +1103,51 @@ const SecretariatView = ({ isLight, onExit }) => {
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.45rem'
+                  gap: '0.45rem',
+                  whiteSpace: 'nowrap'
                 }}
               >
-                <UserPlus size={15} /> Importar / Añadir Países
+                <Users size={15} /> Importar Delegaciones
+              </button>
+
+              <button
+                onClick={() => setSubTabInfo('MOCIONES')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: subTabInfo === 'MOCIONES' ? 'var(--btn-bg)' : 'var(--card-header-bg)',
+                  color: subTabInfo === 'MOCIONES' ? 'var(--btn-text)' : 'var(--muted-text)',
+                  fontWeight: '700',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                <FileText size={15} /> Pizarra de Mociones
+              </button>
+
+              <button
+                onClick={() => setSubTabInfo('RULETA')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: subTabInfo === 'RULETA' ? 'var(--btn-bg)' : 'var(--card-header-bg)',
+                  color: subTabInfo === 'RULETA' ? 'var(--btn-text)' : 'var(--muted-text)',
+                  fontWeight: '700',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                <Dices size={15} /> Ruleta / Selector
               </button>
             </div>
 
@@ -860,12 +1157,16 @@ const SecretariatView = ({ isLight, onExit }) => {
               border: '1px solid var(--border-color)',
               borderRadius: '16px',
               overflow: 'hidden',
-              minHeight: '520px'
+              minHeight: '540px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
             }}>
               {subTabInfo === 'MATRIZ' && <MatrizPaises />}
+              {subTabInfo === 'ANADIR' && <AnadirPaises />}
               {subTabInfo === 'HISTORICO' && <HistoricoDelegaciones />}
               {subTabInfo === 'AGENDA' && <EstablecerAgenda />}
               {subTabInfo === 'IMPORTAR' && <ImportarPaises />}
+              {subTabInfo === 'MOCIONES' && <PizarraMociones />}
+              {subTabInfo === 'RULETA' && <SelectorAleatorio />}
             </div>
           </div>
         )}
@@ -1322,157 +1623,316 @@ const SecretariatView = ({ isLight, onExit }) => {
         )}
 
         {/* ═══════════════════════════════════════════════════════ */}
-        {/* PESTAÑA 6: MONITOR DE DEBATE                            */}
+        {/* PESTAÑA: MONITOR DE DEBATE & AÑADIR PAÍSES              */}
         {/* ═══════════════════════════════════════════════════════ */}
         {activeTab === 'DEBATE' && (
-          <div style={{ maxWidth: '850px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-            {/* Tarjeta Lista General GSL */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            {/* Sub-selector de Debate */}
             <div style={{
-              backgroundColor: 'var(--panel-color)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '14px',
-              padding: '1.25rem',
               display: 'flex',
-              flexDirection: 'column',
-              gap: '1rem'
+              gap: '0.5rem',
+              borderBottom: '1px solid var(--border-color)',
+              paddingBottom: '0.75rem',
+              overflowX: 'auto'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontWeight: '800', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <Users size={16} /> Lista General de Oradores ({oradoresGSL.length})
-                </div>
-              </div>
+              <button
+                onClick={() => setSubTabDebate('MONITOR')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: subTabDebate === 'MONITOR' ? 'var(--btn-bg)' : 'var(--card-header-bg)',
+                  color: subTabDebate === 'MONITOR' ? 'var(--btn-text)' : 'var(--muted-text)',
+                  fontWeight: '700',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem'
+                }}
+              >
+                <Users size={15} /> Monitor de Colas (GSL & Caucus)
+              </button>
 
-              {oradoresGSL.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--muted-text)', fontSize: '0.8rem' }}>
-                  Lista GSL vacía
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                  {oradoresGSL.map((o, idx) => (
-                    <div
-                      key={o.id || idx}
-                      style={{
-                        backgroundColor: idx === 0 ? 'rgba(34, 197, 94, 0.12)' : 'var(--card-header-bg)',
-                        border: `1px solid ${idx === 0 ? 'rgba(34, 197, 94, 0.35)' : 'var(--border-color)'}`,
-                        borderRadius: '8px',
-                        padding: '0.6rem 0.85rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span style={{
-                          width: '22px',
-                          height: '22px',
-                          borderRadius: '50%',
-                          backgroundColor: idx === 0 ? '#22c55e' : 'rgba(255,255,255,0.08)',
-                          color: idx === 0 ? '#ffffff' : 'var(--muted-text)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '0.72rem',
-                          fontWeight: '800'
-                        }}>
-                          {idx + 1}
-                        </span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                          <CountryFlag bandera={o.bandera} nombre={o.nombre} size="sm" />
-                          <span style={{ fontWeight: '700', fontSize: '0.85rem' }}>{o.nombre}</span>
-                        </div>
-                      </div>
-                      {idx === 0 && (
-                        <span style={{ fontSize: '0.68rem', fontWeight: '800', color: '#22c55e' }}>
-                          EN TURNO
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+              <button
+                onClick={() => setSubTabDebate('ANADIR')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: subTabDebate === 'ANADIR' ? 'var(--btn-bg)' : 'var(--card-header-bg)',
+                  color: subTabDebate === 'ANADIR' ? 'var(--btn-text)' : 'var(--muted-text)',
+                  fontWeight: '700',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem'
+                }}
+              >
+                <UserPlus size={15} /> Añadir Países a Colas
+              </button>
             </div>
 
-            {/* Tarjeta Caucus Moderado */}
-            <div style={{
-              backgroundColor: 'var(--panel-color)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '14px',
-              padding: '1.25rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '1rem'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontWeight: '800', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <Clock size={16} /> Caucus Moderado ({oradoresCaucus.length})
-                </div>
-                <span style={{
-                  fontSize: '0.7rem',
-                  fontWeight: '800',
-                  padding: '0.15rem 0.45rem',
-                  borderRadius: '4px',
-                  backgroundColor: caucusActivo.activo ? 'rgba(34, 197, 94, 0.15)' : 'rgba(113, 113, 122, 0.15)',
-                  color: caucusActivo.activo ? '#22c55e' : '#a1a1aa'
+            {/* Contenido según subtab */}
+            {subTabDebate === 'ANADIR' ? (
+              <div style={{
+                backgroundColor: 'var(--panel-color)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '16px',
+                overflow: 'hidden',
+                minHeight: '540px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
+              }}>
+                <AnadirPaises />
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                {/* Tarjeta Lista General GSL */}
+                <div style={{
+                  backgroundColor: 'var(--panel-color)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '14px',
+                  padding: '1.25rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1rem',
+                  boxShadow: '0 4px 14px rgba(0,0,0,0.15)'
                 }}>
-                  {caucusActivo.activo ? 'Activo' : 'Inactivo'}
-                </span>
-              </div>
-
-              {caucusActivo.activo && caucusActivo.tema && (
-                <div style={{ fontSize: '0.8rem', color: 'var(--muted-text)' }}>
-                  Tema: <strong>{caucusActivo.tema}</strong>
-                </div>
-              )}
-
-              {oradoresCaucus.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--muted-text)', fontSize: '0.8rem' }}>
-                  No hay oradores en Caucus
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                  {oradoresCaucus.map((o, idx) => (
-                    <div
-                      key={o.id || idx}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ fontWeight: '800', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <Users size={16} color="#c084fc" /> Lista General de Oradores ({oradoresGSL.length})
+                    </div>
+                    <button
+                      onClick={() => setSubTabDebate('ANADIR')}
                       style={{
-                        backgroundColor: idx === 0 ? 'rgba(168, 85, 247, 0.12)' : 'var(--card-header-bg)',
-                        border: `1px solid ${idx === 0 ? 'rgba(168, 85, 247, 0.35)' : 'var(--border-color)'}`,
-                        borderRadius: '8px',
-                        padding: '0.6rem 0.85rem',
+                        backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                        border: '1px solid rgba(168, 85, 247, 0.35)',
+                        color: '#c084fc',
+                        borderRadius: '6px',
+                        padding: '0.25rem 0.6rem',
+                        fontSize: '0.72rem',
+                        fontWeight: '700',
+                        cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'space-between'
+                        gap: '0.3rem'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span style={{
-                          width: '22px',
-                          height: '22px',
-                          borderRadius: '50%',
-                          backgroundColor: idx === 0 ? '#a855f7' : 'rgba(255,255,255,0.08)',
-                          color: idx === 0 ? '#ffffff' : 'var(--muted-text)',
+                      <UserPlus size={12} /> Añadir Oradores
+                    </button>
+                  </div>
+
+                  {oradoresGSL.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--muted-text)', fontSize: '0.82rem' }}>
+                      Lista GSL vacía
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                      {oradoresGSL.map((o, idx) => (
+                        <div
+                          key={o.id || idx}
+                          style={{
+                            backgroundColor: idx === 0 ? 'rgba(34, 197, 94, 0.12)' : 'var(--card-header-bg)',
+                            border: `1px solid ${idx === 0 ? 'rgba(34, 197, 94, 0.35)' : 'var(--border-color)'}`,
+                            borderRadius: '8px',
+                            padding: '0.6rem 0.85rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{
+                              width: '22px',
+                              height: '22px',
+                              borderRadius: '50%',
+                              backgroundColor: idx === 0 ? '#22c55e' : 'rgba(255,255,255,0.08)',
+                              color: idx === 0 ? '#ffffff' : 'var(--muted-text)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '0.72rem',
+                              fontWeight: '800'
+                            }}>
+                              {idx + 1}
+                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                              <CountryFlag bandera={o.bandera} nombre={o.nombre} size="sm" />
+                              <span style={{ fontWeight: '700', fontSize: '0.85rem' }}>{o.nombre}</span>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            {idx === 0 && (
+                              <span style={{ fontSize: '0.68rem', fontWeight: '800', color: '#22c55e' }}>
+                                EN TURNO
+                              </span>
+                            )}
+                            <button
+                              onClick={() => removerOrador(o.id || o.nombre)}
+                              title="Remover de la lista"
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--muted-text)',
+                                cursor: 'pointer',
+                                padding: '0.2rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                borderRadius: '4px'
+                              }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Tarjeta Caucus Moderado */}
+                <div style={{
+                  backgroundColor: 'var(--panel-color)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '14px',
+                  padding: '1.25rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1rem',
+                  boxShadow: '0 4px 14px rgba(0,0,0,0.15)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div style={{ fontWeight: '800', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <Clock size={16} color="#fb923c" /> Caucus Moderado ({oradoresCaucus.length})
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      {oradoresCaucus.length > 0 && (
+                        <button
+                          onClick={avanzarOradorCaucus}
+                          style={{
+                            backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                            border: '1px solid rgba(34, 197, 94, 0.35)',
+                            color: '#22c55e',
+                            borderRadius: '6px',
+                            padding: '0.25rem 0.6rem',
+                            fontSize: '0.72rem',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.3rem'
+                          }}
+                        >
+                          <SkipForward size={12} /> Avanzar
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setSubTabDebate('ANADIR')}
+                        style={{
+                          backgroundColor: 'rgba(249, 115, 22, 0.15)',
+                          border: '1px solid rgba(249, 115, 22, 0.35)',
+                          color: '#fb923c',
+                          borderRadius: '6px',
+                          padding: '0.25rem 0.6rem',
+                          fontSize: '0.72rem',
+                          fontWeight: '700',
+                          cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '0.72rem',
-                          fontWeight: '800'
-                        }}>
-                          {idx + 1}
-                        </span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                          <CountryFlag bandera={o.bandera} nombre={o.nombre} size="sm" />
-                          <span style={{ fontWeight: '700', fontSize: '0.85rem' }}>{o.nombre}</span>
-                        </div>
-                      </div>
-                      {idx === 0 && (
-                        <span style={{ fontSize: '0.68rem', fontWeight: '800', color: '#c084fc' }}>
-                          EN TURNO
-                        </span>
-                      )}
+                          gap: '0.3rem'
+                        }}
+                      >
+                        <UserPlus size={12} /> Añadir Oradores
+                      </button>
+                      <span style={{
+                        fontSize: '0.7rem',
+                        fontWeight: '800',
+                        padding: '0.15rem 0.45rem',
+                        borderRadius: '4px',
+                        backgroundColor: caucusActivo.activo ? 'rgba(34, 197, 94, 0.15)' : 'rgba(113, 113, 122, 0.15)',
+                        color: caucusActivo.activo ? '#22c55e' : '#a1a1aa'
+                      }}>
+                        {caucusActivo.activo ? 'Activo' : 'Inactivo'}
+                      </span>
                     </div>
-                  ))}
+                  </div>
+
+                  {caucusActivo.activo && caucusActivo.tema && (
+                    <div style={{ fontSize: '0.8rem', color: 'var(--muted-text)' }}>
+                      Tema: <strong>{caucusActivo.tema}</strong>
+                    </div>
+                  )}
+
+                  {oradoresCaucus.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--muted-text)', fontSize: '0.82rem' }}>
+                      No hay oradores en Caucus
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                      {oradoresCaucus.map((o, idx) => (
+                        <div
+                          key={o.id || idx}
+                          style={{
+                            backgroundColor: idx === 0 ? 'rgba(168, 85, 247, 0.12)' : 'var(--card-header-bg)',
+                            border: `1px solid ${idx === 0 ? 'rgba(168, 85, 247, 0.35)' : 'var(--border-color)'}`,
+                            borderRadius: '8px',
+                            padding: '0.6rem 0.85rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{
+                              width: '22px',
+                              height: '22px',
+                              borderRadius: '50%',
+                              backgroundColor: idx === 0 ? '#a855f7' : 'rgba(255,255,255,0.08)',
+                              color: idx === 0 ? '#ffffff' : 'var(--muted-text)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '0.72rem',
+                              fontWeight: '800'
+                            }}>
+                              {idx + 1}
+                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                              <CountryFlag bandera={o.bandera} nombre={o.nombre} size="sm" />
+                              <span style={{ fontWeight: '700', fontSize: '0.85rem' }}>{o.nombre}</span>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            {idx === 0 && (
+                              <span style={{ fontSize: '0.68rem', fontWeight: '800', color: '#c084fc' }}>
+                                EN TURNO
+                              </span>
+                            )}
+                            <button
+                              onClick={() => removerOradorCaucus(o.id || o.nombre)}
+                              title="Remover del caucus"
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--muted-text)',
+                                cursor: 'pointer',
+                                padding: '0.2rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                borderRadius: '4px'
+                              }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )}
       </main>

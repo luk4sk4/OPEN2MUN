@@ -27,14 +27,15 @@ import {
 } from 'lucide-react';
 import configMaster from '../config/config_master.json';
 import WidgetRegistry from '../components/widgets/WidgetRegistry';
-import SettingsModal from '../components/modals/SettingsModal';
 import AccessibilityModal from '../components/modals/AccessibilityModal';
 import LiveSessionModal from '../components/modals/LiveSessionModal';
 import WidgetSidebar, { WIDGET_METADATA } from '../components/panels/WidgetSidebar';
 import OpenMunLogo from '../components/common/OpenMunLogo';
+import PermanentCrisisBanner from '../components/common/PermanentCrisisBanner';
 import HomePage from '../components/pages/HomePage';
 import { useSession } from '../context/SessionContext';
 import { useP2P } from '../context/P2PContext';
+import { useAccessibility } from '../context/AccessibilityContext';
 
 // ─── Grid constants ────────────────────────────────────────────────────────────
 const COLS = 12;
@@ -240,10 +241,15 @@ const Dashboard = () => {
     caucusActivo,
     votacionSesion,
     relojGSLState,
+    mociones,
+    historicoMociones,
+    registroIntervenciones,
     agregarOrador,
     agregarOradorCaucus,
     agregarMocion,
-    registrarVotoPais
+    registrarVotoPais,
+    ejecutarAccion,
+    aplicarEstadoExterno
   } = useSession();
 
   const {
@@ -259,15 +265,17 @@ const Dashboard = () => {
     setViewMode
   } = useP2P();
 
-  // Registrar handlers de sesión para solicitudes P2P automáticas o remotas
+  // Registrar handlers de sesión para solicitudes P2P automáticas, acciones remotas y sincronización
   useEffect(() => {
     registerSessionHandlers({
       onAddSpeakerGSL: (pais) => agregarOrador(pais),
       onAddSpeakerCaucus: (pais) => agregarOradorCaucus(pais),
       onAddMotion: (mocion) => agregarMocion(mocion),
-      onCastVote: (country, vote) => registrarVotoPais(country, vote)
+      onCastVote: (country, vote) => registrarVotoPais(country, vote),
+      onSessionAction: (accion, payload) => ejecutarAccion(accion, payload),
+      onSyncState: (state) => aplicarEstadoExterno(state)
     });
-  }, [registerSessionHandlers, agregarOrador, agregarOradorCaucus, agregarMocion, registrarVotoPais]);
+  }, [registerSessionHandlers, agregarOrador, agregarOradorCaucus, agregarMocion, registrarVotoPais, ejecutarAccion, aplicarEstadoExterno]);
 
   // Sincronizar estado automáticamente a todos los peers conectados si el Chair está emitiendo
   useEffect(() => {
@@ -276,6 +284,9 @@ const Dashboard = () => {
       paises,
       oradoresCola,
       oradoresCaucus,
+      registroIntervenciones,
+      mociones,
+      historicoMociones,
       caucusActivo,
       agendaSesion,
       nombreComite,
@@ -284,32 +295,20 @@ const Dashboard = () => {
       roomSettings,
       speakingRequests
     });
-  }, [broadcastCurrentState, paises, oradoresCola, oradoresCaucus, caucusActivo, agendaSesion, nombreComite, votacionSesion, relojGSLState, roomSettings, speakingRequests]);
+  }, [broadcastCurrentState, paises, oradoresCola, oradoresCaucus, registroIntervenciones, mociones, historicoMociones, caucusActivo, agendaSesion, nombreComite, votacionSesion, relojGSLState, roomSettings, speakingRequests]);
 
-  // Cargar configuración desde localStorage si existe, o usar configMaster por defecto
-  const [config, setConfig] = useState(() => {
-    try {
-      const saved = localStorage.getItem('openmun_config');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && parsed.layouts) {
-          if (parsed.layouts.LAB !== undefined && parsed.layouts.LIBRE === undefined) {
-            delete parsed.layouts.LAB;
-            parsed.layouts.LIBRE = [];
-          }
-        }
-        return parsed;
-      }
-    } catch (err) {
-      console.error('Error al leer config de localStorage:', err);
-    }
-    return configMaster;
-  });
+  // Configuración global y accesibilidad desde el contexto
+  const {
+    config,
+    setConfig,
+    isLight,
+    toggleThemeMode,
+    isAccessOpen,
+    setIsAccessOpen
+  } = useAccessibility();
 
   const [activeTab, setActiveTab] = useState('HOME');
   const [focusedWidgetId, setFocusedWidgetId] = useState(null);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isAccessOpen, setIsAccessOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
 
@@ -318,15 +317,6 @@ const Dashboard = () => {
   useEffect(() => {
     activeTabRef.current = activeTab;
   }, [activeTab]);
-
-  // Guardar configuración en localStorage cada vez que cambia
-  useEffect(() => {
-    try {
-      localStorage.setItem('openmun_config', JSON.stringify(config));
-    } catch (err) {
-      console.error('Error guardando config en localStorage:', err);
-    }
-  }, [config]);
 
   const boardResizeObserverRef = useRef(null);
   const boardNodeRef = useRef(null); // referencia al nodo DOM del tablero
@@ -667,77 +657,14 @@ const Dashboard = () => {
   };
 
   // Accesibilidad y Estilos del Tema (Monocromo / Slate Neutral)
-  const acc = config.accessibility || { dyslexiaMode: false, fontSizeScale: 1, colorblindMode: 'none' };
-  let filterString = 'none';
-  if (acc.colorblindMode === 'protanopia') filterString = 'contrast(90%) hue-rotate(15deg)';
-  if (acc.colorblindMode === 'deuteranopia') filterString = 'contrast(90%) hue-rotate(-15deg)';
-  if (acc.colorblindMode === 'tritanopia') filterString = 'sepia(50%) hue-rotate(180deg)';
-  if (acc.colorblindMode === 'achromatopsia') filterString = 'grayscale(100%)';
-
-  const isLight = config.accessibility?.themeMode === 'light';
-
-  const toggleThemeMode = () => {
-    const nextMode = isLight ? 'dark' : 'light';
-    const newTheme = nextMode === 'light' ? {
-      backgroundColor: "#f1f5f9",
-      panelColor: "#ffffff",
-      textColor: "#0f172a",
-      primaryColor: "#0f172a",
-      fontFamily: "Inter, system-ui, -apple-system, sans-serif",
-      borderRadius: "6px"
-    } : {
-      backgroundColor: "#000000",
-      panelColor: "#0d0d0d",
-      textColor: "#ffffff",
-      primaryColor: "#ffffff",
-      fontFamily: "Inter, system-ui, -apple-system, sans-serif",
-      borderRadius: "6px"
-    };
-
-    setConfig(prev => ({
-      ...prev,
-      theme: newTheme,
-      accessibility: {
-        ...prev.accessibility,
-        themeMode: nextMode
-      }
-    }));
-  };
-
   const themeStyles = {
-    '--bg-color': isLight ? '#f1f5f9' : '#0c0e14',
-    '--panel-color': isLight ? '#ffffff' : '#161922',
-    '--card-header-bg': isLight ? '#f8fafc' : '#1e222f',
-    '--header-bg': isLight ? '#ffffff' : '#10121a',
-    '--subnav-bg': isLight ? '#f1f5f9' : '#141720',
-    '--text-color': isLight ? '#0f172a' : '#f1f5f9',
-    '--muted-text': isLight ? '#64748b' : '#94a3b8',
-    '--border-color': isLight ? '#e2e8f0' : '#2b3042',
-    '--subborder-color': isLight ? '#cbd5e1' : '#222636',
-    '--btn-bg': isLight ? '#2563eb' : '#3b82f6',
-    '--btn-text': '#ffffff',
-    '--grid-line': isLight ? '#cbd5e1' : '#1c202d',
-    '--timer-display-bg': isLight ? '#f8fafc' : '#08090d',
-    '--timer-display-border': isLight ? '#cbd5e1' : '#2b3042',
-    '--timer-display-shadow': isLight ? '0 4px 16px rgba(0,0,0,0.06)' : '0 4px 20px rgba(0,0,0,0.5)',
-    '--timer-digits-shadow': isLight ? 'none' : '0 4px 20px rgba(0,0,0,0.7)',
-    '--timer-orange-bg': isLight ? '#fff7ed' : '#431407',
-    '--timer-orange-color': isLight ? '#ea580c' : '#f97316',
-    '--timer-orange-border': '#f97316',
-    '--timer-negative-bg': isLight ? '#fef2f2' : '#3f0c0c',
-    '--timer-negative-color': isLight ? '#dc2626' : '#ef4444',
-    '--timer-negative-border': '#ef4444',
-    '--font-family': acc.dyslexiaMode ? '"OpenDyslexic","Comic Sans MS",sans-serif' : config.theme.fontFamily,
-    '--border-radius': config.theme.borderRadius,
     backgroundColor: 'var(--bg-color)',
     color: 'var(--text-color)',
     fontFamily: 'var(--font-family)',
-    fontSize: `${acc.fontSizeScale}rem`,
     minHeight: '100vh',
     display: 'flex',
     flexDirection: 'column',
-    filter: filterString,
-    transition: 'filter 0.3s ease, font-size 0.3s ease, background-color 0.3s ease, color 0.3s ease',
+    transition: 'background-color 0.25s ease, color 0.25s ease',
   };
 
   const { cellW, cellH } = boardW ? getCellSize(boardW) : { cellW: 0, cellH: 0 };
@@ -756,7 +683,6 @@ const Dashboard = () => {
         style={{ display: 'none' }}
       />
 
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} config={config} setConfig={setConfig} />
       <AccessibilityModal isOpen={isAccessOpen} onClose={() => setIsAccessOpen(false)} config={config} setConfig={setConfig} />
       <LiveSessionModal isOpen={isLiveModalOpen} onClose={closeLiveModal} isLight={isLight} />
 
@@ -789,6 +715,8 @@ const Dashboard = () => {
       {!isMaximized && (
         <>
           <nav style={{
+            position: 'relative',
+            zIndex: 50,
             display: 'flex',
             padding: '0.75rem 1.5rem',
             backgroundColor: 'var(--header-bg)',
@@ -1013,18 +941,20 @@ const Dashboard = () => {
                 <Maximize2 size={16} />
               </button>
 
-              <button onClick={() => setIsAccessOpen(true)} style={{ background: 'transparent', border: 'none', color: 'var(--text-color)', cursor: 'pointer', display: 'flex', padding: '4px', borderRadius: '4px' }} title="Accesibilidad">
+              <button onClick={() => setIsAccessOpen(true)} style={{ background: 'transparent', border: 'none', color: 'var(--text-color)', cursor: 'pointer', display: 'flex', padding: '4px', borderRadius: '4px' }} title="Accesibilidad y Tema">
                 <Eye size={20} />
-              </button>
-              <button onClick={() => setIsSettingsOpen(true)} style={{ background: 'transparent', border: 'none', color: 'var(--text-color)', cursor: 'pointer', display: 'flex', padding: '4px', borderRadius: '4px' }} title="Ajustes">
-                <Settings size={20} />
               </button>
             </div>
           </nav>
 
+          {/* Banner Permanente de Alerta de Crisis Activa */}
+          <PermanentCrisisBanner isLight={isLight} />
+
           {/* Subheader Persistente de Comité + Agenda (Solo fuera de HOME) */}
           {activeTab !== 'HOME' && (
             <div style={{
+              position: 'relative',
+              zIndex: 40,
               backgroundColor: 'var(--card-header-bg)',
               borderBottom: '1px solid var(--subborder-color)',
               padding: '0.4rem 1.5rem',
@@ -1286,7 +1216,7 @@ const Dashboard = () => {
                     borderRadius: 'var(--border-radius)',
                     pointerEvents: isInteracting ? 'none' : 'auto'
                   }}>
-                    {WidgetComponent ? <WidgetComponent /> : (
+                    {WidgetComponent ? <WidgetComponent isLight={isLight} /> : (
                       <div style={{ padding: '1rem', opacity: 0.5, textAlign: 'center' }}>
                         Widget: {w.i}
                       </div>

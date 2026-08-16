@@ -308,7 +308,7 @@ const CronometroOnlyTime = () => {
                 style={{
                   position: 'absolute',
                   top: '12px',
-                  right: '12px',
+                  left: '12px',
                   backgroundColor: 'var(--primary-color, #3b82f6)',
                   border: 'none',
                   borderRadius: '20px',

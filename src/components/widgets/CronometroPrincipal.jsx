@@ -348,7 +348,7 @@ const CronometroPrincipal = () => {
           <div style={{
             position: 'absolute',
             top: '8px',
-            right: '8px',
+            left: '8px',
             backgroundColor: '#15803d',
             color: '#ffffff',
             fontSize: '0.72rem',

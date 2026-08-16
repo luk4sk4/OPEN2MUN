@@ -43,17 +43,20 @@ const PAISES_POPULARES_ISO = [
   { nombre: 'Sudáfrica', iso: 'za' }
 ];
 
-const EditarPaisModal = ({ isOpen, onClose, pais, onGuardar }) => {
+const EditarPaisModal = ({ isOpen, onClose, pais, onGuardar, onEliminar }) => {
   const [nombre, setNombre] = useState('');
   const [bandera, setBandera] = useState('');
   const [veto, setVeto] = useState(false);
   const [estatus, setEstatus] = useState('Presente');
   const [urlInput, setUrlInput] = useState('');
   const [busquedaBandera, setBusquedaBandera] = useState('');
+  const [filtroIso, setFiltroIso] = useState('');
+  const [mostrarBuscadorIso, setMostrarBuscadorIso] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [mensajeFeedback, setMensajeFeedback] = useState('');
 
   const fileInputRef = useRef(null);
+  const modalRef = useRef(null);
 
   // Cargar datos del país seleccionado al abrir
   useEffect(() => {
@@ -64,6 +67,8 @@ const EditarPaisModal = ({ isOpen, onClose, pais, onGuardar }) => {
       setEstatus(pais.estatus || 'Presente');
       setUrlInput('');
       setBusquedaBandera('');
+      setFiltroIso('');
+      setMostrarBuscadorIso(false);
       setMensajeFeedback('');
     }
   }, [pais, isOpen]);
@@ -447,8 +452,7 @@ const EditarPaisModal = ({ isOpen, onClose, pais, onGuardar }) => {
                     <input
                       type="text"
                       placeholder="Buscar país en catálogo..."
-                      value={filtroIso}
-                      onChange={(e) => setFiltroIso(e.target.value)}
+                      E
                       style={{
                         width: '100%',
                         padding: '0.3rem 0.5rem 0.3rem 1.6rem',

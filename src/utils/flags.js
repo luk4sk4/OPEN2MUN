@@ -253,3 +253,38 @@ export function procesarImagenBandera(fileOrBlob, maxWidth = 200, maxHeight = 15
     reader.readAsDataURL(fileOrBlob);
   });
 }
+
+/**
+ * Convierte un código ISO (ej: 'es') a su correspondiente emoji de bandera (ej: '🇪🇸').
+ */
+export function isoToEmoji(iso) {
+  if (!iso || typeof iso !== 'string') return null;
+  const clean = iso.trim().toLowerCase();
+  if (clean === 'un') return '🇺🇳';
+  if (clean === 'eu') return '🇪🇺';
+  if (clean.length === 2 && /^[a-z]{2}$/.test(clean)) {
+    const c1 = clean.toUpperCase().charCodeAt(0) - 65 + 0x1F1E6;
+    const c2 = clean.toUpperCase().charCodeAt(1) - 65 + 0x1F1E6;
+    return String.fromCodePoint(c1, c2);
+  }
+  return null;
+}
+
+/**
+ * Obtiene el emoji visual de la bandera o un fallback adecuado para selects y textos planos.
+ */
+export function getFlagEmoji(bandera, nombrePais = '') {
+  if (!bandera && !nombrePais) return '🇺🇳';
+  const str = (bandera || '').trim();
+  const codePoints = Array.from(str).map(c => c.codePointAt(0));
+  if (codePoints.length >= 2 && codePoints[0] >= 0x1F1E6 && codePoints[0] <= 0x1F1FF) {
+    return str;
+  }
+  const iso = normalizarBandera(bandera, nombrePais);
+  if (iso) {
+    const emoji = isoToEmoji(iso);
+    if (emoji) return emoji;
+  }
+  return '🌐';
+}
+

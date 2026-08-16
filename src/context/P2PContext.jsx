@@ -93,7 +93,9 @@ export const P2PProvider = ({ children }) => {
     onAddSpeakerGSL: null,
     onAddSpeakerCaucus: null,
     onAddMotion: null,
-    onCastVote: null
+    onCastVote: null,
+    onSessionAction: null,
+    onSyncState: null
   });
 
   const registerSessionHandlers = useCallback((handlers) => {
@@ -128,10 +130,22 @@ export const P2PProvider = ({ children }) => {
         setRole(data.role);
         setError(null);
         if (data.country) setClientCountry(data.country);
-        if (data.sessionState) setRemoteSessionState(data.sessionState);
+        if (data.sessionState) {
+          setRemoteSessionState(data.sessionState);
+          if (sessionActionHandlersRef.current.onSyncState) {
+            sessionActionHandlersRef.current.onSyncState(data.sessionState);
+          }
+        }
         if (data.roomSettings) setRoomSettings(data.roomSettings);
         if (data.speakingRequests) setSpeakingRequests(data.speakingRequests);
         addNotification(`Conectado a la sala como ${data.country || data.role}`, 'success');
+      }
+
+      if (event === 'session_action') {
+        const { action, payload } = data;
+        if (sessionActionHandlersRef.current.onSessionAction) {
+          sessionActionHandlersRef.current.onSessionAction(action, payload);
+        }
       }
 
       if (event === 'disconnected') {
@@ -261,10 +275,16 @@ export const P2PProvider = ({ children }) => {
             }
             if (message.payload.sessionState) {
               setRemoteSessionState(message.payload.sessionState);
+              if (sessionActionHandlersRef.current.onSyncState) {
+                sessionActionHandlersRef.current.onSyncState(message.payload.sessionState);
+              }
             }
           }
         } else if (message.type === MSG_TYPES.SYNC_STATE) {
           setRemoteSessionState(message.payload);
+          if (sessionActionHandlersRef.current.onSyncState) {
+            sessionActionHandlersRef.current.onSyncState(message.payload);
+          }
           if (message.payload?.roomSettings) {
             setRoomSettings(message.payload.roomSettings);
           }
@@ -481,6 +501,17 @@ export const P2PProvider = ({ children }) => {
     }
   }, [connectionStatus]);
 
+  // Enviar acción de sesión desde Secretaría al Host o ejecutarla localmente si somos Host
+  const sendSessionAction = useCallback((action, payload) => {
+    if (connectionStatus === 'host_active') {
+      if (sessionActionHandlersRef.current.onSessionAction) {
+        sessionActionHandlersRef.current.onSessionAction(action, payload);
+      }
+    } else {
+      peerService.sendSessionActionAsClient(action, payload);
+    }
+  }, [connectionStatus]);
+
   const openLiveModal = useCallback(() => setIsLiveModalOpen(true), []);
   const closeLiveModal = useCallback(() => setIsLiveModalOpen(false), []);
 
@@ -524,6 +555,7 @@ export const P2PProvider = ({ children }) => {
       requestSpeaking,
       kickPeer,
       broadcastCurrentState,
+      sendSessionAction,
       registerSessionHandlers,
       notifications
     }}>

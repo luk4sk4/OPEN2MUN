@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import Dashboard from './layouts/Dashboard';
 import { SessionProvider } from './context/SessionContext';
 import { P2PProvider, useP2P } from './context/P2PContext';
+import { AccessibilityProvider, useAccessibility } from './context/AccessibilityContext';
 import DelegateView from './components/views/DelegateView';
 import SecretariatView from './components/views/SecretariatView';
 import BackroomView from './components/views/BackroomView';
@@ -43,6 +44,7 @@ class ErrorBoundary extends React.Component {
 
 function AppContent() {
   const { viewMode, setViewMode, joinRoom } = useP2P();
+  const { isLight } = useAccessibility();
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -61,19 +63,19 @@ function AppContent() {
   }, [joinRoom]);
 
   if (viewMode === 'delegate') {
-    return <DelegateView onExit={() => setViewMode('chair')} />;
+    return <DelegateView isLight={isLight} onExit={() => setViewMode('chair')} />;
   }
 
   if (viewMode === 'secretariat') {
-    return <SecretariatView onExit={() => setViewMode('chair')} />;
+    return <SecretariatView isLight={isLight} onExit={() => setViewMode('chair')} />;
   }
 
   if (viewMode === 'backroom') {
-    return <BackroomView onExit={() => setViewMode('chair')} />;
+    return <BackroomView isLight={isLight} onExit={() => setViewMode('chair')} />;
   }
 
   if (viewMode === 'join') {
-    return <JoinSessionView onBackToChair={() => setViewMode('chair')} />;
+    return <JoinSessionView isLight={isLight} onBackToChair={() => setViewMode('chair')} />;
   }
 
   return <Dashboard />;
@@ -82,11 +84,13 @@ function AppContent() {
 function App() {
   return (
     <ErrorBoundary>
-      <SessionProvider>
-        <P2PProvider>
-          <AppContent />
-        </P2PProvider>
-      </SessionProvider>
+      <AccessibilityProvider>
+        <SessionProvider>
+          <P2PProvider>
+            <AppContent />
+          </P2PProvider>
+        </SessionProvider>
+      </AccessibilityProvider>
     </ErrorBoundary>
   );
 }

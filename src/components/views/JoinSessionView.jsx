@@ -7,16 +7,20 @@ import {
   User, 
   Lock, 
   Globe, 
-  AlertCircle,
-  Sparkles,
-  Layers,
-  Eye,
-  EyeOff,
-  Building2,
-  ShieldAlert,
-  CheckCircle2
+  AlertCircle, 
+  Sparkles, 
+  Layers, 
+  Eye, 
+  EyeOff, 
+  Building2, 
+  ShieldAlert, 
+  CheckCircle2,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { useP2P } from '../../context/P2PContext';
+import { useAccessibility } from '../../context/AccessibilityContext';
+import AccessibilityModal from '../modals/AccessibilityModal';
 import OpenMunLogo from '../common/OpenMunLogo';
 
 const PAISES_DEFAULT = [
@@ -25,8 +29,11 @@ const PAISES_DEFAULT = [
   "Japón", "México", "Noruega", "Reino Unido", "Sudáfrica", "Turquía", "Ucrania"
 ];
 
-const JoinSessionView = ({ isLight, onBackToChair }) => {
+const JoinSessionView = ({ isLight: propIsLight, onBackToChair }) => {
   const { joinRoom, connectionStatus, error, roomId: defaultRoomId } = useP2P();
+  const { isLight: contextIsLight, toggleThemeMode } = useAccessibility();
+  const isLight = propIsLight !== undefined ? propIsLight : contextIsLight;
+  const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
 
   const [roomIdInput, setRoomIdInput] = useState('');
   const [selectedRole, setSelectedRole] = useState('delegate'); // 'delegate' | 'secretariat' | 'backroom'
@@ -84,9 +91,11 @@ const JoinSessionView = ({ isLight, onBackToChair }) => {
       padding: '2rem 1rem',
       backgroundColor: 'var(--bg-color)',
       color: 'var(--text-color)',
-      fontFamily: 'Inter, system-ui, sans-serif',
+      fontFamily: 'var(--font-family, Inter, system-ui, sans-serif)',
       position: 'relative'
     }}>
+      <AccessibilityModal isOpen={isAccessModalOpen} onClose={() => setIsAccessModalOpen(false)} />
+
       {/* Botón Volver a la Mesa Principal */}
       <button
         onClick={onBackToChair}
@@ -110,6 +119,57 @@ const JoinSessionView = ({ isLight, onBackToChair }) => {
       >
         <ArrowLeft size={16} /> Volver a Modo Mesa (Chair)
       </button>
+
+      {/* Controles de Accesibilidad y Tema en esquina superior derecha */}
+      <div style={{
+        position: 'absolute',
+        top: '24px',
+        right: '24px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem'
+      }}>
+        <button
+          onClick={() => setIsAccessModalOpen(true)}
+          style={{
+            background: 'transparent',
+            border: '1px solid var(--subborder-color)',
+            borderRadius: '10px',
+            color: 'var(--text-color)',
+            padding: '0.55rem 0.85rem',
+            fontSize: '0.82rem',
+            fontWeight: '600',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            transition: 'all 0.15s ease'
+          }}
+          title="Accesibilidad y Tema (Dislexia, Tamaño de Letra, Daltonismo)"
+        >
+          <Eye size={15} /> Accesibilidad
+        </button>
+        <button
+          onClick={toggleThemeMode}
+          style={{
+            background: 'transparent',
+            border: '1px solid var(--subborder-color)',
+            borderRadius: '10px',
+            color: 'var(--text-color)',
+            padding: '0.55rem 0.7rem',
+            fontSize: '0.82rem',
+            fontWeight: '600',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            transition: 'all 0.15s ease'
+          }}
+          title={isLight ? "Cambiar a Modo Oscuro" : "Cambiar a Modo Claro"}
+        >
+          {isLight ? <Moon size={15} /> : <Sun size={15} />}
+        </button>
+      </div>
 
       <div style={{
         backgroundColor: 'var(--panel-color)',

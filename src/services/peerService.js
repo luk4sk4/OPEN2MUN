@@ -21,6 +21,7 @@ export const MSG_TYPES = {
   AUTH: 'AUTH',
   AUTH_RESULT: 'AUTH_RESULT',
   SYNC_STATE: 'SYNC_STATE',
+  SESSION_ACTION: 'SESSION_ACTION',
   UPDATE_ROOM_SETTINGS: 'UPDATE_ROOM_SETTINGS',
   ROOM_SETTINGS_UPDATED: 'ROOM_SETTINGS_UPDATED',
   REQUEST_SPEAKING: 'REQUEST_SPEAKING',
@@ -502,6 +503,20 @@ class PeerService {
       }
       this.routeNoteMessage(senderMeta, message);
     }
+
+    // 8. Acción de Sesión (desde Secretaría u Operador Autorizado)
+    if (message.type === MSG_TYPES.SESSION_ACTION) {
+      if (senderMeta.role === 'secretariat' || senderMeta.role === 'chair' || isLocal) {
+        this.emit('session_action', {
+          peerId,
+          senderMeta,
+          action: message.payload?.action,
+          payload: message.payload?.payload,
+          timestamp: message.payload?.timestamp || Date.now()
+        });
+      }
+      return;
+    }
   }
 
   // Enrutador de Notas según Matriz de Privacidad
@@ -705,6 +720,14 @@ class PeerService {
     return this.sendToServer(MSG_TYPES.CAST_VOTE, {
       country,
       vote,
+      timestamp: Date.now()
+    });
+  }
+
+  sendSessionActionAsClient(action, payload) {
+    return this.sendToServer(MSG_TYPES.SESSION_ACTION, {
+      action,
+      payload,
       timestamp: Date.now()
     });
   }

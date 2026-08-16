@@ -21,13 +21,23 @@ import {
   Lock,
   X,
   Check,
-  AlertCircle
+  AlertCircle,
+  Eye,
+  Sun,
+  Moon
 } from 'lucide-react';
 import CountryFlag from '../common/CountryFlag';
+import { getFlagEmoji } from '../../utils/flags';
 import { useP2P } from '../../context/P2PContext';
+import { useAccessibility } from '../../context/AccessibilityContext';
+import AccessibilityModal from '../modals/AccessibilityModal';
 import OpenMunLogo from '../common/OpenMunLogo';
 
-const DelegateView = ({ isLight, onExit }) => {
+const DelegateView = ({ isLight: propIsLight, onExit }) => {
+  const { isLight: contextIsLight, toggleThemeMode } = useAccessibility();
+  const isLight = propIsLight !== undefined ? propIsLight : contextIsLight;
+  const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
+
   const {
     clientCountry,
     roomId,
@@ -129,10 +139,12 @@ const DelegateView = ({ isLight, onExit }) => {
       minHeight: '100vh',
       backgroundColor: 'var(--bg-color)',
       color: 'var(--text-color)',
-      fontFamily: 'Inter, system-ui, sans-serif',
+      fontFamily: 'var(--font-family, Inter, system-ui, sans-serif)',
       display: 'flex',
       flexDirection: 'column'
     }}>
+      <AccessibilityModal isOpen={isAccessModalOpen} onClose={() => setIsAccessModalOpen(false)} />
+
       {/* ── Topbar del Delegado ── */}
       <header style={{
         padding: '0.75rem 1.25rem',
@@ -173,30 +185,76 @@ const DelegateView = ({ isLight, onExit }) => {
           </div>
         </div>
 
-        {/* Botón Salir */}
-        <button
-          onClick={() => {
-            if (confirm('¿Deseas desconectarte de la sala?')) {
-              leaveRoom();
-              if (onExit) onExit();
-            }
-          }}
-          style={{
-            background: 'transparent',
-            border: '1px solid var(--subborder-color)',
-            borderRadius: '6px',
-            color: 'var(--muted-text)',
-            padding: '0.35rem 0.65rem',
-            fontSize: '0.75rem',
-            fontWeight: '600',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.35rem'
-          }}
-        >
-          <LogOut size={13} /> Salir
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {/* Botón Accesibilidad y Tema */}
+          <button
+            onClick={() => setIsAccessModalOpen(true)}
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--subborder-color)',
+              borderRadius: '6px',
+              color: 'var(--text-color)',
+              padding: '0.35rem 0.65rem',
+              fontSize: '0.75rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              transition: 'all 0.15s ease'
+            }}
+            title="Accesibilidad y Tema (Dislexia, Tamaño de Letra, Daltonismo)"
+          >
+            <Eye size={13} /> Accesibilidad
+          </button>
+
+          {/* Botón Rápido Modo Claro / Oscuro */}
+          <button
+            onClick={toggleThemeMode}
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--subborder-color)',
+              borderRadius: '6px',
+              color: 'var(--text-color)',
+              padding: '0.35rem 0.55rem',
+              fontSize: '0.75rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              transition: 'all 0.15s ease'
+            }}
+            title={isLight ? "Cambiar a Modo Oscuro" : "Cambiar a Modo Claro"}
+          >
+            {isLight ? <Moon size={13} /> : <Sun size={13} />}
+          </button>
+
+          {/* Botón Salir */}
+          <button
+            onClick={() => {
+              if (confirm('¿Deseas desconectarte de la sala?')) {
+                leaveRoom();
+                if (onExit) onExit();
+              }
+            }}
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--subborder-color)',
+              borderRadius: '6px',
+              color: 'var(--muted-text)',
+              padding: '0.35rem 0.65rem',
+              fontSize: '0.75rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem'
+            }}
+          >
+            <LogOut size={13} /> Salir
+          </button>
+        </div>
       </header>
 
       {/* ── Subheader / Navegación Móvil ── */}
@@ -786,19 +844,29 @@ const DelegateView = ({ isLight, onExit }) => {
                       backgroundColor: 'var(--card-header-bg)',
                       border: '1px solid var(--subborder-color)',
                       borderRadius: '8px',
-                      padding: '0.6rem',
+                      padding: '0.65rem 0.8rem',
                       color: 'var(--text-color)',
                       fontWeight: '700',
-                      fontSize: '0.85rem'
+                      fontSize: '0.86rem',
+                      cursor: 'pointer',
+                      outline: 'none'
                     }}
                   >
                     {settings.allowChairNotes !== false && (
-                      <option value="CHAIR">Mesa Directiva (Chair)</option>
+                      <option value="CHAIR" style={{ backgroundColor: 'var(--panel-color)', color: 'var(--text-color)' }}>
+                        🏛️ Mesa Directiva (Chair)
+                      </option>
                     )}
                     {settings.allowDelegateNotes !== false && (
-                      <optgroup label="Delegaciones">
+                      <optgroup label="── Delegaciones ──" style={{ backgroundColor: 'var(--panel-color)', color: 'var(--text-color)', fontWeight: 'bold' }}>
                         {paisesDisponibles.filter(p => p.nombre?.toLowerCase() !== clientCountry?.toLowerCase()).map(p => (
-                          <option key={p.nombre} value={p.nombre}>{p.bandera || '🇺🇳'} {p.nombre}</option>
+                          <option 
+                            key={p.id || p.nombre} 
+                            value={p.nombre}
+                            style={{ backgroundColor: 'var(--panel-color)', color: 'var(--text-color)' }}
+                          >
+                            {getFlagEmoji(p.bandera, p.nombre)} {p.nombre}
+                          </option>
                         ))}
                       </optgroup>
                     )}

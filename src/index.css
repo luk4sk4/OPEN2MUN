@@ -1,7 +1,9 @@
+/* Import OpenDyslexic and alternative accessible fonts */
+@import url('https://fonts.cdnfonts.com/css/open-dyslexic');
+
 /* Reset and base styles */
 :root {
-  /* These will be overridden by Dashboard's inline styles, 
-     but provide fallback defaults */
+  /* Dynamic CSS custom properties managed by AccessibilityContext */
   --bg-color: #0c0e14;
   --panel-color: #161922;
   --card-header-bg: #1e222f;
@@ -14,6 +16,12 @@
   --btn-bg: #3b82f6;
   --btn-text: #ffffff;
   --font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  transition: filter 0.25s ease, background-color 0.25s ease, color 0.25s ease;
+}
+
+html {
+  /* font-size is dynamically updated via AccessibilityContext scale (e.g. 100%, 120%, 80%) */
+  transition: font-size 0.2s ease;
 }
 
 body {
@@ -25,26 +33,138 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Modo Dislexia - Tipografía optimizada con máxima legibilidad */
+body.dyslexia-mode,
+body.dyslexia-mode *,
+html.dyslexia-mode,
+html.dyslexia-mode *,
+.dyslexia-mode,
+.dyslexia-mode * {
+  font-family: 'OpenDyslexic', 'Atkinson Hyperlegible', 'Lexend', 'Comic Sans MS', sans-serif !important;
+  letter-spacing: 0.035em !important;
+  word-spacing: 0.06em !important;
 }
 
 * {
   box-sizing: border-box;
 }
 
-/* Custom Scrollbar */
+/* Custom Modern Scrollbars across all browsers */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb, rgba(148, 163, 184, 0.28)) transparent;
+}
+
+/* Webkit Scrollbars (Chrome, Edge, Safari, Opera) */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
-  background: var(--card-header-bg, #10121a);
+  background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: var(--subborder-color, #2b3144);
-  border-radius: 4px;
+  background: var(--scrollbar-thumb, rgba(148, 163, 184, 0.25));
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.2s ease;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--border-color, #3e465e);
+  background: var(--scrollbar-thumb-hover, rgba(148, 163, 184, 0.55));
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: var(--btn-bg, #3b82f6);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Custom Modern Range Sliders (Inputs de rango) */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--slider-track-bg, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  margin: 6px 0;
+}
+
+input[type="range"]:hover {
+  background: var(--slider-track-hover, rgba(255, 255, 255, 0.15));
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+/* Slider Thumb - Webkit */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--btn-bg, #3b82f6);
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 14px rgba(59, 130, 246, 0.8), 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+input[type="range"]::-webkit-slider-thumb:active {
+  transform: scale(0.95);
+  background: #2563eb;
+}
+
+/* Slider Thumb - Firefox */
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--btn-bg, #3b82f6);
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 14px rgba(59, 130, 246, 0.8), 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+input[type="range"]::-moz-range-thumb:active {
+  transform: scale(0.95);
+  background: #2563eb;
+}
+
+input[type="range"]::-moz-range-track {
+  height: 6px;
+  background: var(--slider-track-bg, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+  border-radius: 9999px;
+}
+
+input[type="range"]::-moz-range-progress {
+  height: 6px;
+  background: var(--btn-bg, #3b82f6);
+  border-radius: 9999px 0 0 9999px;
 }
 
 /* React Grid Layout overrides for better visuals */

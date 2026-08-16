@@ -21,18 +21,26 @@ import {
   Flame, 
   ChevronRight,
   RotateCcw,
+  Briefcase,
+  Landmark,
+  BookOpen,
+  Coins,
   ListOrdered
 } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 
 const COMITES_PREDEFINIDOS = [
-  { nombre: 'Consejo de Seguridad (CSNU)', icon: Shield, color: '#3b82f6' },
-  { nombre: 'AG1 - DISEC (Desarme y Seguridad)', icon: Globe, color: '#6366f1' },
-  { nombre: 'AG3 - SOCHUM (Social y Humanitario)', icon: Scale, color: '#8b5cf6' },
-  { nombre: 'ECOSOC (Económico y Social)', icon: Layers, color: '#06b6d4' },
-  { nombre: 'Consejo de Derechos Humanos (CDH)', icon: Scale, color: '#10b981' },
-  { nombre: 'Organización Mundial de la Salud (OMS)', icon: HeartPulse, color: '#14b8a6' },
-  { nombre: 'Gabinete de Crisis / Comité Histórico', icon: Flame, color: '#f97316' },
+  { nombre: 'Consejo de Seguridad (UNSC / CSNU)', icon: Shield, color: '#3b82f6' },
+  { nombre: 'Asamblea General (AG / UNGA)', icon: Globe, color: '#2563eb' },
+  { nombre: 'AG1 - DISEC (Desarme y Seguridad)', icon: Shield, color: '#6366f1' },
+  { nombre: 'AG2 - ECOFIN (Asuntos Económicos y Financieros)', icon: Coins, color: '#0ea5e9' },
+  { nombre: 'Organización Mundial de la Salud (OMS / WHO)', icon: HeartPulse, color: '#14b8a6' },
+  { nombre: 'UNESCO (Educación, Ciencia y Cultura)', icon: BookOpen, color: '#ec4899' },
+  { nombre: 'UNODC (Drogas y Delito)', icon: Scale, color: '#f59e0b' },
+  { nombre: 'Organización Internacional del Trabajo (OIT / ILO)', icon: Briefcase, color: '#10b981' },
+  { nombre: 'Consejo del Atlántico Norte (OTAN / NATO)', icon: Shield, color: '#3b82f6' },
+  { nombre: 'Banco Asiático de Inversión en Infraestructura (AIIB)', icon: Landmark, color: '#8b5cf6' },
+  { nombre: 'Gabinete de Crisis Histórico', icon: Flame, color: '#f97316' },
 ];
 
 const ESTADOS_TEMA = [

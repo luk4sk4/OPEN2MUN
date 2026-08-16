@@ -25,13 +25,72 @@ import {
   Layers,
   Sparkles,
   Info,
-  FlaskConical
+  FlaskConical,
+  Dices,
+  Flame,
+  Radio,
+  Shuffle,
+  Tv,
+  PenTool,
+  Palette,
+  Map
 } from 'lucide-react';
 import WidgetRegistry from '../widgets/WidgetRegistry';
 import configMaster from '../../config/config_master.json';
+import { PRESET_TEMPLATES } from '../../plantillas/widgets';
 
 // Metadata rica para cada widget disponible
 export const WIDGET_METADATA = {
+  mapa_votacion: {
+    title: 'Mapa Mundial de Votación',
+    category: 'Votaciones',
+    description: 'Mapa geopolítico interactivo que colorea en tiempo real cada país según su voto (A Favor, En Contra, Abstención, Veto P5) con zoom y tooltips.',
+    icon: Map,
+    iconBg: 'rgba(59, 130, 246, 0.2)',
+    iconColor: '#3b82f6',
+    defaultColSpan: 7,
+    defaultRowSpan: 5,
+  },
+  pizarra_interactiva: {
+    title: 'Pizarra Interactiva & Mapas',
+    category: 'Debate',
+    description: 'Lienzo táctico para dibujar, marcar posiciones geopolíticas y hacer anotaciones sobre mapas mundiales o imágenes personalizadas.',
+    icon: Palette,
+    iconBg: 'rgba(16, 185, 129, 0.2)',
+    iconColor: '#10b981',
+    defaultColSpan: 7,
+    defaultRowSpan: 5,
+  },
+  tele_noticias: {
+    title: 'Televisión de Noticias (En Vivo)',
+    category: 'Debate',
+    description: 'Monitor con forma de TV que emite exclusivamente la alerta de crisis o noticia que se está proyectando en directo.',
+    icon: Tv,
+    iconBg: 'rgba(59, 130, 246, 0.2)',
+    iconColor: '#60a5fa',
+    defaultColSpan: 6,
+    defaultRowSpan: 5,
+  },
+  selector_aleatorio: {
+    title: 'Selector Aleatorio (Ruleta)',
+    category: 'Debate',
+    description: 'Ruleta animada y sorteo de delegaciones ("Cold Calling") para dinamizar el debate.',
+    icon: Dices,
+    iconBg: 'rgba(236, 72, 153, 0.2)',
+    iconColor: '#ec4899',
+    defaultColSpan: 5,
+    defaultRowSpan: 5,
+  },
+  gestor_crisis: {
+    title: 'Gestor de Crisis & Noticiero',
+    category: 'Debate',
+    description: 'Titulares en vivo estilo noticiero TV ("Última Hora"), reloj de simulación y línea de crisis.',
+    icon: Flame,
+    iconBg: 'rgba(239, 68, 68, 0.2)',
+    iconColor: '#ef4444',
+    defaultColSpan: 7,
+    defaultRowSpan: 5,
+  },
   anadir_paises_gsl: {
     title: 'Añadir Países GSL',
     category: 'Debate',
@@ -49,16 +108,6 @@ export const WIDGET_METADATA = {
     icon: Timer,
     iconBg: 'rgba(249, 115, 22, 0.2)',
     iconColor: '#fb923c',
-    defaultColSpan: 4,
-    defaultRowSpan: 5,
-  },
-  anadir_paises: {
-    title: 'Añadir Países',
-    category: 'Debate',
-    description: 'Búsqueda rápida y selección de países para añadir a la Lista General o Debate.',
-    icon: UserPlus,
-    iconBg: 'rgba(168, 85, 247, 0.2)',
-    iconColor: '#c084fc',
     defaultColSpan: 4,
     defaultRowSpan: 5,
   },
@@ -162,33 +211,27 @@ export const WIDGET_METADATA = {
     defaultColSpan: 6,
     defaultRowSpan: 4,
   },
-  configurar_comite: {
-    title: 'Nombre del Comité',
-    category: 'Configuración',
-    description: 'Asigna el nombre oficial del comité o asamblea para esta sesión.',
-    icon: Building2,
-    iconBg: 'rgba(234, 179, 8, 0.15)',
-    iconColor: '#eab308',
-    defaultColSpan: 6,
-    defaultRowSpan: 3,
-  },
 };
 
 // Lista canónica de widgets únicos sin alias redundantes
 export const CANONICAL_WIDGET_IDS = [
   'establecer_agenda',
-  'configurar_comite',
   'importar_paises',
   'lista_oradores',
-  'cronometro_principal',
   'anadir_paises_gsl',
+  'cronometro_principal',
   'cronometro_dual',
   'cronometro_only_time',
   'pizarra_mociones',
   'anadir_paises_debate',
   'votacion_oficial',
+  'mapa_votacion',
   'matriz_paises',
-  'historico_delegaciones'
+  'historico_delegaciones',
+  'selector_aleatorio',
+  'gestor_crisis',
+  'tele_noticias',
+  'pizarra_interactiva'
 ];
 
 // Mapeo de widgets por defecto según la pestaña/aspecto activo
@@ -196,7 +239,7 @@ export const DEFAULT_WIDGETS_BY_TAB = {
   COMIENZO: ['establecer_agenda', 'importar_paises', 'matriz_paises'],
   GSL: ['lista_oradores', 'cronometro_principal', 'anadir_paises_gsl'],
   DEBATE: ['cronometro_dual', 'pizarra_mociones', 'anadir_paises_debate'],
-  VOTING: ['votacion_oficial', 'matriz_paises'],
+  VOTING: ['votacion_oficial', 'matriz_paises', 'mapa_votacion'],
   INFO: ['matriz_paises', 'historico_delegaciones'],
   LIBRE: [],
   HOME: ['lista_oradores', 'cronometro_principal', 'pizarra_mociones', 'votacion_oficial', 'matriz_paises']
@@ -204,129 +247,17 @@ export const DEFAULT_WIDGETS_BY_TAB = {
 
 // Mapeo de widgets recomendados según la pestaña/aspecto activo
 export const RECOMMENDED_BY_TAB = {
-  COMIENZO: ['establecer_agenda', 'importar_paises', 'matriz_paises', 'configurar_comite'],
-  GSL: ['lista_oradores', 'cronometro_principal', 'anadir_paises_gsl'],
-  DEBATE: ['cronometro_dual', 'pizarra_mociones', 'anadir_paises_debate', 'cronometro_only_time'],
-  VOTING: ['votacion_oficial', 'matriz_paises'],
+  COMIENZO: ['establecer_agenda', 'importar_paises', 'matriz_paises'],
+  GSL: ['lista_oradores', 'cronometro_principal', 'anadir_paises_gsl', 'selector_aleatorio'],
+  DEBATE: ['cronometro_dual', 'pizarra_mociones', 'anadir_paises_debate', 'cronometro_only_time', 'selector_aleatorio', 'gestor_crisis', 'tele_noticias', 'pizarra_interactiva', 'mapa_votacion'],
+  VOTING: ['votacion_oficial', 'matriz_paises', 'mapa_votacion'],
   INFO: ['matriz_paises', 'historico_delegaciones'],
-  LIBRE: [],
-  HOME: ['lista_oradores', 'cronometro_principal', 'pizarra_mociones', 'votacion_oficial', 'matriz_paises', 'establecer_agenda']
+  LIBRE: ['mapa_votacion', 'pizarra_interactiva', 'selector_aleatorio', 'gestor_crisis', 'tele_noticias'],
+  HOME: ['lista_oradores', 'cronometro_principal', 'pizarra_mociones', 'votacion_oficial', 'matriz_paises', 'mapa_votacion', 'pizarra_interactiva', 'establecer_agenda', 'selector_aleatorio', 'gestor_crisis', 'tele_noticias']
 };
 
-// Colección rica de plantillas predefinidas optimizadas para MUN
-export const PRESET_TEMPLATES = [
-  {
-    id: 'gsl_standard',
-    title: 'GSL Estándar (Lista de Oradores)',
-    targetTab: 'GSL',
-    category: 'Debate',
-    badge: 'Ideal para GSL',
-    icon: Users,
-    iconBg: 'rgba(168, 85, 247, 0.2)',
-    iconColor: '#c084fc',
-    description: 'Disposición estándar de 3 columnas para la Lista General de Oradores: oradores en cola, cronómetro de discurso y buscador rápido de delegaciones.',
-    widgets: [
-      { i: 'lista_oradores', col: 0, row: 0, colSpan: 4, rowSpan: 5 },
-      { i: 'cronometro_principal', col: 4, row: 0, colSpan: 4, rowSpan: 5 },
-      { i: 'anadir_paises_gsl', col: 8, row: 0, colSpan: 4, rowSpan: 5 }
-    ]
-  },
-  {
-    id: 'debate_moderado',
-    title: 'Debate & Caucus Moderado',
-    targetTab: 'DEBATE',
-    category: 'Debate',
-    badge: 'Ideal para Caucus',
-    icon: Timer,
-    iconBg: 'rgba(249, 115, 22, 0.2)',
-    iconColor: '#fb923c',
-    description: 'Reloj dual para tiempo individual y total, pizarra interactiva de mociones y selector ágil de oradores para caucus moderados.',
-    widgets: [
-      { i: 'cronometro_dual', col: 0, row: 0, colSpan: 4, rowSpan: 5 },
-      { i: 'pizarra_mociones', col: 4, row: 0, colSpan: 4, rowSpan: 5 },
-      { i: 'anadir_paises_debate', col: 8, row: 0, colSpan: 4, rowSpan: 5 }
-    ]
-  },
-  {
-    id: 'votacion_quorum',
-    title: 'Votación Oficial & Quórum',
-    targetTab: 'VOTING',
-    category: 'Votaciones',
-    badge: 'Ideal para Voting',
-    icon: Vote,
-    iconBg: 'rgba(59, 130, 246, 0.2)',
-    iconColor: '#3b82f6',
-    description: 'Sistema completo de votaciones sustantivas y procedimentales, mayorías calificadas, veto P5 y matriz de asistencia / roll call.',
-    widgets: [
-      { i: 'votacion_oficial', col: 0, row: 0, colSpan: 7, rowSpan: 5 },
-      { i: 'matriz_paises', col: 7, row: 0, colSpan: 5, rowSpan: 5 }
-    ]
-  },
-  {
-    id: 'setup_comienzo',
-    title: 'Apertura & Configuración',
-    targetTab: 'COMIENZO',
-    category: 'Configuración',
-    badge: 'Ideal para Inicio',
-    icon: FileCheck2,
-    iconBg: 'rgba(34, 197, 94, 0.2)',
-    iconColor: '#22c55e',
-    description: 'Configuración del nombre de comisión, agenda oficial de la sesión, importación de delegaciones y pase de lista inicial.',
-    widgets: [
-      { i: 'establecer_agenda', col: 0, row: 0, colSpan: 12, rowSpan: 4 },
-      { i: 'importar_paises', col: 0, row: 4, colSpan: 6, rowSpan: 5 },
-      { i: 'matriz_paises', col: 6, row: 4, colSpan: 6, rowSpan: 5 }
-    ]
-  },
-  {
-    id: 'estadisticas_info',
-    title: 'Estadísticas & Participación',
-    targetTab: 'INFO',
-    category: 'Estadísticas',
-    badge: 'Ideal para Info',
-    icon: BarChart3,
-    iconBg: 'rgba(6, 182, 212, 0.2)',
-    iconColor: '#06b6d4',
-    description: 'Panel de métricas con histórico de intervenciones, interrupciones y matriz integral de estados por delegación.',
-    widgets: [
-      { i: 'matriz_paises', col: 0, row: 0, colSpan: 6, rowSpan: 5 },
-      { i: 'historico_delegaciones', col: 6, row: 0, colSpan: 6, rowSpan: 5 }
-    ]
-  },
-  {
-    id: 'caucus_simple',
-    title: 'Caucus Simple / No Moderado',
-    targetTab: 'DEBATE',
-    category: 'Tiempo',
-    badge: 'Minimalista',
-    icon: Hourglass,
-    iconBg: 'rgba(236, 72, 153, 0.2)',
-    iconColor: '#ec4899',
-    description: 'Temporizador simple de cuenta regresiva para negociaciones informales y pizarra de registro de mociones.',
-    widgets: [
-      { i: 'cronometro_only_time', col: 0, row: 0, colSpan: 6, rowSpan: 4 },
-      { i: 'pizarra_mociones', col: 6, row: 0, colSpan: 6, rowSpan: 4 }
-    ]
-  },
-  {
-    id: 'crisis_lab',
-    title: 'Crisis & Multi-Módulo',
-    targetTab: 'LIBRE',
-    category: 'Debate',
-    badge: 'Completo',
-    icon: FlaskConical,
-    iconBg: 'rgba(234, 179, 8, 0.2)',
-    iconColor: '#eab308',
-    description: 'Tablero multidimensional con cronómetros simultáneos, cola de oradores, mociones y selector rápido para comités dinámicos.',
-    widgets: [
-      { i: 'cronometro_principal', col: 0, row: 0, colSpan: 4, rowSpan: 3 },
-      { i: 'lista_oradores', col: 4, row: 0, colSpan: 4, rowSpan: 4 },
-      { i: 'cronometro_dual', col: 8, row: 0, colSpan: 4, rowSpan: 4 },
-      { i: 'pizarra_mociones', col: 0, row: 3, colSpan: 6, rowSpan: 4 },
-      { i: 'anadir_paises_gsl', col: 6, row: 3, colSpan: 6, rowSpan: 4 }
-    ]
-  }
-];
+// Re-exportar plantillas predefinidas importadas modularmente
+export { PRESET_TEMPLATES };
 
 // Componente Toggle Estilizado de Alta Gama
 const StylizedToggle = ({ checked, onChange, disabled }) => {
@@ -403,11 +334,8 @@ const WidgetSidebar = ({
   };
 
   const allWidgetIds = useMemo(() => {
-    // Tomar los widgets canónicos y luego cualquier otro que exista en Registry
-    const registryKeys = Object.keys(WidgetRegistry);
-    const combined = Array.from(new Set([...CANONICAL_WIDGET_IDS, ...registryKeys]));
-    // Filtrar alias legacy que no son canónicos si el canónico existe
-    return combined.filter(id => !['anadir_paises', 'comite_agenda', 'agregar_paises'].includes(id));
+    // Usar la lista canónica de widgets únicos sin alias redundantes
+    return CANONICAL_WIDGET_IDS;
   }, []);
 
   const activeWidgetIds = useMemo(() => {

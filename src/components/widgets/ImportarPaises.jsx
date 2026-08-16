@@ -122,6 +122,21 @@ function parsearTexto(texto) {
 
 function parsearJSON(texto) {
   const data = JSON.parse(texto);
+
+  // Si el JSON importado contiene alertas de crisis o snapshot, sincronizarlas
+  if (data && typeof data === 'object') {
+    const crisisData = data.alertasCrisis || data.eventosCrisis || data.crisisEventos || (data.localStorageSnapshot && data.localStorageSnapshot.openmun_crisis_eventos);
+    if (Array.isArray(crisisData) && crisisData.length > 0) {
+      localStorage.setItem('openmun_crisis_eventos', JSON.stringify(crisisData));
+      window.dispatchEvent(new CustomEvent('openmun_crisis_update', { detail: crisisData }));
+    }
+    const relojData = data.relojCrisis || data.relojSimulacion || (data.localStorageSnapshot && data.localStorageSnapshot.openmun_crisis_reloj);
+    if (relojData && typeof relojData === 'object') {
+      localStorage.setItem('openmun_crisis_reloj', JSON.stringify(relojData));
+      window.dispatchEvent(new CustomEvent('openmun_crisis_update', { detail: { reloj: relojData } }));
+    }
+  }
+
   let arr = Array.isArray(data) ? data
     : Array.isArray(data.paises) ? data.paises
       : Array.isArray(data.delegaciones) ? data.delegaciones

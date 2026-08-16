@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
-import { Plus, Check, X, Clock, MessageSquare, Users, Mic, Sparkles, RotateCcw, AlertCircle, ArrowUpDown, GripVertical, Pin, Hourglass, BarChart2, Timer } from 'lucide-react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { Plus, Check, X, Clock, MessageSquare, Users, Mic, Sparkles, RotateCcw, AlertCircle, ArrowUpDown, GripVertical, Pin, Hourglass, BarChart2, Timer, ChevronDown, Search, Globe } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
+import CountryFlag from '../common/CountryFlag';
 
 const PizarraMociones = () => {
   const { paises, mociones, agregarMocion, votarMocion, reordenarMociones, ordenarMocionesDisruptividad } = useSession();
@@ -15,6 +16,20 @@ const PizarraMociones = () => {
   const [tema, setTema] = useState('');
   const [tiempoTotalMin, setTiempoTotalMin] = useState(10);
   const [tiempoOradorSeg, setTiempoOradorSeg] = useState(45);
+  const [mostrarDropdownPais, setMostrarDropdownPais] = useState(false);
+  const [busquedaPais, setBusquedaPais] = useState('');
+  const dropdownPaisRef = useRef(null);
+
+  // Cerrar dropdown de país al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownPaisRef.current && !dropdownPaisRef.current.contains(event.target)) {
+        setMostrarDropdownPais(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Quórum y Cálculo de Mayorías en tiempo real
   const totalPaises = paises.length;
@@ -26,10 +41,18 @@ const PizarraMociones = () => {
   const mayoriaCalificada = totalAsistentes > 0 ? Math.ceil((totalAsistentes * 2) / 3) : 0;
   const mayoriaDosTercios = mayoriaCalificada;
 
-  // Filtrar países registrados
-  const listaPaises = useMemo(() => {
-    return paises.map(p => p.nombre);
-  }, [paises]);
+  const paisSeleccionado = useMemo(() => {
+    return paises.find(p => p.nombre === proponente);
+  }, [paises, proponente]);
+
+  const paisesFiltrados = useMemo(() => {
+    const q = busquedaPais.toLowerCase().trim();
+    if (!q) return paises;
+    return paises.filter(p =>
+      p.nombre.toLowerCase().includes(q) ||
+      (p.estatus && p.estatus.toLowerCase().includes(q))
+    );
+  }, [paises, busquedaPais]);
 
   const handleSubmitMocion = (e) => {
     e.preventDefault();
@@ -44,8 +67,11 @@ const PizarraMociones = () => {
       totalSeg = 0;
     }
 
+    const paisObj = paises.find(p => p.nombre === proponente);
+
     agregarMocion({
       proponente,
+      bandera: paisObj ? paisObj.bandera : '',
       posicionProponente,
       tipo: tipo === 'Consulta General' ? `Consulta General (${varianteConsulta})` : tipo,
       varianteConsulta: tipo === 'Consulta General' ? varianteConsulta : '',
@@ -55,6 +81,8 @@ const PizarraMociones = () => {
     });
 
     setTema('');
+    setProponente('');
+    setBusquedaPais('');
     setMostrarForm(false);
   };
 
@@ -295,7 +323,7 @@ const PizarraMociones = () => {
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: '0.4rem'
+              gap: '0.45rem'
             }}>
               {tiposMocionConfig.map(t => {
                 const IconComponent = t.icon;
@@ -319,35 +347,39 @@ const PizarraMociones = () => {
                       }
                     }}
                     style={{
-                      padding: '0.45rem 0.55rem',
+                      padding: '0.55rem 0.65rem',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.45rem',
+                      gap: '0.5rem',
                       cursor: 'pointer',
                       textAlign: 'left',
+                      backgroundColor: isSelected ? t.activeBg : 'var(--card-header-bg, rgba(255, 255, 255, 0.03))',
+                      border: isSelected ? `1.5px solid ${t.activeBorder}` : '1px solid var(--border-color, rgba(255, 255, 255, 0.1))',
+                      borderRadius: '8px',
+                      color: isSelected ? t.textColor : 'var(--text-color)',
+                      boxShadow: isSelected ? `0 0 12px ${t.color}30` : 'none',
                       transition: 'all 0.15s ease',
-                      boxShadow: isSelected ? `0 0 10px ${t.color}25` : 'none',
-                      color: 'var(--text-color)'
+                      outline: 'none'
                     }}
                   >
                     <div style={{
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '5px',
+                      width: '26px',
+                      height: '26px',
+                      borderRadius: '6px',
                       backgroundColor: isSelected ? t.color : 'rgba(255, 255, 255, 0.08)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: isSelected ? '#000000' : 'inherit',
+                      color: isSelected ? '#ffffff' : 'var(--muted-text, #94a3b8)',
                       flexShrink: 0
                     }}>
-                      <IconComponent size={13} />
+                      <IconComponent size={14} />
                     </div>
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{
-                        fontSize: '0.78rem',
+                        fontSize: '0.8rem',
                         fontWeight: isSelected ? '800' : '600',
-                        color: isSelected ? t.textColor : 'inherit',
+                        color: isSelected ? t.textColor : 'var(--text-color)',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis'
@@ -356,7 +388,7 @@ const PizarraMociones = () => {
                       </div>
                     </div>
                     {isSelected && (
-                      <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: t.color, flexShrink: 0 }} />
+                      <div style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: t.color, flexShrink: 0 }} />
                     )}
                   </button>
                 );
@@ -367,7 +399,7 @@ const PizarraMociones = () => {
           {/* 2. País Proponente y Tema / Propósito */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
             {/* País Proponente */}
-            <div>
+            <div style={{ position: 'relative' }} ref={dropdownPaisRef}>
               <label style={{ fontSize: '0.7rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.7, display: 'flex', alignItems: 'center', gap: '0.3rem', marginBottom: '0.25rem' }}>
                 <span>2. País Proponente *</span>
               </label>
@@ -376,33 +408,184 @@ const PizarraMociones = () => {
                   <AlertCircle size={13} /> Sin delegaciones en la sesión.
                 </div>
               ) : (
-                <select
-                  value={proponente}
-                  onChange={e => setProponente(e.target.value)}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '0.45rem 0.65rem',
-                    backgroundColor: 'var(--card-header-bg)',
-                    border: '1px solid var(--border-color)',
-                    color: 'var(--text-color)',
-                    borderRadius: '6px',
-                    fontSize: '0.82rem',
-                    fontWeight: '600',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <option value="" disabled style={{ backgroundColor: 'var(--panel-color)', color: 'var(--muted-text)' }}>
-                    Selecciona el país proponente...
-                  </option>
-                  {paises.map(p => (
-                    <option key={p.id} value={p.nombre} style={{ backgroundColor: 'var(--panel-color)', color: 'var(--text-color)' }}>
-                      {p.bandera} {p.nombre} {p.estatus !== 'Presente' && p.estatus !== 'Presente y Votando' ? `(${p.estatus})` : ''}
-                    </option>
-                  ))}
-                </select>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMostrarDropdownPais(!mostrarDropdownPais);
+                      setBusquedaPais('');
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '0.48rem 0.65rem',
+                      backgroundColor: 'var(--card-header-bg, rgba(255, 255, 255, 0.04))',
+                      border: mostrarDropdownPais ? '1px solid #3b82f6' : '1px solid var(--border-color)',
+                      color: 'var(--text-color)',
+                      borderRadius: '6px',
+                      fontSize: '0.82rem',
+                      fontWeight: '600',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '0.5rem',
+                      textAlign: 'left',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0, flex: 1 }}>
+                      {paisSeleccionado ? (
+                        <>
+                          <CountryFlag bandera={paisSeleccionado.bandera} nombre={paisSeleccionado.nombre} size="xs" />
+                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '700', color: 'var(--text-color)' }}>
+                            {paisSeleccionado.nombre}
+                          </span>
+                          {paisSeleccionado.estatus && (
+                            <span style={{
+                              fontSize: '0.65rem',
+                              padding: '1px 5px',
+                              borderRadius: '4px',
+                              backgroundColor: paisSeleccionado.estatus.includes('Presente') ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                              color: paisSeleccionado.estatus.includes('Presente') ? '#4ade80' : '#f87171',
+                              fontWeight: '600',
+                              marginLeft: 'auto'
+                            }}>
+                              {paisSeleccionado.estatus}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span style={{ color: 'var(--muted-text, #94a3b8)', fontWeight: '500' }}>
+                          Selecciona el país proponente...
+                        </span>
+                      )}
+                    </div>
+                    <ChevronDown size={14} style={{ opacity: 0.6, transform: mostrarDropdownPais ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }} />
+                  </button>
+
+                  {/* Dropdown flotante */}
+                  {mostrarDropdownPais && (
+                    <div style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 4px)',
+                      left: 0,
+                      right: 0,
+                      backgroundColor: 'var(--panel-color, #1e293b)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '8px',
+                      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3)',
+                      zIndex: 100,
+                      overflow: 'hidden',
+                      display: 'flex',
+                      flexDirection: 'column'
+                    }}>
+                      {/* Barra de Búsqueda */}
+                      <div style={{
+                        padding: '0.4rem 0.5rem',
+                        borderBottom: '1px solid var(--border-color)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        backgroundColor: 'var(--card-header-bg, rgba(255, 255, 255, 0.03))'
+                      }}>
+                        <Search size={13} style={{ opacity: 0.5, flexShrink: 0 }} />
+                        <input
+                          type="text"
+                          autoFocus
+                          placeholder="Buscar país..."
+                          value={busquedaPais}
+                          onChange={(e) => setBusquedaPais(e.target.value)}
+                          style={{
+                            width: '100%',
+                            border: 'none',
+                            background: 'transparent',
+                            color: 'var(--text-color)',
+                            fontSize: '0.78rem',
+                            outline: 'none'
+                          }}
+                        />
+                        {busquedaPais && (
+                          <button
+                            type="button"
+                            onClick={() => setBusquedaPais('')}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--muted-text)', cursor: 'pointer', padding: 0, display: 'flex' }}
+                          >
+                            <X size={12} />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Lista de países */}
+                      <div style={{
+                        maxHeight: '180px',
+                        overflowY: 'auto',
+                        padding: '0.25rem 0'
+                      }}>
+                        {paisesFiltrados.length === 0 ? (
+                          <div style={{ padding: '0.6rem', textAlign: 'center', fontSize: '0.74rem', opacity: 0.5 }}>
+                            No se encontraron países
+                          </div>
+                        ) : (
+                          paisesFiltrados.map((p) => {
+                            const isSelected = proponente === p.nombre;
+                            return (
+                              <div
+                                key={p.id || p.nombre}
+                                onClick={() => {
+                                  setProponente(p.nombre);
+                                  setMostrarDropdownPais(false);
+                                }}
+                                style={{
+                                  padding: '0.45rem 0.65rem',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.5rem',
+                                  cursor: 'pointer',
+                                  backgroundColor: isSelected ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                                  transition: 'background 0.1s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--card-header-bg, rgba(255, 255, 255, 0.06))';
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent';
+                                }}
+                              >
+                                <CountryFlag bandera={p.bandera} nombre={p.nombre} size="xs" />
+                                <span style={{
+                                  fontSize: '0.8rem',
+                                  fontWeight: isSelected ? '700' : '500',
+                                  color: isSelected ? '#38bdf8' : 'var(--text-color)',
+                                  flex: 1,
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis'
+                                }}>
+                                  {p.nombre}
+                                </span>
+                                {p.estatus && (
+                                  <span style={{
+                                    fontSize: '0.65rem',
+                                    padding: '1px 5px',
+                                    borderRadius: '4px',
+                                    backgroundColor: p.estatus.includes('Presente') ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                    color: p.estatus.includes('Presente') ? '#4ade80' : '#f87171',
+                                    opacity: 0.8
+                                  }}>
+                                    {p.estatus}
+                                  </span>
+                                )}
+                                {isSelected && <Check size={13} style={{ color: '#38bdf8', flexShrink: 0 }} />}
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -934,8 +1117,8 @@ const PizarraMociones = () => {
               >
                 {/* Bloque Izquierdo: PROMINENCIA TOTAL EN TIPO DE MOCIÓN Y PAÍS */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1, minWidth: 0 }}>
-                  {/* Fila 1: TIPO DE MOCIÓN DESTACADO + País Proponente */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                  {/* Fila 1: TIPO DE MOCIÓN DESTACADO + Bandera + País Proponente */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexWrap: 'wrap' }}>
                     <GripVertical size={15} style={{ color: '#71717a', cursor: 'grab', flexShrink: 0 }} title="Arrastrar para reordenar moción" />
                     <span style={{ fontSize: '0.72rem', fontWeight: '800', opacity: 0.5 }}>#{idx + 1}</span>
                     
@@ -954,14 +1137,22 @@ const PizarraMociones = () => {
                       {m.tipo}
                     </span>
 
-                    <span style={{
-                      fontWeight: '800',
-                      fontSize: '1.05rem',
-                      color: 'var(--text-color)',
-                      letterSpacing: '0.01em'
-                    }}>
-                      {m.proponente}
-                    </span>
+                    {/* Bandera y País Proponente */}
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
+                      <CountryFlag
+                        bandera={m.bandera || paises.find(p => p.nombre === m.proponente)?.bandera}
+                        nombre={m.proponente}
+                        size="sm"
+                      />
+                      <span style={{
+                        fontWeight: '800',
+                        fontSize: '1.05rem',
+                        color: 'var(--text-color)',
+                        letterSpacing: '0.01em'
+                      }}>
+                        {m.proponente}
+                      </span>
+                    </div>
 
                     {m.posicionProponente === 'Ultimo' && (
                       <span style={{ fontSize: '0.65rem', backgroundColor: 'rgba(255,255,255,0.08)', padding: '2px 6px', borderRadius: '3px', opacity: 0.8, fontWeight: '700' }}>
