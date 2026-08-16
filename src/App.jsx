@@ -47,6 +47,27 @@ function AppContent() {
   const { isLight } = useAccessibility();
 
   useEffect(() => {
+    switch (viewMode) {
+      case 'backroom':
+        document.title = 'OpenMUN - Backroom';
+        break;
+      case 'secretariat':
+        document.title = 'OpenMUN - Secretaría';
+        break;
+      case 'delegate':
+        document.title = 'OpenMUN - Delegación';
+        break;
+      case 'join':
+        document.title = 'OpenMUN - Unirse a Sala';
+        break;
+      case 'chair':
+      default:
+        document.title = 'OpenMUN';
+        break;
+    }
+  }, [viewMode]);
+
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const isLocal = params.get('local') === 'true';

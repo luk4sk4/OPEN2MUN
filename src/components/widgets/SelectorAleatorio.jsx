@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
+import { useTranslation } from 'react-i18next';
 import { playTickSound, playFanfareSound } from '../../utils/audioAlerts';
 
 // Paleta de colores vibrantes para las porciones de la ruleta
@@ -33,6 +34,7 @@ const PALETA_COLORES = [
 ];
 
 const SelectorAleatorio = () => {
+  const { t } = useTranslation();
   const { 
     paises, 
     oradoresCola, 
@@ -358,21 +360,21 @@ const SelectorAleatorio = () => {
   // Reiniciar la ronda de exclusión
   const reiniciarRonda = () => {
     setPaisesExcluidosRonda([]);
-    triggerFeedback('Ronda reiniciada: todas las delegaciones disponibles');
+    triggerFeedback(t('random.roundReset', 'Ronda reiniciada: todas las delegaciones disponibles'));
   };
 
   // Añadir directamente a la cola GSL
   const handleAnadirAGSL = () => {
     if (!paisSeleccionado) return;
     agregarOrador(paisSeleccionado);
-    triggerFeedback(`${paisSeleccionado.nombre} añadido a la Lista GSL`);
+    triggerFeedback(`${paisSeleccionado.nombre} ${t('random.addedGSLFeedback', 'añadido a la Lista GSL')}`);
   };
 
   // Dar la palabra inmediatamente / Registrar intervención
   const handleDarPalabraAhora = () => {
     if (!paisSeleccionado) return;
     registrarIntervencion(paisSeleccionado.nombre, 60);
-    triggerFeedback(`Intervención registrada para ${paisSeleccionado.nombre}`);
+    triggerFeedback(`${t('random.interventionRegistered', 'Intervención registrada para')} ${paisSeleccionado.nombre}`);
   };
 
   const restantesEnRonda = paisesElegibles.length;
@@ -422,7 +424,7 @@ const SelectorAleatorio = () => {
             }}
           >
             <RotateCw size={12} />
-            Ruleta
+            {t('random.roulette', 'Ruleta')}
           </button>
           <button
             onClick={() => setModoVista('tarjeta')}
@@ -443,7 +445,7 @@ const SelectorAleatorio = () => {
             }}
           >
             <Shuffle size={12} />
-            Placard
+            {t('random.cards', 'Placard')}
           </button>
         </div>
 
@@ -465,9 +467,9 @@ const SelectorAleatorio = () => {
               outline: 'none'
             }}
           >
-            <option value="PRESENTES">🟢 Solo Presentes</option>
-            <option value="MENOS_INTERVENCIONES">📉 Menos Participación</option>
-            <option value="TODOS">🌐 Todas las Delegaciones</option>
+            <option value="PRESENTES">🟢 {t('random.onlyPresent', 'Solo Presentes')}</option>
+            <option value="MENOS_INTERVENCIONES">📉 {t('random.leastInterventions', 'Menos Participación')}</option>
+            <option value="TODOS">🌐 {t('random.allDelegations', 'Todas las Delegaciones')}</option>
           </select>
         </div>
 
@@ -492,7 +494,7 @@ const SelectorAleatorio = () => {
             }}
           >
             <Layers size={12} />
-            {modoSinRepetir ? `${restantesEnRonda}/${totalBaseElegibles}` : 'Infinito'}
+            {modoSinRepetir ? `${restantesEnRonda}/${totalBaseElegibles}` : t('random.infinite', 'Infinito')}
           </button>
 
           {/* Sonido */}
@@ -681,15 +683,15 @@ const SelectorAleatorio = () => {
                   {girando ? (
                     <>
                       <Sparkles size={13} style={{ animation: 'spin 1.5s linear infinite' }} />
-                      <span>Sorteando Delegación...</span>
+                      <span>{t('random.spinning', 'Sorteando Delegación...')}</span>
                     </>
                   ) : paisSeleccionado ? (
                     <>
                       <CheckCircle2 size={13} />
-                      <span>Cartel / Placard Oficial Concedido</span>
+                      <span>{t('random.placardGranted', 'Cartel / Placard Oficial Concedido')}</span>
                     </>
                   ) : (
-                    <span>Placard de Delegación</span>
+                    <span>{t('random.delegationPlacard', 'Placard de Delegación')}</span>
                   )}
                 </div>
 
@@ -719,7 +721,7 @@ const SelectorAleatorio = () => {
                       </div>
                     ) : (
                       <span style={{ fontSize: '1.3rem', fontWeight: '800', color: 'var(--muted-text)' }}>
-                        Girando...
+                        {t('random.spinning', 'Girando...')}
                       </span>
                     )
                   ) : paisSeleccionado ? (
@@ -737,7 +739,7 @@ const SelectorAleatorio = () => {
                           {paisSeleccionado.nombre}
                         </span>
                         <span style={{ fontSize: '0.76rem', color: '#34d399', fontWeight: '700', marginTop: '3px' }}>
-                          ✨ Delegación con el uso de la palabra
+                          ✨ {t('random.chosenDelegation', 'Delegación con el uso de la palabra')}
                         </span>
                       </div>
                     </div>
@@ -746,10 +748,10 @@ const SelectorAleatorio = () => {
                       <Dices size={36} color="var(--muted-text)" />
                       <div style={{ textAlign: 'left' }}>
                         <div style={{ fontSize: '1.05rem', fontWeight: '700', color: 'var(--text-color)' }}>
-                          Presiona Sortear
+                          {t('random.pressDraw', 'Presiona Sortear')}
                         </div>
                         <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)' }}>
-                          Elección aleatoria para abrir debate o ceder palabra
+                          {t('random.pressDrawSub', 'Elección aleatoria para abrir debate o ceder palabra')}
                         </div>
                       </div>
                     </div>
@@ -782,7 +784,7 @@ const SelectorAleatorio = () => {
                   {paisSeleccionado.nombre}
                 </div>
                 <div style={{ fontSize: '0.68rem', color: 'var(--muted-text)' }}>
-                  {mapaIntervenciones[paisSeleccionado.nombre] || 0} intervenciones previas
+                  {mapaIntervenciones[paisSeleccionado.nombre] || 0} {t('random.previousInterventions', 'intervenciones previas')}
                 </div>
               </div>
             </div>
@@ -806,7 +808,7 @@ const SelectorAleatorio = () => {
                 }}
               >
                 <UserPlus size={11} />
-                Añadir GSL
+                {t('random.addGSL', 'Añadir GSL')}
               </button>
               <button
                 onClick={handleDarPalabraAhora}
@@ -826,7 +828,7 @@ const SelectorAleatorio = () => {
                 }}
               >
                 <Clock size={11} />
-                Palabra
+                {t('random.yieldFloor', 'Palabra')}
               </button>
             </div>
           </div>
@@ -866,12 +868,12 @@ const SelectorAleatorio = () => {
           {girando ? (
             <>
               <RotateCw size={15} style={{ animation: 'spin 1s linear infinite' }} />
-              <span>Sorteando Delegación...</span>
+              <span>{t('random.drawingDelegation', 'Sorteando Delegación...')}</span>
             </>
           ) : (
             <>
               <Dices size={16} />
-              <span>{paisSeleccionado ? 'Girar de Nuevo' : 'Sortear Delegación (Cold Call)'}</span>
+              <span>{paisSeleccionado ? t('random.spinAgain', 'Girar de Nuevo') : t('random.drawDelegation', 'Sortear Delegación (Cold Call)')}</span>
             </>
           )}
         </button>
@@ -922,7 +924,7 @@ const SelectorAleatorio = () => {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: '700' }}>
               <History size={15} color="#3b82f6" />
-              <span>Historial de Delegaciones Sorteadas</span>
+              <span>{t('random.historyTitle', 'Historial de Delegaciones Sorteadas')}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               {historialSorteos.length > 0 && (
@@ -964,7 +966,7 @@ const SelectorAleatorio = () => {
           }}>
             {historialSorteos.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '24px', color: 'var(--muted-text)', fontSize: '0.8rem' }}>
-                No hay sorteos realizados en esta sesión.
+                {t('random.noHistoryYet', 'No hay sorteos realizados en esta sesión.')}
               </div>
             ) : (
               historialSorteos.map((item, idx) => (
@@ -991,7 +993,7 @@ const SelectorAleatorio = () => {
                         {item.pais.nombre}
                       </div>
                       <div style={{ fontSize: '0.68rem', color: 'var(--muted-text)' }}>
-                        Sorteado a las {item.hora}
+                        {t('random.drawnAt', 'Sorteado a las')} {item.hora}
                       </div>
                     </div>
                   </div>
@@ -999,7 +1001,7 @@ const SelectorAleatorio = () => {
                   <button
                     onClick={() => {
                       agregarOrador(item.pais);
-                      triggerFeedback(`${item.pais.nombre} añadido a GSL`);
+                      triggerFeedback(`${item.pais.nombre} ${t('random.addedGSLFeedback', 'añadido a la Lista GSL')}`);
                     }}
                     title="Añadir a GSL"
                     style={{

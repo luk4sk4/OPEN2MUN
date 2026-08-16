@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Search, Timer, Check, Plus, X, Crown, Sparkles, UserPlus, Trash2, ArrowUpDown, GripVertical, Globe } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
+import { useTranslation } from 'react-i18next';
 
 // Normalizar texto para búsqueda sin distinguir tildes ni mayúsculas
 function normalizar(texto) {
@@ -36,6 +37,7 @@ const PRESETS_RAPIDOS = [
 ];
 
 const AnadirPaisesDebate = () => {
+  const { t } = useTranslation();
   const {
     paises,
     setPaises,
@@ -198,7 +200,7 @@ const AnadirPaisesDebate = () => {
             }}
           >
             <Trash2 size={12} />
-            <span>Eliminar todos</span>
+            <span>{t('common.clearAll', 'Eliminar todos')}</span>
           </button>
 
           {/* Badge Informativo de Cola Debate */}
@@ -215,7 +217,7 @@ const AnadirPaisesDebate = () => {
             color: '#fb923c'
           }}>
             <Timer size={13} />
-            <span>En Debate:</span>
+            <span>{t('timers.inDebate', 'En Debate:')}</span>
             <span style={{
               fontSize: '0.7rem',
               backgroundColor: '#f97316',
@@ -245,7 +247,7 @@ const AnadirPaisesDebate = () => {
           <Search size={14} style={{ color: 'var(--muted-text)', flexShrink: 0 }} />
           <input
             type="text"
-            placeholder="Buscar país para añadir a Debate (Caucus)..."
+            placeholder={t('timers.searchCountryDebatePlaceholder', 'Buscar país para añadir a Debate (Caucus)...')}
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
             onKeyDown={handleKeyDownBusqueda}
@@ -295,7 +297,7 @@ const AnadirPaisesDebate = () => {
                   fontWeight: filtroVista === 'TODOS' ? '700' : '500'
                 }}
               >
-                Todos ({paises.length})
+                {t('common.all', 'Todos')} ({paises.length})
               </button>
               <button
                 type="button"
@@ -311,7 +313,7 @@ const AnadirPaisesDebate = () => {
                   fontWeight: filtroVista === 'DISPONIBLES' ? '700' : '500'
                 }}
               >
-                Disponibles ({cantDisponibles})
+                {t('common.available', 'Disponibles')} ({cantDisponibles})
               </button>
               <button
                 type="button"
@@ -327,12 +329,12 @@ const AnadirPaisesDebate = () => {
                   fontWeight: filtroVista === 'EN_DEBATE' ? '700' : '500'
                 }}
               >
-                En Debate ({cantEnLista})
+                {t('timers.inDebate', 'En Debate')} ({cantEnLista})
               </button>
             </div>
 
             <span style={{ fontSize: '0.68rem', color: 'var(--muted-text)' }}>
-              Clic para añadir a Debate
+              {t('timers.clickToAddDebate', 'Clic para añadir a Debate')}
             </span>
           </div>
         )}

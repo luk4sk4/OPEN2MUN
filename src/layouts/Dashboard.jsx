@@ -9,28 +9,32 @@ import {
   Upload,
   Maximize2,
   Minimize2,
-  Move,
-  Maximize,
   Sun,
   Moon,
   Home,
   ChevronRight,
   Radio,
-  MessageSquare,
   Mic,
   Timer,
   Vote,
   BarChart2,
   LayoutGrid,
   Landmark,
-  Scroll
+  Scroll,
+  RefreshCw,
+  LogOut,
+  FolderOpen
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import configMaster from '../config/config_master.json';
 import WidgetRegistry from '../components/widgets/WidgetRegistry';
 import AccessibilityModal from '../components/modals/AccessibilityModal';
 import LiveSessionModal from '../components/modals/LiveSessionModal';
+import DriveSessionsModal from '../components/modals/DriveSessionsModal';
+import ExportSessionModal from '../components/modals/ExportSessionModal';
 import WidgetSidebar, { WIDGET_METADATA } from '../components/panels/WidgetSidebar';
 import OpenMunLogo from '../components/common/OpenMunLogo';
+import LanguageSelector from '../components/common/LanguageSelector';
 import PermanentCrisisBanner from '../components/common/PermanentCrisisBanner';
 import HomePage from '../components/pages/HomePage';
 import { useSession } from '../context/SessionContext';
@@ -52,16 +56,17 @@ function getCellSize(containerWidth) {
 
 // ─── Configuración de pestañas con iconos SVG ────────────────────────────────
 const TAB_CONFIG = {
-  HOME: { label: 'Inicio', Icon: Home },
-  COMIENZO: { label: 'Comienzo', Icon: Settings },
-  GSL: { label: 'GSL', Icon: Mic },
-  DEBATE: { label: 'Debate', Icon: Timer },
-  VOTING: { label: 'Voting', Icon: Vote },
-  INFO: { label: 'Info', Icon: BarChart2 },
-  LIBRE: { label: 'Libre', Icon: LayoutGrid },
+  HOME: { labelKey: 'tabs.home', label: 'Inicio', Icon: Home },
+  COMIENZO: { labelKey: 'tabs.setup', label: 'Comienzo', Icon: Settings },
+  GSL: { labelKey: 'tabs.gsl', label: 'GSL', Icon: Mic },
+  DEBATE: { labelKey: 'tabs.debate', label: 'Debate', Icon: Timer },
+  VOTING: { labelKey: 'tabs.voting', label: 'Votación', Icon: Vote },
+  INFO: { labelKey: 'tabs.info', label: 'Info', Icon: BarChart2 },
+  LIBRE: { labelKey: 'tabs.custom', label: 'Libre', Icon: LayoutGrid },
 };
 
 const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight, nombreComite }) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const closeTimer = useRef(null);
 
@@ -74,6 +79,7 @@ const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight
   };
 
   const ActiveIcon = TAB_CONFIG[activeTab]?.Icon || Home;
+  const currentTabLabel = t(TAB_CONFIG[activeTab]?.labelKey, TAB_CONFIG[activeTab]?.label || activeTab);
 
   return (
     <div
@@ -115,7 +121,7 @@ const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight
           color: isLight ? '#0f172a' : '#ffffff',
           transition: 'color 0.2s ease'
         }}>
-          {TAB_CONFIG[activeTab]?.label || activeTab}
+          {currentTabLabel}
         </span>
         <ChevronRight
           size={13}
@@ -165,7 +171,7 @@ const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight
           {tabs.map(tab => {
             const isActive = activeTab === tab;
             const TabIcon = TAB_CONFIG[tab]?.Icon || Home;
-            const tabLabel = TAB_CONFIG[tab]?.label || tab;
+            const tabLabel = t(TAB_CONFIG[tab]?.labelKey, TAB_CONFIG[tab]?.label || tab);
             return (
               <button
                 key={tab}
@@ -179,7 +185,7 @@ const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight
                   borderRadius: '6px',
                   border: 'none',
                   backgroundColor: isActive ? 'var(--btn-bg)' : 'transparent',
-                  color: isActive ? 'var(--btn-text)' : (isLight ? '#0f172a' : '#ffffff'),
+                  color: isActive ? 'var(--btn-text)' : 'var(--text-color)',
                   fontWeight: isActive ? '800' : '500',
                   fontSize: '0.8rem',
                   cursor: 'pointer',
@@ -191,7 +197,7 @@ const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight
               >
                 <TabIcon size={14} />
                 <span>{tabLabel}</span>
-                {isActive && <span style={{ marginLeft: 'auto', fontSize: '0.65rem', opacity: 0.7 }}>◀ actual</span>}
+                {isActive && <span style={{ marginLeft: 'auto', fontSize: '0.65rem', opacity: 0.7 }}>◀</span>}
               </button>
             );
           })}
@@ -217,11 +223,11 @@ const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight
               textAlign: 'left',
               transition: 'background-color 0.12s ease'
             }}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.1)'; }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = isLight ? '#fee2e2' : '#271212'; }}
             onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
           >
             <Minimize2 size={14} />
-            Salir de pantalla completa
+            {t('header.exitFullscreen', 'Salir de Pantalla Completa')}
           </button>
         </div>
       </div>
@@ -230,6 +236,7 @@ const FullscreenMenu = ({ activeTab, setActiveTab, tabs, toggleMaximize, isLight
 };
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   const {
     descargarSesionJSON,
     cargarSesionJSON,
@@ -249,7 +256,14 @@ const Dashboard = () => {
     agregarMocion,
     registrarVotoPais,
     ejecutarAccion,
-    aplicarEstadoExterno
+    aplicarEstadoExterno,
+    isDriveLinked,
+    driveSyncStatus,
+    driveUser,
+    driveLastSync,
+    conectarGoogleDrive,
+    desconectarGoogleDrive,
+    sincronizarDriveManual
   } = useSession();
 
   const {
@@ -348,6 +362,26 @@ const Dashboard = () => {
   // Referencias para interacciones activas de Drag y Resize
   const activeInteractionRef = useRef(null);
   const [activeInteraction, setActiveInteraction] = useState(null);
+
+  // Menú y control de Google Drive y Modales de Sesión
+  const [driveMenuOpen, setDriveMenuOpen] = useState(false);
+  const [isDriveModalOpen, setIsDriveModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const driveMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (driveMenuRef.current && !driveMenuRef.current.contains(e.target)) {
+        setDriveMenuOpen(false);
+      }
+    };
+    if (driveMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [driveMenuOpen]);
 
   // Pantalla Completa / Maximizar
   const toggleMaximize = useCallback(() => {
@@ -685,6 +719,8 @@ const Dashboard = () => {
 
       <AccessibilityModal isOpen={isAccessOpen} onClose={() => setIsAccessOpen(false)} config={config} setConfig={setConfig} />
       <LiveSessionModal isOpen={isLiveModalOpen} onClose={closeLiveModal} isLight={isLight} />
+      <DriveSessionsModal isOpen={isDriveModalOpen} onClose={() => setIsDriveModalOpen(false)} />
+      <ExportSessionModal isOpen={isExportModalOpen} onClose={() => setIsExportModalOpen(false)} />
 
       {/* Sidebar de Widgets */}
       <WidgetSidebar
@@ -725,7 +761,7 @@ const Dashboard = () => {
             justifyContent: 'space-between',
             transition: 'background-color 0.3s ease, border-color 0.3s ease'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '280px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <button
                 onClick={() => setIsSidebarOpen(true)}
                 style={{
@@ -741,20 +777,56 @@ const Dashboard = () => {
                   fontSize: '0.8rem',
                   fontWeight: '600'
                 }}
-                title="Abrir Gestor de Widgets"
+                title={t('header.widgetsTooltip', 'Abrir Gestor de Widgets')}
               >
                 <Menu size={18} />
-                <span>Widgets</span>
+                <span>{t('header.widgets', 'Widgets')}</span>
               </button>
 
               {/* Clic en Logo conmuta a Pestaña Principal (HOME) */}
               <div
                 onClick={() => setActiveTab('HOME')}
                 style={{ cursor: 'pointer' }}
-                title="Ir a la Página Principal OPENMUN"
+                title="OpenMUN"
               >
                 <OpenMunLogo height={38} isLight={isLight} />
               </div>
+
+              {/* Botón Sesión en Vivo P2P */}
+              <button
+                onClick={openLiveModal}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  backgroundColor: connectionStatus === 'host_active' ? 'rgba(34, 197, 94, 0.15)' : 'transparent',
+                  border: `1px solid ${connectionStatus === 'host_active' ? '#22c55e' : 'var(--subborder-color)'}`,
+                  borderRadius: '6px',
+                  color: connectionStatus === 'host_active' ? '#22c55e' : 'var(--text-color)',
+                  padding: '0.4rem 0.65rem',
+                  fontSize: '0.78rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  position: 'relative'
+                }}
+                title={t('liveSession.title', 'Sesión en Vivo P2P')}
+              >
+                <Radio size={14} className={connectionStatus === 'host_active' ? 'animate-pulse' : ''} />
+                <span>
+                  {connectionStatus === 'host_active' ? `${t('liveSession.live', 'En Vivo')} (${connectedPeers.length})` : 'P2P Live'}
+                </span>
+                {speakingRequests.length > 0 && (
+                  <span style={{
+                    width: '7px',
+                    height: '7px',
+                    borderRadius: '50%',
+                    backgroundColor: '#ef4444',
+                    position: 'absolute',
+                    top: '3px',
+                    right: '3px'
+                  }} />
+                )}
+              </button>
             </div>
 
             {/* Pestañas de Navegación Neutras */}
@@ -769,7 +841,7 @@ const Dashboard = () => {
             }}>
               {tabs.map(tab => {
                 const TabIcon = TAB_CONFIG[tab]?.Icon;
-                const label = TAB_CONFIG[tab]?.label || tab;
+                const label = t(TAB_CONFIG[tab]?.labelKey, TAB_CONFIG[tab]?.label || tab);
                 return (
                   <button
                     key={tab}
@@ -798,43 +870,7 @@ const Dashboard = () => {
             </div>
 
             {/* Acciones de Sesión JSON, Modo Claro/Oscuro y Opciones */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', width: '480px', justifyContent: 'flex-end' }}>
-              {/* Botón Sesión en Vivo P2P */}
-              <button
-                onClick={openLiveModal}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  backgroundColor: connectionStatus === 'host_active' ? 'rgba(34, 197, 94, 0.15)' : 'transparent',
-                  border: `1px solid ${connectionStatus === 'host_active' ? '#22c55e' : 'var(--subborder-color)'}`,
-                  borderRadius: '6px',
-                  color: connectionStatus === 'host_active' ? '#22c55e' : 'var(--text-color)',
-                  padding: '0.4rem 0.65rem',
-                  fontSize: '0.78rem',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  position: 'relative'
-                }}
-                title="Gestionar sala en vivo P2P (Delegados, Secretaría y Backroom)"
-              >
-                <Radio size={14} className={connectionStatus === 'host_active' ? 'animate-pulse' : ''} />
-                <span>
-                  {connectionStatus === 'host_active' ? `En Vivo (${connectedPeers.length})` : 'P2P Live'}
-                </span>
-                {speakingRequests.length > 0 && (
-                  <span style={{
-                    width: '7px',
-                    height: '7px',
-                    borderRadius: '50%',
-                    backgroundColor: '#ef4444',
-                    position: 'absolute',
-                    top: '3px',
-                    right: '3px'
-                  }} />
-                )}
-              </button>
-
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', justifyContent: 'flex-end' }}>
               <button
                 onClick={() => fileInputRef.current?.click()}
                 style={{
@@ -850,13 +886,13 @@ const Dashboard = () => {
                   fontWeight: '600',
                   cursor: 'pointer'
                 }}
-                title="Cargar archivo sesion_activa.json"
+                title={t('header.loadSessionTooltip', 'Cargar archivo sesion_activa.json')}
               >
-                <Upload size={14} /> Cargar Sesión
+                <Upload size={14} /> {t('header.loadSession', 'Cargar Sesión')}
               </button>
 
               <button
-                onClick={descargarSesionJSON}
+                onClick={() => setIsExportModalOpen(true)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -870,43 +906,213 @@ const Dashboard = () => {
                   fontWeight: '600',
                   cursor: 'pointer'
                 }}
-                title="Exportar archivo sesion_activa.json"
+                title={t('header.exportSessionTooltip', 'Exportar archivo JSON con nombre personalizado')}
               >
-                <Download size={14} /> Exportar sesión
+                <Download size={14} /> {t('header.exportSession', 'Exportar sesión')}
               </button>
 
 
-              {/* Botón Placeholder Google Drive */}
-              <button
-                disabled
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  background: 'transparent',
-                  border: '1px solid var(--subborder-color)',
-                  borderRadius: '6px',
-                  color: 'var(--muted-text)',
-                  padding: '5px 0.65rem',
-                  fontSize: '0.78rem',
-                  fontWeight: '600',
-                  cursor: 'not-allowed',
-                  opacity: 0.6,
-                  position: 'relative'
-                }}
-                title="Conectar con Google Drive (próximamente)"
-              >
-                {/* Icono Google Drive simplificado */}
-                <svg width="15" height="15" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
-                  <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da" />
-                  <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47" />
-                  <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335" />
-                  <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d" />
-                  <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc" />
-                  <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 27h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00" />
-                </svg>
-                <span>Drive</span>
-              </button>
+              {/* Botón e Integración Interactiva con Google Drive */}
+              <div style={{ position: 'relative' }} ref={driveMenuRef}>
+                <button
+                  onClick={() => {
+                    if (!isDriveLinked) {
+                      conectarGoogleDrive().then(ok => {
+                        if (ok) setIsDriveModalOpen(true);
+                      });
+                    } else {
+                      setDriveMenuOpen(prev => !prev);
+                    }
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    background: isDriveLinked ? 'rgba(66, 133, 244, 0.08)' : 'transparent',
+                    border: `1px solid ${isDriveLinked ? 'rgba(66, 133, 244, 0.4)' : 'var(--subborder-color)'}`,
+                    borderRadius: '6px',
+                    color: 'var(--text-color)',
+                    padding: '0.4rem 0.65rem',
+                    fontSize: '0.78rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    transition: 'all 0.2s ease'
+                  }}
+                  title={
+                    !isDriveLinked
+                      ? t('header.driveConnect', 'Conectar con Google Drive')
+                      : driveSyncStatus === 'syncing'
+                      ? t('header.driveSyncing', 'Sincronizando...')
+                      : driveSyncStatus === 'error'
+                      ? t('header.driveError', 'Error en Drive')
+                      : `${t('header.driveSynced', 'Drive al día')}${driveLastSync ? ' (' + new Date(driveLastSync).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + ')' : ''}`
+                  }
+                >
+                  {/* Icono Google Drive oficial */}
+                  <svg width="15" height="15" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+                    <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da" />
+                    <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47" />
+                    <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335" />
+                    <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d" />
+                    <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc" />
+                    <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 27h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00" />
+                  </svg>
+
+                  <span>Drive</span>
+
+                  {/* Indicadores de estado de sincronización */}
+                  {driveSyncStatus === 'syncing' || driveSyncStatus === 'connecting' ? (
+                    <RefreshCw size={11} className="spin-animation" style={{ color: '#2684fc', animation: 'spin 1s linear infinite' }} />
+                  ) : isDriveLinked && driveSyncStatus === 'synced' ? (
+                    <span style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      backgroundColor: '#00ac47',
+                      boxShadow: '0 0 4px #00ac47'
+                    }} />
+                  ) : isDriveLinked && driveSyncStatus === 'error' ? (
+                    <span style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      backgroundColor: '#ea4335',
+                      boxShadow: '0 0 4px #ea4335'
+                    }} />
+                  ) : null}
+                </button>
+
+                {/* Menú Desplegable de Google Drive */}
+                {driveMenuOpen && isDriveLinked && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 6px)',
+                    right: 0,
+                    width: '245px',
+                    backgroundColor: 'var(--card-bg, #1e222d)',
+                    border: '1px solid var(--subborder-color, rgba(255,255,255,0.12))',
+                    borderRadius: '8px',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                    padding: '0.65rem',
+                    zIndex: 9999,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.45rem'
+                  }}>
+                    {driveUser && (
+                      <div style={{
+                        borderBottom: '1px solid var(--subborder-color, rgba(255,255,255,0.08))',
+                        paddingBottom: '0.4rem',
+                        marginBottom: '0.2rem'
+                      }}>
+                        <div style={{ fontSize: '0.78rem', fontWeight: 'bold', color: 'var(--text-color)' }}>
+                          {driveUser.name || 'Google Drive'}
+                        </div>
+                        {driveUser.email && (
+                          <div style={{ fontSize: '0.7rem', color: 'var(--muted-text)', wordBreak: 'break-all' }}>
+                            {driveUser.email}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span>Estado:</span>
+                      <span style={{
+                        fontWeight: '600',
+                        color: driveSyncStatus === 'synced' ? '#00ac47' : driveSyncStatus === 'syncing' ? '#2684fc' : '#ea4335'
+                      }}>
+                        {driveSyncStatus === 'synced' ? 'Sincronizado' : driveSyncStatus === 'syncing' ? 'Guardando...' : 'Error'}
+                      </span>
+                    </div>
+
+                    <div style={{ fontSize: '0.7rem', color: 'var(--muted-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      Archivo: <strong>{driveFileName || 'sesion_activa.json'}</strong>
+                    </div>
+
+                    {driveLastSync && (
+                      <div style={{ fontSize: '0.68rem', color: 'var(--muted-text)' }}>
+                        Última copia: {new Date(driveLastSync).toLocaleTimeString()}
+                      </div>
+                    )}
+
+                    {/* Botón Abrir Explorador de Sesiones de Drive */}
+                    <button
+                      onClick={() => {
+                        setIsDriveModalOpen(true);
+                        setDriveMenuOpen(false);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        background: 'rgba(38, 132, 252, 0.1)',
+                        border: '1px solid rgba(38, 132, 252, 0.3)',
+                        borderRadius: '5px',
+                        color: '#2684fc',
+                        padding: '6px 8px',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        marginTop: '0.2rem',
+                        textAlign: 'left'
+                      }}
+                    >
+                      <FolderOpen size={14} />
+                      <span>Explorar / Gestionar Sesiones</span>
+                    </button>
+
+                    <button
+                      onClick={async () => {
+                        await sincronizarDriveManual();
+                        setDriveMenuOpen(false);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        background: 'var(--card-hover, rgba(255,255,255,0.05))',
+                        border: '1px solid var(--subborder-color, rgba(255,255,255,0.1))',
+                        borderRadius: '5px',
+                        color: 'var(--text-color)',
+                        padding: '6px 8px',
+                        fontSize: '0.75rem',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                    >
+                      <RefreshCw size={13} className={driveSyncStatus === 'syncing' ? 'spin-animation' : ''} />
+                      {t('header.driveSyncNow', 'Sincronizar ahora')}
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        desconectarGoogleDrive();
+                        setDriveMenuOpen(false);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        background: 'transparent',
+                        border: '1px solid rgba(234, 67, 53, 0.3)',
+                        borderRadius: '5px',
+                        color: '#ea4335',
+                        padding: '6px 8px',
+                        fontSize: '0.75rem',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                    >
+                      <LogOut size={13} />
+                      {t('header.driveDisconnect', 'Desconectar Google Drive')}
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* Botón Directo para Conmutar Modo Claro / Oscuro */}
               <button
@@ -920,7 +1126,7 @@ const Dashboard = () => {
                   display: 'flex',
                   padding: '6px'
                 }}
-                title={isLight ? "Cambiar a Modo Oscuro" : "Cambiar a Modo Claro"}
+                title={isLight ? t('header.darkMode', "Cambiar a Modo Oscuro") : t('header.lightMode', "Cambiar a Modo Claro")}
               >
                 {isLight ? <Moon size={16} /> : <Sun size={16} />}
               </button>
@@ -936,14 +1142,16 @@ const Dashboard = () => {
                   display: 'flex',
                   padding: '6px'
                 }}
-                title="Maximizar / Pantalla Completa (F11)"
+                title={t('header.fullscreen', "Maximizar / Pantalla Completa (F11)")}
               >
                 <Maximize2 size={16} />
               </button>
 
-              <button onClick={() => setIsAccessOpen(true)} style={{ background: 'transparent', border: 'none', color: 'var(--text-color)', cursor: 'pointer', display: 'flex', padding: '4px', borderRadius: '4px' }} title="Accesibilidad y Tema">
+              <button onClick={() => setIsAccessOpen(true)} style={{ background: 'transparent', border: 'none', color: 'var(--text-color)', cursor: 'pointer', display: 'flex', padding: '4px', borderRadius: '4px' }} title={t('accessibility.title', "Accesibilidad y Tema")}>
                 <Eye size={20} />
               </button>
+
+              <LanguageSelector showIcon={false} />
             </div>
           </nav>
 
@@ -999,7 +1207,7 @@ const Dashboard = () => {
                     alignItems: 'center',
                     gap: '0.35rem'
                   }}>
-                    <Landmark size={12} /> Sin comité
+                    <Landmark size={12} /> {t('header.noCommittee', 'Sin comité')}
                   </span>
                 )}
 
@@ -1016,7 +1224,7 @@ const Dashboard = () => {
                   </>
                 ) : (
                   <span style={{ fontWeight: '500', opacity: 0.4, fontStyle: 'italic', fontSize: '0.78rem' }}>
-                    Agenda no establecida
+                    {t('header.noAgenda', 'Agenda no establecida')}
                   </span>
                 )}
               </div>

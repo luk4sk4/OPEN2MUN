@@ -42,6 +42,7 @@ import {
   Moon,
   SkipForward
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import CountryFlag from '../common/CountryFlag';
 import { getFlagEmoji } from '../../utils/flags';
 import { useP2P } from '../../context/P2PContext';
@@ -49,6 +50,7 @@ import { useSession } from '../../context/SessionContext';
 import { useAccessibility } from '../../context/AccessibilityContext';
 import AccessibilityModal from '../modals/AccessibilityModal';
 import OpenMunLogo from '../common/OpenMunLogo';
+import LanguageSelector from '../common/LanguageSelector';
 import MatrizPaises from '../widgets/MatrizPaises';
 import HistoricoDelegaciones from '../widgets/HistoricoDelegaciones';
 import EstablecerAgenda from '../widgets/EstablecerAgenda';
@@ -61,6 +63,7 @@ import PizarraMociones from '../widgets/PizarraMociones';
 import SelectorAleatorio from '../widgets/SelectorAleatorio';
 
 const SecretariatView = ({ isLight: propIsLight, onExit }) => {
+  const { t } = useTranslation();
   const { isLight: contextIsLight, toggleThemeMode } = useAccessibility();
   const isLight = propIsLight !== undefined ? propIsLight : contextIsLight;
   const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
@@ -275,6 +278,8 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
             {isLight ? <Moon size={14} /> : <Sun size={14} />}
           </button>
 
+          <LanguageSelector showIcon={false} />
+
           <button
             onClick={handleExportarNotasCSV}
             style={{
@@ -317,7 +322,7 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
               gap: '0.35rem'
             }}
           >
-            <LogOut size={14} /> Salir
+            <LogOut size={14} /> {t('common.exit', 'Salir')}
           </button>
         </div>
       </header>
@@ -349,7 +354,7 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
             transition: 'all 0.15s ease'
           }}
         >
-          <MessageSquare size={15} /> Bandeja de Notas ({notes.length})
+          <MessageSquare size={15} /> {t('views.delegate.inbox', 'Bandeja de Notas')} ({notes.length})
         </button>
 
         <button

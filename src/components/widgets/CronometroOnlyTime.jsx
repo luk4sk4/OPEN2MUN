@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, Plus, Clock, ShieldAlert, Edit, Check, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
+import { useTranslation } from 'react-i18next';
 
 const CronometroOnlyTime = () => {
+  const { t } = useTranslation();
   const { caucusActivo } = useSession();
 
   const [tiempoTotalSeg, setTiempoTotalSeg] = useState(caucusActivo?.tiempoTotal || 600); // 10 min
@@ -80,6 +82,28 @@ const CronometroOnlyTime = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const getTimerStyle = (seg, isRunning = false) => {
+    if (seg < 0 || seg === 0) {
+      return { className: 'timer-negative', style: {} };
+    }
+    if (seg <= 5 && seg > 0) {
+      return { className: isRunning ? 'timer-blink-red' : 'timer-warning-red', style: {} };
+    }
+    if (seg <= 10 && seg > 5) {
+      return { className: 'timer-orange', style: {} };
+    }
+    return {
+      className: '',
+      style: {
+        backgroundColor: 'var(--timer-display-bg, var(--card-header-bg))',
+        border: '2px solid var(--timer-display-border, var(--border-color))',
+        color: 'var(--text-color)'
+      }
+    };
+  };
+
+  const displayState = getTimerStyle(tiempoTotalSeg, corriendo);
+
   const progresoPorcentaje = tiempoTotalInicial > 0
     ? Math.min(100, Math.max(0, ((tiempoTotalInicial - tiempoTotalSeg) / tiempoTotalInicial) * 100))
     : 0;
@@ -121,23 +145,25 @@ const CronometroOnlyTime = () => {
       `}</style>
 
       {/* Reloj Display Gigante */}
-      <div style={{
-        position: 'relative',
-        margin: '0.8rem 0',
-        padding: '1.4rem 1rem 1.6rem 1rem',
-        borderRadius: '12px',
-        textAlign: 'center',
-        overflow: 'hidden',
-        backgroundColor: tiempoTotalSeg === 0 ? 'var(--timer-negative-bg, #3f0c0c)' : 'var(--timer-display-bg, var(--card-header-bg))',
-        border: `2px solid ${tiempoTotalSeg === 0 ? '#ef4444' : 'var(--timer-display-border, var(--border-color))'}`,
-        boxShadow: 'var(--timer-display-shadow, 0 6px 25px rgba(0,0,0,0.15))',
-        transition: 'all 0.3s ease',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '150px'
-      }}>
+      <div
+        className={displayState.className}
+        style={{
+          position: 'relative',
+          margin: '0.8rem 0',
+          padding: '1.4rem 1rem 1.6rem 1rem',
+          borderRadius: '12px',
+          textAlign: 'center',
+          overflow: 'hidden',
+          transition: displayState.className ? 'none' : 'all 0.3s ease',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '150px',
+          boxShadow: displayState.className ? undefined : 'var(--timer-display-shadow, 0 6px 25px rgba(0,0,0,0.15))',
+          ...displayState.style
+        }}
+      >
         {editando ? (
           <div style={{
             display: 'flex',
@@ -194,7 +220,7 @@ const CronometroOnlyTime = () => {
                 >
                   <ChevronDown size={24} />
                 </button>
-                <span style={{ fontSize: '0.7rem', color: 'var(--muted-text)', marginTop: '0.1rem', fontWeight: '600', letterSpacing: '0.05em' }}>MINUTOS</span>
+                <span style={{ fontSize: '0.7rem', color: 'var(--muted-text)', marginTop: '0.1rem', fontWeight: '600', letterSpacing: '0.05em' }}>{t('timers.minutes', 'MINUTOS')}</span>
               </div>
 
               <span style={{ fontSize: '2.5rem', fontWeight: '900', color: 'var(--muted-text)', alignSelf: 'center', marginTop: '-15px' }}>:</span>
@@ -241,7 +267,7 @@ const CronometroOnlyTime = () => {
                 >
                   <ChevronDown size={24} />
                 </button>
-                <span style={{ fontSize: '0.7rem', color: 'var(--muted-text)', marginTop: '0.1rem', fontWeight: '600', letterSpacing: '0.05em' }}>SEGUNDOS</span>
+                <span style={{ fontSize: '0.7rem', color: 'var(--muted-text)', marginTop: '0.1rem', fontWeight: '600', letterSpacing: '0.05em' }}>{t('timers.seconds', 'SEGUNDOS')}</span>
               </div>
             </div>
 
@@ -262,7 +288,7 @@ const CronometroOnlyTime = () => {
                   fontSize: '0.85rem'
                 }}
               >
-                <Check size={16} /> Aceptar
+                <Check size={16} /> {t('common.save', 'Aceptar')}
               </button>
               <button
                 onClick={() => setEditando(false)}
@@ -280,7 +306,7 @@ const CronometroOnlyTime = () => {
                   fontSize: '0.85rem'
                 }}
               >
-                <X size={16} /> Cancelar
+                <X size={16} /> {t('common.cancel', 'Cancelar')}
               </button>
             </div>
           </div>
@@ -294,8 +320,7 @@ const CronometroOnlyTime = () => {
               lineHeight: 0.95,
               marginTop: '4px',
               marginBottom: '4px',
-              textShadow: 'var(--timer-digits-shadow, none)',
-              color: tiempoTotalSeg === 0 ? '#ef4444' : 'var(--text-color)'
+              textShadow: 'var(--timer-digits-shadow, none)'
             }}>
               {formatTime(tiempoTotalSeg)}
             </div>
@@ -335,7 +360,7 @@ const CronometroOnlyTime = () => {
                 }}
               >
                 <Edit size={12} />
-                <span>Ajustar</span>
+                <span>{t('common.edit', 'Ajustar')}</span>
               </button>
             )}
           </>
@@ -389,7 +414,7 @@ const CronometroOnlyTime = () => {
           }}
         >
           {corriendo ? <Pause size={17} /> : <Play size={17} />}
-          {corriendo ? 'Pausar Conteo' : 'Iniciar Conteo'}
+          {corriendo ? t('timers.pause', 'Pausar Conteo') : t('timers.start', 'Iniciar Conteo')}
         </button>
 
         <button
@@ -410,7 +435,7 @@ const CronometroOnlyTime = () => {
             fontSize: '0.85rem'
           }}
         >
-          <RotateCcw size={15} /> Reiniciar
+          <RotateCcw size={15} /> {t('common.reset', 'Reiniciar')}
         </button>
 
         <button

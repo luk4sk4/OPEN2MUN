@@ -17,8 +17,10 @@ import {
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
 import EditarPaisModal from '../modals/EditarPaisModal';
+import { useTranslation } from 'react-i18next';
 
 const MatrizPaises = () => {
+  const { t } = useTranslation();
   const {
     paises,
     cambiarEstatusPais,
@@ -162,7 +164,7 @@ const MatrizPaises = () => {
         {/* Total Delegaciones */}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <span style={{ fontSize: '0.7rem', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Total Quórum
+            {t('countries.totalQuorum', 'Total Quórum')}
           </span>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
             <span style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-color)' }}>
@@ -175,7 +177,7 @@ const MatrizPaises = () => {
         {/* Presentes */}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <span style={{ fontSize: '0.7rem', color: '#22c55e', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Presentes
+            {t('countries.present', 'Presentes')}
           </span>
           <span style={{ fontSize: '1.25rem', fontWeight: '800', color: '#22c55e' }}>
             {presentes}
@@ -185,7 +187,7 @@ const MatrizPaises = () => {
         {/* Presentes y Votando */}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <span style={{ fontSize: '0.7rem', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            P. y Votando
+            {t('countries.presentAndVotingShort', 'P. y Votando')}
           </span>
           <span style={{ fontSize: '1.25rem', fontWeight: '800', color: '#3b82f6' }}>
             {presentesYVotando}
@@ -195,7 +197,7 @@ const MatrizPaises = () => {
         {/* Ausentes */}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <span style={{ fontSize: '0.7rem', color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Ausentes
+            {t('countries.absent', 'Ausentes')}
           </span>
           <span style={{ fontSize: '1.25rem', fontWeight: '800', color: '#ef4444' }}>
             {ausentes}
@@ -205,7 +207,7 @@ const MatrizPaises = () => {
         {/* Mayorías Calculadas */}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <span style={{ fontSize: '0.7rem', color: '#eab308', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Mayorías (Simp / 2/3)
+            {t('voting.majorityRequired', 'Mayorías (Simp / 2/3)')}
           </span>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'baseline' }}>
             <span style={{ fontSize: '1.1rem', fontWeight: '800', color: '#eab308' }} title="Mayoría Simple">
@@ -233,7 +235,7 @@ const MatrizPaises = () => {
             <Search size={14} style={{ position: 'absolute', left: '8px', top: '9px', color: 'var(--muted-text)' }} />
             <input
               type="text"
-              placeholder="Buscar delegación..."
+              placeholder={t('countries.searchPlaceholder', 'Buscar delegación...')}
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               style={{
@@ -261,11 +263,11 @@ const MatrizPaises = () => {
               cursor: 'pointer'
             }}
           >
-            <option value="TODOS">Todos ({totalPaises})</option>
-            <option value="Presente">Presente ({presentes})</option>
-            <option value="Presente y Votando">P. y Votando ({presentesYVotando})</option>
-            <option value="Ausente">Ausente ({ausentes})</option>
-            <option value="VETO">P5 / Veto</option>
+            <option value="TODOS">{t('common.all', 'Todos')} ({totalPaises})</option>
+            <option value="Presente">{t('countries.present', 'Presente')} ({presentes})</option>
+            <option value="Presente y Votando">{t('countries.presentAndVoting', 'P. y Votando')} ({presentesYVotando})</option>
+            <option value="Ausente">{t('countries.absent', 'Ausente')} ({ausentes})</option>
+            <option value="VETO">{t('voting.vetoEnabled', 'P5 / Veto')}</option>
           </select>
         </div>
 
@@ -310,7 +312,7 @@ const MatrizPaises = () => {
             title="Marcar a todos como Ausente para iniciar nueva sesión"
           >
             <RotateCcw size={13} />
-            <span>Reiniciar Lista</span>
+            <span>{t('countries.resetAttendance', 'Reiniciar Lista')}</span>
           </button>
 
           <button
@@ -331,7 +333,7 @@ const MatrizPaises = () => {
             }}
           >
             <Play size={13} fill="#ffffff" />
-            <span>{modoRollCall ? 'Cerrar Paso Nominal' : 'Paso Nominal (Roll Call)'}</span>
+            <span>{modoRollCall ? t('countries.closeRollCall', 'Cerrar Paso Nominal') : t('countries.rollCall', 'Paso Nominal (Roll Call)')}</span>
           </button>
         </div>
       </div>
@@ -353,11 +355,11 @@ const MatrizPaises = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <Sparkles size={15} color={rondaRollCall === 2 ? '#f59e0b' : '#3b82f6'} />
               <span style={{ fontWeight: '800', fontSize: '0.82rem', color: rondaRollCall === 2 ? '#f59e0b' : '#60a5fa' }}>
-                {rondaRollCall === 1 ? 'PRIMERA RONDA - PASO DE LISTA NOMINAL' : 'SEGUNDA RONDA - PASADOS / AUSENTES'}
+                {rondaRollCall === 1 ? t('countries.round1', 'PRIMERA RONDA - PASO DE LISTA NOMINAL') : t('countries.round2', 'SEGUNDA RONDA - PASADOS / AUSENTES')}
               </span>
             </div>
             <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>
-              {paisActualRollCall ? `Turno ${indiceRollCall + 1} de ${listaPaisesRondaRollCall.length}` : 'Paso de Lista Finalizado'}
+              {paisActualRollCall ? `${t('countries.turn', 'Turno')} ${indiceRollCall + 1} ${t('common.of', 'de')} ${listaPaisesRondaRollCall.length}` : t('countries.rollCallFinished', 'Paso de Lista Finalizado')}
             </span>
           </div>
 
@@ -367,7 +369,7 @@ const MatrizPaises = () => {
                 <CountryFlag bandera={paisActualRollCall.bandera} nombre={paisActualRollCall.nombre} size="xl" />
                 <div>
                   <div style={{ fontSize: '0.68rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Estatus actual: {paisActualRollCall.estatus}
+                    {t('countries.currentStatus', 'Estatus actual')}: {paisActualRollCall.estatus}
                   </div>
                   <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-color)', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
                     <span>{paisActualRollCall.nombre}</span>
@@ -391,7 +393,7 @@ const MatrizPaises = () => {
                     cursor: 'pointer'
                   }}
                 >
-                  Presente
+                  {t('countries.present', 'Presente')}
                 </button>
 
                 <button
@@ -407,7 +409,7 @@ const MatrizPaises = () => {
                     cursor: 'pointer'
                   }}
                 >
-                  Pres. y Votando
+                  {t('countries.presentAndVoting', 'Pres. y Votando')}
                 </button>
 
                 <button
@@ -423,14 +425,14 @@ const MatrizPaises = () => {
                     cursor: 'pointer'
                   }}
                 >
-                  Ausente
+                  {t('countries.absent', 'Ausente')}
                 </button>
               </div>
             </div>
           ) : (
             <div style={{ textAlign: 'center', padding: '0.75rem', color: '#22c55e', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
               <Check size={16} />
-              <span>Paso de lista nominal completado para todas las delegaciones.</span>
+              <span>{t('countries.rollCallCompleted', 'Paso de lista nominal completado para todas las delegaciones.')}</span>
             </div>
           )}
         </div>
@@ -447,7 +449,7 @@ const MatrizPaises = () => {
       }}>
         {paisesFiltrados.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted-text)', fontSize: '0.85rem' }}>
-            No se encontraron delegaciones con el filtro seleccionado.
+            {t('countries.noMatchFound', 'No se encontraron delegaciones con el filtro seleccionado.')}
           </div>
         ) : (
           paisesFiltrados.map((p, index) => {
@@ -570,7 +572,7 @@ const MatrizPaises = () => {
                       cursor: 'pointer'
                     }}
                   >
-                    Presente
+                    {t('countries.present', 'Presente')}
                   </button>
 
                   <button
@@ -586,7 +588,7 @@ const MatrizPaises = () => {
                       cursor: 'pointer'
                     }}
                   >
-                    P. y Votando
+                    {t('countries.presentAndVotingShort', 'P. y Votando')}
                   </button>
 
                   <button
@@ -602,7 +604,7 @@ const MatrizPaises = () => {
                       cursor: 'pointer'
                     }}
                   >
-                    Ausente
+                    {t('countries.absent', 'Ausente')}
                   </button>
                 </div>
               </div>

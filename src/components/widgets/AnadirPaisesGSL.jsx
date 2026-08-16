@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Search, Users, Check, Plus, X, Crown, Sparkles, UserPlus, Trash2, ArrowUpDown, GripVertical, Globe } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
+import { useTranslation } from 'react-i18next';
 
 // Normalizar texto para búsqueda sin distinguir tildes ni mayúsculas
 function normalizar(texto) {
@@ -36,6 +37,7 @@ const PRESETS_RAPIDOS = [
 ];
 
 const AnadirPaisesGSL = () => {
+  const { t } = useTranslation();
   const {
     paises,
     setPaises,
@@ -198,7 +200,7 @@ const AnadirPaisesGSL = () => {
             }}
           >
             <Trash2 size={12} />
-            <span>Eliminar todos</span>
+            <span>{t('common.clearAll', 'Eliminar todos')}</span>
           </button>
 
           {/* Badge Informativo de Cola GSL */}
@@ -215,7 +217,7 @@ const AnadirPaisesGSL = () => {
             color: '#c084fc'
           }}>
             <Users size={13} />
-            <span>En GSL:</span>
+            <span>{t('timers.inGSL', 'En GSL:')}</span>
             <span style={{
               fontSize: '0.7rem',
               backgroundColor: '#a855f7',
@@ -245,7 +247,7 @@ const AnadirPaisesGSL = () => {
           <Search size={14} style={{ color: 'var(--muted-text)', flexShrink: 0 }} />
           <input
             type="text"
-            placeholder="Buscar país para añadir a GSL..."
+            placeholder={t('timers.searchCountryGSLPlaceholder', 'Buscar país para añadir a GSL...')}
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
             onKeyDown={handleKeyDownBusqueda}
@@ -295,7 +297,7 @@ const AnadirPaisesGSL = () => {
                   fontWeight: filtroVista === 'TODOS' ? '700' : '500'
                 }}
               >
-                Todos ({paises.length})
+                {t('common.all', 'Todos')} ({paises.length})
               </button>
               <button
                 type="button"
@@ -311,7 +313,7 @@ const AnadirPaisesGSL = () => {
                   fontWeight: filtroVista === 'DISPONIBLES' ? '700' : '500'
                 }}
               >
-                Disponibles ({cantDisponibles})
+                {t('common.available', 'Disponibles')} ({cantDisponibles})
               </button>
               <button
                 type="button"
@@ -327,12 +329,12 @@ const AnadirPaisesGSL = () => {
                   fontWeight: filtroVista === 'EN_GSL' ? '700' : '500'
                 }}
               >
-                En GSL ({cantEnLista})
+                {t('timers.inGSL', 'En GSL')} ({cantEnLista})
               </button>
             </div>
 
             <span style={{ fontSize: '0.68rem', color: 'var(--muted-text)' }}>
-              Clic para añadir a GSL
+              {t('timers.clickToAddGSL', 'Clic para añadir a GSL')}
             </span>
           </div>
         )}
@@ -360,10 +362,10 @@ const AnadirPaisesGSL = () => {
           }}>
             <Sparkles size={24} color="#a855f7" style={{ marginBottom: '0.5rem' }} />
             <div style={{ fontSize: '0.86rem', fontWeight: '700', color: 'var(--text-color)', marginBottom: '0.3rem' }}>
-              No hay delegaciones cargadas
+              {t('countries.noDelegationsLoaded', 'No hay delegaciones cargadas')}
             </div>
             <div style={{ fontSize: '0.74rem', color: 'var(--muted-text)', marginBottom: '1rem', lineHeight: '1.35' }}>
-              Importa países desde el widget 'Importar Países' o carga una plantilla rápida:
+              {t('countries.noDelegationsLoadedDesc', "Importa países desde el widget 'Importar Países' o carga una plantilla rápida:")}
             </div>
             <button
               type="button"
@@ -384,7 +386,7 @@ const AnadirPaisesGSL = () => {
               }}
             >
               <Globe size={14} />
-              <span>Cargar Consejo de Seguridad (15)</span>
+              <span>{t('countries.loadUNSC', 'Cargar Consejo de Seguridad (15)')}</span>
             </button>
           </div>
         ) : paisesFiltrados.length === 0 ? (
@@ -396,7 +398,7 @@ const AnadirPaisesGSL = () => {
             color: 'var(--muted-text)',
             fontSize: '0.8rem'
           }}>
-            No se encontraron países con "{busqueda}".
+            {t('countries.noCountriesFoundWith', 'No se encontraron países con')} "{busqueda}".
           </div>
         ) : (
           /* Grid de países */

@@ -22,6 +22,7 @@ import {
   Film
 } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
+import { useTranslation } from 'react-i18next';
 import CountryFlag from '../common/CountryFlag';
 import { playBreakingNewsAlert, playEmergencyPulse } from '../../utils/audioAlerts';
 
@@ -60,14 +61,21 @@ const CATEGORIAS = {
     icon: TrendingUp
   },
   CIBERNETICA: {
-    nombre: 'Ciberseguridad',
-    badge: '⚡ FILTRACIÓN / CIBERATAQUE',
+    nombre: 'Ciberataque',
+    badge: '⚡ FILTRACIÓN / CIBER',
     color: '#10b981',
     bg: '#059669',
     border: '#34d399',
     icon: Zap
   }
 };
+
+const ESTILOS_MARCO = [
+  { id: 'modern_studio', label: 'Estudio de Noticias HD' },
+  { id: 'tactical_hud', label: 'Radar Táctico Militar' },
+  { id: 'retro_crt', label: 'Transmisión Analógica CRT' },
+  { id: 'minimal', label: 'Minimalista Cinema' }
+];
 
 const CANALES_PRESET = [
   'UN-TV WORLD NEWS',
@@ -80,6 +88,7 @@ const CANALES_PRESET = [
 ];
 
 const TeleNoticiasCrisis = () => {
+  const { t } = useTranslation();
   const { paises } = useSession();
 
   // Estados persistentes de configuración de la TV
@@ -323,7 +332,7 @@ const TeleNoticiasCrisis = () => {
                   display: 'inline-block',
                   animation: 'pulse 1s infinite'
                 }} />
-                <span>EN VIVO</span>
+                <span>{t('crisis.live', 'EN VIVO')}</span>
               </div>
             </div>
 
@@ -349,7 +358,7 @@ const TeleNoticiasCrisis = () => {
               {/* Botón Ajustes de TV */}
               <button
                 onClick={() => setPanelAjustesAbierto(true)}
-                title="Configuración de la Televisión"
+                title={t('crisis.tvSettings', 'Configuración de la Televisión')}
                 style={{
                   background: 'transparent',
                   border: 'none',
@@ -406,10 +415,10 @@ const TeleNoticiasCrisis = () => {
                   <Radio size={28} color="#60a5fa" style={{ animation: 'pulse 2s infinite' }} />
                 </div>
                 <div style={{ fontSize: '1rem', fontWeight: '800', color: '#ffffff', letterSpacing: '0.5px' }}>
-                  SEÑAL DE CRISIS EN ESPERA
+                  {t('crisis.standbyTitle', 'SEÑAL DE CRISIS EN ESPERA')}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: '#94a3b8', maxWidth: '320px', lineHeight: '1.4' }}>
-                  Esperando que la Mesa de Presidencia o el Gabinete de Crisis emita una alerta o proyecte un suceso.
+                  {t('crisis.standbyDesc', 'Esperando que la Mesa de Presidencia o el Gabinete de Crisis emita una alerta o proyecte un suceso.')}
                 </div>
               </div>
             ) : (
@@ -444,7 +453,7 @@ const TeleNoticiasCrisis = () => {
 
                   {configTV.mostrarFuente && eventoProyectado.fuente && (
                     <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: '600' }}>
-                      FUENTE: {eventoProyectado.fuente}
+                      {t('crisis.source', 'FUENTE')}: {eventoProyectado.fuente}
                     </span>
                   )}
                 </div>
@@ -490,33 +499,29 @@ const TeleNoticiasCrisis = () => {
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '5px',
+                        gap: '6px',
                         flexWrap: 'wrap'
                       }}>
-                        <span style={{ fontSize: '0.66rem', fontWeight: '800', color: '#94a3b8', letterSpacing: '0.5px' }}>
-                          DELEGACIONES IMPLICADAS:
+                        <span style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: '700' }}>
+                          {t('crisis.involvedDelegations', 'DELEGACIONES AFECTADAS:')}
                         </span>
-                        {eventoProyectado.paisesInvolucrados.map(nP => {
-                          const pObj = paises.find(p => p.nombre === nP) || { nombre: nP, bandera: '🌐' };
+                        {eventoProyectado.paisesInvolucrados.map(nombrePais => {
+                          const p = paises.find(item => item.nombre === nombrePais);
                           return (
-                            <div
-                              key={nP}
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                backgroundColor: 'rgba(255,255,255,0.1)',
-                                padding: '2px 6px',
-                                borderRadius: '4px',
-                                border: '1px solid rgba(255,255,255,0.18)',
-                                fontSize: '0.7rem',
-                                fontWeight: '700',
-                                color: '#ffffff'
-                              }}
-                            >
-                              <CountryFlag bandera={pObj.bandera} nombre={pObj.nombre} size="xs" />
-                              <span>{pObj.nombre}</span>
-                            </div>
+                            <span key={nombrePais} style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              backgroundColor: 'rgba(255,255,255,0.08)',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              fontSize: '0.72rem',
+                              fontWeight: '700',
+                              color: '#ffffff'
+                            }}>
+                              <CountryFlag bandera={p?.bandera} nombre={nombrePais} size="sm" />
+                              {nombrePais}
+                            </span>
                           );
                         })}
                       </div>
@@ -527,17 +532,16 @@ const TeleNoticiasCrisis = () => {
                   {eventoProyectado.imagen && (
                     <div style={{
                       position: 'relative',
-                      width: '100%',
-                      height: fullScreenMode ? '220px' : '150px',
                       borderRadius: '8px',
                       overflow: 'hidden',
-                      border: `2px solid ${catMeta.color}88`,
-                      boxShadow: `0 4px 20px rgba(0,0,0,0.8), 0 0 15px ${catMeta.color}33`,
+                      border: `1px solid ${catMeta.border}`,
+                      boxShadow: `0 4px 15px ${catMeta.color}33`,
+                      aspectRatio: '16/9',
                       backgroundColor: '#000000'
                     }}>
                       <img
                         src={eventoProyectado.imagen}
-                        alt="Retransmisión en directo"
+                        alt="Evidencia Crisis"
                         style={{
                           width: '100%',
                           height: '100%',
@@ -569,7 +573,7 @@ const TeleNoticiasCrisis = () => {
                           backgroundColor: '#ef4444',
                           animation: 'pulse 1s infinite'
                         }} />
-                        <span>RETRANSMISIÓN EXCLUSIVA</span>
+                        <span>{t('crisis.exclusiveBroadcast', 'RETRANSMISIÓN EXCLUSIVA')}</span>
                       </div>
 
                       {/* Marca de agua / Timestamp en la esquina inferior */}
@@ -619,7 +623,7 @@ const TeleNoticiasCrisis = () => {
               flexShrink: 0,
               zIndex: 2
             }}>
-              NOTICIAS
+              {t('crisis.news', 'NOTICIAS')}
             </div>
 
             {/* Texto animado en marquesina horizontal */}
@@ -686,7 +690,7 @@ const TeleNoticiasCrisis = () => {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Tv size={16} color="#60a5fa" />
-                <span>Ajustes de la Pantalla de Televisión</span>
+                <span>{t('crisis.tvSettingsTitle', 'Ajustes de la Pantalla de Televisión')}</span>
               </div>
               <button
                 onClick={() => setPanelAjustesAbierto(false)}
@@ -715,7 +719,7 @@ const TeleNoticiasCrisis = () => {
               {/* Estilo del Marco TV */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: '#94a3b8', marginBottom: '4px' }}>
-                  ESTILO DE TELEVISIÓN
+                  {t('crisis.tvStyle', 'ESTILO DE TELEVISIÓN')}
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                   {[
@@ -748,7 +752,7 @@ const TeleNoticiasCrisis = () => {
               {/* Canal / Logotipo */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: '#94a3b8', marginBottom: '4px' }}>
-                  CANAL / IDENTIFICADOR DE MEDIO
+                  {t('crisis.channelIdentifier', 'CANAL / IDENTIFICADOR DE MEDIO')}
                 </label>
                 <select
                   value={configTV.canal}
@@ -773,7 +777,7 @@ const TeleNoticiasCrisis = () => {
               {/* Velocidad del Ticker */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: '#94a3b8', marginBottom: '4px' }}>
-                  VELOCIDAD DEL TICKER INFERIOR
+                  {t('crisis.tickerSpeed', 'VELOCIDAD DEL TICKER INFERIOR')}
                 </label>
                 <div style={{ display: 'flex', gap: '6px' }}>
                   {['lento', 'normal', 'rapido', 'pausado'].map(vel => (
@@ -802,11 +806,11 @@ const TeleNoticiasCrisis = () => {
               {/* Ticker Personalizado */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: '#94a3b8', marginBottom: '4px' }}>
-                  TEXTO PERSONALIZADO PARA EL TICKER (OPCIONAL)
+                  {t('crisis.customTickerLabel', 'TEXTO PERSONALIZADO PARA EL TICKER (OPCIONAL)')}
                 </label>
                 <input
                   type="text"
-                  placeholder="Dejar en blanco para usar los titulares de crisis automáticos..."
+                  placeholder={t('crisis.customTickerPlaceholder', 'Dejar en blanco para usar los titulares de crisis automáticos...')}
                   value={configTV.tickerPersonalizado}
                   onChange={(e) => setConfigTV(prev => ({ ...prev, tickerPersonalizado: e.target.value }))}
                   style={{
@@ -825,7 +829,7 @@ const TeleNoticiasCrisis = () => {
               {/* Interruptores de Efectos Visuales y Sonido */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', backgroundColor: '#181d2a', padding: '8px 10px', borderRadius: '8px', border: '1px solid #2b3245' }}>
                 <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: '#e2e8f0', cursor: 'pointer' }}>
-                  <span>Efecto Scanlines (Líneas CRT)</span>
+                  <span>{t('crisis.scanlinesEffect', 'Efecto Scanlines (Líneas CRT)')}</span>
                   <input
                     type="checkbox"
                     checked={configTV.efectoScanlines}
@@ -833,7 +837,7 @@ const TeleNoticiasCrisis = () => {
                   />
                 </label>
                 <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: '#e2e8f0', cursor: 'pointer' }}>
-                  <span>Resplandor LED / Glow</span>
+                  <span>{t('crisis.glowEffect', 'Resplandor LED / Glow')}</span>
                   <input
                     type="checkbox"
                     checked={configTV.efectoGlow}
@@ -841,7 +845,7 @@ const TeleNoticiasCrisis = () => {
                   />
                 </label>
                 <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: '#e2e8f0', cursor: 'pointer' }}>
-                  <span>Alarma auditiva al cambiar noticia</span>
+                  <span>{t('crisis.audioAlertToggle', 'Alarma auditiva al cambiar noticia')}</span>
                   <input
                     type="checkbox"
                     checked={configTV.sonidoAlerta}
@@ -849,7 +853,7 @@ const TeleNoticiasCrisis = () => {
                   />
                 </label>
                 <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: '#e2e8f0', cursor: 'pointer' }}>
-                  <span>Mostrar Reloj de Simulación</span>
+                  <span>{t('crisis.showSimClock', 'Mostrar Reloj de Simulación')}</span>
                   <input
                     type="checkbox"
                     checked={configTV.mostrarReloj}
@@ -857,7 +861,7 @@ const TeleNoticiasCrisis = () => {
                   />
                 </label>
                 <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: '#e2e8f0', cursor: 'pointer' }}>
-                  <span>Mostrar Banderas de Países</span>
+                  <span>{t('crisis.showFlags', 'Mostrar Banderas de Países')}</span>
                   <input
                     type="checkbox"
                     checked={configTV.mostrarBanderas}
@@ -882,7 +886,7 @@ const TeleNoticiasCrisis = () => {
                   marginTop: '4px'
                 }}
               >
-                Guardar y Cerrar
+                {t('common.saveAndClose', 'Guardar y Cerrar')}
               </button>
             </div>
           </div>

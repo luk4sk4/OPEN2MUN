@@ -35,6 +35,7 @@ import {
   Palette,
   Map
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import WidgetRegistry from '../widgets/WidgetRegistry';
 import configMaster from '../../config/config_master.json';
 import { PRESET_TEMPLATES } from '../../plantillas/widgets';
@@ -319,6 +320,7 @@ const WidgetSidebar = ({
   onResetDefault,
   onApplyTemplate
 }) => {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('TODOS');
   const [currentView, setCurrentView] = useState('widgets'); // 'widgets' | 'templates'
@@ -520,7 +522,7 @@ const WidgetSidebar = ({
                 <Sliders size={20} color="currentColor" />
               )}
               <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '700', letterSpacing: '-0.01em' }}>
-                {currentView === 'templates' ? 'Biblioteca de Plantillas' : 'Gestor de Widgets'}
+                {currentView === 'templates' ? t('sidebar.templatesLibrary', 'Biblioteca de Plantillas') : t('sidebar.title', 'Gestor de Widgets')}
               </h3>
             </div>
             
@@ -536,7 +538,7 @@ const WidgetSidebar = ({
                 borderRadius: '6px',
                 transition: 'all 0.15s ease'
               }}
-              title="Cerrar Panel"
+              title={t('common.close', 'Cerrar Panel')}
             >
               <X size={20} />
             </button>
@@ -555,7 +557,7 @@ const WidgetSidebar = ({
             borderRadius: '6px',
             border: '1px solid #27272a'
           }}>
-            <span>Pestaña / Aspecto:</span>
+            <span>{t('sidebar.tabAspect', 'Pestaña / Aspecto')}:</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <span style={{ 
                 fontWeight: '800', 
@@ -568,7 +570,7 @@ const WidgetSidebar = ({
                 {activeTab}
               </span>
               <span style={{ fontSize: '0.7rem', color: '#71717a' }}>
-                ({activeWidgetIds.length} activos)
+                ({activeWidgetIds.length} {t('common.activePlural', 'activos')})
               </span>
             </div>
           </div>
@@ -596,7 +598,7 @@ const WidgetSidebar = ({
               title={`Restablecer widgets al diseño por defecto de ${activeTab}`}
             >
               <RotateCcw size={14} />
-              <span>Default ({activeTab})</span>
+              <span>{t('common.default', 'Default')} ({activeTab})</span>
             </button>
 
             <button
@@ -620,7 +622,7 @@ const WidgetSidebar = ({
               title="Explorar y cargar plantillas predefinidas"
             >
               <LayoutTemplate size={14} />
-              <span>{currentView === 'templates' ? 'Ver Widgets' : 'Load Template'}</span>
+              <span>{currentView === 'templates' ? t('sidebar.viewWidgets', 'Ver Widgets') : t('sidebar.templates', 'Plantillas')}</span>
             </button>
           </div>
         </div>
@@ -656,7 +658,7 @@ const WidgetSidebar = ({
                 <Search size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted-text)' }} />
                 <input
                   type="text"
-                  placeholder="Buscar widget por nombre o categoría..."
+                  placeholder={t('sidebar.searchPlaceholder', 'Buscar widget por nombre o categoría...')}
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
                   style={{
@@ -732,7 +734,7 @@ const WidgetSidebar = ({
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  <Zap size={13} /> Activar Todos
+                  <Zap size={13} /> {t('sidebar.activateAll', 'Activar Todos')}
                 </button>
                 <button
                   onClick={onDeactivateAll}
@@ -753,7 +755,7 @@ const WidgetSidebar = ({
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  <X size={13} /> Desactivar Todos
+                  <X size={13} /> {t('sidebar.deactivateAll', 'Desactivar Todos')}
                 </button>
               </div>
             </div>
@@ -769,7 +771,7 @@ const WidgetSidebar = ({
             }}>
               {sortedAndFilteredWidgets.length === 0 ? (
                 <div style={{ color: 'var(--muted-text)', textAlign: 'center', marginTop: '3rem', fontSize: '0.85rem' }}>
-                  No se encontraron widgets para el filtro actual.
+                  {t('sidebar.noWidgetsFound', 'No se encontraron widgets para el filtro actual.')}
                 </div>
               ) : (
                 sortedAndFilteredWidgets.map(widgetId => {
@@ -827,7 +829,7 @@ const WidgetSidebar = ({
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
                             <span style={{ fontWeight: '700', fontSize: '0.88rem', color: 'var(--text-color)' }}>
-                              {meta.title}
+                              {t(`sidebar.widgets.${widgetId}.title`, meta.title)}
                             </span>
 
                             {/* Badge Default del Aspecto Actual */}
@@ -862,7 +864,7 @@ const WidgetSidebar = ({
                                 alignItems: 'center',
                                 gap: '0.2rem'
                               }}>
-                                <Star size={10} /> Recomendado
+                                <Star size={10} /> {t('sidebar.recommended', 'Recomendado')}
                               </span>
                             )}
 
@@ -877,7 +879,7 @@ const WidgetSidebar = ({
                               padding: '0.1rem 0.35rem',
                               borderRadius: '4px'
                             }}>
-                              {meta.category}
+                              {t(`sidebar.widgets.${widgetId}.category`, meta.category)}
                             </span>
                           </div>
 
@@ -891,7 +893,7 @@ const WidgetSidebar = ({
                             WebkitBoxOrient: 'vertical',
                             overflow: 'hidden'
                           }}>
-                            {meta.description}
+                            {t(`sidebar.widgets.${widgetId}.description`, meta.description)}
                           </div>
 
                           {/* Badge de Estado */}
@@ -904,7 +906,7 @@ const WidgetSidebar = ({
                               boxShadow: isActive ? '0 0 6px #22c55e' : 'none'
                             }} />
                             <span style={{ fontSize: '0.68rem', fontWeight: '700', color: isActive ? '#16a34a' : 'var(--muted-text)' }}>
-                              {isActive ? 'ACTIVO' : 'INACTIVO'}
+                              {isActive ? t('common.active', 'ACTIVO') : t('common.inactive', 'INACTIVO')}
                             </span>
                           </div>
                         </div>
@@ -1032,7 +1034,7 @@ const WidgetSidebar = ({
                           }}
                         >
                           <Zap size={13} />
-                          <span>Cargar en {activeTab}</span>
+                          <span>{t('sidebar.loadIn', 'Cargar en')} {activeTab}</span>
                         </button>
                       </div>
 
@@ -1079,7 +1081,7 @@ const WidgetSidebar = ({
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', fontWeight: '700', color: 'var(--muted-text)' }}>
                 <Layers size={15} />
-                <span>Plantillas Personalizadas JSON</span>
+                <span>{t('sidebar.customTemplatesJson', 'Plantillas Personalizadas JSON')}</span>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
@@ -1100,7 +1102,7 @@ const WidgetSidebar = ({
                     cursor: 'pointer'
                   }}
                 >
-                  <Upload size={13} /> Importar JSON
+                  <Upload size={13} /> {t('common.importJson', 'Importar JSON')}
                 </button>
 
                 <button
@@ -1120,7 +1122,7 @@ const WidgetSidebar = ({
                     cursor: 'pointer'
                   }}
                 >
-                  <Download size={13} /> Exportar {activeTab}
+                  <Download size={13} /> {t('common.export', 'Exportar')} {activeTab}
                 </button>
               </div>
 

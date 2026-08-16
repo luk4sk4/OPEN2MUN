@@ -39,6 +39,7 @@ import {
   Edit3
 } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
+import { useTranslation } from 'react-i18next';
 import CountryFlag from '../common/CountryFlag';
 import { playBreakingNewsAlert, playEmergencyPulse } from '../../utils/audioAlerts';
 
@@ -98,34 +99,26 @@ const CATEGORIAS_CRISIS = {
 // Plantillas rápidas de sucesos de crisis
 const PLANTILLAS_CRISIS = [
   {
-    titulo: 'Incursión Militar en Zona Fronteriza',
+    titulo: 'Incursión No Autorizada en Espacio Aéreo',
     categoria: 'MILITAR',
-    fuente: 'Agencia Internacional de Noticias',
-    descripcion: 'Tropas no identificadas han cruzado la línea de demarcación. Se reportan enfrentamientos armados y movilización urgente de defensas aéreas.',
-    imagen: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&auto=format&fit=crop&q=80',
+    fuente: 'Comando de Defensa Aeroespacial',
+    descripcion: 'Aeronaves de reconocimiento han sido detectadas sobrevolando territorio en disputa. Se requiere pronunciamiento urgente de las delegaciones involucradas.',
+    imagen: 'https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?w=800&auto=format&fit=crop&q=80',
     estado: 'Activo'
   },
   {
-    titulo: 'Ciberataque Masivo a la Red Eléctrica y Financiera',
+    titulo: 'Filtración Masiva de Cables Diplomáticos',
     categoria: 'CIBERNETICA',
-    fuente: 'Centro de Ciberseguridad Global',
-    descripcion: 'Un ataque de denegación de servicio a gran escala ha paralizado el sistema bancario y los centros de control de energía en múltiples capitales.',
+    fuente: 'WikiLeaks / Consorcio de Inteligencia',
+    descripcion: 'Se han hecho públicos documentos clasificados sobre negociaciones secretas de armamento y tratados bilaterales.',
     imagen: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80',
     estado: 'Activo'
   },
   {
-    titulo: 'Bloqueo Marítimo en el Estrecho Estratégico',
-    categoria: 'CRITICA',
-    fuente: 'Comando Naval Aliado',
-    descripcion: 'Fragatas de guerra impiden el paso de buques cisterna y comerciales. El precio global de los suministros energéticos se dispara un 35%.',
-    imagen: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&auto=format&fit=crop&q=80',
-    estado: 'Activo'
-  },
-  {
-    titulo: 'Filtración de Documentos Secretos de Espionaje',
+    titulo: 'Ruptura Inmediata de Relaciones Bilaterales',
     categoria: 'DIPLOMATICA',
-    fuente: 'Consorcio Internacional de Prensa',
-    descripcion: 'Se revelan comunicaciones confidenciales que involucran a delegaciones presentes en operaciones encubiertas de desestabilización.',
+    fuente: 'Cancillería de Estado',
+    descripcion: 'Embajadores han sido llamados a consultas y se ha ordenado el cierre de sedes diplomáticas de manera indefinida.',
     imagen: 'https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=800&auto=format&fit=crop&q=80',
     estado: 'Activo'
   },
@@ -140,6 +133,7 @@ const PLANTILLAS_CRISIS = [
 ];
 
 const GestorCrisis = () => {
+  const { t } = useTranslation();
   const { paises } = useSession();
   const fileInputRef = useRef(null);
   const jsonFileInputRef = useRef(null);
@@ -692,7 +686,7 @@ const GestorCrisis = () => {
             }}
           >
             <Sliders size={11} color="#f87171" />
-            <span>Ajustar</span>
+            <span>{t('common.edit', 'Ajustar')}</span>
           </button>
 
           {/* Play/Pause del reloj */}
@@ -771,7 +765,7 @@ const GestorCrisis = () => {
             }}
           >
             <Download size={12} color="#60a5fa" />
-            Exportar
+            {t('common.export', 'Exportar')}
           </button>
 
           {/* Importar JSON */}
@@ -793,7 +787,7 @@ const GestorCrisis = () => {
             }}
           >
             <Upload size={12} color="#10b981" />
-            Importar
+            {t('common.import', 'Importar')}
           </button>
           <input
             ref={jsonFileInputRef}
@@ -821,7 +815,7 @@ const GestorCrisis = () => {
             }}
           >
             <Sparkles size={12} color="#eab308" />
-            Plantillas
+            {t('crisis.templates', 'Plantillas')}
           </button>
 
           <button
@@ -842,7 +836,7 @@ const GestorCrisis = () => {
             }}
           >
             <Plus size={12} strokeWidth={3} />
-            Emitir Alerta
+            {t('crisis.emitAlertBtn', 'Emitir Alerta')}
           </button>
 
           {/* Sonido */}
@@ -986,7 +980,7 @@ const GestorCrisis = () => {
                 flexWrap: 'wrap'
               }}>
                 <span style={{ fontSize: '0.68rem', fontWeight: '700', color: 'var(--muted-text)' }}>
-                  DELEGACIONES IMPLICADAS:
+                  {t('crisis.involvedDelegationsUpper', 'DELEGACIONES IMPLICADAS')}:
                 </span>
                 {eventoBannerActivo.paisesInvolucrados.map(nombrePais => {
                   const pObj = paises.find(p => p.nombre === nombrePais) || { nombre: nombrePais, bandera: '🌐' };
@@ -1037,7 +1031,7 @@ const GestorCrisis = () => {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Filter size={11} color="var(--muted-text)" />
-              <span style={{ fontWeight: '600', color: 'var(--muted-text)' }}>Filtrar:</span>
+              <span style={{ fontWeight: '600', color: 'var(--muted-text)' }}>{t('common.filter', 'Filtrar')}:</span>
               <select
                 value={filtroCategoria}
                 onChange={(e) => setFiltroCategoria(e.target.value)}
@@ -1051,17 +1045,17 @@ const GestorCrisis = () => {
                   outline: 'none'
                 }}
               >
-                <option value="TODOS">Todos ({eventosCrisis.length})</option>
-                <option value="CRITICA">🔴 Crítico</option>
-                <option value="MILITAR">⚔️ Militar</option>
-                <option value="DIPLOMATICA">🌐 Diplomático</option>
-                <option value="ECONOMICA">💵 Económico</option>
-                <option value="CIBERNETICA">⚡ Ciberseguridad</option>
+                <option value="TODOS">{t('common.all', 'Todos')} ({eventosCrisis.length})</option>
+                <option value="CRITICA">🔴 {t('crisis.criticalShort', 'Crítico')}</option>
+                <option value="MILITAR">⚔️ {t('crisis.militaryShort', 'Militar')}</option>
+                <option value="DIPLOMATICA">🌐 {t('crisis.diplomaticShort', 'Diplomático')}</option>
+                <option value="ECONOMICA">💵 {t('crisis.economicShort', 'Económico')}</option>
+                <option value="CIBERNETICA">⚡ {t('crisis.cyberneticShort', 'Ciberseguridad')}</option>
               </select>
             </div>
 
             <div style={{ fontSize: '0.68rem', color: 'var(--muted-text)' }}>
-              {eventosFiltrados.length} acontecimientos registrados
+              {eventosFiltrados.length} {t('crisis.eventsRegistered', 'acontecimientos registrados')}
             </div>
           </div>
 
@@ -1076,7 +1070,7 @@ const GestorCrisis = () => {
           }}>
             {eventosFiltrados.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '24px', color: 'var(--muted-text)', fontSize: '0.8rem' }}>
-                No hay sucesos de crisis en esta categoría.
+                {t('crisis.noEventsCategory', 'No hay sucesos de crisis en esta categoría.')}
               </div>
             ) : (
               eventosFiltrados.map(ev => {
@@ -1127,7 +1121,7 @@ const GestorCrisis = () => {
                             fontSize: '0.62rem',
                             fontWeight: '700'
                           }}>
-                            ✓ Resuelto
+                            ✓ {t('crisis.resolved', 'Resuelto')}
                           </span>
                         )}
                       </div>
@@ -1152,7 +1146,7 @@ const GestorCrisis = () => {
                           }}
                         >
                           <Pin size={10} />
-                          {esBanner ? 'En Pantalla' : 'Proyectar'}
+                          {esBanner ? t('crisis.onScreen', 'En Pantalla') : t('crisis.project', 'Proyectar')}
                         </button>
 
                         {/* Toggle Resuelto */}
@@ -1273,7 +1267,7 @@ const GestorCrisis = () => {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Megaphone size={16} />
-                <span>Emitir Alerta de Crisis / Última Hora</span>
+                <span>{t('crisis.emitAlert', 'Emitir Alerta de Crisis / Última Hora')}</span>
               </div>
               <button
                 onClick={() => setModalNuevoEvento(false)}
@@ -1294,7 +1288,7 @@ const GestorCrisis = () => {
               {/* Titular */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--muted-text)', marginBottom: '4px' }}>
-                  TITULAR DE LA NOTICIA / SUCESO *
+                  {t('crisis.headlineLabel', 'TITULAR DE LA NOTICIA / SUCESO *')}
                 </label>
                 <input
                   type="text"
@@ -1320,7 +1314,7 @@ const GestorCrisis = () => {
               <div style={{ display: 'flex', gap: '8px' }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--muted-text)', marginBottom: '4px' }}>
-                    CATEGORÍA / SEVERIDAD
+                    {t('crisis.categoryLabel', 'CATEGORÍA / SEVERIDAD')}
                   </label>
                   <select
                     value={formCategoria}
@@ -1336,17 +1330,17 @@ const GestorCrisis = () => {
                       outline: 'none'
                     }}
                   >
-                    <option value="CRITICA">🔴 Última Hora (Crítico)</option>
-                    <option value="MILITAR">⚔️ Alerta Militar / Ataque</option>
-                    <option value="DIPLOMATICA">🌐 Comunicado Diplomático</option>
-                    <option value="ECONOMICA">💵 Colapso Financiero</option>
-                    <option value="CIBERNETICA">⚡ Ciberataque / Inteligencia</option>
+                    <option value="CRITICA">{t('crisis.critical', '🔴 Última Hora (Crítico)')}</option>
+                    <option value="MILITAR">{t('crisis.military', '⚔️ Alerta Militar / Ataque')}</option>
+                    <option value="DIPLOMATICA">{t('crisis.diplomatic', '🌐 Comunicado Diplomático')}</option>
+                    <option value="ECONOMICA">{t('crisis.economic', '💵 Colapso Financiero')}</option>
+                    <option value="CIBERNETICA">{t('crisis.cybernetic', '⚡ Ciberataque / Inteligencia')}</option>
                   </select>
                 </div>
 
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--muted-text)', marginBottom: '4px' }}>
-                    FUENTE INFORMATIVA
+                    {t('crisis.sourceLabel', 'FUENTE INFORMATIVA')}
                   </label>
                   <input
                     type="text"
@@ -1370,7 +1364,7 @@ const GestorCrisis = () => {
               {/* Descripción detallada */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--muted-text)', marginBottom: '4px' }}>
-                  DESCRIPCIÓN DEL ACONTECIMIENTO / DIRECTIVAS DE MESA
+                  {t('crisis.descriptionLabel', 'DESCRIPCIÓN DEL ACONTECIMIENTO / DIRECTIVAS DE MESA')}
                 </label>
                 <textarea
                   rows={3}
@@ -1383,7 +1377,7 @@ const GestorCrisis = () => {
                     color: 'var(--text-color)',
                     border: '1px solid var(--border-color)',
                     borderRadius: '6px',
-                    padding: '4px 4x',
+                    padding: '4px 4px',
                     fontSize: '0.8rem',
                     outline: 'none',
                     resize: 'none'
@@ -1395,7 +1389,7 @@ const GestorCrisis = () => {
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
                   <label style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--muted-text)' }}>
-                    IMAGEN PARA LA RETRANSMISIÓN DE TV (OPCIONAL)
+                    {t('crisis.imageLabel', 'IMAGEN PARA LA RETRANSMISIÓN DE TV (OPCIONAL)')}
                   </label>
                   {formImagen && (
                     <button
@@ -1403,7 +1397,7 @@ const GestorCrisis = () => {
                       onClick={() => setFormImagen('')}
                       style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '0.68rem', fontWeight: '700', cursor: 'pointer' }}
                     >
-                      Quitar imagen
+                      {t('crisis.removeImage', 'Quitar imagen')}
                     </button>
                   )}
                 </div>
@@ -1435,7 +1429,7 @@ const GestorCrisis = () => {
                       flexShrink: 0
                     }}
                   >
-                    <UploadCloud size={14} /> Subir Imagen
+                    <UploadCloud size={14} /> {t('crisis.uploadFile', 'Subir Imagen')}
                   </button>
 
                   {/* Input de URL */}
@@ -1465,7 +1459,7 @@ const GestorCrisis = () => {
 
                 {/* Chips de Fotos Rápidas */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '5px', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '0.65rem', color: 'var(--muted-text)' }}>Plantillas:</span>
+                  <span style={{ fontSize: '0.65rem', color: 'var(--muted-text)' }}>{t('crisis.quickPhotos', 'Plantillas:')}</span>
                   {FOTOS_PRESET.map(fp => (
                     <button
                       key={fp.label}
@@ -1525,7 +1519,7 @@ const GestorCrisis = () => {
               {paises.length > 0 && (
                 <div>
                   <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--muted-text)', marginBottom: '4px' }}>
-                    DELEGACIONES INVOLUCRADAS
+                    {t('crisis.involvedCountries', 'DELEGACIONES INVOLUCRADAS')}
                   </label>
                   <div style={{
                     maxHeight: '50px',
@@ -1580,7 +1574,7 @@ const GestorCrisis = () => {
                   style={{ cursor: 'pointer' }}
                 />
                 <label htmlFor="chk-sound" style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-color)', cursor: 'pointer' }}>
-                  Sonar alerta auditiva de transmisión de emergencia
+                  {t('crisis.playSoundOnPublish', 'Sonar alerta auditiva de transmisión de emergencia')}
                 </label>
               </div>
 
@@ -1600,27 +1594,27 @@ const GestorCrisis = () => {
                     cursor: 'pointer'
                   }}
                 >
-                  Cancelar
+                  {t('common.cancel', 'Cancelar')}
                 </button>
                 <button
                   type="submit"
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
                     padding: '8px 16px',
                     borderRadius: '6px',
                     border: 'none',
                     backgroundColor: '#ef4444',
                     color: '#ffffff',
-                    fontSize: '0.8rem',
+                    fontSize: '0.78rem',
                     fontWeight: '800',
                     cursor: 'pointer',
-                    boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)'
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 4px 12px rgba(239, 68, 68, 0.4)'
                   }}
                 >
-                  <Send size={13} />
-                  Publicar y Emitir en Directo
+                  <Send size={14} />
+                  <span>{t('crisis.publishImmediate', 'Publicar Alerta Inmediata')}</span>
                 </button>
               </div>
             </form>
@@ -1669,7 +1663,7 @@ const GestorCrisis = () => {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Sparkles size={15} color="#eab308" />
-                <span>Plantillas Rápidas de Crisis</span>
+                <span>{t('crisis.quickTemplates', 'Plantillas Rápidas de Crisis')}</span>
               </div>
               <button
                 onClick={() => setModalPlantillas(false)}
@@ -1725,7 +1719,7 @@ const GestorCrisis = () => {
                         {meta.badge}
                       </span>
                       <span style={{ fontSize: '0.7rem', color: '#60a5fa', fontWeight: '600' }}>
-                        Usar Plantilla →
+                        {t('crisis.useTemplate', 'Usar Plantilla →')}
                       </span>
                     </div>
                     <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#ffffff' }}>
@@ -1793,10 +1787,10 @@ const GestorCrisis = () => {
                 </div>
                 <div>
                   <div style={{ fontSize: '0.88rem', fontWeight: '800', color: '#ffffff' }}>
-                    Ajuste Exacto del Reloj de Crisis
+                    {t('crisis.adjustClock', 'Ajuste Exacto del Reloj de Crisis')}
                   </div>
                   <div style={{ fontSize: '0.68rem', color: 'var(--muted-text)' }}>
-                    Configura el día, la hora, los minutos y la velocidad de simulación
+                    {t('crisis.adjustClockDesc', 'Configura el día, la hora, los minutos y la velocidad de simulación')}
                   </div>
                 </div>
               </div>
@@ -1834,7 +1828,7 @@ const GestorCrisis = () => {
                 boxShadow: 'inset 0 0 15px rgba(239, 68, 68, 0.08)'
               }}>
                 <div style={{ fontSize: '0.65rem', fontWeight: '800', color: '#f87171', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '4px' }}>
-                  HORA SIMULADA RESULTANTE
+                  {t('crisis.resultClock', 'HORA SIMULADA RESULTANTE')}
                 </div>
                 <div style={{
                   fontSize: '1.6rem',
@@ -1844,7 +1838,7 @@ const GestorCrisis = () => {
                   letterSpacing: '1px',
                   textShadow: '0 0 10px rgba(239, 68, 68, 0.5)'
                 }}>
-                  Día {formRelojDia} · {String(formRelojHoras).padStart(2, '0')}:{String(formRelojMinutos).padStart(2, '0')} hrs
+                  {t('timers.day', 'Día')} {formRelojDia} · {String(formRelojHoras).padStart(2, '0')}:{String(formRelojMinutos).padStart(2, '0')} hrs
                 </div>
               </div>
 
@@ -1861,7 +1855,7 @@ const GestorCrisis = () => {
                   gap: '6px'
                 }}>
                   <label style={{ fontSize: '0.68rem', fontWeight: '700', color: 'var(--muted-text)' }}>
-                    DÍA DE CRISIS
+                    {t('crisis.dayOfCrisis', 'DÍA DE CRISIS')}
                   </label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <button
@@ -1929,7 +1923,7 @@ const GestorCrisis = () => {
                   gap: '6px'
                 }}>
                   <label style={{ fontSize: '0.68rem', fontWeight: '700', color: 'var(--muted-text)' }}>
-                    HORA (0-23)
+                    {t('crisis.hour', 'HORA (0-23)')}
                   </label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <button
@@ -1997,7 +1991,7 @@ const GestorCrisis = () => {
                   gap: '6px'
                 }}>
                   <label style={{ fontSize: '0.68rem', fontWeight: '700', color: 'var(--muted-text)' }}>
-                    MINUTOS (0-59)
+                    {t('crisis.minutes', 'MINUTOS (0-59)')}
                   </label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <button
@@ -2058,7 +2052,7 @@ const GestorCrisis = () => {
               {/* Saltos Rápidos de Tiempo */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: '700', color: 'var(--muted-text)', marginBottom: '6px' }}>
-                  SALTOS RÁPIDOS DE TIEMPO SIMULADO
+                  {t('crisis.quickJumps', 'SALTOS RÁPIDOS DE TIEMPO SIMULADO')}
                 </label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
                   {[
@@ -2104,7 +2098,7 @@ const GestorCrisis = () => {
                       cursor: 'pointer'
                     }}
                   >
-                    🕒 Hora Real de PC
+                    🕒 {t('crisis.realTimePC', 'Hora Real de PC')}
                   </button>
                 </div>
               </div>
@@ -2112,7 +2106,7 @@ const GestorCrisis = () => {
               {/* Velocidad de Simulación */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: '700', color: 'var(--muted-text)', marginBottom: '6px' }}>
-                  VELOCIDAD DE AVANCE AUTOMÁTICO
+                  {t('crisis.simulationSpeed', 'VELOCIDAD DE AVANCE AUTOMÁTICO')}
                 </label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
                   {[
@@ -2151,7 +2145,7 @@ const GestorCrisis = () => {
               {/* Presets Rápidos de Simulación */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: '700', color: 'var(--muted-text)', marginBottom: '6px' }}>
-                  ESCENARIOS Y PRESETS RÁPIDOS DE HORARIO
+                  {t('crisis.schedulePresets', 'ESCENARIOS Y PRESETS RÁPIDOS DE HORARIO')}
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
                   {[
@@ -2206,7 +2200,7 @@ const GestorCrisis = () => {
                   style={{ cursor: 'pointer' }}
                 />
                 <label htmlFor="chk-reloj-activo" style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-color)', cursor: 'pointer' }}>
-                  Dejar el reloj en marcha automáticamente tras aplicar cambios
+                  {t('crisis.keepClockRunning', 'Dejar el reloj en marcha automáticamente tras aplicar cambios')}
                 </label>
               </div>
 
@@ -2226,7 +2220,7 @@ const GestorCrisis = () => {
                     cursor: 'pointer'
                   }}
                 >
-                  Cancelar
+                  {t('common.cancel', 'Cancelar')}
                 </button>
                 <button
                   type="submit"
@@ -2246,7 +2240,7 @@ const GestorCrisis = () => {
                   }}
                 >
                   <Check size={14} strokeWidth={3} />
-                  Guardar y Fijar Hora Exacta
+                  {t('crisis.saveExactTime', 'Guardar y Fijar Hora Exacta')}
                 </button>
               </div>
             </form>

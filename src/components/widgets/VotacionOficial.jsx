@@ -20,8 +20,10 @@ import {
 } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
+import { useTranslation } from 'react-i18next';
 
 const VotacionOficial = () => {
+  const { t } = useTranslation();
   const {
     paises,
     votacionSesion,
@@ -264,7 +266,7 @@ const VotacionOficial = () => {
             type="text"
             value={asunto}
             onChange={e => configurarVotacion({ asunto: e.target.value })}
-            placeholder="Asunto o Título del Proyecto de Resolución / Moción..."
+            placeholder={t('voting.subjectPlaceholder', 'Asunto o Título del Proyecto de Resolución / Moción...')}
             style={{
               flex: 1,
               backgroundColor: 'transparent',
@@ -297,7 +299,7 @@ const VotacionOficial = () => {
               }}
               title="Votación Procedimental: PROHIBIDA LA ABSTENCIÓN"
             >
-              Procedimental (Sin Abst.)
+              {t('voting.procedural', 'Procedimental (Sin Abst.)')}
             </button>
             <button
               onClick={() => configurarVotacion({ tipoVotacion: 'substantive' })}
@@ -314,7 +316,7 @@ const VotacionOficial = () => {
               }}
               title="Votación Sustantiva: PERMITIDA LA ABSTENCIÓN"
             >
-              Sustantiva (Con Abst.)
+              {t('voting.substantive', 'Sustantiva (Con Abst.)')}
             </button>
           </div>
 
@@ -338,7 +340,7 @@ const VotacionOficial = () => {
             title="Activar/desactivar evaluación de Veto P5"
           >
             <Crown size={14} color={aplicarVeto ? '#facc15' : '#888888'} />
-            <span>Veto P5: {aplicarVeto ? 'ON' : 'OFF'}</span>
+            <span>{t('voting.vetoP5', 'Veto P5')}: {aplicarVeto ? t('common.activeOn', 'ON') : t('common.inactiveOff', 'OFF')}</span>
           </button>
         </div>
 
@@ -369,9 +371,9 @@ const VotacionOficial = () => {
               transition: 'all 0.15s ease'
             }}
           >
-            <span style={{ fontSize: '0.8rem', fontWeight: '800' }}>Mayoría Simple (50%+1)</span>
+            <span style={{ fontSize: '0.8rem', fontWeight: '800' }}>{t('voting.simpleMajority', 'Mayoría Simple (50%+1)')}</span>
             <span style={{ fontSize: '0.7rem', opacity: tipoMayoria === 'simple' ? 1 : 0.7, color: tipoMayoria === 'simple' ? '#93c5fd' : 'inherit' }}>
-              Requiere <strong>{reqSimpleQuorum}</strong> {reqSimpleQuorum === 1 ? 'voto' : 'votos'}
+              {t('voting.requiresVotes', 'Requiere')} <strong>{reqSimpleQuorum}</strong> {reqSimpleQuorum === 1 ? t('voting.vote', 'voto') : t('voting.votes', 'votos')}
             </span>
           </button>
 
@@ -395,9 +397,9 @@ const VotacionOficial = () => {
               transition: 'all 0.15s ease'
             }}
           >
-            <span style={{ fontSize: '0.8rem', fontWeight: '800' }}>Calificada (2/3)</span>
+            <span style={{ fontSize: '0.8rem', fontWeight: '800' }}>{t('voting.twoThirds', 'Calificada (2/3)')}</span>
             <span style={{ fontSize: '0.7rem', opacity: tipoMayoria === '2/3' ? 1 : 0.7, color: tipoMayoria === '2/3' ? '#e9d5ff' : 'inherit' }}>
-              Requiere <strong>{reqDosTerciosQuorum}</strong> {reqDosTerciosQuorum === 1 ? 'voto' : 'votos'}
+              {t('voting.requiresVotes', 'Requiere')} <strong>{reqDosTerciosQuorum}</strong> {reqDosTerciosQuorum === 1 ? t('voting.vote', 'voto') : t('voting.votes', 'votos')}
             </span>
           </button>
 
@@ -421,9 +423,9 @@ const VotacionOficial = () => {
               transition: 'all 0.15s ease'
             }}
           >
-            <span style={{ fontSize: '0.8rem', fontWeight: '800' }}>Consenso (100%)</span>
+            <span style={{ fontSize: '0.8rem', fontWeight: '800' }}>{t('voting.consensus', 'Consenso (100%)')}</span>
             <span style={{ fontSize: '0.7rem', opacity: tipoMayoria === 'consensus' ? 1 : 0.7, color: tipoMayoria === 'consensus' ? '#fde68a' : 'inherit' }}>
-              Requiere <strong>0</strong> En Contra
+              {t('voting.requiresZeroAgainst', 'Requiere 0 En Contra')}
             </span>
           </button>
         </div>
@@ -459,8 +461,8 @@ const VotacionOficial = () => {
               {mensajeDictamen}
             </div>
             <div style={{ fontSize: '0.68rem', opacity: 0.7, marginTop: '1px' }}>
-              Meta: <strong style={{ color: 'var(--text-color)' }}>{textoRequerido}</strong> |
-              Emitidos: <strong>{votosEmitidos}/{totalAsistentes}</strong>
+              {t('voting.target', 'Meta')}: <strong style={{ color: 'var(--text-color)' }}>{textoRequerido}</strong> |
+              {t('voting.castVotes', 'Emitidos')}: <strong>{votosEmitidos}/{totalAsistentes}</strong>
             </div>
           </div>
         </div>
@@ -482,7 +484,7 @@ const VotacionOficial = () => {
               gap: '0.3rem'
             }}
           >
-            <Play size={12} /> {modoRollCall ? 'Salir Roll Call' : 'Modo Roll Call'}
+            <Play size={12} /> {modoRollCall ? t('voting.exitRollCall', 'Salir Roll Call') : t('voting.startRollCall', 'Modo Roll Call')}
           </button>
           <button
             onClick={() => {
@@ -504,7 +506,7 @@ const VotacionOficial = () => {
             }}
             title="Reiniciar todos los votos"
           >
-            <RotateCcw size={12} /> Reiniciar
+            <RotateCcw size={12} /> {t('common.reset', 'Reiniciar')}
           </button>
         </div>
       </div>
@@ -526,11 +528,11 @@ const VotacionOficial = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <Sparkles size={15} color={rondaRollCall === 2 ? '#f59e0b' : '#3b82f6'} />
               <span style={{ fontWeight: '800', fontSize: '0.82rem', color: rondaRollCall === 2 ? '#f59e0b' : '#60a5fa' }}>
-                {rondaRollCall === 1 ? 'PRIMERA RONDA - VOTACIÓN NOMINAL' : 'SEGUNDA RONDA - DELEGACIONES QUE PASARON'}
+                {rondaRollCall === 1 ? t('voting.rollCallRound1', 'PRIMERA RONDA - VOTACIÓN NOMINAL') : t('voting.rollCallRound2', 'SEGUNDA RONDA - DELEGACIONES QUE PASARON')}
               </span>
             </div>
             <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>
-              {paisActualRollCall ? `Turno ${indiceRollCall + 1} de ${listaPaisesRondaRollCall.length}` : 'Ronda Completada'}
+              {paisActualRollCall ? `${t('voting.turn', 'Turno')} ${indiceRollCall + 1} ${t('common.of', 'de')} ${listaPaisesRondaRollCall.length}` : t('voting.roundCompleted', 'Ronda Completada')}
             </span>
           </div>
 
@@ -564,7 +566,7 @@ const VotacionOficial = () => {
                     fontSize: '0.82rem'
                   }}
                 >
-                  A Favor
+                  {t('voting.inFavor', 'A Favor')}
                 </button>
 
                 {/* Abstención solo en Sustantiva y si NO es Presente y Votando y NO en Ronda 2 */}
@@ -588,7 +590,7 @@ const VotacionOficial = () => {
                         : (paisActualRollCall.estatus === 'Presente y Votando' ? 'P. y Votando no puede abstenerse' : 'Abstención')
                     }
                   >
-                    Abstención
+                    {t('voting.abstention', 'Abstención')}
                   </button>
                 )}
 
@@ -605,7 +607,7 @@ const VotacionOficial = () => {
                     fontSize: '0.82rem'
                   }}
                 >
-                  En Contra
+                  {t('voting.against', 'En Contra')}
                 </button>
 
                 {/* Botón Pasar / Omitir (Solo disponible en Ronda 1) */}
@@ -624,14 +626,14 @@ const VotacionOficial = () => {
                     }}
                     title="Pasar / Omitir para votar en Segunda Ronda"
                   >
-                    Pasar
+                    {t('voting.pass', 'Pasar')}
                   </button>
                 )}
               </div>
             </div>
           ) : (
             <div style={{ textAlign: 'center', opacity: 0.7, padding: '0.4rem', fontSize: '0.8rem' }}>
-              ¡Votación Nominal Roll Call finalizada! Todos los votos han sido registrados.
+              {t('voting.rollCallFinishedAllRegistered', '¡Votación Nominal Roll Call finalizada! Todos los votos han sido registrados.')}
             </div>
           )}
         </div>
@@ -645,18 +647,18 @@ const VotacionOficial = () => {
         textAlign: 'center'
       }}>
         <div style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', border: '1px solid #166534', borderRadius: '7px', padding: '0.5rem' }}>
-          <div style={{ fontSize: '0.68rem', color: '#4ade80', fontWeight: '800', letterSpacing: '0.04em' }}>A FAVOR</div>
+          <div style={{ fontSize: '0.68rem', color: '#4ade80', fontWeight: '800', letterSpacing: '0.04em' }}>{t('voting.inFavor', 'A FAVOR')}</div>
           <div style={{ fontSize: '1.6rem', fontWeight: '900', color: '#22c55e', lineHeight: 1.1 }}>{favor}</div>
           <div style={{ fontSize: '0.65rem', opacity: 0.6 }}>
-            {totalAsistentes > 0 ? Math.round((favor / totalAsistentes) * 100) : 0}% sala
+            {totalAsistentes > 0 ? Math.round((favor / totalAsistentes) * 100) : 0}% {t('voting.room', 'sala')}
           </div>
         </div>
 
         <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid #991b1b', borderRadius: '7px', padding: '0.5rem' }}>
-          <div style={{ fontSize: '0.68rem', color: '#f87171', fontWeight: '800', letterSpacing: '0.04em' }}>EN CONTRA</div>
+          <div style={{ fontSize: '0.68rem', color: '#f87171', fontWeight: '800', letterSpacing: '0.04em' }}>{t('voting.against', 'EN CONTRA')}</div>
           <div style={{ fontSize: '1.6rem', fontWeight: '900', color: '#ef4444', lineHeight: 1.1 }}>{contra}</div>
           <div style={{ fontSize: '0.65rem', opacity: 0.6 }}>
-            {totalAsistentes > 0 ? Math.round((contra / totalAsistentes) * 100) : 0}% sala
+            {totalAsistentes > 0 ? Math.round((contra / totalAsistentes) * 100) : 0}% {t('voting.room', 'sala')}
           </div>
         </div>
 
@@ -668,20 +670,20 @@ const VotacionOficial = () => {
           opacity: tipoVotacion === 'procedural' ? 0.35 : 1
         }}>
           <div style={{ fontSize: '0.68rem', color: tipoVotacion === 'procedural' ? 'var(--muted-text)' : '#f59e0b', fontWeight: '800', letterSpacing: '0.04em' }}>
-            ABSTENCIÓN {tipoVotacion === 'procedural' && '(N/A)'}
+            {t('voting.abstention', 'ABSTENCIÓN')} {tipoVotacion === 'procedural' && '(N/A)'}
           </div>
           <div style={{ fontSize: '1.6rem', fontWeight: '900', color: tipoVotacion === 'procedural' ? 'var(--muted-text)' : '#f59e0b', lineHeight: 1.1 }}>
             {tipoVotacion === 'procedural' ? 0 : abstencion}
           </div>
           <div style={{ fontSize: '0.65rem', opacity: 0.6 }}>
-            {tipoVotacion === 'procedural' ? 'Prohibida' : `${totalAsistentes > 0 ? Math.round((abstencion / totalAsistentes) * 100) : 0}% sala`}
+            {tipoVotacion === 'procedural' ? t('voting.forbidden', 'Prohibida') : `${totalAsistentes > 0 ? Math.round((abstencion / totalAsistentes) * 100) : 0}% ${t('voting.room', 'sala')}`}
           </div>
         </div>
 
         <div style={{ backgroundColor: 'var(--card-header-bg)', border: '1px solid var(--border-color)', borderRadius: '7px', padding: '0.5rem' }}>
-          <div style={{ fontSize: '0.68rem', color: 'var(--muted-text)', fontWeight: '800', letterSpacing: '0.04em' }}>PENDIENTES</div>
+          <div style={{ fontSize: '0.68rem', color: 'var(--muted-text)', fontWeight: '800', letterSpacing: '0.04em' }}>{t('voting.pending', 'PENDIENTES')}</div>
           <div style={{ fontSize: '1.6rem', fontWeight: '900', color: 'var(--muted-text)', lineHeight: 1.1 }}>{votosPendientes}</div>
-          <div style={{ fontSize: '0.65rem', opacity: 0.5 }}>Sin emitir</div>
+          <div style={{ fontSize: '0.65rem', opacity: 0.5 }}>{t('voting.uncast', 'Sin emitir')}</div>
         </div>
       </div>
 
@@ -721,7 +723,7 @@ const VotacionOficial = () => {
           <Search size={13} style={{ opacity: 0.5 }} />
           <input
             type="text"
-            placeholder="Buscar delegación por nombre..."
+            placeholder={t('countries.searchPlaceholder', 'Buscar delegación por nombre...')}
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
             style={{
@@ -750,11 +752,11 @@ const VotacionOficial = () => {
               outline: 'none'
             }}
           >
-            <option value="alphabetical_asc">Orden A - Z</option>
-            <option value="alphabetical_desc">Orden Z - A</option>
-            <option value="vote_status">Por Estado de Voto</option>
-            <option value="p5_veto">Veto P5 Primero</option>
-            <option value="roll_call">Por Estatus de Asistencia</option>
+            <option value="alphabetical_asc">{t('common.sortAZ', 'Orden A - Z')}</option>
+            <option value="alphabetical_desc">{t('common.sortZA', 'Orden Z - A')}</option>
+            <option value="vote_status">{t('voting.sortByVote', 'Por Estado de Voto')}</option>
+            <option value="p5_veto">{t('voting.sortP5First', 'Veto P5 Primero')}</option>
+            <option value="roll_call">{t('voting.sortByStatus', 'Por Estatus de Asistencia')}</option>
           </select>
         </div>
       </div>
@@ -823,28 +825,28 @@ const VotacionOficial = () => {
 
               {/* Indicador de Voto Actual y Botones */}
               {esAusente ? (
-                <span style={{ fontSize: '0.72rem', color: '#ef4444', fontStyle: 'italic' }}>Ausente</span>
+                <span style={{ fontSize: '0.72rem', color: '#ef4444', fontStyle: 'italic' }}>{t('countries.absent', 'Ausente')}</span>
               ) : (
                 <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center', flexShrink: 0 }}>
                   {/* Badge Prominente de Estado de Voto */}
                   {votoActual === 'favor' && (
                     <span style={{ fontSize: '0.68rem', fontWeight: '800', backgroundColor: '#15803d', color: '#ffffff', padding: '0.15rem 0.45rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <Check size={12} /> A FAVOR
+                      <Check size={12} /> {t('voting.inFavor', 'A FAVOR')}
                     </span>
                   )}
                   {votoActual === 'contra' && (
                     <span style={{ fontSize: '0.68rem', fontWeight: '800', backgroundColor: '#b91c1c', color: '#ffffff', padding: '0.15rem 0.45rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <X size={12} /> EN CONTRA
+                      <X size={12} /> {t('voting.against', 'EN CONTRA')}
                     </span>
                   )}
                   {votoActual === 'abstencion' && (
                     <span style={{ fontSize: '0.68rem', fontWeight: '800', backgroundColor: '#b45309', color: '#ffffff', padding: '0.15rem 0.45rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <RotateCcw size={11} /> ABSTENCIÓN
+                      <RotateCcw size={11} /> {t('voting.abstention', 'ABSTENCIÓN')}
                     </span>
                   )}
                   {!votoActual && (
                     <span style={{ fontSize: '0.65rem', opacity: 0.4, fontWeight: '600', padding: '0.15rem 0.35rem' }}>
-                      Sin votar
+                      {t('voting.notVoted', 'Sin votar')}
                     </span>
                   )}
 
@@ -864,7 +866,7 @@ const VotacionOficial = () => {
                     }}
                     title="Votar A Favor"
                   >
-                    Favor
+                    {t('voting.inFavor', 'Favor')}
                   </button>
 
                   {/* Botón ABSTENCIÓN (Solo en Sustantiva para Presentes) */}
@@ -886,7 +888,7 @@ const VotacionOficial = () => {
                       }}
                       title={esPresenteYVotando ? 'Presente y Votando no puede abstenerse' : 'Abstención'}
                     >
-                      Abs.
+                      {t('voting.abstention', 'Abs.')}
                     </button>
                   )}
 
@@ -906,7 +908,7 @@ const VotacionOficial = () => {
                     }}
                     title="Votar En Contra"
                   >
-                    Contra
+                    {t('voting.against', 'Contra')}
                   </button>
 
                   {/* Limpiar voto */}

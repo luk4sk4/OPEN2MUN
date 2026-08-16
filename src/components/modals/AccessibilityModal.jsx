@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { X, Type, Eye, Palette, Sun, Moon, RotateCcw, Flame } from 'lucide-react';
+import { X, Type, Eye, Palette, Sun, Moon, RotateCcw, Flame, Globe } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAccessibility, defaultDark, defaultLight } from '../../context/AccessibilityContext';
+import LanguageSelector from '../common/LanguageSelector';
 
 const AccessibilityModal = ({
   isOpen: propIsOpen,
@@ -8,6 +10,7 @@ const AccessibilityModal = ({
   config: propConfig,
   setConfig: propSetConfig
 }) => {
+  const { t } = useTranslation();
   const context = useAccessibility();
   const isOpen = propIsOpen !== undefined ? propIsOpen : context?.isAccessOpen;
   const onClose = propOnClose || context?.closeAccessibilityModal;
@@ -134,7 +137,7 @@ const AccessibilityModal = ({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexShrink: 0 }}>
           <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.25rem', fontWeight: '700' }}>
             <Eye size={22} />
-            Accesibilidad y Tema
+            {t('accessibility.title', 'Accesibilidad y Tema')}
           </h2>
           <button
             onClick={onClose}
@@ -154,15 +157,29 @@ const AccessibilityModal = ({
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
+          {/* Language Selector */}
+          <div style={{ padding: '0.9rem', backgroundColor: 'var(--card-header-bg)', border: '1px solid var(--subborder-color)', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600', fontSize: '0.92rem' }}>
+                <Globe size={17} />
+                {t('accessibility.languageSelect', 'Idioma de la Aplicación')}
+              </div>
+              <div style={{ fontSize: '0.78rem', opacity: 0.6, marginTop: '0.2rem' }}>
+                {t('accessibility.languageSelectDesc', 'Selecciona el idioma principal de la interfaz')}
+              </div>
+            </div>
+            <LanguageSelector showIcon={false} />
+          </div>
+
           {/* Theme Mode (Light / Dark) */}
           <div style={{ padding: '0.9rem', backgroundColor: 'var(--card-header-bg)', border: '1px solid var(--subborder-color)', borderRadius: '6px' }}>
             <div style={{ marginBottom: '0.65rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600', fontSize: '0.92rem' }}>
                 {isLight ? <Sun size={17} /> : <Moon size={17} />}
-                Tema Visual (Claro / Oscuro)
+                {t('accessibility.themeMode', 'Tema Visual (Claro / Oscuro)')}
               </div>
               <div style={{ fontSize: '0.78rem', opacity: 0.6, marginTop: '0.2rem' }}>
-                Cambia el esquema de color general
+                {t('accessibility.themeModeDesc', 'Cambia el esquema de color general')}
               </div>
             </div>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -182,7 +199,7 @@ const AccessibilityModal = ({
                   transition: 'all 0.2s ease'
                 }}
               >
-                <Moon size={15} /> Oscuro
+                <Moon size={15} /> {t('accessibility.dark', 'Oscuro')}
               </button>
               <button
                 onClick={() => handleThemeModeChange('light')}
@@ -200,7 +217,7 @@ const AccessibilityModal = ({
                   transition: 'all 0.2s ease'
                 }}
               >
-                <Sun size={15} /> Claro
+                <Sun size={15} /> {t('accessibility.light', 'Claro')}
               </button>
             </div>
           </div>
@@ -211,10 +228,10 @@ const AccessibilityModal = ({
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600', fontSize: '0.92rem' }}>
                   <Palette size={17} />
-                  Controles de Color
+                  {t('accessibility.colorControls', 'Controles de Color')}
                 </div>
                 <div style={{ fontSize: '0.78rem', opacity: 0.6, marginTop: '0.2rem' }}>
-                  Personaliza los tonos principales del tema
+                  {t('accessibility.colorControlsDesc', 'Personaliza los tonos principales del tema')}
                 </div>
               </div>
               <button
@@ -235,7 +252,7 @@ const AccessibilityModal = ({
                   transition: 'all 0.2s ease'
                 }}
               >
-                <RotateCcw size={12} /> Restablecer
+                <RotateCcw size={12} /> {t('common.reset', 'Restablecer')}
               </button>
             </div>
 
@@ -300,10 +317,10 @@ const AccessibilityModal = ({
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600', fontSize: '0.92rem' }}>
                 <Type size={17} />
-                Modo Dislexia
+                {t('accessibility.dyslexiaMode', 'Modo Dislexia')}
               </div>
               <div style={{ fontSize: '0.78rem', opacity: 0.6, marginTop: '0.2rem' }}>
-                Fuente optimizada con mayor legibilidad
+                {t('accessibility.dyslexiaDesc', 'Fuente optimizada con mayor legibilidad')}
               </div>
             </div>
             <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
@@ -320,7 +337,7 @@ const AccessibilityModal = ({
           <div style={{ padding: '0.9rem', backgroundColor: 'var(--card-header-bg)', border: '1px solid var(--subborder-color)', borderRadius: '6px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600', fontSize: '0.92rem', marginBottom: '0.65rem' }}>
               <Type size={17} />
-              Tamaño de Letra ({accConfig.fontSizeScale}x)
+              {t('accessibility.fontSize', 'Tamaño de Letra')} ({accConfig.fontSizeScale}x)
             </div>
             <input
               type="range"
@@ -332,9 +349,9 @@ const AccessibilityModal = ({
               style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--btn-bg)' }}
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', opacity: 0.6, marginTop: '0.3rem' }}>
-              <span>Pequeña (0.8x)</span>
-              <span>Normal (1.0x)</span>
-              <span>Grande (1.5x)</span>
+              <span>{t('accessibility.fontSmall', 'Pequeña (0.8x)')}</span>
+              <span>{t('accessibility.fontNormal', 'Normal (1.0x)')}</span>
+              <span>{t('accessibility.fontLarge', 'Grande (1.5x)')}</span>
             </div>
           </div>
 
@@ -342,7 +359,7 @@ const AccessibilityModal = ({
           <div style={{ padding: '0.9rem', backgroundColor: 'var(--card-header-bg)', border: '1px solid var(--subborder-color)', borderRadius: '6px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600', fontSize: '0.92rem', marginBottom: '0.45rem' }}>
               <Palette size={17} />
-              Filtro de Daltonismo
+              {t('accessibility.colorblind', 'Filtro de Daltonismo')}
             </div>
             <select
               value={accConfig.colorblindMode || 'none'}
@@ -358,11 +375,11 @@ const AccessibilityModal = ({
                 fontSize: '0.85rem'
               }}
             >
-              <option value="none">Ninguno (Normal)</option>
-              <option value="protanopia">Protanopía (Rojo-Verde)</option>
-              <option value="deuteranopia">Deuteranopía (Verde-Rojo)</option>
-              <option value="tritanopia">Tritanopía (Azul-Amarillo)</option>
-              <option value="achromatopsia">Acromatopsia (Escala de grises)</option>
+              <option value="none">{t('accessibility.colorblindNone', 'Ninguno (Normal)')}</option>
+              <option value="protanopia">{t('accessibility.colorblindProtanopia', 'Protanopía (Rojo-Verde)')}</option>
+              <option value="deuteranopia">{t('accessibility.colorblindDeuteranopia', 'Deuteranopía (Verde-Rojo)')}</option>
+              <option value="tritanopia">{t('accessibility.colorblindTritanopia', 'Tritanopía (Azul-Amarillo)')}</option>
+              <option value="achromatopsia">{t('accessibility.colorblindAchromatopsia', 'Acromatopsia (Escala de grises)')}</option>
             </select>
           </div>
 
@@ -371,10 +388,10 @@ const AccessibilityModal = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
               <span style={{ fontWeight: '600', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Flame size={17} color="#ef4444" />
-                Banner Permanente de Crisis
+                {t('accessibility.crisisBanner', 'Banner Permanente de Crisis')}
               </span>
               <span style={{ fontSize: '0.78rem', opacity: 0.7 }}>
-                Muestra la alerta activa en la parte superior de todas las pantallas del Chair
+                {t('accessibility.crisisBannerDesc', 'Muestra la alerta activa en la parte superior de todas las pantallas del Chair')}
               </span>
             </div>
             <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>

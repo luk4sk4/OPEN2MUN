@@ -27,13 +27,16 @@ import {
   Moon
 } from 'lucide-react';
 import CountryFlag from '../common/CountryFlag';
+import { useTranslation } from 'react-i18next';
 import { getFlagEmoji } from '../../utils/flags';
 import { useP2P } from '../../context/P2PContext';
 import { useAccessibility } from '../../context/AccessibilityContext';
 import AccessibilityModal from '../modals/AccessibilityModal';
 import OpenMunLogo from '../common/OpenMunLogo';
+import LanguageSelector from '../common/LanguageSelector';
 
 const DelegateView = ({ isLight: propIsLight, onExit }) => {
+  const { t } = useTranslation();
   const { isLight: contextIsLight, toggleThemeMode } = useAccessibility();
   const isLight = propIsLight !== undefined ? propIsLight : contextIsLight;
   const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
@@ -203,9 +206,9 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
               gap: '0.35rem',
               transition: 'all 0.15s ease'
             }}
-            title="Accesibilidad y Tema (Dislexia, Tamaño de Letra, Daltonismo)"
+            title={t('accessibility.title', "Accesibilidad y Tema")}
           >
-            <Eye size={13} /> Accesibilidad
+            <Eye size={13} /> {t('accessibility.title', 'Accesibilidad')}
           </button>
 
           {/* Botón Rápido Modo Claro / Oscuro */}
@@ -225,10 +228,12 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
               gap: '0.35rem',
               transition: 'all 0.15s ease'
             }}
-            title={isLight ? "Cambiar a Modo Oscuro" : "Cambiar a Modo Claro"}
+            title={isLight ? t('header.darkMode', "Cambiar a Modo Oscuro") : t('header.lightMode', "Cambiar a Modo Claro")}
           >
             {isLight ? <Moon size={13} /> : <Sun size={13} />}
           </button>
+
+          <LanguageSelector showIcon={false} />
 
           {/* Botón Salir */}
           <button
@@ -252,7 +257,7 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
               gap: '0.35rem'
             }}
           >
-            <LogOut size={13} /> Salir
+            <LogOut size={13} /> {t('common.exit', 'Salir')}
           </button>
         </div>
       </header>
@@ -284,7 +289,7 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
             transition: 'all 0.15s ease'
           }}
         >
-          <Mic size={14} /> Sala de Debate
+          <Mic size={14} /> {t('views.delegate.debateTab', 'Sala de Debate')}
         </button>
 
         <button
@@ -307,7 +312,7 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
             transition: 'all 0.15s ease'
           }}
         >
-          <MessageSquare size={14} /> Pajes / Mensajería ({misNotas.length})
+          <MessageSquare size={14} /> {t('views.delegate.notesTab', 'Mensajería y Notas')} ({misNotas.length})
         </button>
       </div>
 

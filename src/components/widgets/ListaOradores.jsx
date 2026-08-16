@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Search, Trash2, Plus, ArrowUpDown, GripVertical, Users } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
+import { useTranslation } from 'react-i18next';
 
 const ListaOradores = () => {
+  const { t } = useTranslation();
   const {
     paises,
     oradoresCola,
@@ -50,7 +52,7 @@ const ListaOradores = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
         <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '700', letterSpacing: '0.03em', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
           <Users size={16} />
-          <span>Lista de Oradores GSL ({oradoresCola.length})</span>
+          <span>{t('timers.gslSpeakersList', 'Lista de Oradores GSL')} ({oradoresCola.length})</span>
         </h3>
         
         {/* Botones de acción masiva */}
@@ -102,7 +104,7 @@ const ListaOradores = () => {
             }}
           >
             <Trash2 size={12} />
-            <span>Eliminar todos</span>
+            <span>{t('common.clearAll', 'Eliminar todos')}</span>
           </button>
         </div>
       </div>
@@ -121,7 +123,7 @@ const ListaOradores = () => {
           <Search size={15} style={{ opacity: 0.5 }} />
           <input
             type="text"
-            placeholder="Añadir país a la cola..."
+            placeholder={t('timers.addCountryQueuePlaceholder', 'Añadir país a la cola...')}
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
             style={{
@@ -153,7 +155,7 @@ const ListaOradores = () => {
           }}>
             {paisesDisponibles.length === 0 ? (
               <div style={{ padding: '0.5rem', fontSize: '0.8rem', opacity: 0.5, textAlign: 'center' }}>
-                Sin resultados coincidentes
+                {t('countries.noMatchingResults', 'Sin resultados coincidentes')}
               </div>
             ) : (
               paisesDisponibles.map(p => (
@@ -189,7 +191,7 @@ const ListaOradores = () => {
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.35rem', paddingRight: '2px' }}>
         {oradoresCola.length === 0 ? (
           <div style={{ opacity: 0.4, textAlign: 'center', margin: 'auto', fontSize: '0.85rem' }}>
-            La lista de oradores está vacía. Usa el buscador para añadir delegados.
+            {t('timers.emptyGslQueue', 'La lista de oradores está vacía. Usa el buscador para añadir delegados.')}
           </div>
         ) : (
           oradoresCola.map((orador, index) => {
@@ -280,7 +282,7 @@ const ListaOradores = () => {
                       borderRadius: '3px',
                       fontWeight: '800'
                     }}>
-                      HABLANDO
+                      {t('timers.speaking', 'HABLANDO')}
                     </span>
                   )}
                   {esSiguiente && (
@@ -292,7 +294,7 @@ const ListaOradores = () => {
                       borderRadius: '3px',
                       fontWeight: '700'
                     }}>
-                      SIGUIENTE
+                      {t('timers.next', 'SIGUIENTE')}
                     </span>
                   )}
                 </div>

@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Search, Users, Timer, Check, Plus, X, Crown, Sparkles, UserPlus, Trash2, ArrowUpDown, GripVertical, Globe } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
+import { useTranslation } from 'react-i18next';
 
 // Normalizar texto para búsqueda sin distinguir tildes ni mayúsculas
 function normalizar(texto) {
@@ -36,6 +37,7 @@ const PRESETS_RAPIDOS = [
 ];
 
 const AnadirPaises = () => {
+  const { t } = useTranslation();
   const {
     paises,
     setPaises,
@@ -222,7 +224,7 @@ const AnadirPaises = () => {
             }}
           >
             <Trash2 size={12} />
-            <span>Eliminar todos</span>
+            <span>{t('common.clearAll', 'Eliminar todos')}</span>
           </button>
 
           {/* Switch Destino: Lista General vs Debate */}
@@ -254,7 +256,7 @@ const AnadirPaises = () => {
               }}
             >
               <Users size={13} />
-              <span>Lista General</span>
+              <span>{t('timers.generalList', 'Lista General')}</span>
               <span style={{
                 fontSize: '0.68rem',
                 backgroundColor: esGSL ? 'rgba(255, 255, 255, 0.25)' : '#1f1f23',
@@ -287,7 +289,7 @@ const AnadirPaises = () => {
               }}
             >
               <Timer size={13} />
-              <span>Debate</span>
+              <span>{t('timers.debate', 'Debate')}</span>
               <span style={{
                 fontSize: '0.68rem',
                 backgroundColor: !esGSL ? 'rgba(255, 255, 255, 0.25)' : '#1f1f23',
@@ -318,7 +320,7 @@ const AnadirPaises = () => {
           <Search size={14} style={{ color: 'var(--muted-text)', flexShrink: 0 }} />
           <input
             type="text"
-            placeholder={`Buscar país para añadir a ${esGSL ? 'Lista General' : 'Debate'}...`}
+            placeholder={esGSL ? t('timers.searchCountryGSLPlaceholder', 'Buscar país para añadir a GSL...') : t('timers.searchCountryDebatePlaceholder', 'Buscar país para añadir a Debate...')}
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
             onKeyDown={handleKeyDownBusqueda}
@@ -368,7 +370,7 @@ const AnadirPaises = () => {
                   fontWeight: filtroVista === 'TODOS' ? '700' : '500'
                 }}
               >
-                Todos ({paises.length})
+                {t('common.all', 'Todos')} ({paises.length})
               </button>
               <button
                 type="button"
@@ -384,7 +386,7 @@ const AnadirPaises = () => {
                   fontWeight: filtroVista === 'DISPONIBLES' ? '700' : '500'
                 }}
               >
-                Disponibles ({cantDisponibles})
+                {t('common.available', 'Disponibles')} ({cantDisponibles})
               </button>
               <button
                 type="button"
@@ -400,12 +402,12 @@ const AnadirPaises = () => {
                   fontWeight: filtroVista === 'EN_LISTA' ? '700' : '500'
                 }}
               >
-                En Lista ({cantEnLista})
+                {t('timers.inList', 'En Lista')} ({cantEnLista})
               </button>
             </div>
 
             <span style={{ fontSize: '0.68rem', color: 'var(--muted-text)' }}>
-              Clic para {esGSL ? 'añadir a GSL' : 'añadir a Debate'}
+              {esGSL ? t('timers.clickToAddGSL', 'Clic para añadir a GSL') : t('timers.clickToAddDebate', 'Clic para añadir a Debate')}
             </span>
           </div>
         )}
@@ -433,10 +435,10 @@ const AnadirPaises = () => {
           }}>
             <Sparkles size={24} color="#a855f7" style={{ marginBottom: '0.5rem' }} />
             <div style={{ fontSize: '0.86rem', fontWeight: '700', color: 'var(--text-color)', marginBottom: '0.3rem' }}>
-              No hay delegaciones cargadas
+              {t('countries.noDelegationsLoaded', 'No hay delegaciones cargadas')}
             </div>
             <div style={{ fontSize: '0.74rem', color: 'var(--muted-text)', marginBottom: '1rem', lineHeight: '1.35' }}>
-              Importa países desde el widget 'Importar Países' o carga una plantilla rápida:
+              {t('countries.noDelegationsLoadedDesc', "Importa países desde el widget 'Importar Países' o carga una plantilla rápida:")}
             </div>
             <button
               type="button"
@@ -457,7 +459,7 @@ const AnadirPaises = () => {
               }}
             >
               <Globe size={14} />
-              <span>Cargar Consejo de Seguridad (15)</span>
+              <span>{t('countries.loadUNSC', 'Cargar Consejo de Seguridad (15)')}</span>
             </button>
           </div>
         ) : paisesFiltrados.length === 0 ? (

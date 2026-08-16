@@ -19,6 +19,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
+import { useTranslation } from 'react-i18next';
 import CountryFlag from './CountryFlag';
 
 const CATEGORIAS = {
@@ -60,6 +61,7 @@ const CATEGORIAS = {
 };
 
 const PermanentCrisisBanner = ({ isLight }) => {
+  const { t } = useTranslation();
   const { paises } = useSession();
 
   // Estado del ajuste de activación del banner permanente
@@ -130,7 +132,7 @@ const PermanentCrisisBanner = ({ isLight }) => {
 
   const catMeta = CATEGORIAS[eventoCrisis.categoria] || CATEGORIAS.CRITICA;
   const CategoryIcon = catMeta.icon || Flame;
-  const formatoHora = `Día ${relojSimulacion.dia || 1} · ${String(relojSimulacion.horas || 8).padStart(2, '0')}:${String(relojSimulacion.minutos || 0).padStart(2, '0')} hrs`;
+  const formatoHora = `${t('timers.day', 'Día')} ${relojSimulacion.dia || 1} · ${String(relojSimulacion.horas || 8).padStart(2, '0')}:${String(relojSimulacion.minutos || 0).padStart(2, '0')} hrs`;
 
   return (
     <div style={{
@@ -211,7 +213,7 @@ const PermanentCrisisBanner = ({ isLight }) => {
 
           {eventoCrisis.fuente && (
             <span style={{ fontSize: '0.68rem', color: '#94a3b8', opacity: 0.8, flexShrink: 0 }}>
-              (Fuente: {eventoCrisis.fuente})
+              ({t('crisis.source', 'Fuente')}: {eventoCrisis.fuente})
             </span>
           )}
         </div>
@@ -271,7 +273,7 @@ const PermanentCrisisBanner = ({ isLight }) => {
             }}
           >
             {modoExpandido ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-            <span>{modoExpandido ? 'Menos' : 'Detalles'}</span>
+            <span>{modoExpandido ? t('crisis.less', 'Menos') : t('crisis.details', 'Detalles')}</span>
           </button>
 
           {/* Botón Ocultar / Desactivar Banner Permanente */}
@@ -347,7 +349,7 @@ const PermanentCrisisBanner = ({ isLight }) => {
           {eventoCrisis.paisesInvolucrados && eventoCrisis.paisesInvolucrados.length > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: '2px' }}>
               <span style={{ fontSize: '0.68rem', fontWeight: '800', color: '#94a3b8' }}>
-                TODAS LAS DELEGACIONES IMPLICADAS:
+                {t('crisis.involvedDelegationsUpper', 'TODAS LAS DELEGACIONES IMPLICADAS')}:
               </span>
               {eventoCrisis.paisesInvolucrados.map(nP => {
                 const pObj = paises.find(p => p.nombre === nP) || { nombre: nP, bandera: '🌐' };

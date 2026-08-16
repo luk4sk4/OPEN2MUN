@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, SkipForward, Clock, Trash2, ArrowUpDown, GripVertical, Mic, ChevronUp, ChevronDown, Plus, Minus } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
+import { useTranslation } from 'react-i18next';
 
 const CronometroDual = ({ modoInicial = null }) => {
+  const { t } = useTranslation();
   const {
     paises,
     caucusActivo,
@@ -121,12 +123,12 @@ const CronometroDual = ({ modoInicial = null }) => {
   };
 
   // Clase dinámica para alertas visuales (naranja a 10s, parpadeo rojo a 5s, negativo en < 0)
-  const getTimerStyle = (seg) => {
+  const getTimerStyle = (seg, isRunning = false) => {
     if (seg < 0) {
       return { className: 'timer-negative', style: {} };
     }
     if (seg <= 5 && seg >= 0) {
-      return { className: 'timer-blink-red', style: {} };
+      return { className: isRunning ? 'timer-blink-red' : 'timer-warning-red', style: {} };
     }
     if (seg <= 10 && seg > 5) {
       return { className: 'timer-orange', style: {} };
@@ -155,8 +157,8 @@ const CronometroDual = ({ modoInicial = null }) => {
     setBusquedaPais('');
   };
 
-  const displayOradorState = getTimerStyle(tiempoOradorSeg);
-  const displayTotalState = getTimerStyle(tiempoTotalSeg);
+  const displayOradorState = getTimerStyle(tiempoOradorSeg, corriendo);
+  const displayTotalState = getTimerStyle(tiempoTotalSeg, corriendo);
 
   const progresoTotalPorcentaje = tiempoTotalInicial > 0
     ? Math.min(100, Math.max(0, ((tiempoTotalInicial - tiempoTotalSeg) / tiempoTotalInicial) * 100))
@@ -215,7 +217,7 @@ const CronometroDual = ({ modoInicial = null }) => {
                 transition: 'all 0.15s ease'
               }}
             >
-              Moderado
+              {t('motions.modCaucus', 'Moderado')}
             </button>
             <button
               onClick={() => setModoSeleccionado('Caucus No Moderado')}
@@ -231,7 +233,7 @@ const CronometroDual = ({ modoInicial = null }) => {
                 transition: 'all 0.15s ease'
               }}
             >
-              No Moderado
+              {t('motions.unmodCaucus', 'No Moderado')}
             </button>
             <button
               onClick={() => setModoSeleccionado('Tour de Table')}
@@ -247,7 +249,7 @@ const CronometroDual = ({ modoInicial = null }) => {
                 transition: 'all 0.15s ease'
               }}
             >
-              Tour de Table
+              {t('motions.roundRobin', 'Tour de Table')}
             </button>
           </div>
         </div>
@@ -264,7 +266,8 @@ const CronometroDual = ({ modoInicial = null }) => {
               padding: '1.5rem 1.5rem 1.8rem 1.5rem',
               borderRadius: '8px',
               textAlign: 'center',
-              transition: 'all 0.3s ease',
+              transition: displayTotalState.className ? 'none' : 'all 0.3s ease',
+              boxShadow: displayTotalState.className ? undefined : 'var(--timer-display-shadow, 0 4px 20px rgba(0,0,0,0.15))',
               ...displayTotalState.style
             }}
           >
@@ -332,7 +335,7 @@ const CronometroDual = ({ modoInicial = null }) => {
               }}
             >
               {corriendo ? <Pause size={15} /> : <Play size={15} />}
-              {corriendo ? 'Pausar' : 'Play (Iniciar)'}
+              {corriendo ? t('timers.pause', 'Pausar') : t('timers.start', 'Play (Iniciar)')}
             </button>
 
             <button
@@ -354,7 +357,7 @@ const CronometroDual = ({ modoInicial = null }) => {
               }}
               title="Reiniciar"
             >
-              <RotateCcw size={15} /> Reiniciar
+              <RotateCcw size={15} /> {t('common.reset', 'Reiniciar')}
             </button>
 
             {/* Flechas estilizadas para sumar/quitar tiempo total del Caucus */}
@@ -467,7 +470,8 @@ const CronometroDual = ({ modoInicial = null }) => {
               padding: '0.8rem 0.8rem 1.1rem 0.8rem',
               borderRadius: '8px',
               textAlign: 'center',
-              transition: 'all 0.3s ease',
+              transition: displayOradorState.className ? 'none' : 'all 0.3s ease',
+              boxShadow: displayOradorState.className ? undefined : 'var(--timer-display-shadow, 0 4px 20px rgba(0,0,0,0.15))',
               ...displayOradorState.style
             }}
           >
@@ -605,7 +609,7 @@ const CronometroDual = ({ modoInicial = null }) => {
                 fontSize: '0.85rem'
               }}
             >
-              <SkipForward size={15} /> Sig. Orador
+              <SkipForward size={15} /> {t('timers.nextSpeaker', 'Sig. Orador')}
             </button>
 
             <button
@@ -687,7 +691,7 @@ const CronometroDual = ({ modoInicial = null }) => {
                   }}
                 >
                   <Trash2 size={11} />
-                  <span>Eliminar todos</span>
+                  <span>{t('common.clearAll', 'Eliminar todos')}</span>
                 </button>
               </div>
             </div>
@@ -812,7 +816,7 @@ const CronometroDual = ({ modoInicial = null }) => {
             flexWrap: 'wrap',
             gap: '0.4rem'
           }}>
-            <span style={{ fontSize: '0.85rem', opacity: 0.75, fontWeight: '700', letterSpacing: '0.02em' }}>Tiempo Total Caucus:</span>
+            <span style={{ fontSize: '0.85rem', opacity: 0.75, fontWeight: '700', letterSpacing: '0.02em' }}>{t('timers.totalCaucusTime', 'Tiempo Total Caucus:')}</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '1.65rem', letterSpacing: '0.04em', color: tiempoTotalSeg < 0 ? '#ef4444' : 'var(--text-color)', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
                 {formatTimeWithNegative(tiempoTotalSeg)}
@@ -924,7 +928,8 @@ const CronometroDual = ({ modoInicial = null }) => {
               padding: '0.75rem 0.8rem 1rem 0.8rem',
               borderRadius: '10px',
               textAlign: 'center',
-              transition: 'all 0.3s ease',
+              transition: displayOradorState.className ? 'none' : 'all 0.3s ease',
+              boxShadow: displayOradorState.className ? undefined : 'var(--timer-display-shadow, 0 4px 20px rgba(0,0,0,0.15))',
               ...displayOradorState.style
             }}
           >
@@ -1046,7 +1051,7 @@ const CronometroDual = ({ modoInicial = null }) => {
               }}
             >
               {corriendo ? <Pause size={15} /> : <Play size={15} />}
-              {corriendo ? 'Pausar' : 'Iniciar'}
+              {corriendo ? t('timers.pause', 'Pausar') : t('timers.start', 'Iniciar')}
             </button>
 
             <button
@@ -1067,7 +1072,7 @@ const CronometroDual = ({ modoInicial = null }) => {
                 fontSize: '0.85rem'
               }}
             >
-              <SkipForward size={15} /> Sig. Orador
+              <SkipForward size={15} /> {t('timers.nextSpeaker', 'Sig. Orador')}
             </button>
 
             <button
@@ -1096,7 +1101,7 @@ const CronometroDual = ({ modoInicial = null }) => {
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '0.45rem', backgroundColor: 'var(--card-header-bg)', gap: '0.35rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.35rem' }}>
               <span style={{ fontSize: '0.72rem', fontWeight: '700', opacity: 0.8, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-                <Mic size={13} /> Oradores Debate ({oradoresCaucus.length})
+                <Mic size={13} /> {t('timers.debateSpeakers', 'Oradores Debate')} ({oradoresCaucus.length})
               </span>
               
               {/* Botones de orden alfabético y eliminar todos de debate */}
@@ -1150,7 +1155,7 @@ const CronometroDual = ({ modoInicial = null }) => {
                   }}
                 >
                   <Trash2 size={11} />
-                  <span>Eliminar todos</span>
+                  <span>{t('common.clearAll', 'Eliminar todos')}</span>
                 </button>
               </div>
             </div>
@@ -1159,7 +1164,7 @@ const CronometroDual = ({ modoInicial = null }) => {
             <div style={{ position: 'relative' }}>
               <input
                 type="text"
-                placeholder="Añadir delegado al caucus..."
+                placeholder={t('timers.addDelegatePlaceholder', 'Añadir delegado al caucus...')}
                 value={busquedaPais}
                 onChange={e => setBusquedaPais(e.target.value)}
                 style={{
@@ -1205,7 +1210,7 @@ const CronometroDual = ({ modoInicial = null }) => {
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.35rem', paddingRight: '2px' }}>
               {oradoresCaucus.length === 0 ? (
                 <div style={{ fontSize: '0.78rem', opacity: 0.4, textAlign: 'center', margin: 'auto' }}>
-                  Sin oradores en la cola del caucus.
+                  {t('timers.noSpeakersInQueue', 'Sin oradores en la cola del caucus.')}
                 </div>
               ) : (
                 oradoresCaucus.map((o, idx) => {

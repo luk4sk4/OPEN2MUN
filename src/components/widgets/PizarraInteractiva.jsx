@@ -23,6 +23,7 @@ import {
   FileImage,
   RefreshCw
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import worldSvgUrl from '../../assets/world.svg';
 
 // Generador de fondos SVG predefinidos para renderizado vectorial nítido
@@ -118,6 +119,7 @@ const BRUSH_SIZES = [
 ];
 
 const PizarraInteractiva = () => {
+  const { t } = useTranslation();
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -527,7 +529,7 @@ const PizarraInteractiva = () => {
             title="Lápiz / Pincel"
           >
             <Pen size={14} />
-            <span style={{ display: 'none', md: 'inline' }}>Lápiz</span>
+            <span style={{ display: 'none', md: 'inline' }}>{t('whiteboard.pen', 'Lápiz')}</span>
           </button>
 
           <button
@@ -548,7 +550,7 @@ const PizarraInteractiva = () => {
             title="Resaltador Semitransparente"
           >
             <Highlighter size={14} />
-            <span style={{ display: 'none', md: 'inline' }}>Resaltador</span>
+            <span style={{ display: 'none', md: 'inline' }}>{t('whiteboard.highlighter', 'Resaltador')}</span>
           </button>
 
           <button
@@ -569,7 +571,7 @@ const PizarraInteractiva = () => {
             title="Flecha Táctica"
           >
             <MoveRight size={14} />
-            <span style={{ display: 'none', md: 'inline' }}>Flecha</span>
+            <span style={{ display: 'none', md: 'inline' }}>{t('whiteboard.arrow', 'Flecha')}</span>
           </button>
 
           <button
@@ -590,7 +592,7 @@ const PizarraInteractiva = () => {
             title="Zona Táctica / Círculo"
           >
             <Circle size={14} />
-            <span style={{ display: 'none', md: 'inline' }}>Zona</span>
+            <span style={{ display: 'none', md: 'inline' }}>{t('whiteboard.zone', 'Zona')}</span>
           </button>
 
           <button
@@ -611,7 +613,7 @@ const PizarraInteractiva = () => {
             title="Añadir Texto"
           >
             <Type size={14} />
-            <span style={{ display: 'none', md: 'inline' }}>Texto</span>
+            <span style={{ display: 'none', md: 'inline' }}>{t('whiteboard.text', 'Texto')}</span>
           </button>
 
           <button
@@ -632,7 +634,7 @@ const PizarraInteractiva = () => {
             title="Borrador"
           >
             <Eraser size={14} />
-            <span style={{ display: 'none', md: 'inline' }}>Borrador</span>
+            <span style={{ display: 'none', md: 'inline' }}>{t('whiteboard.eraser', 'Borrador')}</span>
           </button>
         </div>
 
@@ -751,7 +753,7 @@ const PizarraInteractiva = () => {
             title="Cargar mapa o imagen personalizada desde tu equipo"
           >
             <Upload size={13} />
-            <span>Subir</span>
+            <span>{t('common.upload', 'Subir')}</span>
           </button>
           <input
             ref={fileInputRef}
@@ -833,7 +835,7 @@ const PizarraInteractiva = () => {
             title="Descargar captura PNG con fondo y dibujos"
           >
             <Download size={13} />
-            <span>Guardar</span>
+            <span>{t('common.save', 'Guardar')}</span>
           </button>
         </div>
       </div>
@@ -898,12 +900,12 @@ const PizarraInteractiva = () => {
             }}
           >
             <div style={{ fontSize: '0.82rem', fontWeight: '700', color: 'var(--text-color)' }}>
-              Insertar Anotación / Texto
+              {t('whiteboard.insertText', 'Insertar Anotación / Texto')}
             </div>
             <input
               autoFocus
               type="text"
-              placeholder="Escribe tu nota aquí..."
+              placeholder={t('whiteboard.notePlaceholder', 'Escribe tu nota aquí...')}
               value={textInputPrompt.text}
               onChange={(e) => setTextInputPrompt({ ...textInputPrompt, text: e.target.value })}
               onKeyDown={(e) => {
@@ -933,7 +935,7 @@ const PizarraInteractiva = () => {
                   cursor: 'pointer'
                 }}
               >
-                Cancelar
+                {t('common.cancel', 'Cancelar')}
               </button>
               <button
                 onClick={applyText}
@@ -948,7 +950,7 @@ const PizarraInteractiva = () => {
                   cursor: 'pointer'
                 }}
               >
-                Insertar
+                {t('whiteboard.insert', 'Insertar')}
               </button>
             </div>
           </div>

@@ -18,10 +18,12 @@ import {
   Sun,
   Moon
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useP2P } from '../../context/P2PContext';
 import { useAccessibility } from '../../context/AccessibilityContext';
 import AccessibilityModal from '../modals/AccessibilityModal';
 import OpenMunLogo from '../common/OpenMunLogo';
+import LanguageSelector from '../common/LanguageSelector';
 
 const PAISES_DEFAULT = [
   "Alemania", "Argentina", "Brasil", "Canadá", "China", "Colombia", "Corea del Sur",
@@ -30,6 +32,7 @@ const PAISES_DEFAULT = [
 ];
 
 const JoinSessionView = ({ isLight: propIsLight, onBackToChair }) => {
+  const { t } = useTranslation();
   const { joinRoom, connectionStatus, error, roomId: defaultRoomId } = useP2P();
   const { isLight: contextIsLight, toggleThemeMode } = useAccessibility();
   const isLight = propIsLight !== undefined ? propIsLight : contextIsLight;
@@ -117,7 +120,7 @@ const JoinSessionView = ({ isLight: propIsLight, onBackToChair }) => {
           transition: 'all 0.15s ease'
         }}
       >
-        <ArrowLeft size={16} /> Volver a Modo Mesa (Chair)
+        <ArrowLeft size={16} /> {t('views.join.backToHome', 'Volver a Modo Mesa (Chair)')}
       </button>
 
       {/* Controles de Accesibilidad y Tema en esquina superior derecha */}
@@ -145,9 +148,9 @@ const JoinSessionView = ({ isLight: propIsLight, onBackToChair }) => {
             gap: '0.4rem',
             transition: 'all 0.15s ease'
           }}
-          title="Accesibilidad y Tema (Dislexia, Tamaño de Letra, Daltonismo)"
+          title={t('accessibility.title', "Accesibilidad y Tema")}
         >
-          <Eye size={15} /> Accesibilidad
+          <Eye size={15} /> {t('accessibility.title', 'Accesibilidad')}
         </button>
         <button
           onClick={toggleThemeMode}
@@ -165,10 +168,11 @@ const JoinSessionView = ({ isLight: propIsLight, onBackToChair }) => {
             gap: '0.4rem',
             transition: 'all 0.15s ease'
           }}
-          title={isLight ? "Cambiar a Modo Oscuro" : "Cambiar a Modo Claro"}
+          title={isLight ? t('header.darkMode', "Cambiar a Modo Oscuro") : t('header.lightMode', "Cambiar a Modo Claro")}
         >
           {isLight ? <Moon size={15} /> : <Sun size={15} />}
         </button>
+        <LanguageSelector showIcon={false} />
       </div>
 
       <div style={{
@@ -189,10 +193,10 @@ const JoinSessionView = ({ isLight: propIsLight, onBackToChair }) => {
           <OpenMunLogo height={46} isLight={isLight} />
           <div>
             <h2 style={{ margin: 0, fontSize: '1.45rem', fontWeight: '800', letterSpacing: '-0.02em' }}>
-              Unirse a Sala en Vivo
+              {t('views.join.title', 'Unirse a Sala en Vivo')}
             </h2>
             <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.82rem', color: 'var(--muted-text)' }}>
-              Conéctate a la sesión activa mediante la red descentralizada P2P
+              {t('views.join.subtitle', 'Conéctate a la sesión activa mediante la red descentralizada P2P')}
             </p>
           </div>
         </div>

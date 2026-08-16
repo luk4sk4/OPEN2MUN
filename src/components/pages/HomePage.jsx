@@ -27,6 +27,7 @@ import {
   Heart,
   X
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import OpenMunLogo from '../common/OpenMunLogo';
 import KineticGrid from '../../assets/Kinetic';
 
@@ -122,6 +123,7 @@ const FEATURES = [
 ];
 
 const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
+  const { t } = useTranslation();
   // Estado para visibilidad del banner de donaciones
   const [showDonationBanner, setShowDonationBanner] = useState(true);
 
@@ -298,14 +300,14 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
                   alignItems: 'center',
                   gap: '0.4rem'
                 }}>
-                  <span>¡Apoya el mantenimiento de OpenMUN!</span>
+                  <span>{t('home.donationBannerTitle', '¡Apoya el mantenimiento de OpenMUN!')}</span>
                 </div>
                 <div style={{
                   fontSize: '0.84rem',
                   color: isLight ? '#78350f' : '#d1d5db',
                   lineHeight: '1.4'
                 }}>
-                  OpenMUN es 100% gratuito, libre y sin publicidad. Tu donación nos ayuda a costear los servidores y mantener la plataforma activa para todas las delegaciones.
+                  {t('home.donationBannerDesc', 'OpenMUN es 100% gratuito, libre y sin publicidad. Tu donación nos ayuda a costear los servidores y mantener la plataforma activa para todas las delegaciones.')}
                 </div>
               </div>
             </div>
@@ -344,7 +346,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
                   e.currentTarget.style.boxShadow = '0 3px 10px rgba(255, 221, 0, 0.3)';
                 }}
               >
-                <Coffee size={16} /> Invítanos a un café
+                <Coffee size={16} /> {t('home.coffee', 'Invítanos a un café')}
               </a>
               <button
                 onClick={() => setShowDonationBanner(false)}
@@ -405,7 +407,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
             letterSpacing: '-0.02em',
             color: textPrimary
           }}>
-            Moderación de Modelos de Naciones Unidas en tiempo real
+            {t('home.heroTitle', 'La plataforma abierta y definitiva para Modelos de Naciones Unidas')}
           </h1>
 
           {/* Subtítulo sobrio y directo */}
@@ -416,7 +418,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
             color: textMuted,
             fontWeight: '400'
           }}>
-            Plataforma libre y de código abierto para Mesas de Presidencia, Caucuses, Oradores, Mociones y Votaciones. Sin cuentas ni descargas.
+            {t('home.heroSubtitle', 'Diseñada para Mesas de Presidencia, Delegados, Secretaría y Equipos de Crisis. Sincronización en tiempo real P2P, cronómetros de alta precisión, mapas dinámicos y cero configuraciones de servidor.')}
           </p>
 
           {/* Accesos Rápidos Principales (Hub de Acción Directa) */}
@@ -444,11 +446,11 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
                   <Play size={18} style={{ color: accentColor }} />
                   <h3 style={{ fontSize: '1rem', fontWeight: '700', margin: 0, color: textPrimary }}>
-                    Mesa de Presidencia
+                    {t('home.chairCardTitle', 'Mesa de Presidencia')}
                   </h3>
                 </div>
                 <p style={{ fontSize: '0.85rem', color: textMuted, margin: 0, lineHeight: '1.45' }}>
-                  Panel de control completo para moderar debate, oradores, caucuses y votaciones.
+                  {t('home.chairCardDesc', 'Panel de control completo para moderar debate, oradores, caucuses y votaciones.')}
                 </p>
               </div>
               <button
@@ -471,7 +473,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = accentColor}
               >
-                <Play size={16} fill="#ffffff" /> Ir a Presidencia
+                <Play size={16} fill="#ffffff" /> {t('home.startModerating', 'Iniciar Moderación')}
               </button>
             </div>
 
@@ -492,11 +494,11 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
                     <Radio size={18} style={{ color: '#10b981' }} />
                     <h3 style={{ fontSize: '1rem', fontWeight: '700', margin: 0, color: textPrimary }}>
-                      Sala de Delegados
+                      {t('home.joinCardTitle', 'Unirse a Sesión')}
                     </h3>
                   </div>
                   <p style={{ fontSize: '0.85rem', color: textMuted, margin: 0, lineHeight: '1.45' }}>
-                    Conéctate en directo mediante código de sala o QR para seguir la sesión.
+                    {t('home.joinCardDesc', 'Conéctate en directo mediante código de sala o QR para seguir la sesión.')}
                   </p>
                 </div>
                 <button
@@ -519,7 +521,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isLight ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.25)'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isLight ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.15)'}
                 >
-                  <Radio size={16} /> Unirse a Sala
+                  <Radio size={16} /> {t('home.joinLive', 'Unirse a Sesión en Vivo')}
                 </button>
               </div>
             )}
@@ -557,7 +559,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
               onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
               onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
-              <Coffee size={17} /> Invítanos a un café
+              <Coffee size={17} /> {t('home.coffee', 'Invítanos a un café')}
             </a>
 
             {/* Botón de GitHub */}
@@ -582,7 +584,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
               onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
               onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
-              <Code2 size={17} /> Ver Código en GitHub <ExternalLink size={13} style={{ opacity: 0.6 }} />
+              <Code2 size={17} /> {t('home.github', 'Ver Código en GitHub')} <ExternalLink size={13} style={{ opacity: 0.6 }} />
             </a>
           </div>
 
@@ -600,16 +602,16 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
             color: textMuted
           }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: '500' }}>
-              <ShieldCheck size={16} style={{ color: '#22c55e' }} /> Software 100% Libre
+              <ShieldCheck size={16} style={{ color: '#22c55e' }} /> {t('home.freeSoftware', 'Software 100% Libre')}
             </span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: '500' }}>
-              <Zap size={16} style={{ color: '#eab308' }} /> Sin Registro Obligatorio
+              <Zap size={16} style={{ color: '#eab308' }} /> {t('home.noRegistration', 'Sin Registro Obligatorio')}
             </span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: '500' }}>
-              <Globe size={16} style={{ color: accentColor }} /> Sincronización P2P
+              <Globe size={16} style={{ color: accentColor }} /> {t('home.p2pSync', 'Sincronización P2P')}
             </span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: '500' }}>
-              <Laptop size={16} style={{ color: '#a855f7' }} /> Compatible Offline
+              <Laptop size={16} style={{ color: '#a855f7' }} /> {t('home.offlineCompatible', 'Compatible Offline')}
             </span>
           </div>
         </section>
@@ -624,10 +626,10 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
               color: textPrimary,
               letterSpacing: '-0.01em'
             }}>
-              Herramientas del Sistema
+              {t('home.systemTools', 'Herramientas del Sistema')}
             </h2>
             <p style={{ fontSize: '0.9rem', color: textMuted, margin: 0 }}>
-              Módulos integrados para la moderación eficiente del debate parlamentario.
+              {t('home.systemToolsSubtitle', 'Módulos integrados para la moderación eficiente del debate parlamentario.')}
             </p>
           </div>
 
@@ -638,6 +640,8 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
           }}>
             {FEATURES.map((feat, index) => {
               const IconComponent = feat.icon;
+              const title = t(`home.features.${index}.title`, feat.title);
+              const desc = t(`home.features.${index}.desc`, feat.desc);
               return (
                 <div
                   key={index}
@@ -670,7 +674,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
                     margin: 0,
                     color: textPrimary
                   }}>
-                    {feat.title}
+                    {title}
                   </h3>
 
                   <p style={{
@@ -679,7 +683,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
                     color: textMuted,
                     margin: 0
                   }}>
-                    {feat.desc}
+                    {desc}
                   </p>
                 </div>
               );
@@ -704,10 +708,10 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
               margin: '0 0 0.25rem 0',
               color: textPrimary
             }}>
-              ¿Cómo iniciar una simulación?
+              {t('home.workflowTitle', '¿Cómo iniciar una simulación?')}
             </h2>
             <p style={{ fontSize: '0.88rem', color: textMuted, margin: 0 }}>
-              Pasos recomendados para comenzar a operar la Mesa de Presidencia.
+              {t('home.workflowSubtitle', 'Pasos recomendados para comenzar a operar la Mesa de Presidencia.')}
             </p>
           </div>
 
@@ -730,13 +734,15 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
                 <span style={{ fontSize: '0.8rem', fontWeight: '800', color: accentColor, fontFamily: 'monospace' }}>
                   PASO 01
                 </span>
-                <span style={{ fontSize: '0.72rem', color: textMuted, fontWeight: '600' }}>Pestaña Comienzo</span>
+                <span style={{ fontSize: '0.72rem', color: textMuted, fontWeight: '600' }}>
+                  {t('home.step1Badge', 'Pestaña Comienzo')}
+                </span>
               </div>
               <h4 style={{ fontSize: '0.95rem', fontWeight: '700', margin: 0, color: textPrimary }}>
-                Configurar Comité y Países
+                {t('home.step1Title', 'Configurar Comité y Países')}
               </h4>
               <p style={{ fontSize: '0.84rem', color: textMuted, margin: 0, lineHeight: '1.45' }}>
-                Establece el nombre del comité, el tema e importa la lista de delegaciones desde Excel o texto.
+                {t('home.step1Desc', 'Establece el nombre del comité, el tema e importa la lista de delegaciones desde Excel o texto.')}
               </p>
             </div>
 
@@ -754,13 +760,15 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
                 <span style={{ fontSize: '0.8rem', fontWeight: '800', color: '#10b981', fontFamily: 'monospace' }}>
                   PASO 02
                 </span>
-                <span style={{ fontSize: '0.72rem', color: textMuted, fontWeight: '600' }}>Tablero de Mesa</span>
+                <span style={{ fontSize: '0.72rem', color: textMuted, fontWeight: '600' }}>
+                  {t('home.step2Badge', 'Tablero de Mesa')}
+                </span>
               </div>
               <h4 style={{ fontSize: '0.95rem', fontWeight: '700', margin: 0, color: textPrimary }}>
-                Pase de Lista y Debate
+                {t('home.step2Title', 'Pase de Lista y Debate')}
               </h4>
               <p style={{ fontSize: '0.84rem', color: textMuted, margin: 0, lineHeight: '1.45' }}>
-                Registra presentes para fijar el quorum, gestiona oradores en la GSL y toma notas de mociones.
+                {t('home.step2Desc', 'Registra presentes para fijar el quorum, gestiona oradores en la GSL y toma notas de mociones.')}
               </p>
             </div>
 
@@ -778,19 +786,21 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
                 <span style={{ fontSize: '0.8rem', fontWeight: '800', color: '#8b5cf6', fontFamily: 'monospace' }}>
                   PASO 03
                 </span>
-                <span style={{ fontSize: '0.72rem', color: textMuted, fontWeight: '600' }}>Transmisión P2P</span>
+                <span style={{ fontSize: '0.72rem', color: textMuted, fontWeight: '600' }}>
+                  {t('home.step3Badge', 'Transmisión P2P')}
+                </span>
               </div>
               <h4 style={{ fontSize: '0.95rem', fontWeight: '700', margin: 0, color: textPrimary }}>
-                Conectar Pantallas en Vivo
+                {t('home.step3Title', 'Conectar Pantallas en Vivo')}
               </h4>
               <p style={{ fontSize: '0.84rem', color: textMuted, margin: 0, lineHeight: '1.45' }}>
-                Abre la vista de Secretaría para proyectar en aula o comparte la clave de sala con los delegados.
+                {t('home.step3Desc', 'Abre la vista de Secretaría para proyectar en aula o comparte la clave de sala con los delegados.')}
               </p>
             </div>
           </div>
         </section>
 
-        {/* ── 5. PREGUNTAS FRECUENTES (FAQ) ── */}
+        {/* ── 4. PREGUNTAS FRECUENTES (FAQ) ── */}
         <section style={{
           display: 'flex',
           flexDirection: 'column',
@@ -804,11 +814,11 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <HelpCircle size={18} style={{ color: accentColor }} />
               <h2 style={{ fontSize: '1.35rem', fontWeight: '800', margin: 0, color: textPrimary }}>
-                Preguntas Frecuentes
+                {t('home.faqTitle', 'Preguntas Frecuentes')}
               </h2>
             </div>
             <p style={{ fontSize: '0.88rem', color: textMuted, margin: 0 }}>
-              Respuestas a las dudas habituales sobre el funcionamiento y privacidad de OpenMUN.
+              {t('home.faqSubtitle', 'Respuestas a las dudas habituales sobre el funcionamiento y privacidad de OpenMUN.')}
             </p>
           </div>
 
@@ -828,7 +838,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
               />
               <input
                 type="text"
-                placeholder="Buscar en preguntas frecuentes (ej. P2P, Excel, offline...)"
+                placeholder={t('home.faqSearchPlaceholder', 'Buscar en preguntas frecuentes (ej. P2P, Excel, offline...)')}
                 value={busquedaFaq}
                 onChange={(e) => setBusquedaFaq(e.target.value)}
                 style={{
@@ -858,7 +868,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
                     fontWeight: '600'
                   }}
                 >
-                  Limpiar
+                  {t('common.clear', 'Limpiar')}
                 </button>
               )}
             </div>
@@ -866,6 +876,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
             <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
               {categorias.map((cat) => {
                 const activa = categoriaFaq === cat;
+                const catLabel = cat === 'Todas' ? t('home.faqAllCategories', 'Todas') : t(`home.faqCategories.${cat}`, cat);
                 return (
                   <button
                     key={cat}
@@ -881,7 +892,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
                       cursor: 'pointer'
                     }}
                   >
-                    {cat}
+                    {catLabel}
                   </button>
                 );
               })}
@@ -892,11 +903,14 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {faqsFiltrados.length === 0 ? (
               <div style={{ padding: '1.5rem', textAlign: 'center', color: textMuted, fontSize: '0.88rem' }}>
-                No se encontraron resultados para "<strong>{busquedaFaq}</strong>".
+                {t('home.faqNoResults', 'No se encontraron resultados para')} "<strong>{busquedaFaq}</strong>".
               </div>
             ) : (
               faqsFiltrados.map((faq) => {
                 const estaAbierto = faqAbierto === faq.id;
+                const pregunta = t(`home.faq.${faq.id}.pregunta`, faq.pregunta);
+                const respuesta = t(`home.faq.${faq.id}.respuesta`, faq.respuesta);
+                const catLabel = t(`home.faqCategories.${faq.categoria}`, faq.categoria);
                 return (
                   <div
                     key={faq.id}
@@ -932,10 +946,10 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
                           fontSize: '0.7rem',
                           fontWeight: '700'
                         }}>
-                          {faq.categoria}
+                          {catLabel}
                         </span>
                         <span style={{ fontSize: '0.92rem', fontWeight: '600' }}>
-                          {faq.pregunta}
+                          {pregunta}
                         </span>
                       </div>
                       {estaAbierto ? <ChevronUp size={18} style={{ color: accentColor }} /> : <ChevronDown size={18} style={{ color: textMuted }} />}
@@ -950,7 +964,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
                         borderTop: `1px solid ${subBorderColor}`,
                         paddingTop: '0.75rem'
                       }}>
-                        {faq.respuesta}
+                        {respuesta}
                       </div>
                     )}
                   </div>
@@ -960,7 +974,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
           </div>
         </section>
 
-        {/* ── 6. SUGERENCIAS Y COMUNIDAD ── */}
+        {/* ── 5. SUGERENCIAS Y COMUNIDAD ── */}
         <section style={{
           backgroundColor: headerBg,
           border: `1px solid ${subBorderColor}`,
@@ -974,10 +988,10 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
         }}>
           <div>
             <h3 style={{ fontSize: '1.15rem', fontWeight: '800', margin: '0 0 0.35rem 0', color: textPrimary }}>
-              Sugerencias y Comunidad
+              {t('home.communityTitle', 'Sugerencias y Comunidad')}
             </h3>
             <p style={{ fontSize: '0.88rem', color: textMuted, margin: 0, maxWidth: '620px', lineHeight: '1.5' }}>
-              OpenMUN se mantiene en constante evolución. Si deseas reportar un error o sugerir una mejora, contáctanos directamente.
+              {t('home.communityDesc', 'OpenMUN se mantiene en constante evolución. Si deseas reportar un error o sugerir una mejora, contáctanos directamente.')}
             </p>
           </div>
 
@@ -1017,7 +1031,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
                 }}
               >
                 {copiado ? <Check size={14} /> : <Copy size={14} />}
-                {copiado ? 'Copiado' : 'Copiar'}
+                {copiado ? t('common.copied', 'Copiado') : t('common.copy', 'Copiar')}
               </button>
 
               <a
@@ -1044,7 +1058,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
           </div>
         </section>
 
-        {/* ── 7. FOOTER SOBRIO Y ELEGANTE ── */}
+        {/* ── 6. FOOTER SOBRIO Y ELEGANTE ── */}
         <footer style={{
           paddingTop: '1.25rem',
           borderTop: `1px solid ${subBorderColor}`,
@@ -1057,7 +1071,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
           textAlign: 'center'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <span>Desarrollado por <strong>Lucas R. Kowalski</strong></span>
+            <span>{t('home.developedBy', 'Desarrollado por')} <strong>Lucas R. Kowalski</strong></span>
             <a
               href="https://github.com/luk4sk4"
               target="_blank"
@@ -1077,10 +1091,10 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
             </a>
           </div>
           <div>
-            OpenMUN © {new Date().getFullYear()} — Software Libre para Modelos de Naciones Unidas
+            OpenMUN © {new Date().getFullYear()} — {t('home.footerDesc', 'Software Libre para Modelos de Naciones Unidas')}
           </div>
           <div>
-            Por una cultura accesible para todos
+            {t('home.footerTagline', 'Por una cultura accesible para todos')}
           </div>
         </footer>
       </div>

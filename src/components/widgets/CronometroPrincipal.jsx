@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, Plus, Minus, Square, Download, Clock, CheckCircle2, ArrowRightLeft, Shield, HelpCircle, SkipForward, AlertTriangle, ChevronUp, ChevronDown } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
+import { useTranslation } from 'react-i18next';
 
 const CronometroPrincipal = () => {
+  const { t } = useTranslation();
   const { paises, oradoresCola, removerOrador, registrarIntervencion, descargarSesionJSON, actualizarRelojGSL, yieldEvento, cederTiempo } = useSession();
 
   const [tiempoInicial, setTiempoInicial] = useState(60);
@@ -113,12 +115,12 @@ const CronometroPrincipal = () => {
     return isNegative ? `-${formatted}` : formatted;
   };
 
-  const getTimerStyle = (seg) => {
+  const getTimerStyle = (seg, isRunning = false) => {
     if (seg < 0) {
       return { className: 'timer-negative', style: {} };
     }
     if (seg <= 5 && seg >= 0) {
-      return { className: 'timer-blink-red', style: {} };
+      return { className: isRunning ? 'timer-blink-red' : 'timer-warning-red', style: {} };
     }
     if (seg <= 10 && seg > 5) {
       return { className: 'timer-orange', style: {} };
@@ -133,7 +135,7 @@ const CronometroPrincipal = () => {
     };
   };
 
-  const displayState = getTimerStyle(segundosRestantes);
+  const displayState = getTimerStyle(segundosRestantes, corriendo);
 
   const progresoPorcentaje = tiempoInicial > 0
     ? Math.min(100, Math.max(0, ((tiempoInicial - segundosRestantes) / tiempoInicial) * 100))
@@ -157,14 +159,14 @@ const CronometroPrincipal = () => {
           <CountryFlag bandera={oradorActual.bandera} nombre={oradorActual.nombre} size="xl" />
           <div>
             <div style={{ fontSize: '0.68rem', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '700' }}>
-              Orador Actual
+              {t('timers.currentSpeaker', 'Orador Actual')}
             </div>
             <div style={{ fontWeight: '800', fontSize: '1.15rem', color: 'var(--text-color)', lineHeight: 1.2 }}>
               {oradorActual.nombre}
             </div>
             {oradoresCola.length > 1 && (
               <div style={{ fontSize: '0.72rem', opacity: 0.65, marginTop: '3px', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <span>Siguiente:</span>
+                <span>{t('timers.nextLabel', 'Siguiente')}:</span>
                 <CountryFlag bandera={oradoresCola[1].bandera} nombre={oradoresCola[1].nombre} size="xs" />
                 <strong>{oradoresCola[1].nombre}</strong>
               </div>
@@ -207,7 +209,7 @@ const CronometroPrincipal = () => {
             borderRadius: '5px',
             border: '1px solid var(--border-color)'
           }}>
-            <span style={{ fontSize: '0.65rem', opacity: 0.6, fontWeight: '600' }}>Exacto:</span>
+            <span style={{ fontSize: '0.65rem', opacity: 0.6, fontWeight: '600' }}>{t('timers.exactLabel', 'Exacto')}:</span>
             <input
               type="number"
               min="1"
@@ -287,10 +289,10 @@ const CronometroPrincipal = () => {
           padding: '1.2rem 1rem 1.4rem 1rem',
           borderRadius: '10px',
           textAlign: 'center',
-          transition: 'all 0.3s ease',
+          transition: displayState.className ? 'none' : 'all 0.3s ease',
           position: 'relative',
           overflow: 'hidden',
-          boxShadow: 'var(--timer-display-shadow, 0 4px 20px rgba(0,0,0,0.15))',
+          boxShadow: displayState.className ? undefined : 'var(--timer-display-shadow, 0 4px 20px rgba(0,0,0,0.15))',
           ...displayState.style
         }}
       >
@@ -311,10 +313,10 @@ const CronometroPrincipal = () => {
             {segundosRestantes < 0 ? (
               <>
                 <AlertTriangle size={14} color="#ef4444" />
-                <span>TIEMPO EXCEDIDO (OVERTIME)</span>
+                <span>{t('timers.overtime', 'TIEMPO EXCEDIDO (OVERTIME)')}</span>
               </>
             ) : (
-              `Tiempo Asignado: ${tiempoInicial}s`
+              `${t('timers.assignedTime', 'Tiempo Asignado')}: ${tiempoInicial}s`
             )}
           </div>
         </div>
@@ -358,7 +360,7 @@ const CronometroPrincipal = () => {
             alignItems: 'center',
             gap: '0.3rem'
           }}>
-            <CheckCircle2 size={12} /> Guardado
+            <CheckCircle2 size={12} /> {t('common.saved', 'Guardado')}
           </div>
         )}
       </div>
@@ -385,7 +387,7 @@ const CronometroPrincipal = () => {
           }}
         >
           {corriendo ? <Pause size={16} /> : <Play size={16} />}
-          {corriendo ? 'Pausar' : 'Iniciar'}
+          {corriendo ? t('timers.pause', 'Pausar') : t('timers.start', 'Iniciar')}
         </button>
 
         <button
@@ -498,7 +500,7 @@ const CronometroPrincipal = () => {
           }}
           title="Ceder el tiempo restante (Yield)"
         >
-          <ArrowRightLeft size={15} /> Ceder (Yield)
+          <ArrowRightLeft size={15} /> {t('timers.yield', 'Ceder (Yield)')}
         </button>
 
         <button
@@ -520,7 +522,7 @@ const CronometroPrincipal = () => {
           }}
           title="Terminar intervención y pasar al siguiente orador"
         >
-          <SkipForward size={16} /> Siguiente Orador
+          <SkipForward size={16} /> {t('timers.nextSpeaker', 'Siguiente Orador')}
         </button>
       </div>
 
@@ -555,12 +557,12 @@ const CronometroPrincipal = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <ArrowRightLeft size={18} color="#3b82f6" />
               <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: '700' }}>
-                Ceder el tiempo (Yield)
+                {t('timers.yield', 'Ceder el tiempo (Yield)')}
               </h4>
             </div>
 
             <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.75, lineHeight: 1.35 }}>
-              El orador actual (<strong>{oradorActual.nombre}</strong>) cede su tiempo ({segundosRestantes}s) a:
+              {t('timers.yieldDesc', 'El orador actual')} (<strong>{oradorActual.nombre}</strong>) {t('timers.yieldDescSuffix', 'cede su tiempo')} ({segundosRestantes}s) {t('timers.yieldDescTo', 'a')}:
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
@@ -581,7 +583,7 @@ const CronometroPrincipal = () => {
                   textAlign: 'left'
                 }}
               >
-                <Shield size={16} color="#eab308" /> A la Mesa (Chair)
+                <Shield size={16} color="#eab308" /> {t('timers.yieldChair', 'A la Mesa (Chair)')}
               </button>
 
               <button
@@ -601,11 +603,11 @@ const CronometroPrincipal = () => {
                   textAlign: 'left'
                 }}
               >
-                <HelpCircle size={16} color="#3b82f6" /> A Preguntas del Pleno
+                <HelpCircle size={16} color="#3b82f6" /> {t('timers.yieldQuestions', 'A Preguntas del Pleno')}
               </button>
 
               <div style={{ borderTop: '1px solid var(--subborder-color)', paddingTop: '0.45rem' }}>
-                <div style={{ fontSize: '0.73rem', opacity: 0.7, marginBottom: '0.35rem', fontWeight: '600' }}>A otra Delegación:</div>
+                <div style={{ fontSize: '0.73rem', opacity: 0.7, marginBottom: '0.35rem', fontWeight: '600' }}>{t('timers.yieldDelegation', 'A otra Delegación:')}</div>
                 <select
                   onChange={e => e.target.value && handleEjecutarYield('delegado', e.target.value)}
                   defaultValue=""
@@ -620,7 +622,7 @@ const CronometroPrincipal = () => {
                     cursor: 'pointer'
                   }}
                 >
-                  <option value="" disabled>Seleccionar delegación...</option>
+                  <option value="" disabled>{t('timers.selectDelegation', 'Seleccionar delegación...')}</option>
                   {paises.filter(p => p.nombre !== oradorActual.nombre).map(p => (
                     <option key={p.id} value={p.nombre}>{p.bandera} {p.nombre}</option>
                   ))}
@@ -642,7 +644,7 @@ const CronometroPrincipal = () => {
                 fontWeight: '600'
               }}
             >
-              Cancelar
+              {t('common.cancel', 'Cancelar')}
             </button>
           </div>
         </div>

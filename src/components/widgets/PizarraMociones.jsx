@@ -2,8 +2,10 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Plus, Check, X, Clock, MessageSquare, Users, Mic, Sparkles, RotateCcw, AlertCircle, ArrowUpDown, GripVertical, Pin, Hourglass, BarChart2, Timer, ChevronDown, Search, Globe } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
+import { useTranslation } from 'react-i18next';
 
 const PizarraMociones = () => {
+  const { t } = useTranslation();
   const { paises, mociones, agregarMocion, votarMocion, reordenarMociones, ordenarMocionesDisruptividad } = useSession();
 
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -200,7 +202,7 @@ const PizarraMociones = () => {
             title="Ordenar mociones por prioridad de disruptividad (No Moderado > Consulta > Tour > Moderado)"
           >
             <ArrowUpDown size={12} />
-            <span>Disruptividad</span>
+            <span>{t('motions.disruptivenessOrder', 'Disruptividad')}</span>
           </button>
 
           <button
@@ -223,11 +225,11 @@ const PizarraMociones = () => {
           >
             {mostrarForm ? (
               <>
-                <X size={14} /> Cerrar
+                <X size={14} /> {t('common.close', 'Cerrar')}
               </>
             ) : (
               <>
-                <Plus size={14} /> Añadir Moción
+                <Plus size={14} /> {t('motions.newMotion', 'Añadir Moción')}
               </>
             )}
           </button>
@@ -250,7 +252,7 @@ const PizarraMociones = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
           <Users size={14} style={{ color: '#38bdf8' }} />
           <span style={{ fontWeight: '600', opacity: 0.9 }}>
-            Quórum: <strong>{totalAsistentes}</strong>
+            {t('voting.quorum', 'Quórum')}: <strong>{totalAsistentes}</strong>
           </span>
           <span style={{ fontSize: '0.68rem', opacity: 0.5 }}>
             ({presentes} P + {presentesYVotando} PyV)
@@ -289,7 +291,7 @@ const PizarraMociones = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <Sparkles size={15} style={{ color: '#38bdf8' }} />
               <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: '800', letterSpacing: '0.01em' }}>
-                Nueva Moción
+                {t('motions.newMotion', 'Nueva Moción')}
               </h4>
             </div>
 
@@ -318,31 +320,31 @@ const PizarraMociones = () => {
           {/* 1. Selector Visual de Tipo de Moción (Grid 2x2 compacto) */}
           <div>
             <label style={{ fontSize: '0.7rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.7, display: 'block', marginBottom: '0.35rem' }}>
-              1. Modalidad de Debate
+              {t('motions.motionType', '1. Modalidad de Debate')}
             </label>
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(2, 1fr)',
               gap: '0.45rem'
             }}>
-              {tiposMocionConfig.map(t => {
-                const IconComponent = t.icon;
-                const isSelected = tipo === t.id;
+              {tiposMocionConfig.map(tItem => {
+                const IconComponent = tItem.icon;
+                const isSelected = tipo === tItem.id;
                 return (
                   <button
-                    key={t.id}
+                    key={tItem.id}
                     type="button"
                     onClick={() => {
-                      setTipo(t.id);
-                      if (t.id === 'Caucus Moderado') {
+                      setTipo(tItem.id);
+                      if (tItem.id === 'Caucus Moderado') {
                         setTiempoTotalMin(10);
                         setTiempoOradorSeg(60);
-                      } else if (t.id === 'Caucus No Moderado') {
+                      } else if (tItem.id === 'Caucus No Moderado') {
                         setTiempoTotalMin(15);
-                      } else if (t.id === 'Consulta General') {
+                      } else if (tItem.id === 'Consulta General') {
                         setTiempoTotalMin(10);
                         setVarianteConsulta('No Moderada');
-                      } else if (t.id === 'Tour de Table') {
+                      } else if (tItem.id === 'Tour de Table') {
                         setTiempoOradorSeg(45);
                       }
                     }}
@@ -353,11 +355,11 @@ const PizarraMociones = () => {
                       gap: '0.5rem',
                       cursor: 'pointer',
                       textAlign: 'left',
-                      backgroundColor: isSelected ? t.activeBg : 'var(--card-header-bg, rgba(255, 255, 255, 0.03))',
-                      border: isSelected ? `1.5px solid ${t.activeBorder}` : '1px solid var(--border-color, rgba(255, 255, 255, 0.1))',
+                      backgroundColor: isSelected ? tItem.activeBg : 'var(--card-header-bg, rgba(255, 255, 255, 0.03))',
+                      border: isSelected ? `1.5px solid ${tItem.activeBorder}` : '1px solid var(--border-color, rgba(255, 255, 255, 0.1))',
                       borderRadius: '8px',
-                      color: isSelected ? t.textColor : 'var(--text-color)',
-                      boxShadow: isSelected ? `0 0 12px ${t.color}30` : 'none',
+                      color: isSelected ? tItem.textColor : 'var(--text-color)',
+                      boxShadow: isSelected ? `0 0 12px ${tItem.color}30` : 'none',
                       transition: 'all 0.15s ease',
                       outline: 'none'
                     }}
@@ -366,7 +368,7 @@ const PizarraMociones = () => {
                       width: '26px',
                       height: '26px',
                       borderRadius: '6px',
-                      backgroundColor: isSelected ? t.color : 'rgba(255, 255, 255, 0.08)',
+                      backgroundColor: isSelected ? tItem.color : 'rgba(255, 255, 255, 0.08)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -379,16 +381,16 @@ const PizarraMociones = () => {
                       <div style={{
                         fontSize: '0.8rem',
                         fontWeight: isSelected ? '800' : '600',
-                        color: isSelected ? t.textColor : 'var(--text-color)',
+                        color: isSelected ? tItem.textColor : 'var(--text-color)',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis'
                       }}>
-                        {t.nombre}
+                        {tItem.nombre}
                       </div>
                     </div>
                     {isSelected && (
-                      <div style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: t.color, flexShrink: 0 }} />
+                      <div style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: tItem.color, flexShrink: 0 }} />
                     )}
                   </button>
                 );
@@ -401,7 +403,7 @@ const PizarraMociones = () => {
             {/* País Proponente */}
             <div style={{ position: 'relative' }} ref={dropdownPaisRef}>
               <label style={{ fontSize: '0.7rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.7, display: 'flex', alignItems: 'center', gap: '0.3rem', marginBottom: '0.25rem' }}>
-                <span>2. País Proponente *</span>
+                <span>{t('motions.proponent', '2. País Proponente *')}</span>
               </label>
               {paises.length === 0 ? (
                 <div style={{ padding: '0.45rem 0.6rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '6px', fontSize: '0.73rem', color: '#fca5a5', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
@@ -458,7 +460,7 @@ const PizarraMociones = () => {
                         </>
                       ) : (
                         <span style={{ color: 'var(--muted-text, #94a3b8)', fontWeight: '500' }}>
-                          Selecciona el país proponente...
+                          {t('motions.selectProponent', 'Selecciona el país proponente...')}
                         </span>
                       )}
                     </div>
@@ -494,7 +496,7 @@ const PizarraMociones = () => {
                         <input
                           type="text"
                           autoFocus
-                          placeholder="Buscar país..."
+                          placeholder={t('motions.searchCountryPlaceholder', 'Buscar país...')}
                           value={busquedaPais}
                           onChange={(e) => setBusquedaPais(e.target.value)}
                           style={{
@@ -525,7 +527,7 @@ const PizarraMociones = () => {
                       }}>
                         {paisesFiltrados.length === 0 ? (
                           <div style={{ padding: '0.6rem', textAlign: 'center', fontSize: '0.74rem', opacity: 0.5 }}>
-                            No se encontraron países
+                            {t('countries.noCountriesFound', 'No se encontraron países')}
                           </div>
                         ) : (
                           paisesFiltrados.map((p) => {
@@ -592,11 +594,11 @@ const PizarraMociones = () => {
             {/* Tema / Propósito */}
             <div>
               <label style={{ fontSize: '0.7rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.7, display: 'block', marginBottom: '0.25rem' }}>
-                3. Tema / Propósito del Debate *
+                {t('motions.topic', '3. Tema / Propósito del Debate *')}
               </label>
               <input
                 type="text"
-                placeholder="Ej. Estrategias de cooperación económica..."
+                placeholder={t('motions.topicPlaceholder', 'Ej. Estrategias de cooperación económica...')}
                 value={tema}
                 onChange={e => setTema(e.target.value)}
                 required
@@ -627,7 +629,7 @@ const PizarraMociones = () => {
               gap: '0.35rem'
             }}>
               <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#93c5fd', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                <Mic size={12} /> Turno de la delegación ({proponente || 'Proponente'}):
+                <Mic size={12} /> {t('motions.speakerTurn', 'Turno de la delegación')} ({proponente || 'Proponente'}):
               </label>
               <div style={{ display: 'flex', gap: '0.4rem' }}>
                 <button
@@ -651,7 +653,7 @@ const PizarraMociones = () => {
                   }}
                 >
                   <Mic size={13} />
-                  <span>Hablar <strong>Primero</strong></span>
+                  <span>{t('motions.speakFirst', 'Hablar Primero')}</span>
                 </button>
                 <button
                   type="button"
@@ -674,7 +676,7 @@ const PizarraMociones = () => {
                   }}
                 >
                   <Hourglass size={13} />
-                  <span>Hablar <strong>Al Final</strong></span>
+                  <span>{t('motions.speakLast', 'Hablar Al Final')}</span>
                 </button>
               </div>
             </div>
@@ -692,7 +694,7 @@ const PizarraMociones = () => {
               gap: '0.35rem'
             }}>
               <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#6ee7b7', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                <MessageSquare size={12} /> Modalidad de Consulta:
+                <MessageSquare size={12} /> {t('motions.consultationMode', 'Modalidad de Consulta:')}
               </label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.35rem' }}>
                 {[
@@ -741,7 +743,7 @@ const PizarraMociones = () => {
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <label style={{ fontSize: '0.7rem', fontWeight: '700', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <Clock size={12} style={{ color: '#38bdf8' }} /> Total
+                    <Clock size={12} style={{ color: '#38bdf8' }} /> {t('motions.totalDuration', 'Total')}
                   </label>
                   <span style={{ fontSize: '0.85rem', fontWeight: '800', color: '#38bdf8', fontFamily: 'monospace' }}>
                     {tiempoTotalMin}m
@@ -856,7 +858,7 @@ const PizarraMociones = () => {
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <label style={{ fontSize: '0.7rem', fontWeight: '700', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <Mic size={12} style={{ color: '#a855f7' }} /> Orador
+                    <Mic size={12} style={{ color: '#a855f7' }} /> {t('motions.speakerDuration', 'Orador')}
                   </label>
                   <span style={{ fontSize: '0.85rem', fontWeight: '800', color: '#c084fc', fontFamily: 'monospace' }}>
                     {tiempoOradorSeg}s
@@ -975,7 +977,7 @@ const PizarraMociones = () => {
             }}>
               <span><BarChart2 size={13} style={{ display: 'inline', marginRight: '0.35rem', verticalAlign: '-1px' }} />Capacidad estimada:</span>
               <strong style={{ fontSize: '0.76rem', color: '#38bdf8' }}>
-                ~{intervencionesEstimadas} intervenciones
+                ~{intervencionesEstimadas} {t('motions.estimatedInterventions', 'intervenciones')}
               </strong>
             </div>
           )}
@@ -998,7 +1000,7 @@ const PizarraMociones = () => {
                 transition: 'background 0.15s ease'
               }}
             >
-              Cancelar
+              {t('common.cancel', 'Cancelar')}
             </button>
 
             <button
@@ -1026,7 +1028,7 @@ const PizarraMociones = () => {
                 transition: 'all 0.15s ease'
               }}
             >
-              <Plus size={14} /> Guardar Moción
+              <Plus size={14} /> {t('motions.addMotion', 'Guardar Moción')}
             </button>
           </div>
         </form>
@@ -1036,7 +1038,7 @@ const PizarraMociones = () => {
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingRight: '2px' }}>
         {mociones.length === 0 ? (
           <div style={{ padding: '2rem 1rem', textAlign: 'center', opacity: 0.4, border: '1px dashed var(--border-color)', borderRadius: '6px' }}>
-            No hay mociones registradas en la pizarra.
+            {t('motions.noMotions', 'No hay mociones registradas en la pizarra.')}
           </div>
         ) : (
           mociones.map((m, idx) => {
@@ -1156,7 +1158,7 @@ const PizarraMociones = () => {
 
                     {m.posicionProponente === 'Ultimo' && (
                       <span style={{ fontSize: '0.65rem', backgroundColor: 'rgba(255,255,255,0.08)', padding: '2px 6px', borderRadius: '3px', opacity: 0.8, fontWeight: '700' }}>
-                        Habla al final
+                        {t('motions.speaksLastBadge', 'Habla al final')}
                       </span>
                     )}
                   </div>
@@ -1176,11 +1178,11 @@ const PizarraMociones = () => {
                   {/* Fila 3: Tiempos (Sutiles y limpios) */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', fontSize: '0.73rem', opacity: 0.65, marginTop: '2px', paddingLeft: '1.55rem' }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <Timer size={12} /> Total: <strong style={{ fontFamily: 'monospace', opacity: 1, color: 'var(--text-color)' }}>{formatMinutos(m.tiempoTotal)}</strong>
+                      <Timer size={12} /> {t('motions.totalDuration', 'Total')}: <strong style={{ fontFamily: 'monospace', opacity: 1, color: 'var(--text-color)' }}>{formatMinutos(m.tiempoTotal)}</strong>
                     </span>
                     {m.tiempoOrador > 0 && (
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <Mic size={12} /> Por orador: <strong style={{ fontFamily: 'monospace', opacity: 1, color: 'var(--text-color)' }}>{m.tiempoOrador}s</strong>
+                        <Mic size={12} /> {t('motions.speakerDuration', 'Por orador')}: <strong style={{ fontFamily: 'monospace', opacity: 1, color: 'var(--text-color)' }}>{m.tiempoOrador}s</strong>
                       </span>
                     )}
                   </div>
@@ -1206,7 +1208,7 @@ const PizarraMociones = () => {
                     }}
                     title="Aprobar Moción"
                   >
-                    <Check size={13} /> Aprobar
+                    <Check size={13} /> {t('voting.passed', 'Aprobar')}
                   </button>
 
                   <button
@@ -1227,7 +1229,7 @@ const PizarraMociones = () => {
                     }}
                     title="Reprobar / Fallida"
                   >
-                    <X size={13} /> Reprobar
+                    <X size={13} /> {t('voting.failed', 'Reprobar')}
                   </button>
                 </div>
               </div>

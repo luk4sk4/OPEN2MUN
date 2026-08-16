@@ -31,10 +31,12 @@ import {
   Landmark
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { useTranslation } from 'react-i18next';
 import { useP2P } from '../../context/P2PContext';
 import { useSession } from '../../context/SessionContext';
 
 const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
+  const { t } = useTranslation();
   const {
     connectionStatus,
     roomId,

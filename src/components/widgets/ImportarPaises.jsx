@@ -22,6 +22,7 @@ import {
   Check
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { useTranslation } from 'react-i18next';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
 import {
@@ -88,35 +89,54 @@ function filaAPais(fila, index) {
   const id = get('id', 'codigo', 'code', 'iso') || `pais_${Date.now()}_${index}`;
   const rawBandera = get('bandera', 'flag', 'emoji', 'imagen', 'image');
   const bandera = rawBandera ? normalizarBandera(rawBandera, nombre) : auto.bandera;
-  const vetoRaw = get('veto', 'p5', 'permanent_member', 'miembro_permanente');
-  const veto = vetoRaw !== undefined
-    ? ['true', '1', 'si', 'sí', 'yes', 's'].includes(vetoRaw.toLowerCase())
+  const rawVeto = get('veto', 'p5', 'perm', 'permanente', 'permanent');
+  const veto = rawVeto !== undefined
+    ? ['true', '1', 'si', 'yes', 'p5', 'true'].includes(String(rawVeto).toLowerCase())
     : auto.veto;
 
-  return { id, nombre, bandera, veto, estatus: 'Ausente' };
+  return {
+    id: String(id),
+    nombre: String(nombre).trim(),
+    bandera,
+    veto: Boolean(veto),
+    estatus: 'Ausente'
+  };
 }
 
-function parsearTexto(texto) {
+function parsearCSV(texto) {
   const lineas = texto.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   if (lineas.length === 0) return [];
 
-  // Chequear si es CSV con cabecera
-  const sep = lineas[0].includes(';') ? ';' : lineas[0].includes(',') ? ',' : null;
-  if (sep && lineas.length > 1 && /nombre|name|pais|country/i.test(lineas[0])) {
-    const cabeceras = lineas[0].split(sep).map(c => c.trim().replace(/^"|"$/g, ''));
-    return lineas.slice(1).map((linea, i) => {
-      const valores = linea.split(sep).map(v => v.trim().replace(/^"|"$/g, ''));
+  const separador = lineas[0].includes(';') ? ';' : lineas[0].includes('\t') ? '\t' : ',';
+  const primeraFila = lineas[0].split(separador).map(c => c.replace(/^["']|["']$/g, '').trim());
+  const esCabecera = primeraFila.some(c =>
+    ['nombre', 'name', 'pais', 'country', 'delegacion', 'delegations'].includes(c.toLowerCase())
+  );
+
+  if (esCabecera) {
+    const cabeceras = primeraFila;
+    return lineas.slice(1).map((linea, index) => {
+      const celdas = linea.split(separador).map(c => c.replace(/^["']|["']$/g, '').trim());
       const fila = {};
-      cabeceras.forEach((cab, j) => { fila[cab] = valores[j] || ''; });
-      return filaAPais(fila, i);
+      cabeceras.forEach((h, i) => { fila[h] = celdas[i] || ''; });
+      return filaAPais(fila, index);
+    }).filter(Boolean);
+  } else {
+    return lineas.map((linea, index) => {
+      const celdas = linea.split(separador).map(c => c.replace(/^["']|["']$/g, '').trim());
+      return filaAPais(celdas[0], index);
     }).filter(Boolean);
   }
+}
 
-  // Lista simple de nombres (1 por línea o separados por comas)
-  const items = texto.includes('\n')
-    ? lineas
-    : texto.split(',').map(s => s.trim()).filter(Boolean);
-
+function parsearTextoPlano(texto) {
+  const lineas = texto.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const items = lineas.flatMap(linea => {
+    if (linea.includes(',') && !linea.includes(';')) {
+      return linea.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    return [linea];
+  });
   return items.map((item, i) => filaAPais(item, i)).filter(Boolean);
 }
 
@@ -143,10 +163,10 @@ function parsearJSON(texto) {
         : Array.isArray(data.countries) ? data.countries
           : null;
   if (!arr) throw new Error('El JSON debe contener una lista o un array en "paises".');
-  return arr.map((f, i) => filaAPais(f, i)).filter(Boolean);
+  return arr.map((item, i) => filaAPais(item, i)).filter(Boolean);
 }
 
-async function parsearXLSX(archivo) {
+async function parsearExcel(archivo) {
   try {
     const buffer = await archivo.arrayBuffer();
     const wb = XLSX.read(buffer, { type: 'array' });
@@ -166,6 +186,7 @@ async function parsearXLSX(archivo) {
 
 // ── Componente Principal ────────────────────────────────────────────────────
 const ImportarPaises = () => {
+  const { t } = useTranslation();
   const { paises, setPaises } = useSession();
 
   const [tab, setTab] = useState('archivo'); // 'archivo' | 'pegar' | 'individual' | 'presets'
@@ -728,10 +749,10 @@ const ImportarPaises = () => {
         border: '1px solid var(--border-color)'
       }}>
         {[
-          { key: 'archivo', label: 'Archivo', icon: Upload, desc: 'Excel, CSV, JSON' },
-          { key: 'pegar', label: 'Pegar', icon: ClipboardPaste, desc: 'Texto directo' },
-          { key: 'individual', label: '1 País', icon: UserPlus, desc: 'Añadir único' },
-          { key: 'presets', label: 'Plantillas', icon: Sparkles, desc: 'Comités listos' }
+          { key: 'archivo', label: t('countries.tabFile', 'Archivo'), icon: Upload, desc: 'Excel, CSV, JSON' },
+          { key: 'pegar', label: t('countries.tabPaste', 'Pegar'), icon: ClipboardPaste, desc: 'Texto directo' },
+          { key: 'individual', label: t('countries.tabSingle', '1 País'), icon: UserPlus, desc: 'Añadir único' },
+          { key: 'presets', label: t('countries.tabPresets', 'Plantillas'), icon: Sparkles, desc: 'Comités listos' }
         ].map(m => {
           const Icon = m.icon;
           const activo = tab === m.key && !preview;
@@ -1794,7 +1815,7 @@ const ImportarPaises = () => {
                 boxShadow: '0 2px 6px rgba(59, 130, 246, 0.25)'
               }}
             >
-              Reemplazar Lista Actual
+              {t('countries.importReplace', 'Reemplazar Lista Actual')}
             </button>
             <button
               type="button"
@@ -1811,7 +1832,7 @@ const ImportarPaises = () => {
                 boxShadow: '0 2px 6px rgba(34, 197, 94, 0.25)'
               }}
             >
-              Añadir a la Actual (Fusionar)
+              {t('countries.importAppend', 'Añadir a la Actual (Fusionar)')}
             </button>
           </div>
         </div>

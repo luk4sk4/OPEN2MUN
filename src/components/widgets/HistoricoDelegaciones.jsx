@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
+import { useTranslation } from 'react-i18next';
 
 // Helper para extraer la clave de fecha (YYYY-MM-DD) de cualquier entrada
 const extraerClaveFecha = (item) => {
@@ -48,14 +49,14 @@ const formatearFechaCorta = (fechaStr) => {
 
 // Formatear segundos a formato legible "Xh Ym Zs" o "Xm Ys"
 const formatTiempoLargo = (totalSeg) => {
-  if (!totalSeg || totalSeg <= 0) return '0m 00s';
+  if (!totalSeg || totalSeg <= 0) return '0 min 00 s';
   const horas = Math.floor(totalSeg / 3600);
   const mins = Math.floor((totalSeg % 3600) / 60);
   const secs = totalSeg % 60;
   if (horas > 0) {
-    return `${horas}h ${mins}m ${secs.toString().padStart(2, '0')}s`;
+    return `${horas} h ${mins} min ${secs.toString().padStart(2, '0')} s`;
   }
-  return `${mins}m ${secs.toString().padStart(2, '0')}s`;
+  return `${mins} min ${secs.toString().padStart(2, '0')} s`;
 };
 
 // Formatear tiempo compacto "Xm Ys"
@@ -67,6 +68,7 @@ const formatTiempoCompacto = (totalSeg) => {
 };
 
 const HistoricoDelegaciones = () => {
+  const { t } = useTranslation();
   const { paises, mociones = [], historicoMociones = [], registroIntervenciones = [] } = useSession();
 
   const [busqueda, setBusqueda] = useState('');
@@ -322,10 +324,10 @@ const HistoricoDelegaciones = () => {
           </div>
           <div>
             <div style={{ fontWeight: '800', fontSize: '0.92rem', letterSpacing: '0.04em', color: 'var(--text-color)' }}>
-              HISTÓRICO DE DELEGACIONES
+              {t('history.titleUpper', 'HISTÓRICO DE DELEGACIONES')}
             </div>
             <div style={{ fontSize: '0.68rem', color: 'var(--muted-text)', marginTop: '-2px' }}>
-              Métricas de oratoria, intervenciones y mociones
+              {t('history.subtitle', 'Métricas de oratoria, intervenciones y mociones')}
             </div>
           </div>
         </div>
@@ -344,7 +346,7 @@ const HistoricoDelegaciones = () => {
           <Search size={13} style={{ opacity: 0.6, color: '#3b82f6' }} />
           <input
             type="text"
-            placeholder="BUSCAR PAÍS..."
+            placeholder={t('history.searchPlaceholder', 'BUSCAR PAÍS...')}
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
             style={{
@@ -380,7 +382,7 @@ const HistoricoDelegaciones = () => {
           whiteSpace: 'nowrap'
         }}>
           <Calendar size={13} style={{ color: '#ff007f' }} />
-          <span>FILTRAR POR DÍA:</span>
+          <span>{t('history.filterByDay', 'FILTRAR POR DÍA:')}</span>
         </div>
 
         {/* Opción Global: Todos los Días */}
@@ -403,7 +405,7 @@ const HistoricoDelegaciones = () => {
           }}
         >
           <Layers size={12} />
-          <span>Todos los días (Global)</span>
+          <span>{t('history.allDays', 'Todos los días (Global)')}</span>
         </button>
 
         {/* Botones para cada día detectado */}
@@ -441,7 +443,7 @@ const HistoricoDelegaciones = () => {
                   color: '#22c55e',
                   fontWeight: '700'
                 }}>
-                  HOY
+                  {t('history.today', 'HOY')}
                 </span>
               )}
             </button>
@@ -466,7 +468,7 @@ const HistoricoDelegaciones = () => {
           justifyContent: 'center'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#ff007f', fontSize: '0.66rem', fontWeight: '700' }}>
-            <span>CÓMPUTO TOTAL TIEMPO</span>
+            <span>{t('history.totalTime', 'CÓMPUTO TOTAL TIEMPO')}</span>
             <Clock size={13} />
           </div>
           <div style={{ fontSize: '1.05rem', fontWeight: '900', color: '#ff007f', marginTop: '2px' }}>
@@ -488,14 +490,14 @@ const HistoricoDelegaciones = () => {
           justifyContent: 'center'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#60a5fa', fontSize: '0.66rem', fontWeight: '700' }}>
-            <span>INTERVENCIONES</span>
+            <span>{t('history.interventions', 'INTERVENCIONES')}</span>
             <Mic size={13} />
           </div>
           <div style={{ fontSize: '1.05rem', fontWeight: '900', color: '#60a5fa', marginTop: '2px' }}>
             {estadisticasGenerales.totalIntervenciones}
           </div>
           <div style={{ fontSize: '0.64rem', color: 'var(--muted-text)' }}>
-            Oratorias registradas
+            {t('history.speechesRecorded', 'Oratorias registradas')}
           </div>
         </div>
 
@@ -510,14 +512,14 @@ const HistoricoDelegaciones = () => {
           justifyContent: 'center'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#4ade80', fontSize: '0.66rem', fontWeight: '700' }}>
-            <span>MOCIONES APROBADAS</span>
+            <span>{t('history.motionsPassed', 'MOCIONES APROBADAS')}</span>
             <CheckCircle size={13} />
           </div>
           <div style={{ fontSize: '1.05rem', fontWeight: '900', color: '#4ade80', marginTop: '2px' }}>
             {estadisticasGenerales.totalMocionesAprobadas} <span style={{ fontSize: '0.72rem', fontWeight: '600', color: 'var(--muted-text)' }}>/ {estadisticasGenerales.totalMociones}</span>
           </div>
           <div style={{ fontSize: '0.64rem', color: 'var(--muted-text)' }}>
-            {estadisticasGenerales.tasaAprobacion}% de aprobación
+            {estadisticasGenerales.tasaAprobacion}% {t('history.approvalRate', 'de aprobación')}
           </div>
         </div>
 
@@ -532,7 +534,7 @@ const HistoricoDelegaciones = () => {
           justifyContent: 'center'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#facc15', fontSize: '0.66rem', fontWeight: '700' }}>
-            <span>DELEGACIÓN LÍDER</span>
+            <span>{t('history.leaderDelegation', 'DELEGACIÓN LÍDER')}</span>
             <Flame size={13} />
           </div>
           {estadisticasGenerales.paisLider ? (
@@ -544,11 +546,11 @@ const HistoricoDelegaciones = () => {
             </div>
           ) : (
             <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)', marginTop: '2px' }}>
-              Sin intervenciones
+              {t('history.noInterventions', 'Sin intervenciones')}
             </div>
           )}
           <div style={{ fontSize: '0.64rem', color: 'var(--muted-text)', marginTop: '1px' }}>
-            {estadisticasGenerales.paisLider ? `${estadisticasGenerales.paisLider.minutosExactos} min hablados` : 'Registra oradores'}
+            {estadisticasGenerales.paisLider ? `${estadisticasGenerales.paisLider.minutosExactos} ${t('history.minSpoken', 'min hablados')}` : t('history.registerSpeakers', 'Registra oradores')}
           </div>
         </div>
       </div>
@@ -565,22 +567,22 @@ const HistoricoDelegaciones = () => {
           <thead>
             <tr style={{ backgroundColor: 'var(--card-header-bg)', borderBottom: '1px solid var(--border-color)', position: 'sticky', top: 0, zIndex: 2 }}>
               <th onClick={() => cambiarOrden('nombre')} style={{ padding: '0.45rem 0.65rem', cursor: 'pointer', userSelect: 'none' }}>
-                PAÍS <ArrowUpDown size={11} style={{ display: 'inline', opacity: 0.7 }} />
+                {t('history.country', 'PAÍS')} <ArrowUpDown size={11} style={{ display: 'inline', opacity: 0.7 }} />
               </th>
               <th onClick={() => cambiarOrden('mociones')} style={{ padding: '0.45rem 0.6rem', textAlign: 'center', cursor: 'pointer', userSelect: 'none' }}>
-                MOC. PRESENTADAS <ArrowUpDown size={11} style={{ display: 'inline', opacity: 0.7 }} />
+                {t('history.motionsPresented', 'MOC. PRESENTADAS')} <ArrowUpDown size={11} style={{ display: 'inline', opacity: 0.7 }} />
               </th>
               <th onClick={() => cambiarOrden('aprobadas')} style={{ padding: '0.45rem 0.6rem', textAlign: 'center', cursor: 'pointer', userSelect: 'none' }}>
-                MOC. APROBADAS <ArrowUpDown size={11} style={{ display: 'inline', opacity: 0.7 }} />
+                {t('history.motionsPassedCol', 'MOC. APROBADAS')} <ArrowUpDown size={11} style={{ display: 'inline', opacity: 0.7 }} />
               </th>
               <th onClick={() => cambiarOrden('tiempoHablado')} style={{ padding: '0.45rem 0.6rem', textAlign: 'center', cursor: 'pointer', userSelect: 'none' }}>
-                TIEMPO HABLADO & MINUTOS <ArrowUpDown size={11} style={{ display: 'inline', opacity: 0.7 }} />
+                {t('history.speakingTimeCol', 'TIEMPO HABLADO & MINUTOS')} <ArrowUpDown size={11} style={{ display: 'inline', opacity: 0.7 }} />
               </th>
               <th onClick={() => cambiarOrden('preguntas')} style={{ padding: '0.45rem 0.6rem', textAlign: 'center', cursor: 'pointer', userSelect: 'none' }}>
-                PREGUNTAS / POIs <ArrowUpDown size={11} style={{ display: 'inline', opacity: 0.7 }} />
+                {t('history.questionsCol', 'PREGUNTAS / POIs')} <ArrowUpDown size={11} style={{ display: 'inline', opacity: 0.7 }} />
               </th>
               <th style={{ padding: '0.45rem 0.6rem', textAlign: 'center', userSelect: 'none' }}>
-                % CUOTA
+                {t('history.quotaCol', '% CUOTA')}
               </th>
             </tr>
           </thead>
@@ -588,7 +590,7 @@ const HistoricoDelegaciones = () => {
             {paisesOrdenados.length === 0 ? (
               <tr>
                 <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted-text)' }}>
-                  No hay delegaciones que coincidan con los filtros aplicados.
+                  {t('history.noMatchingDelegations', 'No hay delegaciones que coincidan con los filtros aplicados.')}
                 </td>
               </tr>
             ) : (
@@ -677,7 +679,7 @@ const HistoricoDelegaciones = () => {
                         {/* Si se filtra un día específico, mostrar el acumulado global de todos los días */}
                         {diaSeleccionado !== 'TODOS' && (
                           <span style={{ fontSize: '0.62rem', color: 'var(--muted-text)', marginTop: '1px' }}>
-                            Total MUN: {formatTiempoCompacto(p.segGlobalHablados)}
+                            {t('history.totalMUN', 'Total MUN')}: {formatTiempoCompacto(p.segGlobalHablados)}
                           </span>
                         )}
                       </div>

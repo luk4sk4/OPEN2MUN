@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { googleDriveService } from '../services/googleDriveService';
 
 const SessionContext = createContext();
 
@@ -79,6 +80,16 @@ export const SessionProvider = ({ children }) => {
 
   const [relojGSLState, setRelojGSLState] = useState({ segundosRestantes: 60, tiempoInicial: 60, corriendo: false });
   const [yieldEvento, setYieldEvento] = useState(null);
+
+  // Estados de Google Drive
+  const [driveFileId, setDriveFileId] = useState(() => localStorage.getItem('openmun_drive_file_id') || null);
+  const [driveFileName, setDriveFileName] = useState(() => localStorage.getItem('openmun_drive_file_name') || 'openmun_sesion_activa.json');
+  const [isDriveLinked, setIsDriveLinked] = useState(false);
+  const [driveSyncStatus, setDriveSyncStatus] = useState('disconnected'); // 'disconnected' | 'connecting' | 'synced' | 'syncing' | 'error'
+  const [driveUser, setDriveUser] = useState(null);
+  const [driveLastSync, setDriveLastSync] = useState(null);
+  const [driveFilesList, setDriveFilesList] = useState([]);
+  const isInitialSyncRef = useRef(false);
 
   // Mantener referencias actualizadas para lectura en callbacks
   const stateRef = useRef({
@@ -913,75 +924,83 @@ export const SessionProvider = ({ children }) => {
     };
   }, [ejecutarAccion, aplicarEstadoExterno, tabInstanceId]);
 
-  // 1. EXPORTAR sesion_activa.json
-  const descargarSesionJSON = () => {
-    try {
-      const localStorageSnapshot = {};
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key) {
-          const rawVal = localStorage.getItem(key);
-          try {
-            localStorageSnapshot[key] = JSON.parse(rawVal);
-          } catch {
-            localStorageSnapshot[key] = rawVal;
-          }
+  // 1. GENERAR SNAPSHOT sesion_activa.json
+  const generarSnapshotSesion = useCallback(() => {
+    const localStorageSnapshot = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key) {
+        const rawVal = localStorage.getItem(key);
+        try {
+          localStorageSnapshot[key] = JSON.parse(rawVal);
+        } catch {
+          localStorageSnapshot[key] = rawVal;
         }
       }
+    }
 
-      localStorageSnapshot['openmun_paises'] = paises;
-      localStorageSnapshot['openmun_oradores'] = oradoresCola;
-      localStorageSnapshot['openmun_oradores_caucus'] = oradoresCaucus;
-      localStorageSnapshot['openmun_intervenciones'] = registroIntervenciones;
-      localStorageSnapshot['openmun_mociones'] = mociones;
-      localStorageSnapshot['openmun_historico_mociones'] = historicoMociones;
-      localStorageSnapshot['openmun_caucus'] = caucusActivo;
-      localStorageSnapshot['openmun_votacion'] = votacionSesion;
-      localStorageSnapshot['openmun_agenda'] = agendaSesion;
-      localStorageSnapshot['openmun_comite'] = nombreComite;
+    localStorageSnapshot['openmun_paises'] = paises;
+    localStorageSnapshot['openmun_oradores'] = oradoresCola;
+    localStorageSnapshot['openmun_oradores_caucus'] = oradoresCaucus;
+    localStorageSnapshot['openmun_intervenciones'] = registroIntervenciones;
+    localStorageSnapshot['openmun_mociones'] = mociones;
+    localStorageSnapshot['openmun_historico_mociones'] = historicoMociones;
+    localStorageSnapshot['openmun_caucus'] = caucusActivo;
+    localStorageSnapshot['openmun_votacion'] = votacionSesion;
+    localStorageSnapshot['openmun_agenda'] = agendaSesion;
+    localStorageSnapshot['openmun_comite'] = nombreComite;
 
-      // Recuperar alertas y eventos de crisis
-      let crisisEventosExport = [];
-      let crisisRelojExport = null;
-      try {
-        const savedEventos = localStorage.getItem('openmun_crisis_eventos');
-        if (savedEventos) crisisEventosExport = JSON.parse(savedEventos);
-      } catch (e) {}
-      try {
-        const savedReloj = localStorage.getItem('openmun_crisis_reloj');
-        if (savedReloj) crisisRelojExport = JSON.parse(savedReloj);
-      } catch (e) {}
+    // Recuperar alertas y eventos de crisis
+    let crisisEventosExport = [];
+    let crisisRelojExport = null;
+    try {
+      const savedEventos = localStorage.getItem('openmun_crisis_eventos');
+      if (savedEventos) crisisEventosExport = JSON.parse(savedEventos);
+    } catch (e) {}
+    try {
+      const savedReloj = localStorage.getItem('openmun_crisis_reloj');
+      if (savedReloj) crisisRelojExport = JSON.parse(savedReloj);
+    } catch (e) {}
 
-      localStorageSnapshot['openmun_crisis_eventos'] = crisisEventosExport;
-      if (crisisRelojExport) localStorageSnapshot['openmun_crisis_reloj'] = crisisRelojExport;
+    localStorageSnapshot['openmun_crisis_eventos'] = crisisEventosExport;
+    if (crisisRelojExport) localStorageSnapshot['openmun_crisis_reloj'] = crisisRelojExport;
 
-      const sesionData = {
-        version: '2.0',
-        tipo: 'openmun_full_backup',
-        fechaExportacion: new Date().toISOString(),
-        comision: nombreComite || 'Asamblea General - openMUN',
-        paises,
-        oradoresCola,
-        oradoresCaucus,
-        registroIntervenciones,
-        mociones,
-        historicoMociones,
-        caucusActivo,
-        votacionSesion,
-        agendaSesion,
-        nombreComite,
-        alertasCrisis: crisisEventosExport,
-        eventosCrisis: crisisEventosExport,
-        relojCrisis: crisisRelojExport,
-        config: localStorageSnapshot['openmun_config'] || undefined,
-        localStorageSnapshot
-      };
+    return {
+      version: '2.0',
+      tipo: 'openmun_full_backup',
+      fechaExportacion: new Date().toISOString(),
+      comision: nombreComite || 'Asamblea General - openMUN',
+      paises,
+      oradoresCola,
+      oradoresCaucus,
+      registroIntervenciones,
+      mociones,
+      historicoMociones,
+      caucusActivo,
+      votacionSesion,
+      agendaSesion,
+      nombreComite,
+      alertasCrisis: crisisEventosExport,
+      eventosCrisis: crisisEventosExport,
+      relojCrisis: crisisRelojExport,
+      config: localStorageSnapshot['openmun_config'] || undefined,
+      localStorageSnapshot
+    };
+  }, [paises, oradoresCola, oradoresCaucus, registroIntervenciones, mociones, historicoMociones, caucusActivo, votacionSesion, agendaSesion, nombreComite]);
 
+  // 2. EXPORTAR sesion_activa.json A ARCHIVO LOCAL
+  const descargarSesionJSON = (customFileName) => {
+    try {
+      const sesionData = generarSnapshotSesion();
       const blob = new Blob([JSON.stringify(sesionData, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'sesion_activa.json';
+      let finalName = customFileName && customFileName.trim().length > 0 ? customFileName.trim() : 'sesion_activa.json';
+      if (!finalName.toLowerCase().endsWith('.json')) {
+        finalName += '.json';
+      }
+      a.download = finalName;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
@@ -989,6 +1008,232 @@ export const SessionProvider = ({ children }) => {
       alert('Error al exportar sesión: ' + err.message);
     }
   };
+
+  // Listar todos los archivos en la carpeta openMUN de Drive
+  const listarSesionesDrive = async () => {
+    try {
+      if (!googleDriveService.isAuthenticated()) return [];
+      const archivos = await googleDriveService.listarArchivosSesion();
+      setDriveFilesList(archivos);
+      return archivos;
+    } catch (err) {
+      console.warn('Error al listar archivos de Drive:', err);
+      return [];
+    }
+  };
+
+  // 3. CONECTAR Y VINCULAR CON GOOGLE DRIVE
+  const conectarGoogleDrive = async () => {
+    try {
+      setDriveSyncStatus('connecting');
+      const authResult = await googleDriveService.conectar();
+      if (authResult.user) {
+        setDriveUser(authResult.user);
+      }
+
+      // Obtener lista de archivos en la carpeta openMUN
+      const archivos = await googleDriveService.listarArchivosSesion();
+      setDriveFilesList(archivos);
+
+      const hayDatosLocales = paises.length > 0 || oradoresCola.length > 0 || (nombreComite && nombreComite.trim().length > 0);
+
+      // Si ya hay un archivo id guardado y existe en Drive
+      let targetFile = driveFileId ? archivos.find(f => f.id === driveFileId) : null;
+      if (!targetFile && archivos.length > 0) {
+        targetFile = archivos[0];
+      }
+
+      if (targetFile) {
+        setDriveFileId(targetFile.id);
+        setDriveFileName(targetFile.name);
+        localStorage.setItem('openmun_drive_file_id', targetFile.id);
+        localStorage.setItem('openmun_drive_file_name', targetFile.name);
+
+        if (!hayDatosLocales) {
+          // Si no hay datos locales, cargar directamente la sesión desde Drive
+          const sesionRemota = await googleDriveService.descargarSesion(targetFile.id);
+          cargarSesionJSON(sesionRemota);
+        } else {
+          // Si ya hay datos locales, sincronizar actualizando el archivo en Drive
+          const snapshotActual = generarSnapshotSesion();
+          await googleDriveService.actualizarArchivoSesion(targetFile.id, snapshotActual);
+        }
+      } else {
+        // No existe ningún archivo en la carpeta openMUN -> crear nuevo archivo
+        const nombreArchivo = nombreComite && nombreComite.trim().length > 0
+          ? `openmun_${nombreComite.trim().replace(/[^a-zA-Z0-9_-]/g, '_')}.json`
+          : 'openmun_sesion_activa.json';
+        const snapshotActual = generarSnapshotSesion();
+        const nuevoArchivo = await googleDriveService.crearArchivoSesion(snapshotActual, nombreArchivo);
+        setDriveFileId(nuevoArchivo.id);
+        setDriveFileName(nuevoArchivo.name);
+        localStorage.setItem('openmun_drive_file_id', nuevoArchivo.id);
+        localStorage.setItem('openmun_drive_file_name', nuevoArchivo.name);
+        const actualizados = await googleDriveService.listarArchivosSesion();
+        setDriveFilesList(actualizados);
+      }
+
+      setIsDriveLinked(true);
+      setDriveSyncStatus('synced');
+      setDriveLastSync(new Date());
+      isInitialSyncRef.current = true;
+      return true;
+    } catch (err) {
+      console.error('Error al conectar Google Drive:', err);
+      setDriveSyncStatus('error');
+      alert('Error al conectar con Google Drive: ' + (err.message || err));
+      return false;
+    }
+  };
+
+  // Cargar una sesión específica desde Drive por su File ID
+  const cargarSesionDesdeDrive = async (fileId, fileName) => {
+    try {
+      setDriveSyncStatus('syncing');
+      const sesionRemota = await googleDriveService.descargarSesion(fileId);
+      const ok = cargarSesionJSON(sesionRemota);
+      if (ok) {
+        setDriveFileId(fileId);
+        if (fileName) setDriveFileName(fileName);
+        localStorage.setItem('openmun_drive_file_id', fileId);
+        if (fileName) localStorage.setItem('openmun_drive_file_name', fileName);
+        setIsDriveLinked(true);
+        setDriveSyncStatus('synced');
+        setDriveLastSync(new Date());
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Error al cargar sesión desde Drive:', err);
+      setDriveSyncStatus('error');
+      alert('Error al cargar archivo desde Drive: ' + err.message);
+      return false;
+    }
+  };
+
+  // Guardar la sesión actual como un nuevo archivo en Drive
+  const guardarNuevaSesionEnDrive = async (nombreArchivo) => {
+    try {
+      setDriveSyncStatus('syncing');
+      const snapshotActual = generarSnapshotSesion();
+      const nuevo = await googleDriveService.crearArchivoSesion(snapshotActual, nombreArchivo);
+      setDriveFileId(nuevo.id);
+      setDriveFileName(nuevo.name);
+      localStorage.setItem('openmun_drive_file_id', nuevo.id);
+      localStorage.setItem('openmun_drive_file_name', nuevo.name);
+      
+      const archivos = await googleDriveService.listarArchivosSesion();
+      setDriveFilesList(archivos);
+
+      setIsDriveLinked(true);
+      setDriveSyncStatus('synced');
+      setDriveLastSync(new Date());
+      return nuevo;
+    } catch (err) {
+      console.error('Error al crear nueva sesión en Drive:', err);
+      setDriveSyncStatus('error');
+      alert('Error al crear archivo en Drive: ' + err.message);
+      return null;
+    }
+  };
+
+  // Vincular la sincronización activa a un archivo existente de Drive
+  const vincularArchivoDrive = async (fileId, fileName) => {
+    try {
+      setDriveFileId(fileId);
+      setDriveFileName(fileName);
+      localStorage.setItem('openmun_drive_file_id', fileId);
+      localStorage.setItem('openmun_drive_file_name', fileName);
+      setDriveSyncStatus('syncing');
+
+      const snapshotActual = generarSnapshotSesion();
+      await googleDriveService.actualizarArchivoSesion(fileId, snapshotActual);
+
+      setIsDriveLinked(true);
+      setDriveSyncStatus('synced');
+      setDriveLastSync(new Date());
+      return true;
+    } catch (err) {
+      console.error('Error al vincular archivo en Drive:', err);
+      setDriveSyncStatus('error');
+      return false;
+    }
+  };
+
+  // Eliminar un archivo de Drive
+  const eliminarSesionDrive = async (fileId) => {
+    try {
+      await googleDriveService.eliminarArchivo(fileId);
+      if (driveFileId === fileId) {
+        setDriveFileId(null);
+        setDriveFileName('');
+        localStorage.removeItem('openmun_drive_file_id');
+        localStorage.removeItem('openmun_drive_file_name');
+        setIsDriveLinked(false);
+        setDriveSyncStatus('disconnected');
+      }
+      const archivos = await googleDriveService.listarArchivosSesion();
+      setDriveFilesList(archivos);
+      return true;
+    } catch (err) {
+      console.error('Error al eliminar archivo en Drive:', err);
+      alert('Error al eliminar archivo de Drive: ' + err.message);
+      return false;
+    }
+  };
+
+  // 4. DESCONECTAR GOOGLE DRIVE
+  const desconectarGoogleDrive = () => {
+    googleDriveService.desconectar();
+    setIsDriveLinked(false);
+    setDriveSyncStatus('disconnected');
+    setDriveUser(null);
+    setDriveFilesList([]);
+  };
+
+  // 5. SINCRONIZACIÓN MANUAL CON DRIVE
+  const sincronizarDriveManual = async () => {
+    if (!isDriveLinked || !driveFileId) {
+      return await conectarGoogleDrive();
+    }
+    try {
+      setDriveSyncStatus('syncing');
+      const snapshot = generarSnapshotSesion();
+      await googleDriveService.actualizarArchivoSesion(driveFileId, snapshot);
+      setDriveSyncStatus('synced');
+      setDriveLastSync(new Date());
+      return true;
+    } catch (err) {
+      console.error('Error en sincronización manual con Drive:', err);
+      setDriveSyncStatus('error');
+      return false;
+    }
+  };
+
+  // 6. AUTO-GUARDADO CONTINUO EN GOOGLE DRIVE (Debounce de 2.5s)
+  useEffect(() => {
+    if (!isDriveLinked || !driveFileId || !googleDriveService.isAuthenticated()) return;
+
+    if (!isInitialSyncRef.current) {
+      isInitialSyncRef.current = true;
+      return;
+    }
+
+    setDriveSyncStatus('syncing');
+    const debounceTimer = setTimeout(async () => {
+      try {
+        const snapshot = generarSnapshotSesion();
+        await googleDriveService.actualizarArchivoSesion(driveFileId, snapshot);
+        setDriveSyncStatus('synced');
+        setDriveLastSync(new Date());
+      } catch (err) {
+        console.warn('Error al auto-guardar en Google Drive:', err);
+        setDriveSyncStatus('error');
+      }
+    }, 2500);
+
+    return () => clearTimeout(debounceTimer);
+  }, [paises, oradoresCola, oradoresCaucus, registroIntervenciones, mociones, historicoMociones, caucusActivo, votacionSesion, agendaSesion, nombreComite, isDriveLinked, driveFileId, generarSnapshotSesion]);
 
   // 2. CARGAR sesion_activa.json
   const cargarSesionJSON = (sesionData, onConfigLoaded) => {
@@ -1164,7 +1409,22 @@ export const SessionProvider = ({ children }) => {
       nombreComite,
       setNombreComite,
       ejecutarAccion,
-      aplicarEstadoExterno
+      aplicarEstadoExterno,
+      generarSnapshotSesion,
+      isDriveLinked,
+      driveSyncStatus,
+      driveUser,
+      driveLastSync,
+      driveFileName,
+      driveFilesList,
+      conectarGoogleDrive,
+      desconectarGoogleDrive,
+      sincronizarDriveManual,
+      listarSesionesDrive,
+      cargarSesionDesdeDrive,
+      guardarNuevaSesionEnDrive,
+      vincularArchivoDrive,
+      eliminarSesionDrive
     }}>
       {children}
     </SessionContext.Provider>

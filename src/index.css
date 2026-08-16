@@ -178,28 +178,37 @@ input[type="range"]::-moz-range-progress {
 
 /* Animaciones y Clases para Alertas de Temporizadores */
 @keyframes blinkRed {
-  0% {
-    background-color: var(--timer-negative-bg, #450a0a) !important;
-    border-color: var(--timer-negative-border, #ef4444) !important;
-    color: var(--timer-negative-color, #ef4444) !important;
-    box-shadow: 0 0 16px rgba(239, 68, 68, 0.45);
+  0%, 100% {
+    background-color: var(--timer-negative-bg, #3f0c0c);
+    border-color: var(--timer-negative-border, #ef4444);
+    color: var(--timer-negative-color, #ef4444);
+    box-shadow: 0 0 22px rgba(239, 68, 68, 0.55);
   }
   50% {
-    background-color: var(--card-header-bg, #050505) !important;
-    border-color: #7f1d1d !important;
-    color: var(--timer-negative-color, #f87171) !important;
-    box-shadow: none;
-  }
-  100% {
-    background-color: var(--timer-negative-bg, #450a0a) !important;
-    border-color: var(--timer-negative-border, #ef4444) !important;
-    color: var(--timer-negative-color, #ef4444) !important;
-    box-shadow: 0 0 16px rgba(239, 68, 68, 0.45);
+    background-color: var(--card-header-bg, #1e222f);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: var(--text-color, #f1f5f9);
+    box-shadow: 0 0 4px rgba(239, 68, 68, 0.15);
   }
 }
 
 .timer-blink-red {
-  animation: blinkRed 0.6s infinite ease-in-out !important;
+  animation: blinkRed 1s infinite cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: none !important;
+}
+
+.timer-warning-red {
+  background-color: var(--timer-negative-bg, #3f0c0c) !important;
+  border-color: var(--timer-negative-border, #ef4444) !important;
+  color: var(--timer-negative-color, #ef4444) !important;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.35) !important;
+}
+
+.timer-negative {
+  background-color: var(--timer-negative-bg, #3f0c0c) !important;
+  border-color: var(--timer-negative-border, #ef4444) !important;
+  color: var(--timer-negative-color, #ef4444) !important;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.45) !important;
 }
 
 .timer-orange {
@@ -259,4 +268,230 @@ input[type="range"]::-moz-range-progress {
   transform: scale(0.92);
 }
 
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  background: var(--scrollbar-thumb-hover, rgba(148, 163, 184, 0.55));
+}
 
+::-webkit-scrollbar-thumb:active {
+  background: var(--btn-bg, #3b82f6);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Custom Modern Range Sliders (Inputs de rango) */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--slider-track-bg, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  margin: 6px 0;
+}
+
+input[type="range"]:hover {
+  background: var(--slider-track-hover, rgba(255, 255, 255, 0.15));
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+/* Slider Thumb - Webkit */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--btn-bg, #3b82f6);
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 14px rgba(59, 130, 246, 0.8), 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+input[type="range"]::-webkit-slider-thumb:active {
+  transform: scale(0.95);
+  background: #2563eb;
+}
+
+/* Slider Thumb - Firefox */
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--btn-bg, #3b82f6);
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 14px rgba(59, 130, 246, 0.8), 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+input[type="range"]::-moz-range-thumb:active {
+  transform: scale(0.95);
+  background: #2563eb;
+}
+
+input[type="range"]::-moz-range-track {
+  height: 6px;
+  background: var(--slider-track-bg, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+  border-radius: 9999px;
+}
+
+input[type="range"]::-moz-range-progress {
+  height: 6px;
+  background: var(--btn-bg, #3b82f6);
+  border-radius: 9999px 0 0 9999px;
+}
+
+/* React Grid Layout overrides for better visuals */
+.react-grid-item.react-grid-placeholder {
+  background: var(--btn-bg, #3b82f6) !important;
+  opacity: 0.15;
+  transition-duration: 100ms;
+  z-index: 2;
+  user-select: none;
+}
+
+/* Animaciones y Clases para Alertas de Temporizadores */
+@keyframes blinkRed {
+  0%, 100% {
+    background-color: var(--timer-negative-bg, #3f0c0c);
+    border-color: var(--timer-negative-border, #ef4444);
+    color: var(--timer-negative-color, #ef4444);
+    box-shadow: 0 0 22px rgba(239, 68, 68, 0.55);
+  }
+  50% {
+    background-color: var(--card-header-bg, #1e222f);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: var(--text-color, #f1f5f9);
+    box-shadow: 0 0 4px rgba(239, 68, 68, 0.15);
+  }
+}
+
+.timer-blink-red {
+  animation: blinkRed 1s infinite cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: none !important;
+}
+
+.timer-warning-red {
+  background-color: var(--timer-negative-bg, #3f0c0c) !important;
+  border-color: var(--timer-negative-border, #ef4444) !important;
+  color: var(--timer-negative-color, #ef4444) !important;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.35) !important;
+}
+
+.timer-negative {
+  background-color: var(--timer-negative-bg, #3f0c0c) !important;
+  border-color: var(--timer-negative-border, #ef4444) !important;
+  color: var(--timer-negative-color, #ef4444) !important;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.45) !important;
+}
+
+.timer-orange {
+  background-color: var(--timer-orange-bg, #431407) !important;
+  border-color: var(--timer-orange-border, #f97316) !important;
+  color: var(--timer-orange-color, #f97316) !important;
+}
+
+
+/* Controles flotantes de Widgets (Visibles solo al pasar el ratón o interactuar) */
+.widget-card .widget-floating-controls {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 0.2s cubic-bezier(0.2, 0, 0, 1), transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.widget-card:hover .widget-floating-controls,
+.widget-card:focus-within .widget-floating-controls,
+.widget-card.is-interacting .widget-floating-controls {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+/* Ocultar flechas default de los inputs de tipo number */
+.no-spin::-webkit-outer-spin-button,
+.no-spin::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.no-spin[type=number] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Estilo para flechas personalizadas de ajuste de tiempo */
+.timer-arrow-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 2px 4px;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.timer-arrow-btn:hover {
+  background-color: rgba(59, 130, 246, 0.15);
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+.timer-arrow-btn:active {
+  transform: scale(0.92);
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin-animation {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.94) translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}

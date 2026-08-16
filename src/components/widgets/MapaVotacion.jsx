@@ -31,6 +31,7 @@ import {
   ShieldAlert,
   Scale
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
 import { emojiToIso, normalizarBandera, DICCIONARIO_PAISES_ISO } from '../../utils/flags';
@@ -175,6 +176,7 @@ const PARSED_WORLD_PATHS = (() => {
 })();
 
 const MapaVotacion = ({ isLight: propIsLight }) => {
+  const { t } = useTranslation();
   const {
     paises,
     votacionSesion,
@@ -602,7 +604,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '0.86rem', fontWeight: '800', color: isLight ? 'var(--text-color, #0f172a)' : '#ffffff', letterSpacing: '-0.01em' }}>
-                Mapa Mundial de Votación
+                {t('voting.worldMapTitle', 'Mapa Mundial de Votación')}
               </span>
               <span
                 style={{
@@ -623,7 +625,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                   border: `1px solid ${stats.vetoEjercido ? (isLight ? '#ef4444' : 'rgba(239, 68, 68, 0.45)') : (stats.superado ? (isLight ? '#22c55e' : 'rgba(34, 197, 94, 0.45)') : (isLight ? '#3b82f6' : 'rgba(59, 130, 246, 0.45)'))}`
                 }}
               >
-                {stats.vetoEjercido ? 'VETADA' : (stats.superado ? 'APROBADA' : (tipoMayoria === 'consensus' ? 'CONSENSO (0 contra)' : `META: ${stats.favor}/${stats.requeridos}`))}
+                {stats.vetoEjercido ? t('voting.vetoed', 'VETADA') : (stats.superado ? t('voting.passed', 'APROBADA') : (tipoMayoria === 'consensus' ? t('voting.consensus', 'CONSENSO (0 contra)') : `${t('voting.target', 'META')}: ${stats.favor}/${stats.requeridos}`))}
               </span>
 
               {/* Badges de Tipo y Mayoría */}
@@ -638,7 +640,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                   border: `1px solid ${isLight ? '#cbd5e1' : '#334155'}`
                 }}
               >
-                {tipoVotacion === 'substantive' ? 'Sustantiva' : 'Procedimental (Sin Abst.)'}
+                {tipoVotacion === 'substantive' ? t('voting.substantive', 'Sustantiva') : t('voting.procedural', 'Procedimental (Sin Abst.)')}
               </span>
 
               <span
@@ -652,7 +654,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                   border: `1px solid ${isLight ? '#cbd5e1' : '#334155'}`
                 }}
               >
-                {tipoMayoria === 'simple' ? 'Mayoría 50%+1' : (tipoMayoria === '2/3' ? 'Mayoría 2/3' : 'Consenso')}
+                {tipoMayoria === 'simple' ? t('voting.simpleMajority', 'Mayoría 50%+1') : (tipoMayoria === '2/3' ? t('voting.twoThirds', 'Mayoría 2/3') : t('voting.consensus', 'Consenso'))}
               </span>
 
               {aplicarVeto && (
@@ -668,12 +670,12 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                   }}
                   title="Derecho a Veto del Consejo de Seguridad activo"
                 >
-                  👑 Veto P5
+                  👑 {t('voting.vetoP5', 'Veto P5')}
                 </span>
               )}
             </div>
             <div style={{ fontSize: '0.72rem', color: isLight ? 'var(--muted-text, #64748b)' : '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
-              {asunto || 'Votación oficial en tiempo real'}
+              {asunto || t('voting.defaultSubject', 'Votación oficial en tiempo real')}
             </div>
           </div>
         </div>
@@ -701,7 +703,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
             title="Filtrar delegaciones a favor"
           >
             <CheckCircle2 size={13} color={isLight ? '#16a34a' : '#22c55e'} />
-            <span>A Favor: {stats.favor}</span>
+            <span>{t('voting.inFavor', 'A Favor')}: {stats.favor}</span>
           </button>
 
           {/* En Contra */}
@@ -725,7 +727,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
             title="Filtrar delegaciones en contra"
           >
             <XCircle size={13} color={isLight ? '#dc2626' : '#ef4444'} />
-            <span>En Contra: {stats.contra}</span>
+            <span>{t('voting.against', 'En Contra')}: {stats.contra}</span>
           </button>
 
           {/* Abstención */}
@@ -749,7 +751,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
             title="Filtrar abstenciones"
           >
             <AlertTriangle size={13} color={isLight ? '#d97706' : '#f59e0b'} />
-            <span>Abst: {stats.abstencion}</span>
+            <span>{t('voting.abstentionShort', 'Abst')}: {stats.abstencion}</span>
           </button>
 
           {/* Pendientes */}
@@ -773,7 +775,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
             title="Filtrar delegaciones con voto pendiente"
           >
             <HelpCircle size={13} color="#3b82f6" />
-            <span>Pend: {stats.pendientes}</span>
+            <span>{t('voting.pendingShort', 'Pend')}: {stats.pendientes}</span>
           </button>
         </div>
 
@@ -800,7 +802,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
             title="Ajustes de la Votación (Tipo, Mayoría, Veto P5, Asunto)"
           >
             <Settings size={13} color={mostrarAjustes ? (isLight ? '#1d4ed8' : '#60a5fa') : (isLight ? '#64748b' : '#94a3b8')} />
-            <span>Ajustes</span>
+            <span>{t('common.settings', 'Ajustes')}</span>
           </button>
 
           {/* Botón Iniciar Roll Call */}
@@ -825,7 +827,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
             title="Iniciar votación nominal delegación por delegación en el mapa"
           >
             {modoRollCall ? <Square size={12} fill="#ffffff" /> : <Play size={12} fill={isLight ? '#2563eb' : '#60a5fa'} color={isLight ? '#2563eb' : '#60a5fa'} />}
-            <span>{modoRollCall ? 'Salir Roll Call' : 'Modo Roll Call'}</span>
+            <span>{modoRollCall ? t('voting.exitRollCall', 'Salir Roll Call') : t('voting.startRollCall', 'Modo Roll Call')}</span>
           </button>
 
           {/* Buscador de país */}
@@ -833,7 +835,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
             <Search size={13} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: isLight ? '#94a3b8' : '#64748b' }} />
             <input
               type="text"
-              placeholder="Buscar país..."
+              placeholder={t('countries.searchPlaceholder', 'Buscar país...')}
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               style={{
@@ -952,10 +954,10 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
               </div>
               <div>
                 <div style={{ fontSize: '0.9rem', fontWeight: '900', color: isLight ? '#0f172a' : '#ffffff' }}>
-                  Ajustes de la Votación
+                  {t('voting.settingsTitle', 'Ajustes de la Votación')}
                 </div>
                 <div style={{ fontSize: '0.7rem', color: isLight ? '#64748b' : '#94a3b8' }}>
-                  Configuración en tiempo real sincronizada con el comité
+                  {t('voting.settingsSubtitle', 'Configuración en tiempo real sincronizada con el comité')}
                 </div>
               </div>
             </div>
@@ -971,13 +973,13 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
           {/* 1. Asunto de la Votación */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
             <label style={{ fontSize: '0.74rem', fontWeight: '800', color: isLight ? '#334155' : '#cbd5e1' }}>
-              Asunto / Título del Proyecto de Resolución o Moción
+              {t('voting.subjectLabel', 'Asunto / Título del Proyecto de Resolución o Moción')}
             </label>
             <input
               type="text"
               value={asunto || ''}
               onChange={(e) => configurarVotacion({ asunto: e.target.value })}
-              placeholder="Ej: Proyecto de Resolución 1.1 / Moción de Debate Moderado"
+              placeholder={t('voting.subjectPlaceholder', 'Ej: Proyecto de Resolución 1.1 / Moción de Debate Moderado')}
               style={{
                 width: '100%',
                 padding: '0.45rem 0.75rem',
@@ -996,10 +998,10 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <label style={{ fontSize: '0.74rem', fontWeight: '800', color: isLight ? '#334155' : '#cbd5e1' }}>
-                Tipo de Votación
+                {t('voting.voteType', 'Tipo de Votación')}
               </label>
               <span style={{ fontSize: '0.68rem', color: isLight ? '#64748b' : '#94a3b8' }}>
-                {tipoVotacion === 'procedural' ? '🚫 Abstención prohibida' : '✅ Abstención permitida'}
+                {tipoVotacion === 'procedural' ? `🚫 ${t('voting.abstentionForbidden', 'Abstención prohibida')}` : `✅ ${t('voting.abstentionAllowed', 'Abstención permitida')}`}
               </span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
@@ -1019,11 +1021,11 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ fontWeight: '800', fontSize: '0.8rem' }}>Procedimental</div>
+                  <div style={{ fontWeight: '800', fontSize: '0.8rem' }}>{t('voting.procedural', 'Procedimental')}</div>
                   {tipoVotacion === 'procedural' && <Check size={14} color="#3b82f6" />}
                 </div>
                 <div style={{ fontSize: '0.68rem', color: isLight ? '#64748b' : '#94a3b8', marginTop: '2px' }}>
-                  Mociones y orden (Sin abstención)
+                  {t('voting.proceduralSub', 'Mociones y orden (Sin abstención)')}
                 </div>
               </button>
 
@@ -1043,11 +1045,11 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ fontWeight: '800', fontSize: '0.8rem' }}>Sustantiva</div>
+                  <div style={{ fontWeight: '800', fontSize: '0.8rem' }}>{t('voting.substantive', 'Sustantiva')}</div>
                   {tipoVotacion === 'substantive' && <Check size={14} color="#3b82f6" />}
                 </div>
                 <div style={{ fontSize: '0.68rem', color: isLight ? '#64748b' : '#94a3b8', marginTop: '2px' }}>
-                  Resoluciones y enmiendas (Con abstención)
+                  {t('voting.substantiveSub', 'Resoluciones y enmiendas (Con abstención)')}
                 </div>
               </button>
             </div>
@@ -1056,7 +1058,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
           {/* 3. Regla de Mayoría */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             <label style={{ fontSize: '0.74rem', fontWeight: '800', color: isLight ? '#334155' : '#cbd5e1' }}>
-              Regla de Mayoría Requerida
+              {t('voting.majorityRequired', 'Regla de Mayoría Requerida')}
             </label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.45rem' }}>
               {/* Mayoría Simple */}
@@ -1074,9 +1076,9 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                   transition: 'all 0.15s ease'
                 }}
               >
-                <div style={{ fontSize: '0.78rem', fontWeight: '800' }}>Simple (50%+1)</div>
+                <div style={{ fontSize: '0.78rem', fontWeight: '800' }}>{t('voting.simpleMajority', 'Simple (50%+1)')}</div>
                 <div style={{ fontSize: '0.67rem', opacity: 0.8, marginTop: '2px' }}>
-                  Meta: {stats.reqSimpleQuorum} {stats.reqSimpleQuorum === 1 ? 'voto' : 'votos'}
+                  {t('voting.target', 'Meta')}: {stats.reqSimpleQuorum} {stats.reqSimpleQuorum === 1 ? t('voting.vote', 'voto') : t('voting.votes', 'votos')}
                 </div>
               </button>
 
@@ -1095,9 +1097,9 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                   transition: 'all 0.15s ease'
                 }}
               >
-                <div style={{ fontSize: '0.78rem', fontWeight: '800' }}>Calificada (2/3)</div>
+                <div style={{ fontSize: '0.78rem', fontWeight: '800' }}>{t('voting.twoThirds', 'Calificada (2/3)')}</div>
                 <div style={{ fontSize: '0.67rem', opacity: 0.8, marginTop: '2px' }}>
-                  Meta: {stats.reqDosTerciosQuorum} {stats.reqDosTerciosQuorum === 1 ? 'voto' : 'votos'}
+                  {t('voting.target', 'Meta')}: {stats.reqDosTerciosQuorum} {stats.reqDosTerciosQuorum === 1 ? t('voting.vote', 'voto') : t('voting.votes', 'votos')}
                 </div>
               </button>
 
@@ -1116,9 +1118,9 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                   transition: 'all 0.15s ease'
                 }}
               >
-                <div style={{ fontSize: '0.78rem', fontWeight: '800' }}>Consenso</div>
+                <div style={{ fontSize: '0.78rem', fontWeight: '800' }}>{t('voting.consensus', 'Consenso')}</div>
                 <div style={{ fontSize: '0.67rem', opacity: 0.8, marginTop: '2px' }}>
-                  0 en contra
+                  {t('voting.requiresZeroAgainst', '0 en contra')}
                 </div>
               </button>
             </div>
@@ -1130,10 +1132,10 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
               <Crown size={18} color="#f59e0b" />
               <div>
                 <div style={{ fontSize: '0.78rem', fontWeight: '800', color: isLight ? '#0f172a' : '#ffffff' }}>
-                  Derecho a Veto (P5)
+                  {t('voting.vetoRight', 'Derecho a Veto (P5)')}
                 </div>
                 <div style={{ fontSize: '0.68rem', color: isLight ? '#64748b' : '#94a3b8' }}>
-                  Voto en contra de miembros permanentes veta la resolución
+                  {t('voting.vetoRightDesc', 'Voto en contra de miembros permanentes veta la resolución')}
                 </div>
               </div>
             </div>
@@ -1152,7 +1154,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                 transition: 'all 0.15s ease'
               }}
             >
-              {aplicarVeto ? 'ACTIVO (ON)' : 'INACTIVO (OFF)'}
+              {aplicarVeto ? t('common.activeOn', 'ACTIVO (ON)') : t('common.inactiveOff', 'INACTIVO (OFF)')}
             </button>
           </div>
 
@@ -1180,7 +1182,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
               }}
             >
               <RotateCcw size={13} />
-              <span>Limpiar Votos</span>
+              <span>{t('voting.clearVotes', 'Limpiar Votos')}</span>
             </button>
 
             <button
@@ -1198,7 +1200,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                 boxShadow: '0 2px 10px rgba(37, 99, 235, 0.35)'
               }}
             >
-              Listo
+              {t('common.done', 'Listo')}
             </button>
           </div>
         </div>
@@ -1241,13 +1243,13 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                 letterSpacing: '0.02em'
               }}>
                 {rollCallFinalizado
-                  ? 'DICTAMEN FINAL — ROLL CALL NOMINAL'
-                  : (rondaRollCall === 1 ? 'PRIMERA RONDA — ROLL CALL NOMINAL' : 'SEGUNDA RONDA — DELEGACIONES QUE PASARON')}
+                  ? t('voting.finalRulingRollCall', 'DICTAMEN FINAL — ROLL CALL NOMINAL')
+                  : (rondaRollCall === 1 ? t('voting.round1RollCall', 'PRIMERA RONDA — ROLL CALL NOMINAL') : t('voting.round2RollCall', 'SEGUNDA RONDA — DELEGACIONES QUE PASARON'))}
               </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
               <span style={{ fontSize: '0.75rem', fontWeight: '800', color: isLight ? '#64748b' : '#94a3b8' }}>
-                {paisActualRollCall ? `Turno ${indiceRollCall + 1} de ${listaPaisesRondaRollCall.length}` : 'Votación Nominal Completada'}
+                {paisActualRollCall ? `${t('voting.turn', 'Turno')} ${indiceRollCall + 1} ${t('common.of', 'de')} ${listaPaisesRondaRollCall.length}` : t('voting.rollCallCompleted', 'Votación Nominal Completada')}
               </span>
               <button
                 type="button"
@@ -1261,7 +1263,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                   display: 'flex',
                   alignItems: 'center'
                 }}
-                title="Cerrar Roll Call"
+                title={t('voting.closeRollCall', 'Cerrar Roll Call')}
               >
                 <X size={16} />
               </button>
@@ -1329,7 +1331,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                   }}
                 >
                   <CheckCircle2 size={16} />
-                  <span>A Favor</span>
+                  <span>{t('voting.inFavor', 'A Favor')}</span>
                 </button>
 
                 <button
@@ -1351,7 +1353,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                   }}
                 >
                   <XCircle size={16} />
-                  <span>En Contra</span>
+                  <span>{t('voting.against', 'En Contra')}</span>
                 </button>
 
                 {tipoVotacion === 'substantive' && (
@@ -1380,7 +1382,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                     }
                   >
                     <AlertTriangle size={15} />
-                    <span>Abstención</span>
+                    <span>{t('voting.abstention', 'Abstención')}</span>
                   </button>
                 )}
 
@@ -1404,7 +1406,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                     title="Pasar / Omitir para votar en Segunda Ronda"
                   >
                     <SkipForward size={14} />
-                    <span>Pasar</span>
+                    <span>{t('voting.pass', 'Pasar')}</span>
                   </button>
                 )}
               </div>
@@ -1440,38 +1442,38 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                     : (stats.superado ? (isLight ? '#16a34a' : '#4ade80') : (isLight ? '#dc2626' : '#f87171'))
                 }}>
                   {stats.vetoEjercido
-                    ? '¡VOTACIÓN REPROBADA POR VETO!'
-                    : (stats.superado ? '¡VOTACIÓN APROBADA CON ÉXITO!' : '¡VOTACIÓN REPROBADA!')}
+                    ? t('voting.vetoedResultBanner', '¡VOTACIÓN REPROBADA POR VETO!')
+                    : (stats.superado ? t('voting.passedResultBanner', '¡VOTACIÓN APROBADA CON ÉXITO!') : t('voting.failedResultBanner', '¡VOTACIÓN REPROBADA!'))}
                 </div>
               </div>
 
               {/* Detalle si hubo veto */}
               {stats.vetoEjercido && stats.paisesVeto.length > 0 && (
                 <div style={{ fontSize: '0.78rem', color: isLight ? '#b91c1c' : '#fca5a5', fontWeight: '700' }}>
-                  Veto ejercido por: {stats.paisesVeto.map(p => p.nombre).join(', ')}
+                  {t('voting.vetoExercisedBy', 'Veto ejercido por')}: {stats.paisesVeto.map(p => p.nombre).join(', ')}
                 </div>
               )}
 
               {/* Chips de Conteo */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', flexWrap: 'wrap', fontSize: '0.8rem', fontWeight: '700' }}>
                 <span style={{ color: isLight ? '#16a34a' : '#4ade80', backgroundColor: isLight ? 'rgba(34, 197, 94, 0.12)' : 'rgba(34, 197, 94, 0.2)', padding: '0.2rem 0.55rem', borderRadius: '6px' }}>
-                  A Favor: {stats.favor}
+                  {t('voting.inFavor', 'A Favor')}: {stats.favor}
                 </span>
                 <span style={{ color: isLight ? '#dc2626' : '#f87171', backgroundColor: isLight ? 'rgba(239, 68, 68, 0.12)' : 'rgba(239, 68, 68, 0.2)', padding: '0.2rem 0.55rem', borderRadius: '6px' }}>
-                  En Contra: {stats.contra}
+                  {t('voting.against', 'En Contra')}: {stats.contra}
                 </span>
                 {tipoVotacion === 'substantive' && (
                   <span style={{ color: isLight ? '#d97706' : '#facc15', backgroundColor: isLight ? 'rgba(234, 179, 8, 0.12)' : 'rgba(234, 179, 8, 0.2)', padding: '0.2rem 0.55rem', borderRadius: '6px' }}>
-                    Abstención: {stats.abstencion}
+                    {t('voting.abstention', 'Abstención')}: {stats.abstencion}
                   </span>
                 )}
                 <span style={{ color: isLight ? '#2563eb' : '#60a5fa', backgroundColor: isLight ? 'rgba(59, 130, 246, 0.12)' : 'rgba(59, 130, 246, 0.2)', padding: '0.2rem 0.55rem', borderRadius: '6px' }}>
-                  Quórum: {stats.totalEmitidos}/{stats.totalAsistentes}
+                  {t('voting.quorum', 'Quórum')}: {stats.totalEmitidos}/{stats.totalAsistentes}
                 </span>
               </div>
 
               <div style={{ fontSize: '0.74rem', color: isLight ? '#64748b' : '#94a3b8' }}>
-                Regla: {stats.textoRequerido}
+                {t('voting.rule', 'Regla')}: {stats.textoRequerido}
               </div>
 
               {/* Botones de acción post Roll Call */}
@@ -1494,7 +1496,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                     boxShadow: '0 4px 12px rgba(37, 99, 235, 0.4)'
                   }}
                 >
-                  Ver Resultados en el Mapa
+                  {t('voting.viewResultsOnMap', 'Ver Resultados en el Mapa')}
                 </button>
 
                 <button
@@ -1517,7 +1519,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                     cursor: 'pointer'
                   }}
                 >
-                  Reiniciar Votación
+                  {t('voting.resetVoting', 'Reiniciar Votación')}
                 </button>
               </div>
             </div>
@@ -1708,7 +1710,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', color: isLight ? '#64748b' : '#94a3b8' }}>
-              <span>Estado:</span>
+              <span>{t('voting.state', 'Estado')}:</span>
               <span
                 style={{
                   fontWeight: '800',
@@ -1725,20 +1727,20 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                 }}
               >
                 {tooltipData.vote === 'favor'
-                  ? 'A FAVOR'
+                  ? t('voting.inFavorUpper', 'A FAVOR')
                   : tooltipData.vote === 'contra'
-                  ? 'EN CONTRA'
+                  ? t('voting.againstUpper', 'EN CONTRA')
                   : tooltipData.vote === 'abstencion'
-                  ? 'ABSTENCIÓN'
+                  ? t('voting.abstentionUpper', 'ABSTENCIÓN')
                   : tooltipData.countryObj
-                  ? 'PENDIENTE'
-                  : 'NO DELEGADO'}
+                  ? t('voting.pendingUpper', 'PENDIENTE')
+                  : t('voting.notDelegationUpper', 'NO DELEGADO')}
               </span>
             </div>
 
             {tooltipData.countryObj && (
               <div style={{ fontSize: '0.65rem', color: isLight ? '#94a3b8' : '#64748b', borderTop: `1px solid ${isLight ? '#e2e8f0' : '#1e293b'}`, paddingTop: '0.2rem', marginTop: '0.1rem' }}>
-                Haz clic para registrar o cambiar voto
+                {t('voting.clickToVote', 'Haz clic para registrar o cambiar voto')}
               </div>
             )}
           </div>
@@ -1795,13 +1797,13 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
 
             {/* Voto Actual */}
             <div style={{ fontSize: '0.72rem', color: isLight ? '#64748b' : '#94a3b8', display: 'flex', justifyContent: 'space-between' }}>
-              <span>Voto registrado:</span>
+              <span>{t('voting.recordedVote', 'Voto registrado')}:</span>
               <strong style={{
                 color: (votos[selectedCountryForVote.countryObj.id] || votos[String(selectedCountryForVote.countryObj.id)]) === 'favor' ? (isLight ? '#16a34a' : '#4ade80') :
                   (votos[selectedCountryForVote.countryObj.id] || votos[String(selectedCountryForVote.countryObj.id)]) === 'contra' ? (isLight ? '#dc2626' : '#f87171') :
                   (votos[selectedCountryForVote.countryObj.id] || votos[String(selectedCountryForVote.countryObj.id)]) === 'abstencion' ? (isLight ? '#d97706' : '#facc15') : '#2563eb'
               }}>
-                {(votos[selectedCountryForVote.countryObj.id] || votos[String(selectedCountryForVote.countryObj.id)]) ? (votos[selectedCountryForVote.countryObj.id] || votos[String(selectedCountryForVote.countryObj.id)]).toUpperCase() : 'PENDIENTE'}
+                {(votos[selectedCountryForVote.countryObj.id] || votos[String(selectedCountryForVote.countryObj.id)]) ? (votos[selectedCountryForVote.countryObj.id] || votos[String(selectedCountryForVote.countryObj.id)]).toUpperCase() : t('voting.pendingUpper', 'PENDIENTE')}
               </strong>
             </div>
 
@@ -1826,7 +1828,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                 }}
               >
                 <CheckCircle2 size={14} color={(votos[selectedCountryForVote.countryObj.id] || votos[String(selectedCountryForVote.countryObj.id)]) === 'favor' ? '#ffffff' : (isLight ? '#16a34a' : '#22c55e')} />
-                <span>A Favor</span>
+                <span>{t('voting.inFavor', 'A Favor')}</span>
               </button>
 
               <button
@@ -1848,7 +1850,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                 }}
               >
                 <XCircle size={14} color={(votos[selectedCountryForVote.countryObj.id] || votos[String(selectedCountryForVote.countryObj.id)]) === 'contra' ? '#ffffff' : (isLight ? '#dc2626' : '#ef4444')} />
-                <span>En Contra {selectedCountryForVote.countryObj.veto && aplicarVeto ? '(Veto)' : ''}</span>
+                <span>{t('voting.against', 'En Contra')} {selectedCountryForVote.countryObj.veto && aplicarVeto ? `(${t('voting.vetoWord', 'Veto')})` : ''}</span>
               </button>
 
               <button
@@ -1877,7 +1879,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                 }
               >
                 <AlertTriangle size={14} color={(votos[selectedCountryForVote.countryObj.id] || votos[String(selectedCountryForVote.countryObj.id)]) === 'abstencion' ? '#ffffff' : (isLight ? '#d97706' : '#eab308')} />
-                <span>Abstención</span>
+                <span>{t('voting.abstention', 'Abstención')}</span>
               </button>
 
               {(votos[selectedCountryForVote.countryObj.id] || votos[String(selectedCountryForVote.countryObj.id)]) && (
@@ -1900,7 +1902,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
                     marginTop: '2px'
                   }}
                 >
-                  <RotateCcw size={11} /> Limpiar Voto
+                  <RotateCcw size={11} /> {t('voting.clearVote', 'Limpiar Voto')}
                 </button>
               )}
             </div>
@@ -1929,19 +1931,19 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: isLight ? '#22c55e' : '#16a34a', boxShadow: `0 0 6px ${isLight ? '#22c55e' : '#16a34a'}` }} />
-            <span>A Favor ({stats.favor})</span>
+            <span>{t('voting.inFavor', 'A Favor')} ({stats.favor})</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: isLight ? '#ef4444' : '#dc2626', boxShadow: `0 0 6px ${isLight ? '#ef4444' : '#dc2626'}` }} />
-            <span>En Contra ({stats.contra})</span>
+            <span>{t('voting.against', 'En Contra')} ({stats.contra})</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: isLight ? '#eab308' : '#d97706', boxShadow: `0 0 6px ${isLight ? '#eab308' : '#d97706'}` }} />
-            <span>Abstención ({stats.abstencion})</span>
+            <span>{t('voting.abstention', 'Abstención')} ({stats.abstencion})</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: isLight ? '#3b82f6' : '#2563eb', boxShadow: `0 0 6px ${isLight ? '#3b82f6' : '#2563eb'}` }} />
-            <span>Pendiente ({stats.pendientes})</span>
+            <span>{t('voting.pending', 'Pendiente')} ({stats.pendientes})</span>
           </div>
         </div>
       </div>

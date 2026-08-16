@@ -28,6 +28,7 @@ import {
   ListOrdered
 } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
+import { useTranslation } from 'react-i18next';
 
 const COMITES_PREDEFINIDOS = [
   { nombre: 'Consejo de Seguridad (UNSC / CSNU)', icon: Shield, color: '#3b82f6' },
@@ -38,9 +39,9 @@ const COMITES_PREDEFINIDOS = [
   { nombre: 'UNESCO (Educación, Ciencia y Cultura)', icon: BookOpen, color: '#ec4899' },
   { nombre: 'UNODC (Drogas y Delito)', icon: Scale, color: '#f59e0b' },
   { nombre: 'Organización Internacional del Trabajo (OIT / ILO)', icon: Briefcase, color: '#10b981' },
-  { nombre: 'Consejo del Atlántico Norte (OTAN / NATO)', icon: Shield, color: '#3b82f6' },
-  { nombre: 'Banco Asiático de Inversión en Infraestructura (AIIB)', icon: Landmark, color: '#8b5cf6' },
-  { nombre: 'Gabinete de Crisis Histórico', icon: Flame, color: '#f97316' },
+  { nombre: 'ACNUR (Refugiados / UNHCR)', icon: Landmark, color: '#06b6d4' },
+  { nombre: 'Consejo de Derechos Humanos (UNHRC)', icon: Scale, color: '#8b5cf6' },
+  { nombre: 'Gabinete de Crisis Histórica / Futura', icon: Flame, color: '#ef4444' }
 ];
 
 const ESTADOS_TEMA = [
@@ -51,6 +52,7 @@ const ESTADOS_TEMA = [
 ];
 
 const EstablecerAgenda = () => {
+  const { t } = useTranslation();
   const { 
     nombreComite, 
     setNombreComite, 
@@ -307,7 +309,7 @@ const EstablecerAgenda = () => {
             onChange={e => setComite(e.target.value)}
             onBlur={handleComiteBlur}
             onKeyDown={handleComiteKeyDown}
-            placeholder="Nombre del comité (ej: Consejo de Seguridad)..."
+            placeholder={t('agenda.committeePlaceholder', 'Nombre del comité (ej: Consejo de Seguridad)...')}
             style={{
               flex: 1,
               background: 'transparent',
@@ -371,7 +373,7 @@ const EstablecerAgenda = () => {
                   textTransform: 'uppercase',
                   letterSpacing: '0.04em'
                 }}>
-                  Comités MUN Habituales
+                  {t('agenda.munCommittees', 'Comités MUN Habituales')}
                 </div>
                 {COMITES_PREDEFINIDOS.map((p, idx) => {
                   const Icon = p.icon;
@@ -428,7 +430,7 @@ const EstablecerAgenda = () => {
               gap: '0.25rem'
             }}>
               <ListOrdered size={12} />
-              {totalTemas} {totalTemas === 1 ? 'Punto' : 'Puntos'}
+              {totalTemas} {totalTemas === 1 ? t('agenda.topicSingular', 'Punto') : t('agenda.topicPlural', 'Puntos')}
             </span>
             {concluidosCount > 0 && (
               <span style={{
@@ -440,7 +442,7 @@ const EstablecerAgenda = () => {
                 color: '#22c55e',
                 border: '1px solid rgba(34, 197, 94, 0.3)'
               }}>
-                {concluidosCount} Concluido{concluidosCount > 1 ? 's' : ''}
+                {concluidosCount} {concluidosCount > 1 ? t('agenda.completedPlural', 'Concluidos') : t('agenda.completedSingular', 'Concluido')}
               </span>
             )}
           </div>
@@ -468,7 +470,7 @@ const EstablecerAgenda = () => {
               onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)'}
               title="Marcar actual como concluido y pasar al siguiente punto"
             >
-              <span>Siguiente</span>
+              <span>{t('common.next', 'Siguiente')}</span>
               <ChevronRight size={11} />
             </button>
           )}
@@ -481,7 +483,7 @@ const EstablecerAgenda = () => {
           type="text"
           value={nuevoTema}
           onChange={e => setNuevoTema(e.target.value)}
-          placeholder="Escribir nuevo punto de agenda o tópico..."
+          placeholder={t('agenda.newTopicPlaceholder', 'Escribir nuevo punto de agenda o tópico...')}
           style={{
             flex: 1,
             padding: '0.4rem 0.6rem',
@@ -521,7 +523,7 @@ const EstablecerAgenda = () => {
             if (nuevoTema.trim()) e.currentTarget.style.backgroundColor = '#3b82f6';
           }}
         >
-          <Plus size={13} /> Añadir
+          <Plus size={13} /> {t('common.add', 'Añadir')}
         </button>
       </form>
 
@@ -562,10 +564,10 @@ const EstablecerAgenda = () => {
             </div>
             <div>
               <div style={{ fontWeight: '600', fontSize: '0.8rem', color: 'var(--text-color)' }}>
-                Sin puntos de agenda asignados
+                {t('agenda.noTopics', 'Sin puntos de agenda asignados')}
               </div>
               <div style={{ color: '#71717a', fontSize: '0.72rem', marginTop: '2px' }}>
-                Añade tópicos o carga una plantilla rápida:
+                {t('agenda.addOrPreset', 'Añade tópicos o carga una plantilla rápida:')}
               </div>
             </div>
 
@@ -588,7 +590,7 @@ const EstablecerAgenda = () => {
                 onMouseEnter={e => e.currentTarget.style.borderColor = '#3b82f6'}
                 onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
               >
-                📑 Tópico A / Tópico B
+                📑 {t('agenda.templateAB', 'Tópico A / Tópico B')}
               </button>
               <button
                 type="button"
@@ -607,7 +609,7 @@ const EstablecerAgenda = () => {
                 onMouseEnter={e => e.currentTarget.style.borderColor = '#3b82f6'}
                 onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
               >
-                🏛️ Asamblea General
+                🏛️ {t('agenda.templateGA', 'Asamblea General')}
               </button>
               <button
                 type="button"
@@ -626,7 +628,7 @@ const EstablecerAgenda = () => {
                 onMouseEnter={e => e.currentTarget.style.borderColor = '#3b82f6'}
                 onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
               >
-                ⚡ Fases de Crisis
+                ⚡ {t('agenda.templateCrisis', 'Fases de Crisis')}
               </button>
             </div>
           </div>

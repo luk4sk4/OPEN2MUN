@@ -28,10 +28,12 @@ import {
   Sun,
   Moon
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useP2P } from '../../context/P2PContext';
 import { useAccessibility } from '../../context/AccessibilityContext';
 import AccessibilityModal from '../modals/AccessibilityModal';
 import OpenMunLogo from '../common/OpenMunLogo';
+import LanguageSelector from '../common/LanguageSelector';
 import peerService from '../../services/peerService';
 import GestorCrisis from '../widgets/GestorCrisis';
 import TeleNoticiasCrisis from '../widgets/TeleNoticiasCrisis';
@@ -39,6 +41,7 @@ import { playBreakingNewsAlert, playEmergencyPulse } from '../../utils/audioAler
 import { getFlagEmoji } from '../../utils/flags';
 
 const BackroomView = ({ isLight: propIsLight, onExit }) => {
+  const { t } = useTranslation();
   const { isLight: contextIsLight, toggleThemeMode } = useAccessibility();
   const isLight = propIsLight !== undefined ? propIsLight : contextIsLight;
   const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
@@ -169,9 +172,9 @@ const BackroomView = ({ isLight: propIsLight, onExit }) => {
               gap: '0.35rem',
               transition: 'all 0.15s ease'
             }}
-            title="Accesibilidad y Tema (Dislexia, Tamaño de Letra, Daltonismo)"
+            title={t('accessibility.title', "Accesibilidad y Tema")}
           >
-            <Eye size={14} /> Accesibilidad
+            <Eye size={14} /> {t('accessibility.title', 'Accesibilidad')}
           </button>
 
           {/* Botón Rápido Modo Claro / Oscuro */}
@@ -191,10 +194,12 @@ const BackroomView = ({ isLight: propIsLight, onExit }) => {
               gap: '0.35rem',
               transition: 'all 0.15s ease'
             }}
-            title={isLight ? "Cambiar a Modo Oscuro" : "Cambiar a Modo Claro"}
+            title={isLight ? t('header.darkMode', "Cambiar a Modo Oscuro") : t('header.lightMode', "Cambiar a Modo Claro")}
           >
             {isLight ? <Moon size={14} /> : <Sun size={14} />}
           </button>
+
+          <LanguageSelector showIcon={false} />
 
           <button
             onClick={() => {
@@ -217,7 +222,7 @@ const BackroomView = ({ isLight: propIsLight, onExit }) => {
               gap: '0.35rem'
             }}
           >
-            <LogOut size={14} /> Salir
+            <LogOut size={14} /> {t('common.exit', 'Salir')}
           </button>
         </div>
       </header>
