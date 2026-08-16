@@ -52,17 +52,17 @@
     "active": "Active",
     "inactive": "Inactive",
     "activePlural": "active",
+    "activeOn": "ON",
+    "inactiveOff": "OFF",
     "areYouSure": "Are you sure?",
     "file": "File",
     "default": "Default",
     "upload": "Upload",
     "export": "Export",
-    "of": "of",
     "settings": "Settings",
     "sortAZ": "Sort A-Z",
     "sortZA": "Sort Z-A",
     "importJson": "Import JSON",
-    "add": "Add",
     "clearAll": "Clear All",
     "next": "Next",
     "of": "of"
@@ -232,104 +232,6 @@
     "openSourceBadge": "Open Source & Free",
     "license": "GNU AGPLv3 License",
     "madeWithLove": "Crafted for the international MUN community"
-  },
-  "sidebar": {
-    "title": "Widget Manager",
-    "searchPlaceholder": "Search widget by name or category...",
-    "presetsTitle": "Quick Presets",
-    "availableWidgets": "Available Widgets",
-    "added": "Added",
-    "add": "Add",
-    "categories": {
-      "all": "All",
-      "debate": "Debate",
-      "votaciones": "Voting",
-      "configuracion": "Setup",
-      "tiempo": "Time",
-      "utilidades": "Utilities"
-    },
-    "widgets": {
-      "mapa_votacion": {
-        "title": "World Voting Map",
-        "category": "Voting",
-        "description": "Interactive geopolitical map coloring each country in real-time according to their vote with zoom and tooltips."
-      },
-      "pizarra_interactiva": {
-        "title": "Interactive Whiteboard & Maps",
-        "category": "Debate",
-        "description": "Tactical canvas for drawing, marking geopolitical positions and annotating on world maps."
-      },
-      "tele_noticias": {
-        "title": "Television News (Live)",
-        "category": "Debate",
-        "description": "TV-style monitor that exclusively broadcasts the live crisis alert or breaking news."
-      },
-      "selector_aleatorio": {
-        "title": "Random Selector (Wheel)",
-        "category": "Debate",
-        "description": "Animated wheel and delegation lottery to energize debate and cold calling."
-      },
-      "gestor_crisis": {
-        "title": "Crisis Manager & Newsroom",
-        "category": "Debate",
-        "description": "Live breaking news headlines, simulation clock and incident chronology."
-      },
-      "anadir_paises_gsl": {
-        "title": "Add GSL Countries",
-        "category": "Debate",
-        "description": "Quick search and selection of countries for the General Speakers List (GSL)."
-      },
-      "anadir_paises_debate": {
-        "title": "Add Debate Countries",
-        "category": "Debate",
-        "description": "Quick search and selection of countries for Moderated Caucus and Debate."
-      },
-      "establecer_agenda": {
-        "title": "Committee & Agenda",
-        "category": "Setup",
-        "description": "Configuration of committee title and structured agenda items."
-      },
-      "matriz_paises": {
-        "title": "Delegations Matrix",
-        "category": "Setup",
-        "description": "Grid of present countries, quorum calculation, veto powers and flag assignment."
-      },
-      "pizarra_mociones": {
-        "title": "Motions Board",
-        "category": "Debate",
-        "description": "Logging, order of precedence and voting on moderated and unmoderated caucus motions."
-      },
-      "cronometro_dual": {
-        "title": "Dual Timer (Total + Speaker)",
-        "category": "Time",
-        "description": "Synchronized timer with total caucus countdown and individual speaker time."
-      },
-      "cronometro_principal": {
-        "title": "GSL Timer",
-        "category": "Time",
-        "description": "Optimized timer for the General Speakers List with traffic light and yield controls."
-      },
-      "cronometro_only_time": {
-        "title": "Simple Timer",
-        "category": "Time",
-        "description": "Compact digital countdown for simple unmoderated caucuses or breaks."
-      },
-      "votacion_oficial": {
-        "title": "Official Voting Panel",
-        "category": "Voting",
-        "description": "Roll call voting by delegation list, majority thresholds and result tallying."
-      },
-      "historico_delegaciones": {
-        "title": "Participation History",
-        "category": "Utilities",
-        "description": "Statistics and intervention counter per delegation throughout the session."
-      },
-      "importar_paises": {
-        "title": "Import Delegations",
-        "category": "Setup",
-        "description": "Load delegations from Excel spreadsheets or text lists with flag autodetection."
-      }
-    }
   },
   "accessibility": {
     "title": "Accessibility & Theme",
@@ -802,6 +704,10 @@
   "sidebar": {
     "title": "Widget Manager",
     "searchPlaceholder": "Search widget by name or category...",
+    "presetsTitle": "Quick Presets",
+    "availableWidgets": "Available Widgets",
+    "added": "Added",
+    "add": "Add",
     "tabAspect": "Tab / Aspect",
     "activateAll": "Activate All",
     "deactivateAll": "Deactivate All",
@@ -811,6 +717,96 @@
     "templates": "Templates",
     "viewWidgets": "View Widgets",
     "loadIn": "Load in",
-    "customTemplatesJson": "Custom JSON Templates"
+    "customTemplatesJson": "Custom JSON Templates",
+    "categories": {
+      "all": "All",
+      "debate": "Debate",
+      "votaciones": "Voting",
+      "configuracion": "Setup",
+      "tiempo": "Time",
+      "utilidades": "Utilities"
+    },
+    "widgets": {
+      "mapa_votacion": {
+        "title": "World Voting Map",
+        "category": "Voting",
+        "description": "Interactive geopolitical map coloring each country in real-time according to their vote with zoom and tooltips."
+      },
+      "pizarra_interactiva": {
+        "title": "Interactive Whiteboard & Maps",
+        "category": "Debate",
+        "description": "Tactical canvas for drawing, marking geopolitical positions and annotating on world maps."
+      },
+      "tele_noticias": {
+        "title": "Television News (Live)",
+        "category": "Debate",
+        "description": "TV-style monitor that exclusively broadcasts the live crisis alert or breaking news."
+      },
+      "selector_aleatorio": {
+        "title": "Random Selector (Wheel)",
+        "category": "Debate",
+        "description": "Animated wheel and delegation lottery to energize debate and cold calling."
+      },
+      "gestor_crisis": {
+        "title": "Crisis Manager & Newsroom",
+        "category": "Debate",
+        "description": "Live breaking news headlines, simulation clock and incident chronology."
+      },
+      "anadir_paises_gsl": {
+        "title": "Add GSL Countries",
+        "category": "Debate",
+        "description": "Quick search and selection of countries for the General Speakers List (GSL)."
+      },
+      "anadir_paises_debate": {
+        "title": "Add Debate Countries",
+        "category": "Debate",
+        "description": "Quick search and selection of countries for Moderated Caucus and Debate."
+      },
+      "establecer_agenda": {
+        "title": "Committee & Agenda",
+        "category": "Setup",
+        "description": "Configuration of committee title and structured agenda items."
+      },
+      "matriz_paises": {
+        "title": "Delegations Matrix",
+        "category": "Setup",
+        "description": "Grid of present countries, quorum calculation, veto powers and flag assignment."
+      },
+      "pizarra_mociones": {
+        "title": "Motions Board",
+        "category": "Debate",
+        "description": "Logging, order of precedence and voting on moderated and unmoderated caucus motions."
+      },
+      "cronometro_dual": {
+        "title": "Dual Timer (Total + Speaker)",
+        "category": "Time",
+        "description": "Synchronized timer with total caucus countdown and individual speaker time."
+      },
+      "cronometro_principal": {
+        "title": "GSL Timer",
+        "category": "Time",
+        "description": "Optimized timer for the General Speakers List with traffic light and yield controls."
+      },
+      "cronometro_only_time": {
+        "title": "Simple Timer",
+        "category": "Time",
+        "description": "Compact digital countdown for simple unmoderated caucuses or breaks."
+      },
+      "votacion_oficial": {
+        "title": "Official Voting Panel",
+        "category": "Voting",
+        "description": "Roll call voting by delegation list, majority thresholds and result tallying."
+      },
+      "historico_delegaciones": {
+        "title": "Participation History",
+        "category": "Utilities",
+        "description": "Statistics and intervention counter per delegation throughout the session."
+      },
+      "importar_paises": {
+        "title": "Import Delegations",
+        "category": "Setup",
+        "description": "Load delegations from Excel spreadsheets or text lists with flag autodetection."
+      }
+    }
   }
 }
