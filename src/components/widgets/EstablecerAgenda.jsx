@@ -468,7 +468,7 @@ const EstablecerAgenda = () => {
               }}
               onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.2)'}
               onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)'}
-              title="Marcar actual como concluido y pasar al siguiente punto"
+              title={t('agenda.markDoneAndPass', "Marcar actual como concluido y pasar al siguiente punto")}
             >
               <span>{t('common.next', 'Siguiente')}</span>
               <ChevronRight size={11} />
@@ -708,7 +708,7 @@ const EstablecerAgenda = () => {
                           display: 'flex',
                           alignItems: 'center'
                         }}
-                        title="Guardar cambios"
+                        title={t('common.SaveChanges', 'Guardar cambios')}
                       >
                         <Check size={12} />
                       </button>

@@ -6,7 +6,7 @@
 export const GOOGLE_CLIENT_ID = '917213180364-2jktmr4s9etrajiai697bfk8410u424r.apps.googleusercontent.com';
 export const OPENMUN_FOLDER_NAME = 'openMUN';
 export const DEFAULT_DRIVE_FILE_NAME = 'openmun_sesion_activa.json';
-const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const SCOPES = 'https://www.googleapis.com/auth/drive';
 
 class GoogleDriveService {
   constructor() {

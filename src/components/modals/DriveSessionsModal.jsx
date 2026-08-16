@@ -263,6 +263,28 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
                   <span>Conectar con Google Drive</span>
                 )}
               </button>
+
+              <div
+                style={{
+                  marginTop: '1.5rem',
+                  padding: '0.75rem 1rem',
+                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid var(--subborder-color, rgba(255, 255, 255, 0.08))',
+                  borderRadius: '8px',
+                  textAlign: 'left',
+                  fontSize: '0.75rem',
+                  color: 'var(--muted-text, #94a3b8)',
+                  lineHeight: '1.4'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#38bdf8', fontWeight: '600', marginBottom: '0.25rem' }}>
+                  <AlertCircle size={14} />
+                  <span>Privacidad y uso de datos</span>
+                </div>
+                <p style={{ margin: 0 }}>
+                  La aplicación es 100% cliente/local. Tu información <strong>navega exclusivamente entre tu Google Drive y tu ordenador</strong>. Ningún dato pasa ni se almacena jamás en servidores externos o a los que nosotros tengamos acceso.
+                </p>
+              </div>
             </div>
           ) : (
             <>
@@ -597,10 +619,15 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
             padding: '0.75rem 1.25rem',
             borderTop: '1px solid var(--subborder-color, rgba(255, 255, 255, 0.08))',
             display: 'flex',
-            justifyContent: 'flex-end',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem',
             background: 'var(--card-header-bg, rgba(255, 255, 255, 0.02))'
           }}
         >
+          <div style={{ fontSize: '0.7rem', color: 'var(--muted-text, #94a3b8)', opacity: 0.85, maxWidth: '420px' }}>
+            🔒 Tus datos navegan únicamente entre tu navegador y Google Drive. Ningún dato pasa por servidores externos.
+          </div>
           <button
             onClick={onClose}
             style={{

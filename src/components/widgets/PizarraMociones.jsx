@@ -1,12 +1,12 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Plus, Check, X, Clock, MessageSquare, Users, Mic, Sparkles, RotateCcw, AlertCircle, ArrowUpDown, GripVertical, Pin, Hourglass, BarChart2, Timer, ChevronDown, Search, Globe } from 'lucide-react';
+import { Plus, Check, X, Clock, MessageSquare, Users, Mic, Sparkles, RotateCcw, AlertCircle, ArrowUpDown, GripVertical, Pin, Hourglass, BarChart2, Timer, ChevronDown, Search, Globe, Trash2 } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
 import { useTranslation } from 'react-i18next';
 
 const PizarraMociones = () => {
   const { t } = useTranslation();
-  const { paises, mociones, agregarMocion, votarMocion, reordenarMociones, ordenarMocionesDisruptividad } = useSession();
+  const { paises, mociones, agregarMocion, votarMocion, eliminarMocion, reordenarMociones, ordenarMocionesDisruptividad } = useSession();
 
   const [mostrarForm, setMostrarForm] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState(null);
@@ -1034,10 +1034,10 @@ const PizarraMociones = () => {
         </form>
       )}
 
-      {/* Lista / Tarjetas de Mociones con Drag & Drop y Máxima Visibilidad */}
-      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingRight: '2px' }}>
+      {/* Lista / Tarjetas de Mociones con Drag & Drop y Adaptabilidad Total */}
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.55rem', paddingRight: '2px' }}>
         {mociones.length === 0 ? (
-          <div style={{ padding: '2rem 1rem', textAlign: 'center', opacity: 0.4, border: '1px dashed var(--border-color)', borderRadius: '6px' }}>
+          <div style={{ padding: '2rem 1rem', textAlign: 'center', opacity: 0.4, border: '1px dashed var(--border-color)', borderRadius: '8px' }}>
             {t('motions.noMotions', 'No hay mociones registradas en la pizarra.')}
           </div>
         ) : (
@@ -1047,20 +1047,20 @@ const PizarraMociones = () => {
             const isDragging = draggedIndex === idx;
             const isDragOver = dragOverIndex === idx;
 
-            const getTipoBadgeStyle = (tipoMocion) => {
-              if (tipoMocion === 'Caucus Moderado') {
-                return { bg: 'rgba(59, 130, 246, 0.15)', border: '#3b82f6', text: '#60a5fa' };
+            const getTipoBadgeStyle = (tipoMocion = '') => {
+              if (tipoMocion.startsWith('Caucus Moderado')) {
+                return { bg: 'rgba(59, 130, 246, 0.12)', border: 'rgba(59, 130, 246, 0.4)', text: '#60a5fa' };
               }
-              if (tipoMocion === 'Caucus No Moderado') {
-                return { bg: 'rgba(168, 85, 247, 0.15)', border: '#a855f7', text: '#c084fc' };
+              if (tipoMocion.startsWith('Caucus No Moderado')) {
+                return { bg: 'rgba(168, 85, 247, 0.12)', border: 'rgba(168, 85, 247, 0.4)', text: '#c084fc' };
               }
-              if (tipoMocion === 'Consulta General') {
-                return { bg: 'rgba(20, 184, 166, 0.15)', border: '#14b8a6', text: '#2dd4bf' };
+              if (tipoMocion.startsWith('Consulta General')) {
+                return { bg: 'rgba(20, 184, 166, 0.12)', border: 'rgba(20, 184, 166, 0.4)', text: '#2dd4bf' };
               }
-              if (tipoMocion === 'Tour de Table') {
-                return { bg: 'rgba(245, 158, 11, 0.15)', border: '#f59e0b', text: '#fbbf24' };
+              if (tipoMocion.startsWith('Tour de Table')) {
+                return { bg: 'rgba(245, 158, 11, 0.12)', border: 'rgba(245, 158, 11, 0.4)', text: '#fbbf24' };
               }
-              return { bg: 'rgba(99, 102, 241, 0.15)', border: '#6366f1', text: '#a5b4fc' };
+              return { bg: 'rgba(99, 102, 241, 0.12)', border: 'rgba(99, 102, 241, 0.4)', text: '#a5b4fc' };
             };
 
             const tipoBadge = getTipoBadgeStyle(m.tipo);
@@ -1102,135 +1102,256 @@ const PizarraMociones = () => {
                 style={{
                   backgroundColor: isDragging
                     ? 'rgba(59, 130, 246, 0.15)'
-                    : (esAprobada ? 'rgba(34, 197, 94, 0.08)' : (esFallida ? 'rgba(239, 68, 68, 0.08)' : 'var(--card-header-bg)')),
+                    : (esAprobada ? 'rgba(34, 197, 94, 0.08)' : (esFallida ? 'rgba(239, 68, 68, 0.08)' : 'var(--card-header-bg, rgba(255, 255, 255, 0.03))')),
                   border: isDragOver
                     ? `2px dashed ${tipoBadge.border || '#3b82f6'}`
-                    : `1px solid ${isDragging ? '#3b82f6' : (esAprobada ? '#166534' : (esFallida ? '#991b1b' : 'var(--border-color)'))}`,
-                  borderRadius: '8px',
-                  padding: '0.75rem 0.95rem',
+                    : `1px solid ${isDragging ? '#3b82f6' : (esAprobada ? '#166534' : (esFallida ? '#991b1b' : 'var(--border-color, rgba(255, 255, 255, 0.08))'))}`,
+                  borderRadius: '9px',
+                  padding: '0.65rem 0.75rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.45rem',
+                  opacity: isDragging ? 0.45 : 1,
+                  transition: 'all 0.15s ease',
+                  boxShadow: '0 2px 5px rgba(0,0,0,0.08)'
+                }}
+              >
+                {/* 1. Header: Tirador + Índice + País + Tipo de Moción + Eliminar */}
+                <div style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  gap: '0.85rem',
-                  opacity: isDragging ? 0.45 : 1,
-                  cursor: 'grab',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                {/* Bloque Izquierdo: PROMINENCIA TOTAL EN TIPO DE MOCIÓN Y PAÍS */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1, minWidth: 0 }}>
-                  {/* Fila 1: TIPO DE MOCIÓN DESTACADO + Bandera + País Proponente */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexWrap: 'wrap' }}>
-                    <GripVertical size={15} style={{ color: '#71717a', cursor: 'grab', flexShrink: 0 }} title="Arrastrar para reordenar moción" />
-                    <span style={{ fontSize: '0.72rem', fontWeight: '800', opacity: 0.5 }}>#{idx + 1}</span>
-                    
-                    {/* Badge de TIPO DE MOCIÓN Destacado */}
-                    <span style={{
-                      fontSize: '0.8rem',
-                      fontWeight: '800',
-                      padding: '3px 9px',
-                      borderRadius: '5px',
-                      backgroundColor: tipoBadge.bg,
-                      border: `1.5px solid ${tipoBadge.border}`,
-                      color: tipoBadge.text,
-                      letterSpacing: '0.03em',
-                      textTransform: 'uppercase'
-                    }}>
-                      {m.tipo}
-                    </span>
-
-                    {/* Bandera y País Proponente */}
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
-                      <CountryFlag
-                        bandera={m.bandera || paises.find(p => p.nombre === m.proponente)?.bandera}
-                        nombre={m.proponente}
-                        size="sm"
-                      />
-                      <span style={{
-                        fontWeight: '800',
-                        fontSize: '1.05rem',
-                        color: 'var(--text-color)',
-                        letterSpacing: '0.01em'
-                      }}>
-                        {m.proponente}
-                      </span>
+                  gap: '0.4rem',
+                  flexWrap: 'nowrap'
+                }}>
+                  {/* Izquierda: Grip, Orden, Bandera y País Proponente */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, flex: 1 }}>
+                    <div
+                      style={{ cursor: 'grab', display: 'flex', alignItems: 'center', opacity: 0.5, flexShrink: 0 }}
+                      title={t('motions.dragToReorder', 'Arrastrar para reordenar')}
+                    >
+                      <GripVertical size={15} />
                     </div>
-
+                    <span style={{
+                      fontSize: '0.72rem',
+                      fontWeight: '800',
+                      opacity: 0.6,
+                      fontFamily: 'monospace',
+                      flexShrink: 0
+                    }}>
+                      #{idx + 1}
+                    </span>
+                    <CountryFlag
+                      bandera={m.bandera || paises.find(p => p.nombre === m.proponente)?.bandera}
+                      nombre={m.proponente}
+                      size="xs"
+                    />
+                    <span style={{
+                      fontWeight: '700',
+                      fontSize: '0.86rem',
+                      color: 'var(--text-color)',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      minWidth: 0
+                    }}>
+                      {m.proponente}
+                    </span>
                     {m.posicionProponente === 'Ultimo' && (
-                      <span style={{ fontSize: '0.65rem', backgroundColor: 'rgba(255,255,255,0.08)', padding: '2px 6px', borderRadius: '3px', opacity: 0.8, fontWeight: '700' }}>
+                      <span style={{
+                        fontSize: '0.62rem',
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                        border: '1px solid rgba(59, 130, 246, 0.3)',
+                        color: '#93c5fd',
+                        padding: '1px 5px',
+                        borderRadius: '3px',
+                        fontWeight: '700',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0
+                      }}>
                         {t('motions.speaksLastBadge', 'Habla al final')}
                       </span>
                     )}
                   </div>
 
-                  {/* Fila 2: TEMA / PROPÓSITO GRANDE Y CLARO */}
-                  <div style={{
-                    fontSize: '0.95rem',
-                    fontWeight: '700',
-                    color: 'var(--text-color)',
-                    opacity: 0.95,
-                    lineHeight: 1.3,
-                    paddingLeft: '1.55rem'
-                  }}>
-                    «{m.tema}»
-                  </div>
-
-                  {/* Fila 3: Tiempos (Sutiles y limpios) */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', fontSize: '0.73rem', opacity: 0.65, marginTop: '2px', paddingLeft: '1.55rem' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <Timer size={12} /> {t('motions.totalDuration', 'Total')}: <strong style={{ fontFamily: 'monospace', opacity: 1, color: 'var(--text-color)' }}>{formatMinutos(m.tiempoTotal)}</strong>
+                  {/* Derecha: Badge de Modalidad y Botón Eliminar */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+                    <span style={{
+                      fontSize: '0.68rem',
+                      fontWeight: '800',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      backgroundColor: tipoBadge.bg,
+                      border: `1px solid ${tipoBadge.border}`,
+                      color: tipoBadge.text,
+                      letterSpacing: '0.02em',
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {m.tipo}
                     </span>
-                    {m.tiempoOrador > 0 && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <Mic size={12} /> {t('motions.speakerDuration', 'Por orador')}: <strong style={{ fontFamily: 'monospace', opacity: 1, color: 'var(--text-color)' }}>{m.tiempoOrador}s</strong>
-                      </span>
+
+                    {eliminarMocion && (
+                      <button
+                        type="button"
+                        onClick={() => eliminarMocion(m.id)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--muted-text, #94a3b8)',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          padding: '2px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          opacity: 0.6,
+                          transition: 'all 0.15s ease'
+                        }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.color = '#ef4444';
+                          e.currentTarget.style.opacity = '1';
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.color = 'var(--muted-text, #94a3b8)';
+                          e.currentTarget.style.opacity = '0.6';
+                        }}
+                        title={t('common.delete', 'Eliminar')}
+                      >
+                        <Trash2 size={13} />
+                      </button>
                     )}
                   </div>
                 </div>
 
-                {/* Bloque Derecho: Estado y Acciones */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
-                  <button
-                    onClick={() => votarMocion(m.id, 'Aprobada')}
-                    style={{
-                      background: esAprobada ? '#22c55e' : 'transparent',
-                      border: '1px solid #22c55e',
-                      color: esAprobada ? '#000000' : '#22c55e',
-                      borderRadius: '5px',
-                      cursor: 'pointer',
-                      padding: '0.35rem 0.65rem',
-                      fontSize: '0.75rem',
-                      fontWeight: '800',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.25rem',
-                      transition: 'all 0.15s ease'
-                    }}
-                    title="Aprobar Moción"
-                  >
-                    <Check size={13} /> {t('voting.passed', 'Aprobar')}
-                  </button>
+                {/* 2. Cuerpo: Tema / Propósito */}
+                <div style={{
+                  fontSize: '0.85rem',
+                  fontWeight: '600',
+                  color: 'var(--text-color)',
+                  lineHeight: 1.35,
+                  wordBreak: 'break-word',
+                  padding: '0.15rem 0'
+                }}>
+                  {m.tema}
+                </div>
 
-                  <button
-                    onClick={() => votarMocion(m.id, 'Fallida')}
-                    style={{
-                      background: esFallida ? '#ef4444' : 'transparent',
-                      border: '1px solid #ef4444',
-                      color: esFallida ? '#ffffff' : '#ef4444',
-                      borderRadius: '5px',
-                      cursor: 'pointer',
-                      padding: '0.35rem 0.65rem',
-                      fontSize: '0.75rem',
-                      fontWeight: '800',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.25rem',
-                      transition: 'all 0.15s ease'
-                    }}
-                    title="Reprobar / Fallida"
-                  >
-                    <X size={13} /> {t('voting.failed', 'Reprobar')}
-                  </button>
+                {/* 3. Footer: Métricas de Tiempo a la Izquierda y Botonera a la Derecha */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '0.5rem',
+                  flexWrap: 'wrap',
+                  paddingTop: '0.3rem',
+                  borderTop: '1px solid var(--border-color, rgba(255, 255, 255, 0.05))'
+                }}>
+                  {/* Chips de Tiempo */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    flexWrap: 'wrap',
+                    fontSize: '0.7rem',
+                    color: 'var(--muted-text, #94a3b8)'
+                  }}>
+                    {m.tiempoTotal > 0 && (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.2rem',
+                        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                        padding: '2px 5px',
+                        borderRadius: '4px',
+                        border: '1px solid var(--border-color, rgba(255, 255, 255, 0.06))',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        <Timer size={11} style={{ color: '#38bdf8' }} />
+                        <span>Total:</span>
+                        <strong style={{ color: 'var(--text-color)', fontFamily: 'monospace' }}>{formatMinutos(m.tiempoTotal)}</strong>
+                      </span>
+                    )}
+                    {m.tiempoOrador > 0 && (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.2rem',
+                        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                        padding: '2px 5px',
+                        borderRadius: '4px',
+                        border: '1px solid var(--border-color, rgba(255, 255, 255, 0.06))',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        <Mic size={11} style={{ color: '#c084fc' }} />
+                        <span>Orador:</span>
+                        <strong style={{ color: 'var(--text-color)', fontFamily: 'monospace' }}>{m.tiempoOrador}s</strong>
+                      </span>
+                    )}
+                    {m.tiempoTotal > 0 && m.tiempoOrador > 0 && (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.2rem',
+                        opacity: 0.8,
+                        fontSize: '0.67rem',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        <BarChart2 size={11} />
+                        <span>~{Math.floor(m.tiempoTotal / m.tiempoOrador)} turnos</span>
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Botones de Votación */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginLeft: 'auto' }}>
+                    <button
+                      type="button"
+                      onClick={() => votarMocion(m.id, 'Aprobada')}
+                      style={{
+                        background: esAprobada ? '#16a34a' : 'rgba(34, 197, 94, 0.12)',
+                        border: '1px solid rgba(34, 197, 94, 0.4)',
+                        color: esAprobada ? '#ffffff' : '#4ade80',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                        padding: '0.3rem 0.55rem',
+                        fontSize: '0.72rem',
+                        fontWeight: '700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                        whiteSpace: 'nowrap',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title={t('motions.approve', 'Aprobar Moción')}
+                    >
+                      <Check size={12} />
+                      <span>{t('motions.approve', 'Aprobar')}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => votarMocion(m.id, 'Fallida')}
+                      style={{
+                        background: esFallida ? '#dc2626' : 'rgba(239, 68, 68, 0.12)',
+                        border: '1px solid rgba(239, 68, 68, 0.4)',
+                        color: esFallida ? '#ffffff' : '#f87171',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                        padding: '0.3rem 0.55rem',
+                        fontSize: '0.72rem',
+                        fontWeight: '700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                        whiteSpace: 'nowrap',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title={t('motions.reject', 'Reprobar / Fallida')}
+                    >
+                      <X size={12} />
+                      <span>{t('motions.reject', 'Reprobar')}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             );

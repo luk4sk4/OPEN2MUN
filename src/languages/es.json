@@ -570,6 +570,8 @@
     "precedence": "Precedencia",
     "disruptivenessOrder": "Ordenar por Disruptividad",
     "searchCountryPlaceholder": "Buscar país...",
+    "approve": "Aprobar",
+    "reject": "Reprobar",
     "noMotions": "No hay mociones registradas"
   },
   "timers": {
@@ -672,7 +674,8 @@
     "addOrPreset": "Añade tópicos o carga una plantilla rápida:",
     "templateAB": "Tópico A / Tópico B",
     "templateGA": "Asamblea General",
-    "templateCrisis": "Fases de Crisis"
+    "templateCrisis": "Fases de Crisis",
+    "markDoneAndPass": "Marcar actual como concluido y pasar al siguiente punto"
   },
   "random": {
     "title": "Selector Aleatorio (Ruleta)",

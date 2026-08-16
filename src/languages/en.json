@@ -1,5 +1,6 @@
 {
   "common": {
+    "saveChanges": "Save changes",
     "save": "Save",
     "saved": "Saved",
     "cancel": "Cancel",
@@ -504,6 +505,8 @@
     "precedence": "Precedence",
     "disruptivenessOrder": "Order by Disruptiveness",
     "searchCountryPlaceholder": "Search country...",
+    "approve": "Pass",
+    "reject": "Fail",
     "noMotions": "No motions logged"
   },
   "timers": {
@@ -606,7 +609,8 @@
     "addOrPreset": "Add topics or load a quick template:",
     "templateAB": "Topic A / Topic B",
     "templateGA": "General Assembly",
-    "templateCrisis": "Crisis Phases"
+    "templateCrisis": "Crisis Phases",
+    "markDoneAndPass": "Mark current as done and go to the next item"
   },
   "random": {
     "title": "Random Selector (Roulette)",
