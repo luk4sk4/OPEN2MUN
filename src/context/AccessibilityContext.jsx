@@ -77,6 +77,23 @@ export const sanitizeConfig = (raw) => {
     validLayouts.LIBRE = [];
   }
 
+  if (Array.isArray(validLayouts.ENMIENDAS)) {
+    const hasCronometro = validLayouts.ENMIENDAS.some(w => w.i === 'cronometro_enmiendas');
+    if (!hasCronometro) {
+      const miniVot = validLayouts.ENMIENDAS.find(w => w.i === 'mini_votacion');
+      if (miniVot) {
+        miniVot.rowSpan = 3;
+      }
+      validLayouts.ENMIENDAS.push({
+        i: 'cronometro_enmiendas',
+        col: 7,
+        row: 3,
+        colSpan: 5,
+        rowSpan: 3
+      });
+    }
+  }
+
   return {
     theme: (raw.theme && typeof raw.theme === 'object' && !Array.isArray(raw.theme)) 
       ? { ...configMaster.theme, ...raw.theme } 

@@ -115,7 +115,14 @@
         "col": 7,
         "row": 0,
         "colSpan": 5,
-        "rowSpan": 6
+        "rowSpan": 3
+      },
+      {
+        "i": "cronometro_enmiendas",
+        "col": 7,
+        "row": 3,
+        "colSpan": 5,
+        "rowSpan": 3
       }
     ],
     "INFO": [

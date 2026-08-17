@@ -43,6 +43,16 @@ import { PRESET_TEMPLATES } from '../../plantillas/widgets';
 
 // Metadata rica para cada widget disponible
 export const WIDGET_METADATA = {
+  cronometro_enmiendas: {
+    title: 'Cronómetro de Enmiendas',
+    category: 'Debate',
+    description: 'Temporizador compacto para oradores en debate de enmiendas, con selección de país, presets (30s-120s) y sincronización directa con el Histórico de Delegaciones.',
+    icon: Clock,
+    iconBg: 'rgba(234, 179, 8, 0.2)',
+    iconColor: '#eab308',
+    defaultColSpan: 4,
+    defaultRowSpan: 3,
+  },
   controlador_enmiendas: {
     title: 'Controlador de Enmiendas & Resolución',
     category: 'Debate',
@@ -244,6 +254,7 @@ export const CANONICAL_WIDGET_IDS = [
   'cronometro_principal',
   'cronometro_dual',
   'cronometro_only_time',
+  'cronometro_enmiendas',
   'pizarra_mociones',
   'anadir_paises_debate',
   'votacion_oficial',
@@ -264,7 +275,7 @@ export const DEFAULT_WIDGETS_BY_TAB = {
   GSL: ['lista_oradores', 'cronometro_principal', 'anadir_paises_gsl'],
   DEBATE: ['cronometro_dual', 'pizarra_mociones', 'anadir_paises_debate'],
   VOTING: ['votacion_oficial', 'matriz_paises', 'mapa_votacion'],
-  ENMIENDAS: ['controlador_enmiendas', 'mini_votacion'],
+  ENMIENDAS: ['controlador_enmiendas', 'mini_votacion', 'cronometro_enmiendas'],
   INFO: ['matriz_paises', 'historico_delegaciones'],
   LIBRE: [],
   HOME: ['lista_oradores', 'cronometro_principal', 'pizarra_mociones', 'votacion_oficial', 'matriz_paises']
@@ -274,12 +285,12 @@ export const DEFAULT_WIDGETS_BY_TAB = {
 export const RECOMMENDED_BY_TAB = {
   COMIENZO: ['establecer_agenda', 'importar_paises', 'matriz_paises'],
   GSL: ['lista_oradores', 'cronometro_principal', 'anadir_paises_gsl', 'selector_aleatorio'],
-  DEBATE: ['cronometro_dual', 'pizarra_mociones', 'anadir_paises_debate', 'cronometro_only_time', 'selector_aleatorio', 'gestor_crisis', 'tele_noticias', 'pizarra_interactiva', 'mapa_votacion'],
+  DEBATE: ['cronometro_dual', 'pizarra_mociones', 'anadir_paises_debate', 'cronometro_enmiendas', 'cronometro_only_time', 'selector_aleatorio', 'gestor_crisis', 'tele_noticias', 'pizarra_interactiva', 'mapa_votacion'],
   VOTING: ['votacion_oficial', 'matriz_paises', 'mapa_votacion', 'mini_votacion'],
-  ENMIENDAS: ['controlador_enmiendas', 'mini_votacion', 'votacion_oficial', 'matriz_paises'],
+  ENMIENDAS: ['controlador_enmiendas', 'mini_votacion', 'cronometro_enmiendas', 'votacion_oficial', 'matriz_paises'],
   INFO: ['matriz_paises', 'historico_delegaciones'],
-  LIBRE: ['mapa_votacion', 'pizarra_interactiva', 'selector_aleatorio', 'gestor_crisis', 'tele_noticias', 'controlador_enmiendas', 'mini_votacion'],
-  HOME: ['lista_oradores', 'cronometro_principal', 'pizarra_mociones', 'votacion_oficial', 'matriz_paises', 'mapa_votacion', 'pizarra_interactiva', 'establecer_agenda', 'selector_aleatorio', 'gestor_crisis', 'tele_noticias', 'controlador_enmiendas', 'mini_votacion']
+  LIBRE: ['mapa_votacion', 'pizarra_interactiva', 'selector_aleatorio', 'gestor_crisis', 'tele_noticias', 'controlador_enmiendas', 'mini_votacion', 'cronometro_enmiendas'],
+  HOME: ['lista_oradores', 'cronometro_principal', 'pizarra_mociones', 'votacion_oficial', 'matriz_paises', 'mapa_votacion', 'pizarra_interactiva', 'establecer_agenda', 'selector_aleatorio', 'gestor_crisis', 'tele_noticias', 'controlador_enmiendas', 'mini_votacion', 'cronometro_enmiendas']
 };
 
 // Re-exportar plantillas predefinidas importadas modularmente

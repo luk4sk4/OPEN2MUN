@@ -32,6 +32,7 @@ export const MSG_TYPES = {
   NOTE_RECEIVED: 'NOTE_RECEIVED',
   CRISIS_ALERT: 'CRISIS_ALERT',
   CAST_VOTE: 'CAST_VOTE',
+  SUBMIT_AMENDMENT: 'SUBMIT_AMENDMENT',
   KICK: 'KICK',
   KICK_PEER: 'KICK_PEER',
   PING: 'PING',
@@ -418,6 +419,31 @@ class PeerService {
       return;
     }
 
+    // 5.1 Envío de Enmienda desde Delegado
+    if (message.type === MSG_TYPES.SUBMIT_AMENDMENT) {
+      const amendmentData = {
+        id: `prop_del_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        paisProponente: senderMeta.country,
+        tipo: message.payload?.tipo || 'modificacion',
+        articuloId: message.payload?.articuloId || null,
+        articuloNumero: message.payload?.articuloNumero || '',
+        textoOriginal: message.payload?.textoOriginal || '',
+        textoPropuesto: message.payload?.textoPropuesto || '',
+        justificacion: message.payload?.justificacion || '',
+        timestamp: Date.now()
+      };
+
+      this.emit('amendment_proposed_by_delegate', amendmentData);
+
+      if (conn) {
+        conn.send({
+          type: MSG_TYPES.SPEAKING_PROCESSED,
+          payload: { success: true, mode: 'amendment', message: '¡Enmienda enviada a la Mesa para su revisión!' }
+        });
+      }
+      return;
+    }
+
     // 6. Solicitudes de Orador / Moción (desde Delegado)
     if (message.type === MSG_TYPES.REQUEST_SPEAKING) {
       const speechType = message.payload?.speechType; // 'GSL' | 'CAUCUS' | 'POINT_MOTION'
@@ -722,6 +748,10 @@ class PeerService {
       vote,
       timestamp: Date.now()
     });
+  }
+
+  submitAmendmentAsClient(amendmentData) {
+    return this.sendToServer(MSG_TYPES.SUBMIT_AMENDMENT, amendmentData);
   }
 
   sendSessionActionAsClient(action, payload) {

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   FileText,
   Upload,
@@ -21,9 +21,19 @@ import {
   BookOpen,
   ChevronDown,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  Clock,
+  Play,
+  Pause,
+  Volume2,
+  Mic,
+  Send,
+  Inbox,
+  ShieldCheck,
+  CheckCircle2
 } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
+import { useP2P } from '../../context/P2PContext';
 import CountryFlag from '../common/CountryFlag';
 import { useTranslation } from 'react-i18next';
 
@@ -156,14 +166,20 @@ const ControladorEnmiendas = () => {
   const {
     paises,
     enmiendasSesion,
-    setEnmiendasSesion,
     guardarResolucionEnmiendas,
     agregarEnmiendaResolucion,
     resolverEnmiendaResolucion,
     eliminarEnmiendaResolucion,
     configurarVotacion,
-    resetearVotacion
+    resetearVotacion,
+    registrarIntervencion
   } = useSession();
+
+  // Integración P2P para propuestas telemáticas de delegados
+  const {
+    enmiendasPropuestas = [],
+    eliminarEnmiendaPropuesta
+  } = useP2P() || {};
 
   const {
     tituloProyecto = 'Proyecto de Resolución A/RES/79/1',
@@ -175,7 +191,14 @@ const ControladorEnmiendas = () => {
   // Pestañas internas del widget: 'articulos' | 'consolidado' | 'importar'
   const [tabInterna, setTabInterna] = useState('articulos');
   const [filtroEstado, setFiltroEstado] = useState('todos'); // 'todos' | 'pendiente' | 'aceptada' | 'rechazada'
-  const [filtroArticulo, setFiltroArticulo] = useState('todos');
+  const [showBuzonDelegadosModal, setShowBuzonDelegadosModal] = useState(false);
+
+  // Mini Cronómetro Integrado
+  const [cronometroVisible, setCronometroVisible] = useState(true);
+  const [cronometroPais, setCronometroPais] = useState('');
+  const [cronometroSegundos, setCronometroSegundos] = useState(60);
+  const [cronometroInicial, setCronometroInicial] = useState(60);
+  const [cronometroCorriendo, setCronometroCorriendo] = useState(false);
 
   // Estado del modal de proponer enmienda
   const [modalProponerOpen, setModalProponerOpen] = useState(false);
@@ -191,10 +214,45 @@ const ControladorEnmiendas = () => {
   const [rawInputTitulo, setRawInputTitulo] = useState(tituloProyecto || '');
   const fileInputRef = useRef(null);
 
-  // Países asistentes para el selector de proponentes
+  // Países asistentes para el selector de proponentes y cronómetro
   const paisesAsistentes = useMemo(() => {
     return (paises || []).filter(p => p.estatus !== 'Ausente');
   }, [paises]);
+
+  // Inicializar proponente y país de cronómetro por defecto
+  useEffect(() => {
+    if (paisesAsistentes.length > 0) {
+      if (!paisProponente) setPaisProponente(paisesAsistentes[0].nombre);
+      if (!cronometroPais) setCronometroPais(paisesAsistentes[0].nombre);
+    }
+  }, [paisesAsistentes, paisProponente, cronometroPais]);
+
+  // Efecto del Cronómetro
+  useEffect(() => {
+    let interval = null;
+    if (cronometroCorriendo) {
+      interval = setInterval(() => {
+        setCronometroSegundos(prev => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [cronometroCorriendo]);
+
+  // Manejador para guardar intervención en el Histórico de Delegaciones
+  const handleGuardarIntervencionCronometro = () => {
+    if (!cronometroPais) return;
+    const tiempoHablado = Math.max(1, cronometroInicial - Math.max(0, cronometroSegundos));
+    const overtime = cronometroSegundos < 0 ? Math.abs(cronometroSegundos) : 0;
+
+    if (registrarIntervencion) {
+      registrarIntervencion(cronometroPais, cronometroInicial, tiempoHablado, overtime);
+    }
+
+    setCronometroCorriendo(false);
+    setCronometroSegundos(cronometroInicial);
+  };
 
   // Artículos parseados actuales o generados dinámicamente
   const articulosActuales = useMemo(() => {
@@ -204,6 +262,26 @@ const ControladorEnmiendas = () => {
     }
     return [];
   }, [articulos, textoResolucion]);
+
+  // Desglose de artículos operativos y preámbulo
+  const articulosOperativos = useMemo(() => {
+    return articulosActuales.filter(a => !a.esPreambulo);
+  }, [articulosActuales]);
+
+  const tienePreambulo = useMemo(() => {
+    return articulosActuales.some(a => a.esPreambulo);
+  }, [articulosActuales]);
+
+  // Enmiendas que no corresponden a un artículo específico o son generales / adiciones al final
+  const enmiendasGeneralesOFinales = useMemo(() => {
+    return enmiendas.filter(e => {
+      const artAsoc = articulosActuales.find(a => a.id === e.articuloId);
+      const esGeneral = !e.articuloId || !artAsoc;
+      if (!esGeneral) return false;
+      if (filtroEstado !== 'todos' && e.estado?.toLowerCase() !== filtroEstado) return false;
+      return true;
+    });
+  }, [enmiendas, articulosActuales, filtroEstado]);
 
   // Manejador de subida de archivos (.txt, .md)
   const handleFileUpload = (e) => {
@@ -257,7 +335,7 @@ const ControladorEnmiendas = () => {
   // Abrir modal de enmienda con contexto de artículo
   const handleOpenProponer = (artId, textoSeleccionado = '') => {
     const art = articulosActuales.find(a => a.id === artId);
-    setSelectedArticuloId(artId);
+    setSelectedArticuloId(artId || null);
     if (textoSeleccionado) {
       setTextoOriginal(textoSeleccionado);
       setTipoEnmienda('modificacion');
@@ -278,12 +356,12 @@ const ControladorEnmiendas = () => {
   const handleSubmitEnmienda = (e) => {
     e.preventDefault();
     const art = articulosActuales.find(a => a.id === selectedArticuloId);
-    const num = art ? art.numero : (articulosActuales.length + 1);
+    const num = art ? art.numero : (articulosOperativos.length + 1);
 
     agregarEnmiendaResolucion({
       tipo: tipoEnmienda,
-      articuloId: selectedArticuloId,
-      articuloNumero: art ? art.prefijo : `Artículo ${num}`,
+      articuloId: selectedArticuloId || null,
+      articuloNumero: art ? (art.prefijo || `Artículo ${art.numero}`) : `Nuevo Artículo ${num}`,
       paisProponente: paisProponente.trim() || 'Delegación',
       textoOriginal: textoOriginal.trim(),
       textoPropuesto: textoPropuesto.trim(),
@@ -314,6 +392,22 @@ const ControladorEnmiendas = () => {
     resetearVotacion();
   };
 
+  // Aprobar propuesta telemática de delegado
+  const handleAprobarPropuestaDelegado = (prop) => {
+    agregarEnmiendaResolucion({
+      tipo: prop.tipo || 'modificacion',
+      articuloId: prop.articuloId || null,
+      articuloNumero: prop.articuloNumero || 'Artículo',
+      paisProponente: prop.paisProponente || 'Delegación',
+      textoOriginal: prop.textoOriginal || '',
+      textoPropuesto: prop.textoPropuesto || '',
+      justificacion: prop.justificacion || ''
+    });
+    if (eliminarEnmiendaPropuesta) {
+      eliminarEnmiendaPropuesta(prop.id);
+    }
+  };
+
   // Copiar resolución consolidada al portapapeles
   const handleCopiarResolucion = () => {
     const texto = articulosActuales.map(a => `${a.prefijo ? a.prefijo + ' ' : ''}${a.texto}`).join('\n\n');
@@ -333,11 +427,20 @@ const ControladorEnmiendas = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Estadísticas rápidas
+  // Estadísticas y contadores corregidos
   const totalEnmiendas = enmiendas.length;
-  const enmiendasPendientes = enmiendas.filter(e => e.estado === 'pendiente').length;
-  const enmiendasAceptadas = enmiendas.filter(e => e.estado === 'aceptada').length;
-  const enmiendasRechazadas = enmiendas.filter(e => e.estado === 'rechazada').length;
+  const enmiendasPendientes = enmiendas.filter(e => e.estado?.toLowerCase() === 'pendiente').length;
+  const enmiendasAceptadas = enmiendas.filter(e => e.estado?.toLowerCase() === 'aceptada').length;
+  const enmiendasRechazadas = enmiendas.filter(e => e.estado?.toLowerCase() === 'rechazada').length;
+
+  // Formato MM:SS para el cronómetro
+  const formatTiempo = (totalSeg) => {
+    const isNeg = totalSeg < 0;
+    const abs = Math.abs(totalSeg);
+    const mins = Math.floor(abs / 60);
+    const secs = abs % 60;
+    return `${isNeg ? '-' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
 
   return (
     <div style={{
@@ -353,7 +456,7 @@ const ControladorEnmiendas = () => {
       {/* ── HEADER DEL CONTROLADOR DE ENMIENDAS ── */}
       <div style={{
         padding: '0.65rem 0.85rem',
-        paddingRight: '60px', // Dejar espacio libre en la esquina superior derecha para controles de movilidad
+        paddingRight: '60px',
         borderBottom: '1px solid var(--subborder-color)',
         backgroundColor: 'var(--card-header-bg)',
         display: 'flex',
@@ -391,16 +494,19 @@ const ControladorEnmiendas = () => {
             alignItems: 'center',
             gap: '0.35rem'
           }}>
-            <span>{articulosActuales.length} artículos</span>
+            <span style={{ fontWeight: '700' }}>
+              {articulosOperativos.length} {articulosOperativos.length === 1 ? 'artículo' : 'artículos'}
+              {tienePreambulo && ' • 1 preámbulo'}
+            </span>
             <span>•</span>
-            <span style={{ color: '#eab308' }}>{enmiendasPendientes} pendientes</span>
+            <span style={{ color: '#eab308', fontWeight: '700' }}>{enmiendasPendientes} pendientes</span>
             <span>•</span>
-            <span style={{ color: '#22c55e' }}>{enmiendasAceptadas} aceptadas</span>
+            <span style={{ color: '#22c55e', fontWeight: '700' }}>{enmiendasAceptadas} aceptadas</span>
           </div>
         </div>
       </div>
 
-      {/* ── BARRA DE HERRAMIENTAS Y PESTAÑAS (Lejos de la esquina superior derecha) ── */}
+      {/* ── BARRA DE HERRAMIENTAS Y PESTAÑAS ── */}
       <div style={{
         padding: '0.4rem 0.75rem',
         borderBottom: '1px solid var(--subborder-color)',
@@ -412,7 +518,6 @@ const ControladorEnmiendas = () => {
         flexWrap: 'wrap',
         flexShrink: 0
       }}>
-        {/* Selector de Pestañas de Vista */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
           <button
             onClick={() => setTabInterna('articulos')}
@@ -475,7 +580,217 @@ const ControladorEnmiendas = () => {
             <span>Cargar / Pegar</span>
           </button>
         </div>
+
+        {/* Acciones de Buzón Telemático y Cronómetro */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          {enmiendasPropuestas.length > 0 && (
+            <button
+              onClick={() => setShowBuzonDelegadosModal(true)}
+              style={{
+                backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                border: '1px solid #a855f7',
+                color: '#c084fc',
+                borderRadius: '5px',
+                padding: '0.3rem 0.55rem',
+                fontSize: '0.72rem',
+                fontWeight: '800',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.3rem',
+                animation: 'pulse 2s infinite'
+              }}
+            >
+              <Inbox size={13} />
+              <span>Buzón Delegados ({enmiendasPropuestas.length})</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setCronometroVisible(v => !v)}
+            style={{
+              background: cronometroVisible ? 'rgba(59, 130, 246, 0.2)' : 'var(--card-hover, rgba(255,255,255,0.05))',
+              border: `1px solid ${cronometroVisible ? '#3b82f6' : 'var(--subborder-color)'}`,
+              color: cronometroVisible ? '#60a5fa' : 'var(--muted-text)',
+              borderRadius: '5px',
+              padding: '0.3rem 0.55rem',
+              cursor: 'pointer',
+              fontSize: '0.72rem',
+              fontWeight: '700',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem'
+            }}
+            title="Mostrar / Ocultar Cronómetro de Intervenciones"
+          >
+            <Clock size={13} />
+            <span>Cronómetro</span>
+          </button>
+        </div>
       </div>
+
+      {/* ── MINI CRONÓMETRO INTEGRADO CON SINCRONIZACIÓN AL HISTÓRICO ── */}
+      {cronometroVisible && (
+        <div style={{
+          backgroundColor: 'var(--card-header-bg)',
+          borderBottom: '1px solid var(--subborder-color)',
+          padding: '0.5rem 0.75rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '0.5rem',
+          flexShrink: 0
+        }}>
+          {/* Selector de País con Bandera */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--muted-text)' }}>Orador:</span>
+            {paisesAsistentes.length > 0 ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                {(() => {
+                  const pObj = paisesAsistentes.find(p => p.nombre === cronometroPais) || paisesAsistentes[0];
+                  return pObj ? <CountryFlag country={pObj} bandera={pObj.bandera} nombre={pObj.nombre} size="xs" /> : null;
+                })()}
+                <select
+                  value={cronometroPais}
+                  onChange={e => setCronometroPais(e.target.value)}
+                  style={{
+                    backgroundColor: 'var(--panel-bg)',
+                    border: '1px solid var(--subborder-color)',
+                    color: 'var(--text-color)',
+                    borderRadius: '4px',
+                    padding: '0.2rem 0.4rem',
+                    fontSize: '0.72rem',
+                    fontWeight: '700'
+                  }}
+                >
+                  {paisesAsistentes.map(p => (
+                    <option key={p.id} value={p.nombre}>
+                      {p.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <input
+                type="text"
+                value={cronometroPais}
+                onChange={e => setCronometroPais(e.target.value)}
+                placeholder="Nombre del país"
+                style={{
+                  backgroundColor: 'var(--panel-bg)',
+                  border: '1px solid var(--subborder-color)',
+                  color: 'var(--text-color)',
+                  borderRadius: '4px',
+                  padding: '0.2rem 0.4rem',
+                  fontSize: '0.72rem'
+                }}
+              />
+            )}
+          </div>
+
+          {/* Reloj y Controles */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <div style={{
+              fontSize: '1.05rem',
+              fontWeight: '900',
+              fontFamily: 'monospace',
+              color: cronometroSegundos < 10 ? '#ef4444' : cronometroSegundos < 20 ? '#eab308' : '#22c55e',
+              minWidth: '55px',
+              textAlign: 'center'
+            }}>
+              {formatTiempo(cronometroSegundos)}
+            </div>
+
+            <button
+              onClick={() => setCronometroCorriendo(c => !c)}
+              style={{
+                backgroundColor: cronometroCorriendo ? 'rgba(234, 179, 8, 0.2)' : 'rgba(34, 197, 94, 0.2)',
+                border: `1px solid ${cronometroCorriendo ? '#eab308' : '#22c55e'}`,
+                color: cronometroCorriendo ? '#eab308' : '#22c55e',
+                borderRadius: '4px',
+                padding: '0.25rem 0.5rem',
+                fontSize: '0.7rem',
+                fontWeight: '800',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.2rem'
+              }}
+            >
+              {cronometroCorriendo ? <Pause size={12} /> : <Play size={12} />}
+              <span>{cronometroCorriendo ? 'Pausa' : 'Iniciar'}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setCronometroCorriendo(false);
+                setCronometroSegundos(cronometroInicial);
+              }}
+              style={{
+                backgroundColor: 'transparent',
+                border: '1px solid var(--subborder-color)',
+                color: 'var(--muted-text)',
+                borderRadius: '4px',
+                padding: '0.25rem 0.4rem',
+                fontSize: '0.7rem',
+                cursor: 'pointer'
+              }}
+              title="Reiniciar reloj"
+            >
+              <RotateCcw size={12} />
+            </button>
+
+            {/* Presets de Tiempo */}
+            <div style={{ display: 'flex', gap: '0.2rem' }}>
+              {[30, 45, 60, 90].map(s => (
+                <button
+                  key={s}
+                  onClick={() => {
+                    setCronometroInicial(s);
+                    setCronometroSegundos(s);
+                    setCronometroCorriendo(false);
+                  }}
+                  style={{
+                    backgroundColor: cronometroInicial === s ? 'rgba(59, 130, 246, 0.25)' : 'transparent',
+                    border: '1px solid var(--subborder-color)',
+                    color: cronometroInicial === s ? '#60a5fa' : 'var(--muted-text)',
+                    borderRadius: '3px',
+                    padding: '0.15rem 0.35rem',
+                    fontSize: '0.65rem',
+                    fontWeight: '700',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {s}s
+                </button>
+              ))}
+            </div>
+
+            {/* Botón Guardar en Histórico */}
+            <button
+              onClick={handleGuardarIntervencionCronometro}
+              title="Guardar intervención y sumar segundos en el Histórico de Delegaciones"
+              style={{
+                backgroundColor: 'var(--btn-bg)',
+                border: 'none',
+                color: 'var(--btn-text)',
+                borderRadius: '4px',
+                padding: '0.25rem 0.55rem',
+                fontSize: '0.7rem',
+                fontWeight: '800',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem'
+              }}
+            >
+              <Check size={12} />
+              <span>Guardar en Histórico</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── CUERPO PRINCIPAL DEL WIDGET ── */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -609,16 +924,16 @@ const ControladorEnmiendas = () => {
                   gap: '0.25rem'
                 }}
               >
-                <Plus size={14} /> Proponer Enmienda General
+                <Plus size={14} /> Proponer Enmienda / Nuevo Artículo
               </button>
             </div>
 
-            {/* Listado de Artículos */}
+            {/* Listado de Artículos Existentes */}
             {articulosActuales.map(art => {
               const enmiendasArticulo = enmiendas.filter(e => {
                 const coincideArt = e.articuloId === art.id;
                 if (!coincideArt) return false;
-                if (filtroEstado !== 'todos' && e.estado !== filtroEstado) return false;
+                if (filtroEstado !== 'todos' && e.estado?.toLowerCase() !== filtroEstado) return false;
                 return true;
               });
 
@@ -685,12 +1000,6 @@ const ControladorEnmiendas = () => {
 
                   {/* Texto Oficial del Artículo */}
                   <div
-                    onMouseUp={() => {
-                      const selection = window.getSelection()?.toString();
-                      if (selection && selection.trim().length > 3) {
-                        // Selección de texto detectada
-                      }
-                    }}
                     style={{
                       fontSize: '0.8rem',
                       lineHeight: 1.5,
@@ -713,263 +1022,53 @@ const ControladorEnmiendas = () => {
                         Mociones de Enmienda ({enmiendasArticulo.length})
                       </div>
 
-                      {enmiendasArticulo.map(enm => {
-                        const paisObj = (paises || []).find(p => p.nombre?.toLowerCase() === enm.paisProponente?.toLowerCase());
-                        const esAdicion = enm.tipo === 'adicion';
-                        const esSupresion = enm.tipo === 'supresion';
-                        const esModificacion = enm.tipo === 'modificacion';
-
-                        return (
-                          <div
-                            key={enm.id}
-                            style={{
-                              backgroundColor: enm.estado === 'aceptada'
-                                ? 'rgba(34, 197, 94, 0.08)'
-                                : enm.estado === 'rechazada'
-                                  ? 'rgba(239, 68, 68, 0.08)'
-                                  : 'var(--card-hover, rgba(255,255,255,0.03))',
-                              border: `1px solid ${
-                                enm.estado === 'aceptada'
-                                  ? 'rgba(34, 197, 94, 0.4)'
-                                  : enm.estado === 'rechazada'
-                                    ? 'rgba(239, 68, 68, 0.4)'
-                                    : 'var(--subborder-color)'
-                              }`,
-                              borderRadius: '6px',
-                              padding: '0.6rem',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '0.4rem'
-                            }}
-                          >
-                            {/* Cabecera de la Enmienda */}
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                {/* Badge de Tipo */}
-                                <span style={{
-                                  fontSize: '0.65rem',
-                                  fontWeight: '800',
-                                  padding: '0.1rem 0.4rem',
-                                  borderRadius: '4px',
-                                  backgroundColor: esAdicion
-                                    ? 'rgba(34, 197, 94, 0.2)'
-                                    : esSupresion
-                                      ? 'rgba(239, 68, 68, 0.2)'
-                                      : 'rgba(59, 130, 246, 0.2)',
-                                  color: esAdicion ? '#22c55e' : esSupresion ? '#ef4444' : '#3b82f6',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '0.2rem'
-                                }}>
-                                  {esAdicion && <FilePlus size={12} />}
-                                  {esSupresion && <FileMinus size={12} />}
-                                  {esModificacion && <Edit3 size={12} />}
-                                  {esAdicion ? 'Adición' : esSupresion ? 'Supresión' : 'Modificación'}
-                                </span>
-
-                                {/* País Proponente */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                  {paisObj && <CountryFlag country={paisObj} width="16px" height="12px" />}
-                                  <span style={{ fontSize: '0.72rem', fontWeight: '700' }}>
-                                    {enm.paisProponente}
-                                  </span>
-                                </div>
-                              </div>
-
-                              {/* Estado de la Enmienda */}
-                              <span style={{
-                                fontSize: '0.65rem',
-                                fontWeight: '800',
-                                padding: '0.1rem 0.4rem',
-                                borderRadius: '4px',
-                                textTransform: 'uppercase',
-                                backgroundColor: enm.estado === 'aceptada'
-                                  ? 'rgba(34, 197, 94, 0.2)'
-                                  : enm.estado === 'rechazada'
-                                    ? 'rgba(239, 68, 68, 0.2)'
-                                    : 'rgba(234, 179, 8, 0.2)',
-                                color: enm.estado === 'aceptada'
-                                  ? '#22c55e'
-                                  : enm.estado === 'rechazada'
-                                    ? '#ef4444'
-                                    : '#eab308'
-                              }}>
-                                {enm.estado}
-                              </span>
-                            </div>
-
-                            {/* Contenido Visual Diff */}
-                            <div style={{ fontSize: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                              {esAdicion && (
-                                <div style={{
-                                  backgroundColor: 'rgba(34, 197, 94, 0.12)',
-                                  borderLeft: '3px solid #22c55e',
-                                  padding: '0.35rem 0.5rem',
-                                  borderRadius: '0 4px 4px 0',
-                                  color: '#22c55e',
-                                  fontWeight: '600'
-                                }}>
-                                  + {enm.textoPropuesto}
-                                </div>
-                              )}
-
-                              {esSupresion && (
-                                <div style={{
-                                  backgroundColor: 'rgba(239, 68, 68, 0.12)',
-                                  borderLeft: '3px solid #ef4444',
-                                  padding: '0.35rem 0.5rem',
-                                  borderRadius: '0 4px 4px 0',
-                                  color: '#ef4444',
-                                  textDecoration: 'line-through',
-                                  fontWeight: '500'
-                                }}>
-                                  - {enm.textoOriginal || 'Supresión total del artículo'}
-                                </div>
-                              )}
-
-                              {esModificacion && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                                  {enm.textoOriginal && (
-                                    <div style={{
-                                      backgroundColor: 'rgba(239, 68, 68, 0.08)',
-                                      padding: '0.25rem 0.45rem',
-                                      borderRadius: '4px',
-                                      color: '#ef4444',
-                                      textDecoration: 'line-through',
-                                      fontSize: '0.72rem'
-                                    }}>
-                                      {enm.textoOriginal}
-                                    </div>
-                                  )}
-                                  <div style={{
-                                    backgroundColor: 'rgba(34, 197, 94, 0.12)',
-                                    padding: '0.25rem 0.45rem',
-                                    borderRadius: '4px',
-                                    color: '#22c55e',
-                                    fontWeight: '600',
-                                    fontSize: '0.72rem'
-                                  }}>
-                                    ➔ {enm.textoPropuesto}
-                                  </div>
-                                </div>
-                              )}
-
-                              {enm.justificacion && (
-                                <div style={{ fontSize: '0.68rem', color: 'var(--muted-text)', fontStyle: 'italic', marginTop: '0.1rem' }}>
-                                  Motivación: {enm.justificacion}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Botones de Acción sobre la Enmienda */}
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem', marginTop: '0.2rem' }}>
-                              <button
-                                onClick={() => handleVotarEnmienda(enm)}
-                                title="Votar esta enmienda en el Mini Sistema de Votación"
-                                style={{
-                                  backgroundColor: 'rgba(59, 130, 246, 0.15)',
-                                  border: '1px solid rgba(59, 130, 246, 0.3)',
-                                  color: '#3b82f6',
-                                  padding: '0.25rem 0.5rem',
-                                  borderRadius: '4px',
-                                  fontSize: '0.68rem',
-                                  fontWeight: '700',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '0.25rem'
-                                }}
-                              >
-                                <Vote size={12} /> Votar Moción
-                              </button>
-
-                              <div style={{ display: 'flex', gap: '0.3rem' }}>
-                                {enm.estado === 'pendiente' ? (
-                                  <>
-                                    <button
-                                      onClick={() => resolverEnmiendaResolucion(enm.id, 'aceptada')}
-                                      title="Aceptar enmienda y actualizar texto automáticamente"
-                                      style={{
-                                        backgroundColor: '#16a34a',
-                                        border: 'none',
-                                        color: '#ffffff',
-                                        padding: '0.25rem 0.55rem',
-                                        borderRadius: '4px',
-                                        fontSize: '0.68rem',
-                                        fontWeight: '700',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.2rem'
-                                      }}
-                                    >
-                                      <Check size={12} /> Aceptar
-                                    </button>
-
-                                    <button
-                                      onClick={() => resolverEnmiendaResolucion(enm.id, 'rechazada')}
-                                      title="Rechazar enmienda"
-                                      style={{
-                                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                                        border: '1px solid rgba(239, 68, 68, 0.4)',
-                                        color: '#ef4444',
-                                        padding: '0.25rem 0.55rem',
-                                        borderRadius: '4px',
-                                        fontSize: '0.68rem',
-                                        fontWeight: '700',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.2rem'
-                                      }}
-                                    >
-                                      <X size={12} /> Rechazar
-                                    </button>
-                                  </>
-                                ) : (
-                                  <button
-                                    onClick={() => resolverEnmiendaResolucion(enm.id, 'pendiente')}
-                                    title="Deshacer decisión y volver a pendiente"
-                                    style={{
-                                      backgroundColor: 'transparent',
-                                      border: '1px solid var(--subborder-color)',
-                                      color: 'var(--muted-text)',
-                                      padding: '0.25rem 0.45rem',
-                                      borderRadius: '4px',
-                                      fontSize: '0.68rem',
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '0.2rem'
-                                    }}
-                                  >
-                                    <RotateCcw size={11} /> Deshacer
-                                  </button>
-                                )}
-
-                                <button
-                                  onClick={() => eliminarEnmiendaResolucion(enm.id)}
-                                  title="Eliminar enmienda"
-                                  style={{
-                                    backgroundColor: 'transparent',
-                                    border: 'none',
-                                    color: 'var(--muted-text)',
-                                    padding: '0.25rem',
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  <Trash2 size={12} />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
+                      {enmiendasArticulo.map(enm => (
+                        <EnmiendaCard
+                          key={enm.id}
+                          enm={enm}
+                          paises={paises}
+                          onVotar={handleVotarEnmienda}
+                          onResolver={resolverEnmiendaResolucion}
+                          onEliminar={eliminarEnmiendaResolucion}
+                        />
+                      ))}
                     </div>
                   )}
                 </div>
               );
             })}
+
+            {/* SECCIÓN ESPECIAL: ENMIENDAS GENERALES / NUEVAS CLÁUSULAS PROPUESTAS AL FINAL */}
+            {enmiendasGeneralesOFinales.length > 0 && (
+              <div style={{
+                backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                border: '1px dashed rgba(59, 130, 246, 0.4)',
+                borderRadius: '8px',
+                padding: '0.75rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.6rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', fontWeight: '800', color: '#60a5fa' }}>
+                    <FilePlus size={14} /> Nuevos Artículos y Enmiendas Generales al Final ({enmiendasGeneralesOFinales.length})
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                  {enmiendasGeneralesOFinales.map(enm => (
+                    <EnmiendaCard
+                      key={enm.id}
+                      enm={enm}
+                      paises={paises}
+                      onVotar={handleVotarEnmienda}
+                      onResolver={resolverEnmiendaResolucion}
+                      onEliminar={eliminarEnmiendaResolucion}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : tabInterna === 'consolidado' ? (
           /* ── VISTA CONSOLIDADA FINAL ── */
@@ -1126,6 +1225,149 @@ const ControladorEnmiendas = () => {
         )}
       </div>
 
+      {/* ── MODAL DE BUZÓN DE PROPUESTAS DE DELEGADOS (P2P) ── */}
+      {showBuzonDelegadosModal && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.8)',
+          backdropFilter: 'blur(5px)',
+          zIndex: 120,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem'
+        }}>
+          <div style={{
+            backgroundColor: 'var(--panel-bg)',
+            border: '1px solid var(--subborder-color)',
+            borderRadius: '10px',
+            padding: '1.25rem',
+            width: '100%',
+            maxWidth: '520px',
+            maxHeight: '90%',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.85rem',
+            boxShadow: '0 16px 40px rgba(0,0,0,0.6)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.95rem', fontWeight: '800' }}>
+                <Inbox size={16} color="#a855f7" /> Propuestas de Enmienda de Delegados ({enmiendasPropuestas.length})
+              </div>
+              <button
+                onClick={() => setShowBuzonDelegadosModal(false)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--muted-text)', cursor: 'pointer' }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {enmiendasPropuestas.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted-text)', fontSize: '0.82rem' }}>
+                No hay propuestas pendientes en el buzón.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                {enmiendasPropuestas.map(prop => {
+                  const pObj = (paises || []).find(p => p.nombre?.toLowerCase() === prop.paisProponente?.toLowerCase());
+                  return (
+                    <div
+                      key={prop.id}
+                      style={{
+                        backgroundColor: 'var(--card-header-bg)',
+                        border: '1px solid var(--subborder-color)',
+                        borderRadius: '6px',
+                        padding: '0.75rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.4rem'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <CountryFlag country={pObj} bandera={pObj?.bandera} nombre={prop.paisProponente} size="xs" />
+                          <span style={{ fontSize: '0.8rem', fontWeight: '800' }}>{prop.paisProponente}</span>
+                          <span style={{
+                            fontSize: '0.62rem',
+                            fontWeight: '800',
+                            padding: '0.1rem 0.35rem',
+                            borderRadius: '3px',
+                            backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                            color: '#60a5fa'
+                          }}>
+                            {prop.tipo?.toUpperCase()} · {prop.articuloNumero || 'General'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {prop.textoOriginal && (
+                        <div style={{ fontSize: '0.72rem', color: '#ef4444', textDecoration: 'line-through' }}>
+                          {prop.textoOriginal}
+                        </div>
+                      )}
+
+                      {prop.textoPropuesto && (
+                        <div style={{ fontSize: '0.75rem', color: '#22c55e', fontWeight: '600' }}>
+                          + {prop.textoPropuesto}
+                        </div>
+                      )}
+
+                      {prop.justificacion && (
+                        <div style={{ fontSize: '0.68rem', color: 'var(--muted-text)', fontStyle: 'italic' }}>
+                          Motivo: {prop.justificacion}
+                        </div>
+                      )}
+
+                      <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end', marginTop: '0.3rem' }}>
+                        <button
+                          onClick={() => eliminarEnmiendaPropuesta && eliminarEnmiendaPropuesta(prop.id)}
+                          style={{
+                            backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            color: '#ef4444',
+                            borderRadius: '4px',
+                            padding: '0.25rem 0.55rem',
+                            fontSize: '0.7rem',
+                            fontWeight: '700',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Rechazar
+                        </button>
+
+                        <button
+                          onClick={() => handleAprobarPropuestaDelegado(prop)}
+                          style={{
+                            backgroundColor: '#16a34a',
+                            border: 'none',
+                            color: '#ffffff',
+                            borderRadius: '4px',
+                            padding: '0.25rem 0.65rem',
+                            fontSize: '0.7rem',
+                            fontWeight: '800',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem'
+                          }}
+                        >
+                          <Check size={12} /> Aprobar y Agregar
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ── MODAL DE PROPONER ENMIENDA / MOCIÓN ── */}
       {modalProponerOpen && (
         <div style={{
@@ -1246,7 +1488,7 @@ const ControladorEnmiendas = () => {
                 <select
                   value={selectedArticuloId || ''}
                   onChange={e => {
-                    setSelectedArticuloId(e.target.value);
+                    setSelectedArticuloId(e.target.value || null);
                     const art = articulosActuales.find(a => a.id === e.target.value);
                     if (art && tipoEnmienda !== 'adicion') {
                       setTextoOriginal(art.texto);
@@ -1262,7 +1504,7 @@ const ControladorEnmiendas = () => {
                     fontSize: '0.78rem'
                   }}
                 >
-                  <option value="">-- Nuevo Artículo al final --</option>
+                  <option value="">-- Añadir Nuevo Artículo al Final / Enmienda General --</option>
                   {articulosActuales.map(art => (
                     <option key={art.id} value={art.id}>
                       {art.prefijo || `Artículo ${art.numero}`} - {art.texto.substring(0, 45)}...
@@ -1271,31 +1513,38 @@ const ControladorEnmiendas = () => {
                 </select>
               </div>
 
-              {/* Selector de Delegación Proponente */}
+              {/* Selector de Delegación Proponente con Bandera */}
               <div>
                 <label style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--muted-text)', display: 'block', marginBottom: '0.2rem' }}>
                   Delegación Proponente:
                 </label>
                 {paisesAsistentes.length > 0 ? (
-                  <select
-                    value={paisProponente}
-                    onChange={e => setPaisProponente(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.45rem 0.6rem',
-                      backgroundColor: 'var(--card-hover, rgba(0,0,0,0.2))',
-                      border: '1px solid var(--subborder-color)',
-                      borderRadius: '6px',
-                      color: 'var(--text-color)',
-                      fontSize: '0.78rem'
-                    }}
-                  >
-                    {paisesAsistentes.map(p => (
-                      <option key={p.id} value={p.nombre}>
-                        {p.nombre}
-                      </option>
-                    ))}
-                  </select>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    {(() => {
+                      const pObj = paisesAsistentes.find(p => p.nombre === paisProponente) || paisesAsistentes[0];
+                      return pObj ? <CountryFlag country={pObj} bandera={pObj.bandera} nombre={pObj.nombre} size="sm" /> : null;
+                    })()}
+                    <select
+                      value={paisProponente}
+                      onChange={e => setPaisProponente(e.target.value)}
+                      style={{
+                        flex: 1,
+                        padding: '0.45rem 0.6rem',
+                        backgroundColor: 'var(--card-hover, rgba(0,0,0,0.2))',
+                        border: '1px solid var(--subborder-color)',
+                        borderRadius: '6px',
+                        color: 'var(--text-color)',
+                        fontSize: '0.78rem',
+                        fontWeight: '700'
+                      }}
+                    >
+                      {paisesAsistentes.map(p => (
+                        <option key={p.id} value={p.nombre}>
+                          {p.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 ) : (
                   <input
                     type="text"
@@ -1427,6 +1676,267 @@ const ControladorEnmiendas = () => {
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+// Componente reutilizable para cada tarjeta de enmienda con bandera y proponente prominente
+const EnmiendaCard = ({ enm, paises, onVotar, onResolver, onEliminar }) => {
+  const paisObj = (paises || []).find(p => p.nombre?.toLowerCase() === enm.paisProponente?.toLowerCase());
+  const esAdicion = enm.tipo === 'adicion';
+  const esSupresion = enm.tipo === 'supresion';
+  const esModificacion = enm.tipo === 'modificacion';
+
+  return (
+    <div
+      style={{
+        backgroundColor: enm.estado === 'aceptada'
+          ? 'rgba(34, 197, 94, 0.08)'
+          : enm.estado === 'rechazada'
+            ? 'rgba(239, 68, 68, 0.08)'
+            : 'var(--card-hover, rgba(255,255,255,0.03))',
+        border: `1px solid ${
+          enm.estado === 'aceptada'
+            ? 'rgba(34, 197, 94, 0.4)'
+            : enm.estado === 'rechazada'
+              ? 'rgba(239, 68, 68, 0.4)'
+              : 'var(--subborder-color)'
+        }`,
+        borderRadius: '6px',
+        padding: '0.65rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.45rem'
+      }}
+    >
+      {/* Cabecera de la Enmienda con Proponente Prominente */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+          {/* Badge de Tipo */}
+          <span style={{
+            fontSize: '0.65rem',
+            fontWeight: '800',
+            padding: '0.12rem 0.4rem',
+            borderRadius: '4px',
+            backgroundColor: esAdicion
+              ? 'rgba(34, 197, 94, 0.2)'
+              : esSupresion
+                ? 'rgba(239, 68, 68, 0.2)'
+                : 'rgba(59, 130, 246, 0.2)',
+            color: esAdicion ? '#22c55e' : esSupresion ? '#ef4444' : '#3b82f6',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.2rem'
+          }}>
+            {esAdicion && <FilePlus size={12} />}
+            {esSupresion && <FileMinus size={12} />}
+            {esModificacion && <Edit3 size={12} />}
+            {esAdicion ? 'Adición' : esSupresion ? 'Supresión' : 'Modificación'}
+          </span>
+
+          {/* País Proponente Prominente */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.3rem',
+            backgroundColor: 'rgba(255,255,255,0.06)',
+            padding: '0.15rem 0.45rem',
+            borderRadius: '4px',
+            border: '1px solid var(--subborder-color)'
+          }}>
+            <CountryFlag country={paisObj} bandera={paisObj?.bandera} nombre={enm.paisProponente} size="xs" />
+            <span style={{ fontSize: '0.74rem', fontWeight: '800', color: 'var(--text-color)' }}>
+              {enm.paisProponente || 'Delegación'}
+            </span>
+          </div>
+        </div>
+
+        {/* Estado de la Enmienda */}
+        <span style={{
+          fontSize: '0.65rem',
+          fontWeight: '800',
+          padding: '0.12rem 0.45rem',
+          borderRadius: '4px',
+          textTransform: 'uppercase',
+          backgroundColor: enm.estado === 'aceptada'
+            ? 'rgba(34, 197, 94, 0.2)'
+            : enm.estado === 'rechazada'
+              ? 'rgba(239, 68, 68, 0.2)'
+              : 'rgba(234, 179, 8, 0.2)',
+          color: enm.estado === 'aceptada'
+            ? '#22c55e'
+            : enm.estado === 'rechazada'
+              ? '#ef4444'
+              : '#eab308'
+        }}>
+          {enm.estado}
+        </span>
+      </div>
+
+      {/* Contenido Visual Diff */}
+      <div style={{ fontSize: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+        {esAdicion && (
+          <div style={{
+            backgroundColor: 'rgba(34, 197, 94, 0.12)',
+            borderLeft: '3px solid #22c55e',
+            padding: '0.35rem 0.5rem',
+            borderRadius: '0 4px 4px 0',
+            color: '#22c55e',
+            fontWeight: '600'
+          }}>
+            + {enm.textoPropuesto}
+          </div>
+        )}
+
+        {esSupresion && (
+          <div style={{
+            backgroundColor: 'rgba(239, 68, 68, 0.12)',
+            borderLeft: '3px solid #ef4444',
+            padding: '0.35rem 0.5rem',
+            borderRadius: '0 4px 4px 0',
+            color: '#ef4444',
+            textDecoration: 'line-through',
+            fontWeight: '500'
+          }}>
+            - {enm.textoOriginal || 'Supresión total del artículo'}
+          </div>
+        )}
+
+        {esModificacion && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+            {enm.textoOriginal && (
+              <div style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                padding: '0.25rem 0.45rem',
+                borderRadius: '4px',
+                color: '#ef4444',
+                textDecoration: 'line-through',
+                fontSize: '0.72rem'
+              }}>
+                {enm.textoOriginal}
+              </div>
+            )}
+            <div style={{
+              backgroundColor: 'rgba(34, 197, 94, 0.12)',
+              padding: '0.25rem 0.45rem',
+              borderRadius: '4px',
+              color: '#22c55e',
+              fontWeight: '600',
+              fontSize: '0.72rem'
+            }}>
+              ➔ {enm.textoPropuesto}
+            </div>
+          </div>
+        )}
+
+        {enm.justificacion && (
+          <div style={{ fontSize: '0.68rem', color: 'var(--muted-text)', fontStyle: 'italic', marginTop: '0.1rem' }}>
+            Motivación: {enm.justificacion}
+          </div>
+        )}
+      </div>
+
+      {/* Botones de Acción sobre la Enmienda */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem', marginTop: '0.2rem' }}>
+        <button
+          onClick={() => onVotar(enm)}
+          title="Votar esta enmienda en el Mini Sistema de Votación"
+          style={{
+            backgroundColor: 'rgba(59, 130, 246, 0.15)',
+            border: '1px solid rgba(59, 130, 246, 0.3)',
+            color: '#3b82f6',
+            padding: '0.25rem 0.5rem',
+            borderRadius: '4px',
+            fontSize: '0.68rem',
+            fontWeight: '700',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.25rem'
+          }}
+        >
+          <Vote size={12} /> Votar Moción
+        </button>
+
+        <div style={{ display: 'flex', gap: '0.3rem' }}>
+          {enm.estado === 'pendiente' ? (
+            <>
+              <button
+                onClick={() => onResolver(enm.id, 'aceptada')}
+                title="Aceptar enmienda y actualizar texto automáticamente"
+                style={{
+                  backgroundColor: '#16a34a',
+                  border: 'none',
+                  color: '#ffffff',
+                  padding: '0.25rem 0.55rem',
+                  borderRadius: '4px',
+                  fontSize: '0.68rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.2rem'
+                }}
+              >
+                <Check size={12} /> Aceptar
+              </button>
+
+              <button
+                onClick={() => onResolver(enm.id, 'rechazada')}
+                title="Rechazar enmienda"
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                  border: '1px solid rgba(239, 68, 68, 0.4)',
+                  color: '#ef4444',
+                  padding: '0.25rem 0.55rem',
+                  borderRadius: '4px',
+                  fontSize: '0.68rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.2rem'
+                }}
+              >
+                <X size={12} /> Rechazar
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => onResolver(enm.id, 'pendiente')}
+              title="Deshacer decisión y volver a pendiente"
+              style={{
+                backgroundColor: 'transparent',
+                border: '1px solid var(--subborder-color)',
+                color: 'var(--muted-text)',
+                padding: '0.25rem 0.45rem',
+                borderRadius: '4px',
+                fontSize: '0.68rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.2rem'
+              }}
+            >
+              <RotateCcw size={11} /> Deshacer
+            </button>
+          )}
+
+          <button
+            onClick={() => onEliminar(enm.id)}
+            title="Eliminar enmienda"
+            style={{
+              backgroundColor: 'transparent',
+              border: 'none',
+              color: 'var(--muted-text)',
+              padding: '0.25rem',
+              cursor: 'pointer'
+            }}
+          >
+            <Trash2 size={12} />
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

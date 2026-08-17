@@ -19,6 +19,7 @@ import PizarraInteractiva from './PizarraInteractiva';
 import MapaVotacion from './MapaVotacion';
 import MiniVotacion from './MiniVotacion';
 import ControladorEnmiendas from './ControladorEnmiendas';
+import CronometroEnmiendas from './CronometroEnmiendas';
 
 const WidgetRegistry = {
   // Widgets Canónicos Únicos
@@ -29,6 +30,7 @@ const WidgetRegistry = {
   "cronometro_principal": CronometroPrincipal,
   "cronometro_dual": CronometroDual,
   "cronometro_only_time": CronometroOnlyTime,
+  "cronometro_enmiendas": CronometroEnmiendas,
   "pizarra_mociones": PizarraMociones,
   "anadir_paises_debate": AnadirPaisesDebate,
   "votacion_oficial": VotacionOficial,
@@ -48,6 +50,8 @@ const WidgetRegistry = {
   "gestor_enmiendas": ControladorEnmiendas,
   "enmiendas": ControladorEnmiendas,
   "amendments_controller": ControladorEnmiendas,
+  "timer_enmiendas": CronometroEnmiendas,
+  "cronometro_debate_enmiendas": CronometroEnmiendas,
   "configurar_comite": EstablecerAgenda,
   "comite_agenda": EstablecerAgenda,
   "anadir_paises": AnadirPaises,

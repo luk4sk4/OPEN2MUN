@@ -57,9 +57,21 @@ export const P2PProvider = ({ children }) => {
   const [notes, setNotes] = useState([]);
   const [unreadNotesCount, setUnreadNotesCount] = useState(0);
   const [speakingRequests, setSpeakingRequests] = useState([]);
+  const [enmiendasPropuestas, setEnmiendasPropuestas] = useState(() => {
+    try {
+      const saved = localStorage.getItem('openmun_enmiendas_propuestas');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [remoteSessionState, setRemoteSessionState] = useState(null);
   const [isLiveModalOpen, setIsLiveModalOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    localStorage.setItem('openmun_enmiendas_propuestas', JSON.stringify(enmiendasPropuestas));
+  }, [enmiendasPropuestas]);
 
   // Sincronizar ajustes P2P si se importan datos a localStorage
   useEffect(() => {
@@ -230,6 +242,12 @@ export const P2PProvider = ({ children }) => {
           sessionActionHandlersRef.current.onCastVote(country, vote);
         }
         addNotification(`Voto registrado de ${country}: ${vote}`, 'info');
+      }
+
+      // Recepción de Propuesta de Enmienda desde Delegado en Host
+      if (event === 'amendment_proposed_by_delegate') {
+        setEnmiendasPropuestas(prev => [data, ...prev]);
+        addNotification(`Nueva propuesta de enmienda de ${data.paisProponente}`, 'info');
       }
 
       // Recepción de Notas
@@ -512,6 +530,26 @@ export const P2PProvider = ({ children }) => {
     }
   }, [connectionStatus]);
 
+  const submitAmendment = useCallback((amendmentData) => {
+    const formatted = {
+      ...amendmentData,
+      paisProponente: amendmentData.paisProponente || clientCountry || 'Delegación',
+      timestamp: Date.now()
+    };
+    if (connectionStatus === 'connected' && role === 'delegate') {
+      peerService.submitAmendmentAsClient(formatted);
+      addNotification('Propuesta de enmienda enviada a la Presidencia', 'success');
+    } else {
+      // Si somos Host / modo local
+      setEnmiendasPropuestas(prev => [formatted, ...prev]);
+      addNotification('Enmienda registrada en bandeja de propuestas', 'info');
+    }
+  }, [connectionStatus, role, clientCountry, addNotification]);
+
+  const eliminarEnmiendaPropuesta = useCallback((propId) => {
+    setEnmiendasPropuestas(prev => prev.filter(p => p.id !== propId));
+  }, []);
+
   const openLiveModal = useCallback(() => setIsLiveModalOpen(true), []);
   const closeLiveModal = useCallback(() => setIsLiveModalOpen(false), []);
 
@@ -542,6 +580,10 @@ export const P2PProvider = ({ children }) => {
       setSpeakingRequests,
       approveSpeakingRequest,
       rejectSpeakingRequest,
+      enmiendasPropuestas,
+      setEnmiendasPropuestas,
+      submitAmendment,
+      eliminarEnmiendaPropuesta,
       castVote,
       remoteSessionState,
       isLiveModalOpen,

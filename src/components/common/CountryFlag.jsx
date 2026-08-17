@@ -12,24 +12,33 @@ const SIZES = {
 
 /**
  * Componente universal para renderizar banderas en imagen (SVG/PNG o Base64 personalizadas).
+ * Soporta props tradicionales (bandera, nombre) y prop unificada (country={paisObj}).
  */
 const CountryFlag = ({
-  bandera,
-  nombre = '',
+  country,
+  bandera: propBandera,
+  nombre: propNombre = '',
   size = 'md',
   shape = 'rect', // 'rect' | 'circle' | 'square'
   style = {},
   className = '',
-  title = ''
+  title = '',
+  width: customWidth,
+  height: customHeight
 }) => {
   const [hasError, setHasError] = useState(false);
+
+  // Extraer bandera y nombre de forma resiliente tanto si se pasa country objeto como props separadas
+  const bandera = propBandera || country?.bandera || country?.flag || (typeof country === 'string' ? country : '');
+  const nombre = propNombre || country?.nombre || country?.name || (typeof country === 'string' ? country : '');
+
   const imageUrl = getFlagImageUrl(bandera, nombre);
 
   const dimension = SIZES[size] || (typeof size === 'number' ? { width: `${size}px`, height: `${Math.round(size * 0.75)}px`, fontSize: `${Math.round(size * 0.4)}px` } : SIZES.md);
 
   const borderRadius = shape === 'circle' ? '50%' : shape === 'square' ? '4px' : '3px';
-  const width = shape === 'circle' || shape === 'square' ? dimension.height : dimension.width;
-  const height = dimension.height;
+  const width = customWidth || (shape === 'circle' || shape === 'square' ? dimension.height : dimension.width);
+  const height = customHeight || dimension.height;
 
   // Fallback si la imagen no existe o falla su carga
   if (!imageUrl || hasError) {

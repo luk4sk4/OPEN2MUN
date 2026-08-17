@@ -51,10 +51,11 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
     remoteSessionState,
     roomSettings,
     castVote,
+    submitAmendment,
     leaveRoom
   } = useP2P();
 
-  const [activeTab, setActiveTab] = useState('DEBATE'); // 'DEBATE' | 'NOTAS'
+  const [activeTab, setActiveTab] = useState('DEBATE'); // 'DEBATE' | 'NOTAS' | 'ENMIENDAS'
   const [destinatario, setDestinatario] = useState('CHAIR');
   const [textoNota, setTextoNota] = useState('');
   const [tipoNota, setTipoNota] = useState('general'); // 'general' | 'urgente' | 'pregunta'
@@ -67,6 +68,15 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
   const [solicitudCaucusHecha, setSolicitudCaucusHecha] = useState(false);
   const [subTabNotas, setSubTabNotas] = useState('BUZON'); // 'BUZON' | 'REDACTAR'
   const [miVotoEmitido, setMiVotoEmitido] = useState(null);
+
+  // Estados de Enmiendas de Delegados
+  const [tipoEnmiendaDel, setTipoEnmiendaDel] = useState('modificacion');
+  const [artIdDel, setArtIdDel] = useState('');
+  const [textoOriginalDel, setTextoOriginalDel] = useState('');
+  const [textoPropuestoDel, setTextoPropuestoDel] = useState('');
+  const [justificacionDel, setJustificacionDel] = useState('');
+  const [enmiendaEnviadaFeedback, setEnmiendaEnviadaFeedback] = useState(false);
+  const [misEnmiendasEnviadas, setMisEnmiendasEnviadas] = useState([]);
 
   // Estado sincronizado desde el Chair
   const state = remoteSessionState || {};
@@ -128,6 +138,38 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
   const handleEmitirVoto = (opcion) => {
     castVote(opcion);
     setMiVotoEmitido(opcion);
+  };
+
+  const handleEnviarEnmiendaDelegado = (e) => {
+    e.preventDefault();
+    if (!textoPropuestoDel.trim() && tipoEnmiendaDel !== 'supresion') return;
+
+    const articulosList = state.enmiendasSesion?.articulos || [];
+    const artObj = articulosList.find(a => a.id === artIdDel);
+    const artNum = artObj ? (artObj.prefijo || `Artículo ${artObj.numero}`) : 'Nuevo Artículo';
+
+    const nuevaPropuesta = {
+      id: `prop_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+      tipo: tipoEnmiendaDel,
+      articuloId: artIdDel || null,
+      articuloNumero: artNum,
+      paisProponente: clientCountry || 'Delegación',
+      textoOriginal: textoOriginalDel.trim(),
+      textoPropuesto: textoPropuestoDel.trim(),
+      justificacion: justificacionDel.trim(),
+      timestamp: Date.now()
+    };
+
+    if (submitAmendment) {
+      submitAmendment(nuevaPropuesta);
+    }
+
+    setMisEnmiendasEnviadas(prev => [nuevaPropuesta, ...prev]);
+    setEnmiendaEnviadaFeedback(true);
+    setTextoPropuestoDel('');
+    setTextoOriginalDel('');
+    setJustificacionDel('');
+    setTimeout(() => setEnmiendaEnviadaFeedback(false), 5000);
   };
 
   // Filtrar notas que pertenecen a este país
@@ -312,7 +354,29 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
             transition: 'all 0.15s ease'
           }}
         >
-          <MessageSquare size={14} /> {t('views.delegate.notesTab', 'Mensajería y Notas')} ({misNotas.length})
+          <MessageSquare size={14} /> {t('views.delegate.notesTab', 'Notas')} ({misNotas.length})
+        </button>
+
+        <button
+          onClick={() => setActiveTab('ENMIENDAS')}
+          style={{
+            flex: 1,
+            padding: '0.5rem',
+            borderRadius: '6px',
+            border: 'none',
+            backgroundColor: activeTab === 'ENMIENDAS' ? 'var(--btn-bg)' : 'transparent',
+            color: activeTab === 'ENMIENDAS' ? 'var(--btn-text)' : 'var(--muted-text)',
+            fontWeight: '700',
+            fontSize: '0.82rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.4rem',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <FileText size={14} /> Enmiendas
         </button>
       </div>
 
@@ -947,6 +1011,277 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
                   <Send size={15} /> Enviar Nota
                 </button>
               </form>
+            )}
+          </div>
+        )}
+
+        {/* ── PESTAÑA DE ENMIENDAS Y RESOLUCIONES ── */}
+        {activeTab === 'ENMIENDAS' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {/* Notificación de envío exitoso */}
+            {enmiendaEnviadaFeedback && (
+              <div style={{
+                backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                border: '1px solid rgba(34, 197, 94, 0.4)',
+                color: '#22c55e',
+                borderRadius: '8px',
+                padding: '0.75rem 1rem',
+                fontSize: '0.82rem',
+                fontWeight: '700',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                animation: 'scaleUp 0.2s ease'
+              }}>
+                <CheckCircle2 size={16} /> ¡Propuesta de enmienda enviada a la Mesa Directiva para su revisión!
+              </div>
+            )}
+
+            {/* Formulario de Propuesta de Enmienda Telemática */}
+            <form onSubmit={handleEnviarEnmiendaDelegado} style={{
+              backgroundColor: 'var(--panel-color)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '12px',
+              padding: '1.25rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.85rem',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <FileText size={18} color="#3b82f6" />
+                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '800' }}>
+                  Proponer Enmienda a la Mesa Directiva
+                </h3>
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--muted-text)' }}>
+                Envía tu propuesta de modificación, adición o supresión de cláusula directamente a la mesa para ser evaluada y sometida a debate.
+              </div>
+
+              {/* Selector de Naturaleza */}
+              <div>
+                <label style={{ fontSize: '0.74rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                  Tipo de Enmienda
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.4rem', marginTop: '0.35rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setTipoEnmiendaDel('adicion')}
+                    style={{
+                      padding: '0.45rem',
+                      borderRadius: '6px',
+                      border: `1px solid ${tipoEnmiendaDel === 'adicion' ? '#22c55e' : 'var(--subborder-color)'}`,
+                      backgroundColor: tipoEnmiendaDel === 'adicion' ? 'rgba(34, 197, 94, 0.2)' : 'transparent',
+                      color: tipoEnmiendaDel === 'adicion' ? '#22c55e' : 'var(--text-color)',
+                      fontWeight: '700',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    + Adición
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTipoEnmiendaDel('supresion')}
+                    style={{
+                      padding: '0.45rem',
+                      borderRadius: '6px',
+                      border: `1px solid ${tipoEnmiendaDel === 'supresion' ? '#ef4444' : 'var(--subborder-color)'}`,
+                      backgroundColor: tipoEnmiendaDel === 'supresion' ? 'rgba(239, 68, 68, 0.2)' : 'transparent',
+                      color: tipoEnmiendaDel === 'supresion' ? '#ef4444' : 'var(--text-color)',
+                      fontWeight: '700',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    - Supresión
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTipoEnmiendaDel('modificacion')}
+                    style={{
+                      padding: '0.45rem',
+                      borderRadius: '6px',
+                      border: `1px solid ${tipoEnmiendaDel === 'modificacion' ? '#3b82f6' : 'var(--subborder-color)'}`,
+                      backgroundColor: tipoEnmiendaDel === 'modificacion' ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
+                      color: tipoEnmiendaDel === 'modificacion' ? '#3b82f6' : 'var(--text-color)',
+                      fontWeight: '700',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ➔ Modificación
+                  </button>
+                </div>
+              </div>
+
+              {/* Selector de Artículo */}
+              <div>
+                <label style={{ fontSize: '0.74rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                  Artículo / Cláusula
+                </label>
+                <select
+                  value={artIdDel}
+                  onChange={e => setArtIdDel(e.target.value)}
+                  style={{
+                    width: '100%',
+                    marginTop: '0.35rem',
+                    backgroundColor: 'var(--card-header-bg)',
+                    border: '1px solid var(--subborder-color)',
+                    borderRadius: '8px',
+                    padding: '0.6rem',
+                    color: 'var(--text-color)',
+                    fontSize: '0.8rem',
+                    fontWeight: '600'
+                  }}
+                >
+                  <option value="">-- Añadir como Nuevo Artículo al Final / General --</option>
+                  {(state.enmiendasSesion?.articulos || []).map(art => (
+                    <option key={art.id} value={art.id}>
+                      {art.prefijo || `Artículo ${art.numero}`} - {art.texto?.substring(0, 45)}...
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Texto original */}
+              {(tipoEnmiendaDel === 'supresion' || tipoEnmiendaDel === 'modificacion') && (
+                <div>
+                  <label style={{ fontSize: '0.74rem', fontWeight: '700', color: '#ef4444', textTransform: 'uppercase' }}>
+                    {tipoEnmiendaDel === 'supresion' ? 'Texto a Suprimir' : 'Texto Original a Modificar'}
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Fragmento del texto a suprimir o reemplazar..."
+                    value={textoOriginalDel}
+                    onChange={e => setTextoOriginalDel(e.target.value)}
+                    style={{
+                      width: '100%',
+                      marginTop: '0.35rem',
+                      backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      borderRadius: '8px',
+                      padding: '0.55rem',
+                      color: 'var(--text-color)',
+                      fontSize: '0.8rem'
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Texto propuesto */}
+              {(tipoEnmiendaDel === 'adicion' || tipoEnmiendaDel === 'modificacion') && (
+                <div>
+                  <label style={{ fontSize: '0.74rem', fontWeight: '700', color: '#22c55e', textTransform: 'uppercase' }}>
+                    Texto Propuesto
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Escribe la redacción propuesta..."
+                    required
+                    value={textoPropuestoDel}
+                    onChange={e => setTextoPropuestoDel(e.target.value)}
+                    style={{
+                      width: '100%',
+                      marginTop: '0.35rem',
+                      backgroundColor: 'rgba(34, 197, 94, 0.05)',
+                      border: '1px solid rgba(34, 197, 94, 0.3)',
+                      borderRadius: '8px',
+                      padding: '0.55rem',
+                      color: 'var(--text-color)',
+                      fontSize: '0.8rem'
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Justificación */}
+              <div>
+                <label style={{ fontSize: '0.74rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                  Motivación / Justificación (Opcional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: Fomenta la inclusión tecnológica en países en desarrollo"
+                  value={justificacionDel}
+                  onChange={e => setJustificacionDel(e.target.value)}
+                  style={{
+                    width: '100%',
+                    marginTop: '0.35rem',
+                    backgroundColor: 'var(--card-header-bg)',
+                    border: '1px solid var(--subborder-color)',
+                    borderRadius: '8px',
+                    padding: '0.55rem',
+                    color: 'var(--text-color)',
+                    fontSize: '0.8rem'
+                  }}
+                />
+              </div>
+
+              <button
+                type="submit"
+                style={{
+                  backgroundColor: 'var(--btn-bg)',
+                  color: 'var(--btn-text)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '0.65rem',
+                  fontWeight: '800',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  marginTop: '0.25rem'
+                }}
+              >
+                <Send size={15} /> Enviar Propuesta a la Mesa Directiva
+              </button>
+            </form>
+
+            {/* Historial de Propuestas Enviadas por este Delegado */}
+            {misEnmiendasEnviadas.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                  Tus Propuestas Enviadas ({misEnmiendasEnviadas.length})
+                </div>
+                {misEnmiendasEnviadas.map(prop => (
+                  <div
+                    key={prop.id}
+                    style={{
+                      backgroundColor: 'var(--card-header-bg)',
+                      border: '1px solid var(--subborder-color)',
+                      borderRadius: '8px',
+                      padding: '0.75rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.3rem'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '0.74rem', fontWeight: '800', color: '#60a5fa' }}>
+                        {prop.tipo?.toUpperCase()} · {prop.articuloNumero}
+                      </span>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--muted-text)' }}>
+                        Enviada
+                      </span>
+                    </div>
+                    {prop.textoPropuesto && (
+                      <div style={{ fontSize: '0.75rem', color: '#22c55e', fontWeight: '600' }}>
+                        + {prop.textoPropuesto}
+                      </div>
+                    )}
+                    {prop.justificacion && (
+                      <div style={{ fontSize: '0.68rem', color: 'var(--muted-text)', fontStyle: 'italic' }}>
+                        {prop.justificacion}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         )}
