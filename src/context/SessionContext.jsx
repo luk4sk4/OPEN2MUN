@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { googleDriveService } from '../services/googleDriveService';
+import { validateSessionJSON } from '../utils/sessionValidator';
 
 const SessionContext = createContext();
 
@@ -1236,11 +1237,15 @@ export const SessionProvider = ({ children }) => {
   }, [paises, oradoresCola, oradoresCaucus, registroIntervenciones, mociones, historicoMociones, caucusActivo, votacionSesion, agendaSesion, nombreComite, isDriveLinked, driveFileId, generarSnapshotSesion]);
 
   // 2. CARGAR sesion_activa.json
-  const cargarSesionJSON = (sesionData, onConfigLoaded) => {
+  const cargarSesionJSON = (rawSesionData, onConfigLoaded) => {
     try {
-      if (!sesionData || typeof sesionData !== 'object') {
-        throw new Error('Formato de JSON inválido');
+      const validation = validateSessionJSON(rawSesionData);
+      if (!validation.valid) {
+        console.warn('Validación de sesión fallida:', validation.message);
+        return false;
       }
+
+      const sesionData = validation.data;
 
       if (sesionData.localStorageSnapshot && typeof sesionData.localStorageSnapshot === 'object') {
         Object.entries(sesionData.localStorageSnapshot).forEach(([key, val]) => {
@@ -1327,10 +1332,16 @@ export const SessionProvider = ({ children }) => {
 
       const configData = sesionData.config || sesionData.openmun_config || snapshot.openmun_config;
       if (configData) {
-        const parsedConfig = typeof configData === 'string' ? JSON.parse(configData) : configData;
-        localStorage.setItem('openmun_config', JSON.stringify(parsedConfig));
-        if (typeof onConfigLoaded === 'function') {
-          onConfigLoaded(parsedConfig);
+        try {
+          const parsedConfig = typeof configData === 'string' ? JSON.parse(configData) : configData;
+          if (parsedConfig && typeof parsedConfig === 'object' && !Array.isArray(parsedConfig)) {
+            localStorage.setItem('openmun_config', JSON.stringify(parsedConfig));
+            if (typeof onConfigLoaded === 'function') {
+              onConfigLoaded(parsedConfig);
+            }
+          }
+        } catch (e) {
+          console.warn('Configuración omitida por formato no válido:', e);
         }
       }
 
@@ -1350,7 +1361,6 @@ export const SessionProvider = ({ children }) => {
       return true;
     } catch (err) {
       console.error('Error al cargar la sesión JSON:', err);
-      alert('Error al cargar el archivo sesion_activa.json: ' + err.message);
       return false;
     }
   };

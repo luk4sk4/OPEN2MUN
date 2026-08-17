@@ -13,6 +13,7 @@ import {
   Moon,
   Home,
   ChevronRight,
+  ChevronDown,
   Radio,
   Mic,
   Timer,
@@ -23,7 +24,9 @@ import {
   Scroll,
   RefreshCw,
   LogOut,
-  FolderOpen
+  FolderOpen,
+  FolderArchive,
+  Cloud
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import configMaster from '../config/config_master.json';
@@ -36,10 +39,12 @@ import WidgetSidebar, { WIDGET_METADATA } from '../components/panels/WidgetSideb
 import OpenMunLogo from '../components/common/OpenMunLogo';
 import LanguageSelector from '../components/common/LanguageSelector';
 import PermanentCrisisBanner from '../components/common/PermanentCrisisBanner';
+import ToastNotification from '../components/common/ToastNotification';
 import HomePage from '../components/pages/HomePage';
 import { useSession } from '../context/SessionContext';
 import { useP2P } from '../context/P2PContext';
 import { useAccessibility } from '../context/AccessibilityContext';
+import { validateSessionJSON } from '../utils/sessionValidator';
 
 // ─── Grid constants ────────────────────────────────────────────────────────────
 const COLS = 12;
@@ -389,25 +394,51 @@ const Dashboard = () => {
   const activeInteractionRef = useRef(null);
   const [activeInteraction, setActiveInteraction] = useState(null);
 
-  // Menú y control de Google Drive y Modales de Sesión
-  const [driveMenuOpen, setDriveMenuOpen] = useState(false);
+  // Menú unificado de Sesión (JSON + Drive) y Modales
+  const [sessionMenuOpen, setSessionMenuOpen] = useState(false);
   const [isDriveModalOpen, setIsDriveModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const driveMenuRef = useRef(null);
+  const sessionMenuRef = useRef(null);
+
+  // Sistema de Notificaciones Toasts Estilizadas
+  const [toasts, setToasts] = useState([]);
+
+  const addToast = useCallback(({ type = 'info', title, message, duration = 4000 }) => {
+    const id = `toast_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    setToasts(prev => [...prev, { id, type, title, message, duration }]);
+    return id;
+  }, []);
+
+  const removeToast = useCallback((id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  // Escuchar eventos globales de toast para que cualquier componente pueda dispararlos
+  useEffect(() => {
+    const handleCustomToast = (e) => {
+      if (e && e.detail) {
+        addToast(e.detail);
+      }
+    };
+    window.addEventListener('openmun_toast', handleCustomToast);
+    return () => {
+      window.removeEventListener('openmun_toast', handleCustomToast);
+    };
+  }, [addToast]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (driveMenuRef.current && !driveMenuRef.current.contains(e.target)) {
-        setDriveMenuOpen(false);
+      if (sessionMenuRef.current && !sessionMenuRef.current.contains(e.target)) {
+        setSessionMenuOpen(false);
       }
     };
-    if (driveMenuOpen) {
+    if (sessionMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [driveMenuOpen]);
+  }, [sessionMenuOpen]);
 
   // Pantalla Completa / Maximizar
   const toggleMaximize = useCallback(() => {
@@ -455,14 +486,38 @@ const Dashboard = () => {
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const parsed = JSON.parse(event.target.result);
-        const ok = cargarSesionJSON(parsed, (newConfig) => {
+        const rawContent = event.target.result;
+        
+        // Validar sintaxis y estructura estricta del JSON
+        const validation = validateSessionJSON(rawContent);
+
+        if (!validation.valid) {
+          if (validation.errorType === 'SYNTAX_ERROR') {
+            addToast({
+              type: 'error',
+              title: t('toast.invalidJsonSyntaxTitle', 'Error de Sintaxis JSON'),
+              message: `${t('toast.invalidJsonSyntaxDesc', 'El archivo no contiene un JSON válido o está corrupto.')} (${validation.message})`,
+              duration: 5000
+            });
+          } else {
+            addToast({
+              type: 'error',
+              title: t('toast.invalidSessionFormatTitle', 'Estructura de Sesión Inválida'),
+              message: validation.message || t('toast.invalidSessionFormatDesc', 'El archivo no contiene una estructura reconocida de sesión de OpenMUN.'),
+              duration: 5000
+            });
+          }
+          return;
+        }
+
+        const ok = cargarSesionJSON(validation.data, (newConfig) => {
           if (newConfig) {
             setConfig(newConfig);
           }
         });
+
         if (ok) {
-          const cfg = parsed.config || parsed.openmun_config || (parsed.localStorageSnapshot && parsed.localStorageSnapshot.openmun_config);
+          const cfg = validation.data.config || validation.data.openmun_config || (validation.data.localStorageSnapshot && validation.data.localStorageSnapshot.openmun_config);
           if (cfg) {
             try {
               const parsedCfg = typeof cfg === 'string' ? JSON.parse(cfg) : cfg;
@@ -471,10 +526,27 @@ const Dashboard = () => {
               console.error('Error parseando config importada:', err);
             }
           }
-          alert('¡Sesión activa y todos los datos importados exitosamente!');
+          addToast({
+            type: 'success',
+            title: t('toast.sessionLoadedTitle', '¡Sesión Cargada con Éxito!'),
+            message: t('toast.sessionLoadedDesc', 'Todos los datos de la sesión han sido procesados y restaurados correctamente.'),
+            duration: 4000
+          });
+        } else {
+          addToast({
+            type: 'error',
+            title: t('toast.importErrorTitle', 'Error al Importar Sesión'),
+            message: 'No se pudo aplicar la sesión.',
+            duration: 5000
+          });
         }
       } catch (err) {
-        alert('Error al leer el archivo JSON: ' + err.message);
+        addToast({
+          type: 'error',
+          title: t('toast.importErrorTitle', 'Error al Leer Archivo'),
+          message: err.message,
+          duration: 5000
+        });
       }
     };
     reader.readAsText(file);
@@ -482,23 +554,24 @@ const Dashboard = () => {
   };
 
   const tabs = ['HOME', 'COMIENZO', 'GSL', 'DEBATE', 'VOTING', 'INFO', 'LIBRE'];
-  const widgets = config.layouts[activeTab] || [];
+  const widgets = (config?.layouts && config.layouts[activeTab]) || configMaster.layouts[activeTab] || [];
 
   // Actualizador seguro para la pestaña activa sin stale closures
   const updateActiveLayout = useCallback((updater) => {
     const currentTab = activeTabRef.current;
     setConfig(prev => {
-      const currentWidgets = prev.layouts[currentTab] || [];
+      const prevLayouts = prev?.layouts || configMaster.layouts;
+      const currentWidgets = prevLayouts[currentTab] || configMaster.layouts[currentTab] || [];
       const newWidgets = typeof updater === 'function' ? updater(currentWidgets) : updater;
       return {
         ...prev,
         layouts: {
-          ...prev.layouts,
+          ...prevLayouts,
           [currentTab]: newWidgets
         }
       };
     });
-  }, []);
+  }, [setConfig]);
 
   // ─── LÓGICA DE DRAG & RESIZE Y ELEVACIÓN DE Z-INDEX ───
 
@@ -506,7 +579,7 @@ const Dashboard = () => {
     e.preventDefault();
     e.stopPropagation();
     setFocusedWidgetId(widgetId);
-    const currentLayout = config.layouts[activeTabRef.current] || [];
+    const currentLayout = (config?.layouts && config.layouts[activeTabRef.current]) || configMaster.layouts[activeTabRef.current] || [];
     const targetWidget = currentLayout.find(w => w.i === widgetId);
     if (!targetWidget) return;
 
@@ -532,7 +605,7 @@ const Dashboard = () => {
     e.preventDefault();
     e.stopPropagation();
     setFocusedWidgetId(widgetId);
-    const currentLayout = config.layouts[activeTabRef.current] || [];
+    const currentLayout = (config?.layouts && config.layouts[activeTabRef.current]) || configMaster.layouts[activeTabRef.current] || [];
     const targetWidget = currentLayout.find(w => w.i === widgetId);
     if (!targetWidget) return;
 
@@ -616,7 +689,8 @@ const Dashboard = () => {
   const handleToggleWidget = useCallback((widgetId, shouldBeActive) => {
     const currentTab = activeTabRef.current;
     setConfig(prev => {
-      const currentWidgets = prev.layouts[currentTab] || [];
+      const prevLayouts = prev?.layouts || configMaster.layouts;
+      const currentWidgets = prevLayouts[currentTab] || configMaster.layouts[currentTab] || [];
       const exists = currentWidgets.some(w => w.i === widgetId);
 
       let nextWidgets = [...currentWidgets];
@@ -639,17 +713,18 @@ const Dashboard = () => {
       return {
         ...prev,
         layouts: {
-          ...prev.layouts,
+          ...prevLayouts,
           [currentTab]: nextWidgets
         }
       };
     });
-  }, []);
+  }, [setConfig]);
 
   const handleActivateAll = useCallback(() => {
     const currentTab = activeTabRef.current;
     const allIds = Object.keys(WidgetRegistry);
     setConfig(prev => {
+      const prevLayouts = prev?.layouts || configMaster.layouts;
       let currentRow = 0;
       let currentCol = 0;
 
@@ -671,46 +746,55 @@ const Dashboard = () => {
       return {
         ...prev,
         layouts: {
-          ...prev.layouts,
+          ...prevLayouts,
           [currentTab]: newWidgets
         }
       };
     });
-  }, []);
+  }, [setConfig]);
 
   const handleDeactivateAll = useCallback(() => {
     const currentTab = activeTabRef.current;
-    setConfig(prev => ({
-      ...prev,
-      layouts: {
-        ...prev.layouts,
-        [currentTab]: []
-      }
-    }));
-  }, []);
+    setConfig(prev => {
+      const prevLayouts = prev?.layouts || configMaster.layouts;
+      return {
+        ...prev,
+        layouts: {
+          ...prevLayouts,
+          [currentTab]: []
+        }
+      };
+    });
+  }, [setConfig]);
 
   const handleResetDefault = useCallback((targetTab) => {
     const tabToReset = targetTab || activeTabRef.current;
     const defaultWidgets = configMaster.layouts[tabToReset] || [];
-    setConfig(prev => ({
-      ...prev,
-      layouts: {
-        ...prev.layouts,
-        [tabToReset]: JSON.parse(JSON.stringify(defaultWidgets))
-      }
-    }));
-  }, []);
+    setConfig(prev => {
+      const prevLayouts = prev?.layouts || configMaster.layouts;
+      return {
+        ...prev,
+        layouts: {
+          ...prevLayouts,
+          [tabToReset]: JSON.parse(JSON.stringify(defaultWidgets))
+        }
+      };
+    });
+  }, [setConfig]);
 
   const handleApplyTemplate = useCallback((templateWidgets, targetTab) => {
     const tabToApply = targetTab || activeTabRef.current;
-    setConfig(prev => ({
-      ...prev,
-      layouts: {
-        ...prev.layouts,
-        [tabToApply]: JSON.parse(JSON.stringify(templateWidgets))
-      }
-    }));
-  }, []);
+    setConfig(prev => {
+      const prevLayouts = prev?.layouts || configMaster.layouts;
+      return {
+        ...prev,
+        layouts: {
+          ...prevLayouts,
+          [tabToApply]: JSON.parse(JSON.stringify(templateWidgets))
+        }
+      };
+    });
+  }, [setConfig]);
 
   const removeWidget = (id) => {
     handleToggleWidget(id, false);
@@ -747,6 +831,7 @@ const Dashboard = () => {
       <LiveSessionModal isOpen={isLiveModalOpen} onClose={closeLiveModal} isLight={isLight} />
       <DriveSessionsModal isOpen={isDriveModalOpen} onClose={() => setIsDriveModalOpen(false)} />
       <ExportSessionModal isOpen={isExportModalOpen} onClose={() => setIsExportModalOpen(false)} />
+      <ToastNotification toasts={toasts} onDismiss={removeToast} />
 
       {/* Sidebar de Widgets */}
       <WidgetSidebar
@@ -778,7 +863,7 @@ const Dashboard = () => {
         <>
           <nav style={{
             position: 'relative',
-            zIndex: 50,
+            zIndex: 1000,
             display: 'flex',
             padding: '0.75rem 1.5rem',
             backgroundColor: 'var(--header-bg)',
@@ -897,106 +982,41 @@ const Dashboard = () => {
 
             {/* Acciones de Sesión JSON, Modo Claro/Oscuro y Opciones */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  backgroundColor: 'transparent',
-                  border: '1px solid var(--subborder-color)',
-                  borderRadius: '6px',
-                  color: 'var(--text-color)',
-                  padding: '0.4rem 0.65rem',
-                  fontSize: '0.78rem',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
-                title={t('header.loadSessionTooltip', 'Cargar archivo sesion_activa.json')}
-              >
-                <Upload size={14} /> {t('header.loadSession', 'Cargar Sesión')}
-              </button>
-
-              <button
-                onClick={() => setIsExportModalOpen(true)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  backgroundColor: 'transparent',
-                  border: '1px solid var(--subborder-color)',
-                  borderRadius: '6px',
-                  color: 'var(--text-color)',
-                  padding: '0.4rem 0.65rem',
-                  fontSize: '0.78rem',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
-                title={t('header.exportSessionTooltip', 'Exportar archivo JSON con nombre personalizado')}
-              >
-                <Download size={14} /> {t('header.exportSession', 'Exportar sesión')}
-              </button>
-
-
-              {/* Botón e Integración Interactiva con Google Drive */}
-              <div style={{ position: 'relative' }} ref={driveMenuRef}>
+              {/* Botón Unificado de Sesión (Importar / Exportar / Google Drive) */}
+              <div style={{ position: 'relative' }} ref={sessionMenuRef}>
                 <button
-                  onClick={() => {
-                    if (!isDriveLinked) {
-                      conectarGoogleDrive().then(ok => {
-                        if (ok) setIsDriveModalOpen(true);
-                      });
-                    } else {
-                      setDriveMenuOpen(prev => !prev);
-                    }
-                  }}
+                  onClick={() => setSessionMenuOpen(prev => !prev)}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.4rem',
-                    background: isDriveLinked ? 'rgba(66, 133, 244, 0.08)' : 'transparent',
-                    border: `1px solid ${isDriveLinked ? 'rgba(66, 133, 244, 0.4)' : 'var(--subborder-color)'}`,
+                    gap: '0.45rem',
+                    backgroundColor: sessionMenuOpen
+                      ? (isLight ? 'rgba(59, 130, 246, 0.12)' : 'rgba(59, 130, 246, 0.2)')
+                      : (isDriveLinked ? 'rgba(66, 133, 244, 0.08)' : 'transparent'),
+                    border: `1px solid ${sessionMenuOpen ? 'var(--btn-bg)' : isDriveLinked ? 'rgba(66, 133, 244, 0.4)' : 'var(--subborder-color)'}`,
                     borderRadius: '6px',
                     color: 'var(--text-color)',
                     padding: '0.4rem 0.65rem',
                     fontSize: '0.78rem',
                     fontWeight: '600',
                     cursor: 'pointer',
-                    position: 'relative',
                     transition: 'all 0.2s ease'
                   }}
-                  title={
-                    !isDriveLinked
-                      ? t('header.driveConnect', 'Conectar con Google Drive')
-                      : driveSyncStatus === 'syncing'
-                      ? t('header.driveSyncing', 'Sincronizando...')
-                      : driveSyncStatus === 'error'
-                      ? t('header.driveError', 'Error en Drive')
-                      : `${t('header.driveSynced', 'Drive al día')}${driveLastSync ? ' (' + new Date(driveLastSync).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + ')' : ''}`
-                  }
+                  title={t('header.sessionMenuTooltip', 'Gestión de Sesión: Importar, Exportar y Google Drive')}
                 >
-                  {/* Icono Google Drive oficial */}
-                  <svg width="15" height="15" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
-                    <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da" />
-                    <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47" />
-                    <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335" />
-                    <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d" />
-                    <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc" />
-                    <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 27h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00" />
-                  </svg>
+                  <FolderArchive size={15} style={{ color: isDriveLinked ? '#2684fc' : 'currentColor' }} />
+                  <span>{t('header.sessionMenu', 'Sesión')}</span>
 
-                  <span>Drive</span>
-
-                  {/* Indicadores de estado de sincronización */}
+                  {/* Indicador de estado de Google Drive si está vinculado */}
                   {driveSyncStatus === 'syncing' || driveSyncStatus === 'connecting' ? (
-                    <RefreshCw size={11} className="spin-animation" style={{ color: '#2684fc', animation: 'spin 1s linear infinite' }} />
+                    <RefreshCw size={11} className="spin-animation" style={{ color: '#2684fc' }} />
                   ) : isDriveLinked && driveSyncStatus === 'synced' ? (
                     <span style={{
                       width: '6px',
                       height: '6px',
                       borderRadius: '50%',
                       backgroundColor: '#00ac47',
-                      boxShadow: '0 0 4px #00ac47'
+                      boxShadow: '0 0 5px #00ac47'
                     }} />
                   ) : isDriveLinked && driveSyncStatus === 'error' ? (
                     <span style={{
@@ -1004,138 +1024,334 @@ const Dashboard = () => {
                       height: '6px',
                       borderRadius: '50%',
                       backgroundColor: '#ea4335',
-                      boxShadow: '0 0 4px #ea4335'
+                      boxShadow: '0 0 5px #ea4335'
                     }} />
                   ) : null}
+
+                  <ChevronDown
+                    size={13}
+                    style={{
+                      transform: sessionMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.2s ease',
+                      opacity: 0.7
+                    }}
+                  />
                 </button>
 
-                {/* Menú Desplegable de Google Drive */}
-                {driveMenuOpen && isDriveLinked && (
-                  <div style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 6px)',
-                    right: 0,
-                    width: '245px',
-                    backgroundColor: 'var(--card-bg, #1e222d)',
-                    border: '1px solid var(--subborder-color, rgba(255,255,255,0.12))',
-                    borderRadius: '8px',
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-                    padding: '0.65rem',
-                    zIndex: 9999,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.45rem'
-                  }}>
-                    {driveUser && (
-                      <div style={{
-                        borderBottom: '1px solid var(--subborder-color, rgba(255,255,255,0.08))',
-                        paddingBottom: '0.4rem',
-                        marginBottom: '0.2rem'
-                      }}>
-                        <div style={{ fontSize: '0.78rem', fontWeight: 'bold', color: 'var(--text-color)' }}>
-                          {driveUser.name || 'Google Drive'}
-                        </div>
-                        {driveUser.email && (
-                          <div style={{ fontSize: '0.7rem', color: 'var(--muted-text)', wordBreak: 'break-all' }}>
-                            {driveUser.email}
-                          </div>
-                        )}
-                      </div>
-                    )}
+                {/* Menú Desplegable Unificado de Sesión */}
+                {sessionMenuOpen && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 6px)',
+                      right: 0,
+                      width: '275px',
+                      backgroundColor: isLight ? 'rgba(255, 255, 255, 0.98)' : 'rgba(22, 27, 39, 0.96)',
+                      backdropFilter: 'blur(16px)',
+                      WebkitBackdropFilter: 'blur(16px)',
+                      border: '1px solid var(--subborder-color)',
+                      borderRadius: '10px',
+                      boxShadow: isLight ? '0 10px 30px rgba(0,0,0,0.12)' : '0 16px 36px rgba(0,0,0,0.5)',
+                      padding: '0.65rem',
+                      zIndex: 9999,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.45rem',
+                      animation: 'fadeIn 0.15s ease'
+                    }}
+                  >
+                    {/* SECCIÓN 1: ARCHIVOS LOCALES (JSON) */}
+                    <div style={{
+                      fontSize: '0.68rem',
+                      fontWeight: '700',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      color: 'var(--muted-text)',
+                      padding: '0.2rem 0.4rem 0.1rem'
+                    }}>
+                      {t('header.sessionSectionLocal', 'Archivos Locales (JSON)')}
+                    </div>
 
-                    <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span>Estado:</span>
-                      <span style={{
-                        fontWeight: '600',
-                        color: driveSyncStatus === 'synced' ? '#00ac47' : driveSyncStatus === 'syncing' ? '#2684fc' : '#ea4335'
+                    {/* Botón Cargar Sesión */}
+                    <button
+                      onClick={() => {
+                        setSessionMenuOpen(false);
+                        fileInputRef.current?.click();
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.6rem',
+                        padding: '0.5rem 0.6rem',
+                        borderRadius: '7px',
+                        border: 'none',
+                        backgroundColor: 'transparent',
+                        color: 'var(--text-color)',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'background-color 0.15s ease'
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.07)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                    >
+                      <div style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '6px',
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                        color: '#3b82f6',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
                       }}>
-                        {driveSyncStatus === 'synced' ? 'Sincronizado' : driveSyncStatus === 'syncing' ? 'Guardando...' : 'Error'}
+                        <Upload size={15} />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>
+                          {t('header.importSession', 'Cargar Sesión (JSON)')}
+                        </span>
+                        <span style={{ fontSize: '0.68rem', color: 'var(--muted-text)' }}>
+                          {t('header.importSessionDesc', 'Restaurar datos desde archivo .json')}
+                        </span>
+                      </div>
+                    </button>
+
+                    {/* Botón Exportar Sesión */}
+                    <button
+                      onClick={() => {
+                        setSessionMenuOpen(false);
+                        setIsExportModalOpen(true);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.6rem',
+                        padding: '0.5rem 0.6rem',
+                        borderRadius: '7px',
+                        border: 'none',
+                        backgroundColor: 'transparent',
+                        color: 'var(--text-color)',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'background-color 0.15s ease'
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.07)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                    >
+                      <div style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '6px',
+                        backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                        color: '#10b981',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}>
+                        <Download size={15} />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>
+                          {t('header.exportSession', 'Exportar sesión')}
+                        </span>
+                        <span style={{ fontSize: '0.68rem', color: 'var(--muted-text)' }}>
+                          {t('header.exportSessionDesc', 'Guardar copia de seguridad en JSON')}
+                        </span>
+                      </div>
+                    </button>
+
+                    {/* Separador */}
+                    <div style={{ height: '1px', backgroundColor: 'var(--subborder-color)', margin: '0.2rem 0' }} />
+
+                    {/* SECCIÓN 2: GOOGLE DRIVE */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.1rem 0.4rem'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <svg width="13" height="13" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+                          <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da" />
+                          <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47" />
+                          <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335" />
+                          <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d" />
+                          <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc" />
+                          <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 27h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00" />
+                        </svg>
+                        <span style={{
+                          fontSize: '0.68rem',
+                          fontWeight: '700',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                          color: 'var(--muted-text)'
+                        }}>
+                          Google Drive
+                        </span>
+                      </div>
+
+                      <span style={{
+                        fontSize: '0.65rem',
+                        fontWeight: '700',
+                        padding: '1px 6px',
+                        borderRadius: '4px',
+                        backgroundColor: !isDriveLinked
+                          ? (isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)')
+                          : driveSyncStatus === 'synced'
+                          ? 'rgba(0, 172, 71, 0.15)'
+                          : driveSyncStatus === 'syncing'
+                          ? 'rgba(38, 132, 252, 0.15)'
+                          : 'rgba(234, 67, 53, 0.15)',
+                        color: !isDriveLinked
+                          ? 'var(--muted-text)'
+                          : driveSyncStatus === 'synced'
+                          ? '#00ac47'
+                          : driveSyncStatus === 'syncing'
+                          ? '#2684fc'
+                          : '#ea4335'
+                      }}>
+                        {!isDriveLinked
+                          ? 'Offline'
+                          : driveSyncStatus === 'synced'
+                          ? 'Sincronizado'
+                          : driveSyncStatus === 'syncing'
+                          ? 'Guardando...'
+                          : 'Error'}
                       </span>
                     </div>
 
-                    <div style={{ fontSize: '0.7rem', color: 'var(--muted-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      Archivo: <strong>{driveFileName || 'sesion_activa.json'}</strong>
-                    </div>
+                    {!isDriveLinked ? (
+                      <button
+                        onClick={() => {
+                          setSessionMenuOpen(false);
+                          conectarGoogleDrive().then(ok => {
+                            if (ok) setIsDriveModalOpen(true);
+                          });
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.6rem',
+                          padding: '0.5rem 0.6rem',
+                          borderRadius: '7px',
+                          border: '1px solid rgba(66, 133, 244, 0.3)',
+                          backgroundColor: 'rgba(66, 133, 244, 0.08)',
+                          color: '#2684fc',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.15s ease'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(66, 133, 244, 0.16)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(66, 133, 244, 0.08)'; }}
+                      >
+                        <Cloud size={16} />
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: '0.78rem', fontWeight: '700' }}>
+                            {t('header.driveConnect', 'Conectar con Google Drive')}
+                          </span>
+                          <span style={{ fontSize: '0.66rem', opacity: 0.8 }}>
+                            Copia y sincronización en la nube
+                          </span>
+                        </div>
+                      </button>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                        {driveUser && (
+                          <div style={{
+                            backgroundColor: isLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.03)',
+                            padding: '0.35rem 0.5rem',
+                            borderRadius: '6px',
+                            border: '1px solid var(--subborder-color)'
+                          }}>
+                            <div style={{ fontSize: '0.74rem', fontWeight: '700', color: 'var(--text-color)' }}>
+                              {driveUser.name || 'Google Drive'}
+                            </div>
+                            {driveUser.email && (
+                              <div style={{ fontSize: '0.66rem', color: 'var(--muted-text)', wordBreak: 'break-all' }}>
+                                {driveUser.email}
+                              </div>
+                            )}
+                            <div style={{ fontSize: '0.66rem', color: 'var(--muted-text)', marginTop: '0.15rem' }}>
+                              Archivo: <strong>{driveFileName || 'sesion_activa.json'}</strong>
+                            </div>
+                          </div>
+                        )}
 
-                    {driveLastSync && (
-                      <div style={{ fontSize: '0.68rem', color: 'var(--muted-text)' }}>
-                        Última copia: {new Date(driveLastSync).toLocaleTimeString()}
+                        <button
+                          onClick={() => {
+                            setSessionMenuOpen(false);
+                            setIsDriveModalOpen(true);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                            background: 'rgba(38, 132, 252, 0.1)',
+                            border: '1px solid rgba(38, 132, 252, 0.3)',
+                            borderRadius: '5px',
+                            color: '#2684fc',
+                            padding: '5px 8px',
+                            fontSize: '0.75rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            textAlign: 'left'
+                          }}
+                        >
+                          <FolderOpen size={13} />
+                          <span>{t('header.driveExplore', 'Explorar / Gestionar Sesiones')}</span>
+                        </button>
+
+                        <button
+                          onClick={async () => {
+                            await sincronizarDriveManual();
+                            setSessionMenuOpen(false);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                            background: 'var(--card-hover, rgba(255,255,255,0.05))',
+                            border: '1px solid var(--subborder-color)',
+                            borderRadius: '5px',
+                            color: 'var(--text-color)',
+                            padding: '5px 8px',
+                            fontSize: '0.74rem',
+                            fontWeight: '500',
+                            cursor: 'pointer',
+                            textAlign: 'left'
+                          }}
+                        >
+                          <RefreshCw size={12} className={driveSyncStatus === 'syncing' ? 'spin-animation' : ''} />
+                          <span>{t('header.driveSyncNow', 'Sincronizar ahora')}</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            desconectarGoogleDrive();
+                            setSessionMenuOpen(false);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                            background: 'transparent',
+                            border: '1px solid rgba(234, 67, 53, 0.3)',
+                            borderRadius: '5px',
+                            color: '#ea4335',
+                            padding: '5px 8px',
+                            fontSize: '0.74rem',
+                            fontWeight: '500',
+                            cursor: 'pointer',
+                            textAlign: 'left'
+                          }}
+                        >
+                          <LogOut size={12} />
+                          <span>{t('header.driveDisconnect', 'Desconectar Google Drive')}</span>
+                        </button>
                       </div>
                     )}
-
-                    {/* Botón Abrir Explorador de Sesiones de Drive */}
-                    <button
-                      onClick={() => {
-                        setIsDriveModalOpen(true);
-                        setDriveMenuOpen(false);
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.4rem',
-                        background: 'rgba(38, 132, 252, 0.1)',
-                        border: '1px solid rgba(38, 132, 252, 0.3)',
-                        borderRadius: '5px',
-                        color: '#2684fc',
-                        padding: '6px 8px',
-                        fontSize: '0.75rem',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        marginTop: '0.2rem',
-                        textAlign: 'left'
-                      }}
-                    >
-                      <FolderOpen size={14} />
-                      <span>Explorar / Gestionar Sesiones</span>
-                    </button>
-
-                    <button
-                      onClick={async () => {
-                        await sincronizarDriveManual();
-                        setDriveMenuOpen(false);
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.4rem',
-                        background: 'var(--card-hover, rgba(255,255,255,0.05))',
-                        border: '1px solid var(--subborder-color, rgba(255,255,255,0.1))',
-                        borderRadius: '5px',
-                        color: 'var(--text-color)',
-                        padding: '6px 8px',
-                        fontSize: '0.75rem',
-                        fontWeight: '500',
-                        cursor: 'pointer',
-                        textAlign: 'left'
-                      }}
-                    >
-                      <RefreshCw size={13} className={driveSyncStatus === 'syncing' ? 'spin-animation' : ''} />
-                      {t('header.driveSyncNow', 'Sincronizar ahora')}
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        desconectarGoogleDrive();
-                        setDriveMenuOpen(false);
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.4rem',
-                        background: 'transparent',
-                        border: '1px solid rgba(234, 67, 53, 0.3)',
-                        borderRadius: '5px',
-                        color: '#ea4335',
-                        padding: '6px 8px',
-                        fontSize: '0.75rem',
-                        fontWeight: '500',
-                        cursor: 'pointer',
-                        textAlign: 'left'
-                      }}
-                    >
-                      <LogOut size={13} />
-                      {t('header.driveDisconnect', 'Desconectar Google Drive')}
-                    </button>
                   </div>
                 )}
               </div>
@@ -1188,7 +1404,7 @@ const Dashboard = () => {
           {activeTab !== 'HOME' && (
             <div style={{
               position: 'relative',
-              zIndex: 40,
+              zIndex: 900,
               backgroundColor: 'var(--card-header-bg)',
               borderBottom: '1px solid var(--subborder-color)',
               padding: '0.4rem 1.5rem',

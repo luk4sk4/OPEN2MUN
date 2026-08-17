@@ -99,10 +99,28 @@
     "liveSession": "Sesión en Vivo P2P",
     "darkMode": "Cambiar a Modo Oscuro",
     "lightMode": "Cambiar a Modo Claro",
+    "sessionMenu": "Sesión",
+    "sessionMenuTooltip": "Gestión de Sesión: Importar, Exportar y Google Drive",
+    "sessionSectionLocal": "Archivos Locales (JSON)",
+    "sessionSectionCloud": "Sincronización en la Nube",
+    "importSession": "Cargar Sesión (JSON)",
+    "importSessionDesc": "Restaurar datos desde archivo .json",
+    "exportSessionDesc": "Guardar copia de seguridad en JSON",
+    "driveExplore": "Explorar / Gestionar Sesiones",
+    "driveConnectedAs": "Conectado como",
     "committee": "Comité",
     "agenda": "Agenda",
     "noCommittee": "Comité no configurado",
     "noAgenda": "Agenda no establecida"
+  },
+  "toast": {
+    "sessionLoadedTitle": "¡Sesión Cargada con Éxito!",
+    "sessionLoadedDesc": "Todos los datos de la sesión han sido procesados y restaurados correctamente.",
+    "invalidJsonSyntaxTitle": "Error de Sintaxis JSON",
+    "invalidJsonSyntaxDesc": "El archivo seleccionado no tiene un formato JSON válido o está corrupto.",
+    "invalidSessionFormatTitle": "Estructura de Sesión Inválida",
+    "invalidSessionFormatDesc": "El archivo no contiene una estructura reconocida de sesión de OpenMUN.",
+    "importErrorTitle": "Error al Importar Sesión"
   },
   "home": {
     "heroTitle": "La plataforma abierta y definitiva para Modelos de Naciones Unidas",

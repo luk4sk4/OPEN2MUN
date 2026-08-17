@@ -65,26 +65,49 @@ export const getThemeCssVars = (theme, accessibility) => {
   };
 };
 
+export const sanitizeConfig = (raw) => {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return configMaster;
+
+  const validLayouts = (raw.layouts && typeof raw.layouts === 'object' && !Array.isArray(raw.layouts))
+    ? { ...configMaster.layouts, ...raw.layouts }
+    : configMaster.layouts;
+
+  if (validLayouts.LAB !== undefined && validLayouts.LIBRE === undefined) {
+    delete validLayouts.LAB;
+    validLayouts.LIBRE = [];
+  }
+
+  return {
+    theme: (raw.theme && typeof raw.theme === 'object' && !Array.isArray(raw.theme)) 
+      ? { ...configMaster.theme, ...raw.theme } 
+      : configMaster.theme,
+    accessibility: (raw.accessibility && typeof raw.accessibility === 'object' && !Array.isArray(raw.accessibility)) 
+      ? { ...configMaster.accessibility, ...raw.accessibility } 
+      : configMaster.accessibility,
+    layouts: validLayouts
+  };
+};
+
 export const AccessibilityProvider = ({ children }) => {
   // Cargar configuración desde localStorage si existe, o usar configMaster por defecto
-  const [config, setConfig] = useState(() => {
+  const [config, setConfigState] = useState(() => {
     try {
       const saved = localStorage.getItem('openmun_config');
       if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && parsed.layouts) {
-          if (parsed.layouts.LAB !== undefined && parsed.layouts.LIBRE === undefined) {
-            delete parsed.layouts.LAB;
-            parsed.layouts.LIBRE = [];
-          }
-        }
-        return parsed;
+        return sanitizeConfig(JSON.parse(saved));
       }
     } catch (err) {
       console.error('Error al leer config de localStorage:', err);
     }
     return configMaster;
   });
+
+  const setConfig = useCallback((updater) => {
+    setConfigState(prev => {
+      const nextVal = typeof updater === 'function' ? updater(prev) : updater;
+      return sanitizeConfig(nextVal);
+    });
+  }, []);
 
   const [isAccessOpen, setIsAccessOpen] = useState(false);
 
@@ -104,7 +127,7 @@ export const AccessibilityProvider = ({ children }) => {
         themeMode: nextMode
       }
     }));
-  }, [isLight]);
+  }, [isLight, setConfig]);
 
   // Aplicar variables CSS, filtro de daltonismo, modo dislexia y tamaño de fuente al elemento raíz
   useEffect(() => {
@@ -140,27 +163,22 @@ export const AccessibilityProvider = ({ children }) => {
     if (currentAcc.colorblindMode === 'achromatopsia') filterString = 'grayscale(100%)';
     root.style.filter = filterString;
 
-    // 5. Guardar en localStorage y emitir evento para sincronización entre ventanas
+    // 5. Guardar en localStorage para sincronización entre ventanas/pestañas
     try {
       localStorage.setItem('openmun_config', JSON.stringify(config));
     } catch (err) {
       console.error('Error guardando config en localStorage:', err);
     }
-
-    window.dispatchEvent(new CustomEvent('openmun_config_updated', { detail: config }));
   }, [config]);
 
-  // Escuchar cambios de almacenamiento y eventos custom para sincronizar entre pestañas/ventanas abiertas
+  // Escuchar cambios de almacenamiento para sincronizar entre pestañas/ventanas abiertas
   useEffect(() => {
     const handleStorage = (e) => {
       if (e.key === 'openmun_config' && e.newValue) {
         try {
           const parsed = JSON.parse(e.newValue);
           if (parsed) {
-            setConfig(prev => ({
-              ...prev,
-              ...parsed
-            }));
+            setConfig(parsed);
           }
         } catch (err) {
           console.error('Error parseando config de storage:', err);
@@ -168,25 +186,11 @@ export const AccessibilityProvider = ({ children }) => {
       }
     };
 
-    const handleConfigUpdated = (e) => {
-      if (e.detail) {
-        setConfig(prev => {
-          if (JSON.stringify(prev) !== JSON.stringify(e.detail)) {
-            return e.detail;
-          }
-          return prev;
-        });
-      }
-    };
-
     window.addEventListener('storage', handleStorage);
-    window.addEventListener('openmun_config_updated', handleConfigUpdated);
-
     return () => {
       window.removeEventListener('storage', handleStorage);
-      window.removeEventListener('openmun_config_updated', handleConfigUpdated);
     };
-  }, []);
+  }, [setConfig]);
 
   const openAccessibilityModal = useCallback(() => setIsAccessOpen(true), []);
   const closeAccessibilityModal = useCallback(() => setIsAccessOpen(false), []);
