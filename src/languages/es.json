@@ -877,5 +877,41 @@
         "description": "Carga de delegaciones desde archivos Excel o listas en texto con autodetección de banderas."
       }
     }
+  },
+  "legalBanner": {
+    "noCookiesBadge": "¡SIN COOKIES!",
+    "title": "Aviso de Privacidad y Transparencia",
+    "description": "En OpenMUN priorizamos tu privacidad: esta web NO utiliza cookies de seguimiento ni de terceros. Solamente almacenamos la sesión de tu Modelo de Naciones Unidas de forma local en tu propio navegador (LocalStorage).",
+    "privacyLink": "Política de Privacidad",
+    "termsLink": "Términos y Condiciones",
+    "accept": "Entendido"
+  },
+  "privacy": {
+    "pageTitle": "OpenMUN - Política de Privacidad",
+    "badge": "Compromiso Total con la Privacidad",
+    "title": "Política de Privacidad",
+    "subtitle": "OpenMUN ha sido diseñado desde cero bajo el principio de Privacidad por Diseño. Tus datos te pertenecen a ti y a tu comité.",
+    "noCookiesTitle": "Garantía 100% Libre de Cookies",
+    "noCookiesHeading": "NO Utilizamos Cookies",
+    "noCookiesDescription": "En OpenMUN NO instalamos ni leemos cookies de ningún tipo en tu navegador. No usamos cookies de seguimiento, no usamos cookies de terceros, ni utilizamos píxeles analíticos o publicitarios. Navegas y trabajas con total libertad e intimidad.",
+    "localStorageTitle": "1. Almacenamiento Local (LocalStorage)",
+    "localStorageDesc": "Para garantizar que no pierdas tu trabajo si recargas la página o cierras el navegador, OpenMUN almacena los datos de tu sesión (nombre del comité, lista de delegados, mociones, cronómetros y preferencias de accesibilidad) exclusivamente de forma LOCAL en tu propio dispositivo utilizando LocalStorage.",
+    "p2pTitle": "2. Conexiones Peer-to-Peer (WebRTC & P2P)",
+    "p2pDesc": "Las funciones de sincronización en vivo (como el modo Delegado, Secretaría o Backroom) utilizan WebRTC / PeerJS. La comunicación se realiza de punto a punto (peer-to-peer) entre el dispositivo de la Mesa de Presidencia y los dispositivos conectados.",
+    "driveTitle": "3. Sincronización Opcional con Google Drive",
+    "driveDesc": "Si decides vincular voluntariamente tu cuenta de Google Drive para realizar copias de seguridad de tus sesiones de MUN, el token de autorización se almacena de forma segura en tu propio navegador. Las copias de seguridad se transfieren directamente desde tu navegador a tu espacio personal de Google Drive, sin intermediarios.",
+    "openSourceTitle": "4. Código Abierto y Transparencia",
+    "openSourceDesc": "OpenMUN es un proyecto de Software Libre e independiente. Cualquiera puede auditar el código fuente público en GitHub para comprobar que no existen rastreadores ni recopilación oculta de datos."
+  },
+  "terms": {
+    "pageTitle": "OpenMUN - Términos y Condiciones",
+    "badge": "Condiciones de Uso y Licencia Libre",
+    "title": "Términos y Condiciones",
+    "subtitle": "Bienvenido a OpenMUN, una plataforma web gratuita y de código abierto creada para potenciar la gestión de Modelos de Naciones Unidas.",
+    "sec1Title": "1. Carácter Gratuito y Educativo",
+    "sec1Desc": "OpenMUN se ofrece libremente y sin costo para conferencias, instituciones educativas, mesas presidenciales y delegados. Su propósito fundamental es enriquecer la cultura académica, el debate constructivo y la diplomacia entre estudiantes.",
+    "sec2Title": "2. Propiedad Intelectual y Licencia Libre",
+    "sec3Title": "3. Gestión de Datos y Copias de Seguridad",
+    "sec4Title": "4. Exención de Garantías"
   }
 }

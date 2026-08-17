@@ -30,6 +30,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import OpenMunLogo from '../common/OpenMunLogo';
 import KineticGrid from '../../assets/Kinetic';
+import { navigateTo } from '../../utils/router';
 
 const FAQ_ITEMS = [
   {
@@ -1090,6 +1091,27 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
               LinkedIn
             </a>
           </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center', margin: '0.25rem 0' }}>
+            <button
+              onClick={() => navigateTo('/privacy')}
+              style={{ background: 'none', border: 'none', padding: 0, color: accentColor, cursor: 'pointer', fontSize: '0.82rem', fontWeight: '600', textDecoration: 'underline' }}
+            >
+              {t('legalBanner.privacyLink', 'Política de Privacidad')}
+            </button>
+            <span>•</span>
+            <button
+              onClick={() => navigateTo('/terms')}
+              style={{ background: 'none', border: 'none', padding: 0, color: accentColor, cursor: 'pointer', fontSize: '0.82rem', fontWeight: '600', textDecoration: 'underline' }}
+            >
+              {t('legalBanner.termsLink', 'Términos y Condiciones')}
+            </button>
+            <span>•</span>
+            <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.8rem' }}>
+              🍪 0 Cookies / 100% LocalStorage
+            </span>
+          </div>
+
           <div>
             OpenMUN © {new Date().getFullYear()} — {t('home.footerDesc', 'Software Libre para Modelos de Naciones Unidas')}
           </div>

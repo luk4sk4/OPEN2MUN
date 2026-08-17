@@ -812,5 +812,41 @@
         "description": "Load delegations from Excel spreadsheets or text lists with flag autodetection."
       }
     }
+  },
+  "legalBanner": {
+    "noCookiesBadge": "ZERO COOKIES!",
+    "title": "Privacy & Transparency Notice",
+    "description": "At OpenMUN we prioritize your privacy: this website DOES NOT use tracking or third-party cookies. We only store your Model UN session locally on your own browser (LocalStorage).",
+    "privacyLink": "Privacy Policy",
+    "termsLink": "Terms & Conditions",
+    "accept": "Got it"
+  },
+  "privacy": {
+    "pageTitle": "OpenMUN - Privacy Policy",
+    "badge": "Total Commitment to Privacy",
+    "title": "Privacy Policy",
+    "subtitle": "OpenMUN has been designed from the ground up on Privacy by Design principles. Your data belongs strictly to you and your committee.",
+    "noCookiesTitle": "100% Cookie-Free Guarantee",
+    "noCookiesHeading": "We Do NOT Use Cookies",
+    "noCookiesDescription": "OpenMUN does NOT install or read cookies of any kind in your browser. We do not use tracking cookies, third-party cookies, or analytics/ad pixels. Browse and operate with total privacy.",
+    "localStorageTitle": "1. Local Storage (LocalStorage)",
+    "localStorageDesc": "To ensure you don't lose your work when refreshing or closing the browser, OpenMUN stores your session data (committee name, delegate list, motions, timers, accessibility settings) exclusively LOCAL on your own device using LocalStorage.",
+    "p2pTitle": "2. Peer-to-Peer Connections (WebRTC & P2P)",
+    "p2pDesc": "Live synchronization features (Delegate, Secretariat, or Backroom views) utilize WebRTC / PeerJS. Data is transmitted directly peer-to-peer between the Chair's device and connected delegates.",
+    "driveTitle": "3. Optional Google Drive Sync",
+    "driveDesc": "If you voluntarily link your Google Drive account for session backups, authorization tokens are kept securely in your own browser. Backups transfer directly from your browser to your personal Google Drive, with no middleman server.",
+    "openSourceTitle": "4. Open Source & Transparency",
+    "openSourceDesc": "OpenMUN is free, open-source software. Anyone can audit the public source code on GitHub to verify zero trackers or hidden data collection."
+  },
+  "terms": {
+    "pageTitle": "OpenMUN - Terms & Conditions",
+    "badge": "Terms of Use & Free License",
+    "title": "Terms & Conditions",
+    "subtitle": "Welcome to OpenMUN, a free and open-source web platform for Model United Nations management.",
+    "sec1Title": "1. Free Educational Purpose",
+    "sec1Desc": "OpenMUN is provided free of charge for Model UN conferences, schools, universities, chairs, and delegates worldwide.",
+    "sec2Title": "2. Open Source & License",
+    "sec3Title": "3. Data Management & Backups",
+    "sec4Title": "4. Disclaimer of Warranties"
   }
 }

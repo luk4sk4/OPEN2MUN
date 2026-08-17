@@ -330,6 +330,32 @@ const Dashboard = () => {
   const activeTabRef = useRef(activeTab);
   useEffect(() => {
     activeTabRef.current = activeTab;
+    switch (activeTab) {
+      case 'HOME':
+        document.title = 'OpenMUN - Plataforma Libre de Gestión para Modelos de Naciones Unidas (MUN)';
+        break;
+      case 'COMIENZO':
+        document.title = 'OpenMUN - Configuración y Agenda de Comité';
+        break;
+      case 'GSL':
+        document.title = 'OpenMUN - Lista General de Oradores (GSL)';
+        break;
+      case 'DEBATE':
+        document.title = 'OpenMUN - Cronómetros y Moderación de Debate';
+        break;
+      case 'VOTING':
+        document.title = 'OpenMUN - Sistema de Votación Oficial y Mapa de Votos';
+        break;
+      case 'INFO':
+        document.title = 'OpenMUN - Matriz de Quórum e Información de Delegaciones';
+        break;
+      case 'LIBRE':
+        document.title = 'OpenMUN - Panel de Widgets Personalizable';
+        break;
+      default:
+        document.title = 'OpenMUN - Plataforma Libre de Gestión para Modelos de Naciones Unidas (MUN)';
+        break;
+    }
   }, [activeTab]);
 
   const boardResizeObserverRef = useRef(null);

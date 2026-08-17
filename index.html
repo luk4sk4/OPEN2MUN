@@ -2,15 +2,106 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenMUN - Plataforma Libre de Gestión para Modelos de Naciones Unidas (MUN)</title>
+    
+    <!-- SEO & Metadata Primarios -->
+    <meta name="description" content="OpenMUN es la plataforma libre, modular y en tiempo real para gestión de comités de Modelos de Naciones Unidas (MUN). Control de oradores GSL, cronómetros, mociones, votaciones, quórum y sincronización P2P sin registros." />
+    <meta name="keywords" content="OpenMUN, Model United Nations, Modelo de Naciones Unidas, MUN, software mesa directiva MUN, debate MUN, cronometro MUN, lista de oradores GSL, votacion MUN, P2P WebRTC, software libre MUN" />
+    <meta name="author" content="OpenMUN Team" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://open2mun.vercel.app/" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Open Graph / Facebook / WhatsApp / LinkedIn -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://open2mun.vercel.app/" />
+    <meta property="og:title" content="OpenMUN - Plataforma Libre de Gestión para Modelos de Naciones Unidas (MUN)" />
+    <meta property="og:description" content="Plataforma modular y en tiempo real para mesas directivas (Chairs), delegaciones, secretarías y gabinetes de crisis en Modelos de Naciones Unidas." />
+    <meta property="og:image" content="https://open2mun.vercel.app/favicon.svg" />
+    <meta property="og:site_name" content="OpenMUN" />
+    <meta property="og:locale" content="es_ES" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://open2mun.vercel.app/" />
+    <meta name="twitter:title" content="OpenMUN - Plataforma Libre de Gestión para Modelos de Naciones Unidas (MUN)" />
+    <meta name="twitter:description" content="Plataforma modular y en tiempo real para mesas directivas (Chairs), delegaciones, secretarías y gabinetes de crisis en Modelos de Naciones Unidas." />
+    <meta name="twitter:image" content="https://open2mun.vercel.app/favicon.svg" />
+
+    <!-- Fuentes Preconectadas -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@300;400;500;600;700;800;900&family=Lexend:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <title>OpenMUN</title>
+
+    <!-- Datos Estructurados JSON-LD (Schema.org) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "OpenMUN",
+      "alternateName": ["openMUN", "Open MUN"],
+      "url": "https://open2mun.vercel.app",
+      "description": "Plataforma web libre, modular y en tiempo real para la gestión y proyección de comités de Modelos de Naciones Unidas (MUN).",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "All",
+      "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR"
+      },
+      "author": {
+        "@type": "Organization",
+        "name": "OpenMUN Team",
+        "url": "https://open2mun.vercel.app"
+      }
+    }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Pre-renderizado estático legible para buscadores (SEO Crawlers & Social Bots) -->
+      <header style="padding: 2rem; font-family: sans-serif; text-align: center;">
+        <h1 style="font-size: 2.2rem; color: #2563eb;">OpenMUN — Software Libre para Modelos de Naciones Unidas (MUN)</h1>
+        <p style="font-size: 1.1rem; max-width: 800px; margin: 1rem auto; color: #475569;">
+          Plataforma integral, modular y de latencia cero para mesas directivas (Chairs), delegaciones, secretarías y gabinetes de crisis en comités de Model United Nations (MUN).
+        </p>
+      </header>
+      <main style="padding: 1rem 2rem; font-family: sans-serif; max-width: 1000px; margin: 0 auto;">
+        <section>
+          <h2>Características Principales para Comités MUN</h2>
+          <ul>
+            <li><strong>Lista General de Oradores (GSL):</strong> Gestión fluida de delegaciones con tiempos configurables por orador, cesiones de palabra y cola en tiempo real.</li>
+            <li><strong>Cronómetros Dinámicos:</strong> Control preciso de debates moderados e inmoderados con alertas visuales y sonoras.</li>
+            <li><strong>Gestión de Quórum y Asistencia:</strong> Matriz de países con cálculo automático de mayorías simples, 2/3 y calificadas.</li>
+            <li><strong>Pizarra de Mociones y Votación Oficial:</strong> Registro jerárquico de mociones, votaciones procedimentales/sustantivas y mapa de votos.</li>
+            <li><strong>Sincronización P2P en Tiempo Real:</strong> Comunicación Peer-to-Peer mediante WebRTC y códigos QR para conectar proyectores, secretarías y delegaciones sin servidor intermediario.</li>
+            <li><strong>Gabinete de Crisis y Noticiero TV:</strong> Emisión de noticias en directo, alertas urgentes y cintillo permanente de noticias.</li>
+            <li><strong>Privacidad y Sincronización Nube:</strong> Datos guardados localmente con opción de respaldo en Google Drive. 100% libre bajo licencia AGPLv3.</li>
+          </ul>
+        </section>
+        <section style="margin-top: 2rem;">
+          <h2>Preguntas Frecuentes (FAQ)</h2>
+          <article>
+            <h3>¿Qué es OpenMUN y para qué sirve?</h3>
+            <p>OpenMUN es una plataforma web de código abierto diseñada para facilitar la moderación y gestión de simulaciones de Modelos de Naciones Unidas (MUN). Permite a las Mesas de Presidencia llevar el control de oradores, cronómetros, mociones, votaciones, cálculo de quorum y transmitir el estado de la sesión en vivo a delegados y pantallas de proyección.</p>
+          </article>
+          <article>
+            <h3>¿Es realmente 100% gratuito y de código abierto?</h3>
+            <p>Sí, totalmente. OpenMUN es software libre bajo licencia GNU AGPLv3. No incluye pagos, suscripciones premium ni publicidad.</p>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <noscript>
+      <div style="padding: 2rem; text-align: center; font-family: sans-serif;">
+        <h2>JavaScript es necesario para ejecutar OpenMUN</h2>
+        <p>Esta aplicación requiere JavaScript habilitado en tu navegador para funcionar de forma interactiva.</p>
+      </div>
+    </noscript>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

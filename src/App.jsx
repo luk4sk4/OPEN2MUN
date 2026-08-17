@@ -7,6 +7,10 @@ import DelegateView from './components/views/DelegateView';
 import SecretariatView from './components/views/SecretariatView';
 import BackroomView from './components/views/BackroomView';
 import JoinSessionView from './components/views/JoinSessionView';
+import PrivacyPolicyPage from './components/pages/PrivacyPolicyPage';
+import TermsConditionsPage from './components/pages/TermsConditionsPage';
+import LegalBanner from './components/common/LegalBanner';
+import { useRouter } from './utils/router';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -45,8 +49,12 @@ class ErrorBoundary extends React.Component {
 function AppContent() {
   const { viewMode, setViewMode, joinRoom } = useP2P();
   const { isLight } = useAccessibility();
+  const { route, navigateTo } = useRouter();
 
   useEffect(() => {
+    if (route === 'privacy') return;
+    if (route === 'terms') return;
+
     switch (viewMode) {
       case 'backroom':
         document.title = 'OpenMUN - Backroom';
@@ -65,7 +73,7 @@ function AppContent() {
         document.title = 'OpenMUN';
         break;
     }
-  }, [viewMode]);
+  }, [viewMode, route]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -83,23 +91,44 @@ function AppContent() {
     }
   }, [joinRoom]);
 
+  // Si la ruta solicitada es Privacidad o Términos, renderizamos su página específica
+  if (route === 'privacy') {
+    return (
+      <>
+        <PrivacyPolicyPage isLight={isLight} onBack={() => navigateTo('/')} />
+        <LegalBanner isLight={isLight} />
+      </>
+    );
+  }
+
+  if (route === 'terms') {
+    return (
+      <>
+        <TermsConditionsPage isLight={isLight} onBack={() => navigateTo('/')} />
+        <LegalBanner isLight={isLight} />
+      </>
+    );
+  }
+
+  let currentView;
   if (viewMode === 'delegate') {
-    return <DelegateView isLight={isLight} onExit={() => setViewMode('chair')} />;
+    currentView = <DelegateView isLight={isLight} onExit={() => setViewMode('chair')} />;
+  } else if (viewMode === 'secretariat') {
+    currentView = <SecretariatView isLight={isLight} onExit={() => setViewMode('chair')} />;
+  } else if (viewMode === 'backroom') {
+    currentView = <BackroomView isLight={isLight} onExit={() => setViewMode('chair')} />;
+  } else if (viewMode === 'join') {
+    currentView = <JoinSessionView isLight={isLight} onBackToChair={() => setViewMode('chair')} />;
+  } else {
+    currentView = <Dashboard />;
   }
 
-  if (viewMode === 'secretariat') {
-    return <SecretariatView isLight={isLight} onExit={() => setViewMode('chair')} />;
-  }
-
-  if (viewMode === 'backroom') {
-    return <BackroomView isLight={isLight} onExit={() => setViewMode('chair')} />;
-  }
-
-  if (viewMode === 'join') {
-    return <JoinSessionView isLight={isLight} onBackToChair={() => setViewMode('chair')} />;
-  }
-
-  return <Dashboard />;
+  return (
+    <>
+      {currentView}
+      <LegalBanner isLight={isLight} />
+    </>
+  );
 }
 
 function App() {
