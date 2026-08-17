@@ -3,7 +3,7 @@ import { Cookie, ShieldCheck, X, Check, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { navigateTo } from '../../utils/router';
 
-const LEGAL_STORAGE_KEY = 'openmun_legal_accepted_v1';
+const LEGAL_STORAGE_KEY = 'open2mun_legal_accepted_v1';
 
 export default function LegalBanner({ isLight = false }) {
   const { t } = useTranslation();
@@ -12,7 +12,7 @@ export default function LegalBanner({ isLight = false }) {
 
   useEffect(() => {
     try {
-      const accepted = localStorage.getItem(LEGAL_STORAGE_KEY);
+      const accepted = localStorage.getItem(LEGAL_STORAGE_KEY) || localStorage.getItem('openmun_legal_accepted_v1');
       if (!accepted) {
         setIsVisible(true);
       }
@@ -176,7 +176,7 @@ export default function LegalBanner({ isLight = false }) {
         >
           {t(
             'legalBanner.description',
-            'En OpenMUN priorizamos tu privacidad: esta web NO utiliza cookies de seguimiento ni de terceros. Solamente almacenamos la sesión de tu Modelo de Naciones Unidas de forma local en tu propio navegador (LocalStorage).'
+            'En Open2MUN priorizamos tu privacidad: esta web NO utiliza cookies de seguimiento ni de terceros. Solamente almacenamos la sesión de tu Modelo de Naciones Unidas de forma local en tu propio navegador (LocalStorage).'
           )}
         </p>
 

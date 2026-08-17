@@ -20,14 +20,15 @@ const AccessibilityModal = ({
   if (!isOpen || !config) return null;
 
   const [bannerCrisisHabilitado, setBannerCrisisHabilitado] = useState(() => {
-    const saved = localStorage.getItem('openmun_permanent_banner_enabled');
+    const saved = localStorage.getItem('open2mun_permanent_banner_enabled') || localStorage.getItem('openmun_permanent_banner_enabled');
     return saved !== null ? saved === 'true' : true;
   });
 
   const handleToggleBannerCrisis = () => {
     const nuevoValor = !bannerCrisisHabilitado;
     setBannerCrisisHabilitado(nuevoValor);
-    localStorage.setItem('openmun_permanent_banner_enabled', String(nuevoValor));
+    localStorage.setItem('open2mun_permanent_banner_enabled', String(nuevoValor));
+    window.dispatchEvent(new CustomEvent('open2mun_crisis_update'));
     window.dispatchEvent(new CustomEvent('openmun_crisis_update'));
   };
 

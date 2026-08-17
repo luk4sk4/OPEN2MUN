@@ -93,7 +93,7 @@ const TeleNoticiasCrisis = () => {
 
   // Estados persistentes de configuración de la TV
   const [configTV, setConfigTV] = useState(() => {
-    const saved = localStorage.getItem('openmun_tv_config');
+    const saved = localStorage.getItem('open2mun_tv_config') || localStorage.getItem('openmun_tv_config');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
     }
@@ -125,13 +125,13 @@ const TeleNoticiasCrisis = () => {
 
   // Guardar configuración en localStorage
   useEffect(() => {
-    localStorage.setItem('openmun_tv_config', JSON.stringify(configTV));
+    localStorage.setItem('open2mun_tv_config', JSON.stringify(configTV));
   }, [configTV]);
 
   // Cargar y sincronizar eventos de crisis en tiempo real
   const recargarEventosCrisis = () => {
     try {
-      const savedEventos = localStorage.getItem('openmun_crisis_eventos');
+      const savedEventos = localStorage.getItem('open2mun_crisis_eventos') || localStorage.getItem('openmun_crisis_eventos');
       if (savedEventos) {
         const parsed = JSON.parse(savedEventos);
         setTodosLosEventos(parsed);
@@ -151,7 +151,7 @@ const TeleNoticiasCrisis = () => {
         }
       }
 
-      const savedReloj = localStorage.getItem('openmun_crisis_reloj');
+      const savedReloj = localStorage.getItem('open2mun_crisis_reloj') || localStorage.getItem('openmun_crisis_reloj');
       if (savedReloj) {
         setRelojSimulacion(JSON.parse(savedReloj));
       }
@@ -165,12 +165,14 @@ const TeleNoticiasCrisis = () => {
 
     // Escuchar eventos locales y storage
     const handleCustomUpdate = () => recargarEventosCrisis();
+    window.addEventListener('open2mun_crisis_update', handleCustomUpdate);
     window.addEventListener('openmun_crisis_update', handleCustomUpdate);
     window.addEventListener('storage', handleCustomUpdate);
 
     const interval = setInterval(recargarEventosCrisis, 1200);
 
     return () => {
+      window.removeEventListener('open2mun_crisis_update', handleCustomUpdate);
       window.removeEventListener('openmun_crisis_update', handleCustomUpdate);
       window.removeEventListener('storage', handleCustomUpdate);
       clearInterval(interval);
@@ -183,7 +185,7 @@ const TeleNoticiasCrisis = () => {
       return configTV.tickerPersonalizado;
     }
     if (!todosLosEventos || todosLosEventos.length === 0) {
-      return 'OPENMUN TRANSMISIÓN EN DIRECTO · SALA DE CRISIS ACTIVA · ESPERANDO NUEVAS DIRECTIVAS DE LA MESA';
+      return 'OPEN2MUN TRANSMISIÓN EN DIRECTO · SALA DE CRISIS ACTIVA · ESPERANDO NUEVAS DIRECTIVAS DE LA MESA';
     }
     return todosLosEventos
       .map(e => `[${e.categoria}] ${e.titulo.toUpperCase()} (${e.horaSimulada})`)

@@ -1,6 +1,6 @@
 import { Peer } from 'peerjs';
 
-export const LOCAL_BROADCAST_CHANNEL_NAME = 'openmun_local_secret_channel';
+export const LOCAL_BROADCAST_CHANNEL_NAME = 'open2mun_local_secret_channel';
 
 /**
  * Tipos de mensajes normalizados

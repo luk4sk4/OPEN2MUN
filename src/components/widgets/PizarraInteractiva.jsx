@@ -473,7 +473,7 @@ const PizarraInteractiva = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const link = document.createElement('a');
-    link.download = `pizarra_openmun_${Date.now()}.png`;
+    link.download = `pizarra_open2mun_${Date.now()}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
   };

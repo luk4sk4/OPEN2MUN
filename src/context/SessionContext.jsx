@@ -4,44 +4,44 @@ import { googleDriveService } from '../services/googleDriveService';
 const SessionContext = createContext();
 
 const PAISES_INICIALES = [];
-const SESSION_SYNC_CHANNEL_NAME = 'openmun_session_sync';
+const SESSION_SYNC_CHANNEL_NAME = 'open2mun_session_sync';
 
 export const SessionProvider = ({ children }) => {
   const tabInstanceId = useRef(`tab_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`).current;
   const broadcastChannelRef = useRef(null);
 
   const [paises, setPaisesState] = useState(() => {
-    const saved = localStorage.getItem('openmun_paises');
+    const saved = localStorage.getItem('open2mun_paises') || localStorage.getItem('openmun_paises');
     return saved ? JSON.parse(saved) : PAISES_INICIALES;
   });
 
   const [oradoresCola, setOradoresColaState] = useState(() => {
-    const saved = localStorage.getItem('openmun_oradores');
+    const saved = localStorage.getItem('open2mun_oradores') || localStorage.getItem('openmun_oradores');
     return saved ? JSON.parse(saved) : [];
   });
 
   const [oradoresCaucus, setOradoresCaucusState] = useState(() => {
-    const saved = localStorage.getItem('openmun_oradores_caucus');
+    const saved = localStorage.getItem('open2mun_oradores_caucus') || localStorage.getItem('openmun_oradores_caucus');
     return saved ? JSON.parse(saved) : [];
   });
 
   const [registroIntervenciones, setRegistroIntervencionesState] = useState(() => {
-    const saved = localStorage.getItem('openmun_intervenciones');
+    const saved = localStorage.getItem('open2mun_intervenciones') || localStorage.getItem('openmun_intervenciones');
     return saved ? JSON.parse(saved) : [];
   });
 
   const [mociones, setMocionesState] = useState(() => {
-    const saved = localStorage.getItem('openmun_mociones');
+    const saved = localStorage.getItem('open2mun_mociones') || localStorage.getItem('openmun_mociones');
     return saved ? JSON.parse(saved) : [];
   });
 
   const [historicoMociones, setHistoricoMocionesState] = useState(() => {
-    const saved = localStorage.getItem('openmun_historico_mociones');
+    const saved = localStorage.getItem('open2mun_historico_mociones') || localStorage.getItem('openmun_historico_mociones');
     return saved ? JSON.parse(saved) : [];
   });
 
   const [caucusActivo, setCaucusActivoState] = useState(() => {
-    const saved = localStorage.getItem('openmun_caucus');
+    const saved = localStorage.getItem('open2mun_caucus') || localStorage.getItem('openmun_caucus');
     return saved ? JSON.parse(saved) : {
       activo: false,
       proponente: '',
@@ -55,7 +55,7 @@ export const SessionProvider = ({ children }) => {
   });
 
   const [votacionSesion, setVotacionSesionState] = useState(() => {
-    const saved = localStorage.getItem('openmun_votacion');
+    const saved = localStorage.getItem('open2mun_votacion') || localStorage.getItem('openmun_votacion');
     return saved ? JSON.parse(saved) : {
       asunto: 'Proyecto de Resolución / Moción',
       tipoVotacion: 'procedural',
@@ -66,7 +66,7 @@ export const SessionProvider = ({ children }) => {
   });
 
   const [agendaSesion, setAgendaSesionState] = useState(() => {
-    const saved = localStorage.getItem('openmun_agenda');
+    const saved = localStorage.getItem('open2mun_agenda') || localStorage.getItem('openmun_agenda');
     return saved ? JSON.parse(saved) : {
       establecida: false,
       temaActual: '',
@@ -75,15 +75,15 @@ export const SessionProvider = ({ children }) => {
   });
 
   const [nombreComite, setNombreComiteState] = useState(() => {
-    return localStorage.getItem('openmun_comite') || '';
+    return localStorage.getItem('open2mun_comite') || localStorage.getItem('openmun_comite') || '';
   });
 
   const [relojGSLState, setRelojGSLState] = useState({ segundosRestantes: 60, tiempoInicial: 60, corriendo: false });
   const [yieldEvento, setYieldEvento] = useState(null);
 
   // Estados de Google Drive
-  const [driveFileId, setDriveFileId] = useState(() => localStorage.getItem('openmun_drive_file_id') || null);
-  const [driveFileName, setDriveFileName] = useState(() => localStorage.getItem('openmun_drive_file_name') || 'openmun_sesion_activa.json');
+  const [driveFileId, setDriveFileId] = useState(() => localStorage.getItem('open2mun_drive_file_id') || localStorage.getItem('openmun_drive_file_id') || null);
+  const [driveFileName, setDriveFileName] = useState(() => localStorage.getItem('open2mun_drive_file_name') || localStorage.getItem('openmun_drive_file_name') || 'open2mun_sesion_activa.json');
   const [isDriveLinked, setIsDriveLinked] = useState(false);
   const [driveSyncStatus, setDriveSyncStatus] = useState('disconnected'); // 'disconnected' | 'connecting' | 'synced' | 'syncing' | 'error'
   const [driveUser, setDriveUser] = useState(null);
@@ -124,21 +124,21 @@ export const SessionProvider = ({ children }) => {
 
   // PERSISTENCIA EN LOCALSTORAGE
   useEffect(() => {
-    localStorage.setItem('openmun_paises', JSON.stringify(paises));
-    localStorage.setItem('openmun_oradores', JSON.stringify(oradoresCola));
-    localStorage.setItem('openmun_oradores_caucus', JSON.stringify(oradoresCaucus));
-    localStorage.setItem('openmun_intervenciones', JSON.stringify(registroIntervenciones));
-    localStorage.setItem('openmun_mociones', JSON.stringify(mociones));
-    localStorage.setItem('openmun_historico_mociones', JSON.stringify(historicoMociones));
-    localStorage.setItem('openmun_caucus', JSON.stringify(caucusActivo));
-    localStorage.setItem('openmun_votacion', JSON.stringify(votacionSesion));
-    localStorage.setItem('openmun_agenda', JSON.stringify(agendaSesion));
-    localStorage.setItem('openmun_comite', nombreComite);
+    localStorage.setItem('open2mun_paises', JSON.stringify(paises));
+    localStorage.setItem('open2mun_oradores', JSON.stringify(oradoresCola));
+    localStorage.setItem('open2mun_oradores_caucus', JSON.stringify(oradoresCaucus));
+    localStorage.setItem('open2mun_intervenciones', JSON.stringify(registroIntervenciones));
+    localStorage.setItem('open2mun_mociones', JSON.stringify(mociones));
+    localStorage.setItem('open2mun_historico_mociones', JSON.stringify(historicoMociones));
+    localStorage.setItem('open2mun_caucus', JSON.stringify(caucusActivo));
+    localStorage.setItem('open2mun_votacion', JSON.stringify(votacionSesion));
+    localStorage.setItem('open2mun_agenda', JSON.stringify(agendaSesion));
+    localStorage.setItem('open2mun_comite', nombreComite);
 
     const sesionDataCompleta = {
       version: '1.0',
       ultimaActualizacion: new Date().toISOString(),
-      comision: nombreComite || 'Asamblea General - openMUN',
+      comision: nombreComite || 'Asamblea General - open2MUN',
       paises,
       oradoresCola,
       oradoresCaucus,
@@ -172,6 +172,9 @@ export const SessionProvider = ({ children }) => {
 
     // 2. Disparar evento DOM para que P2PContext lo transmita al Host remoto si somos cliente
     if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('open2mun_session_action', {
+        detail: { action: accion, payload, timestamp: Date.now() }
+      }));
       window.dispatchEvent(new CustomEvent('openmun_session_action', {
         detail: { action: accion, payload, timestamp: Date.now() }
       }));

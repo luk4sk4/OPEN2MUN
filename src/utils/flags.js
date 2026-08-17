@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Utilidades de Banderas e Imágenes de Delegaciones para openMUN
+// Utilidades de Banderas e Imágenes de Delegaciones para open2MUN
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**

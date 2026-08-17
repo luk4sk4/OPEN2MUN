@@ -66,12 +66,12 @@ const PermanentCrisisBanner = ({ isLight }) => {
 
   // Estado del ajuste de activación del banner permanente
   const [bannerActivo, setBannerActivo] = useState(() => {
-    const saved = localStorage.getItem('openmun_permanent_banner_enabled');
+    const saved = localStorage.getItem('open2mun_permanent_banner_enabled') || localStorage.getItem('openmun_permanent_banner_enabled');
     return saved !== null ? saved === 'true' : true;
   });
 
   const [modoExpandido, setModoExpandido] = useState(() => {
-    const saved = localStorage.getItem('openmun_permanent_banner_expanded');
+    const saved = localStorage.getItem('open2mun_permanent_banner_expanded') || localStorage.getItem('openmun_permanent_banner_expanded');
     return saved !== null ? saved === 'true' : false;
   });
 
@@ -81,17 +81,17 @@ const PermanentCrisisBanner = ({ isLight }) => {
 
   // Sincronizar ajuste en localStorage
   useEffect(() => {
-    localStorage.setItem('openmun_permanent_banner_enabled', String(bannerActivo));
+    localStorage.setItem('open2mun_permanent_banner_enabled', String(bannerActivo));
   }, [bannerActivo]);
 
   useEffect(() => {
-    localStorage.setItem('openmun_permanent_banner_expanded', String(modoExpandido));
+    localStorage.setItem('open2mun_permanent_banner_expanded', String(modoExpandido));
   }, [modoExpandido]);
 
   // Recargar evento proyectado
   const recargarEvento = () => {
     try {
-      const savedEventos = localStorage.getItem('openmun_crisis_eventos');
+      const savedEventos = localStorage.getItem('open2mun_crisis_eventos') || localStorage.getItem('openmun_crisis_eventos');
       if (savedEventos) {
         const parsed = JSON.parse(savedEventos);
         const fijado = parsed.find(e => e.fijadoComoBanner) || parsed[0] || null;
@@ -100,7 +100,7 @@ const PermanentCrisisBanner = ({ isLight }) => {
         setEventoCrisis(null);
       }
 
-      const savedReloj = localStorage.getItem('openmun_crisis_reloj');
+      const savedReloj = localStorage.getItem('open2mun_crisis_reloj') || localStorage.getItem('openmun_crisis_reloj');
       if (savedReloj) {
         setRelojSimulacion(JSON.parse(savedReloj));
       }
@@ -113,12 +113,14 @@ const PermanentCrisisBanner = ({ isLight }) => {
     recargarEvento();
 
     const handleUpdate = () => recargarEvento();
+    window.addEventListener('open2mun_crisis_update', handleUpdate);
     window.addEventListener('openmun_crisis_update', handleUpdate);
     window.addEventListener('storage', handleUpdate);
 
     const interval = setInterval(recargarEvento, 1500);
 
     return () => {
+      window.removeEventListener('open2mun_crisis_update', handleUpdate);
       window.removeEventListener('openmun_crisis_update', handleUpdate);
       window.removeEventListener('storage', handleUpdate);
       clearInterval(interval);

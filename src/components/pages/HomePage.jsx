@@ -28,7 +28,7 @@ import {
   X
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import OpenMunLogo from '../common/OpenMunLogo';
+import Open2MunLogo from '../common/Open2MunLogo';
 import KineticGrid from '../../assets/Kinetic';
 import { navigateTo } from '../../utils/router';
 
@@ -395,7 +395,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
         }}>
           {/* Logo oficial */}
           <div style={{ marginBottom: '1.25rem' }}>
-            <OpenMunLogo height={80} isLight={isLight} />
+            <Open2MunLogo height={80} isLight={isLight} />
           </div>
 
           {/* Título principal */}

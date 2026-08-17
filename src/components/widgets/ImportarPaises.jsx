@@ -145,14 +145,16 @@ function parsearJSON(texto) {
 
   // Si el JSON importado contiene alertas de crisis o snapshot, sincronizarlas
   if (data && typeof data === 'object') {
-    const crisisData = data.alertasCrisis || data.eventosCrisis || data.crisisEventos || (data.localStorageSnapshot && data.localStorageSnapshot.openmun_crisis_eventos);
+    const crisisData = data.alertasCrisis || data.eventosCrisis || data.crisisEventos || (data.localStorageSnapshot && (data.localStorageSnapshot.open2mun_crisis_eventos || data.localStorageSnapshot.openmun_crisis_eventos));
     if (Array.isArray(crisisData) && crisisData.length > 0) {
-      localStorage.setItem('openmun_crisis_eventos', JSON.stringify(crisisData));
+      localStorage.setItem('open2mun_crisis_eventos', JSON.stringify(crisisData));
+      window.dispatchEvent(new CustomEvent('open2mun_crisis_update', { detail: crisisData }));
       window.dispatchEvent(new CustomEvent('openmun_crisis_update', { detail: crisisData }));
     }
-    const relojData = data.relojCrisis || data.relojSimulacion || (data.localStorageSnapshot && data.localStorageSnapshot.openmun_crisis_reloj);
+    const relojData = data.relojCrisis || data.relojSimulacion || (data.localStorageSnapshot && (data.localStorageSnapshot.open2mun_crisis_reloj || data.localStorageSnapshot.openmun_crisis_reloj));
     if (relojData && typeof relojData === 'object') {
-      localStorage.setItem('openmun_crisis_reloj', JSON.stringify(relojData));
+      localStorage.setItem('open2mun_crisis_reloj', JSON.stringify(relojData));
+      window.dispatchEvent(new CustomEvent('open2mun_crisis_update', { detail: { reloj: relojData } }));
       window.dispatchEvent(new CustomEvent('openmun_crisis_update', { detail: { reloj: relojData } }));
     }
   }
@@ -514,7 +516,7 @@ const ImportarPaises = () => {
     );
     const link = document.createElement('a');
     link.setAttribute('href', csvContent);
-    link.setAttribute('download', 'plantilla_delegaciones_openMUN.csv');
+    link.setAttribute('download', 'plantilla_delegaciones_open2MUN.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

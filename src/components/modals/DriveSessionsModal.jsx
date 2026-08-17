@@ -49,7 +49,7 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
     if (isOpen) {
       const sanitizedComite = (nombreComite || 'Asamblea').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
       const fecha = new Date().toISOString().slice(0, 10);
-      setNuevoNombre(`openmun_${sanitizedComite}_${fecha}.json`);
+      setNuevoNombre(`open2mun_${sanitizedComite}_${fecha}.json`);
       if (isDriveLinked) {
         listarSesionesDrive();
       }
@@ -186,7 +186,7 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
               </h3>
               <div style={{ fontSize: '0.72rem', color: 'var(--muted-text, #94a3b8)', display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '2px' }}>
                 <Folder size={12} />
-                <span>Carpeta dedicada: <strong>Google Drive &gt; openMUN</strong></span>
+                <span>Carpeta dedicada: <strong>Google Drive &gt; open2MUN</strong></span>
               </div>
             </div>
           </div>
@@ -235,7 +235,7 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
               <HardDrive size={42} style={{ color: 'var(--muted-text)', marginBottom: '0.8rem', opacity: 0.7 }} />
               <h4 style={{ margin: '0 0 0.4rem 0', fontSize: '1rem' }}>Conecta tu cuenta de Google</h4>
               <p style={{ fontSize: '0.8rem', color: 'var(--muted-text)', maxWidth: '420px', margin: '0 auto 1.2rem auto' }}>
-                Guarda tus sesiones organizadas automáticamente en la carpeta <strong>openMUN/</strong> de tu Google Drive y continúa tu debate en cualquier dispositivo.
+                Guarda tus sesiones organizadas automáticamente en la carpeta <strong>open2MUN/</strong> de tu Google Drive y continúa tu debate en cualquier dispositivo.
               </p>
               <button
                 onClick={conectarGoogleDrive}
@@ -481,7 +481,7 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', maxHeight: '350px', overflowY: 'auto' }}>
                 {driveFilesList.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--muted-text)', fontSize: '0.8rem' }}>
-                    No hay archivos de sesión guardados en la carpeta <strong>openMUN</strong> de Google Drive.
+                    No hay archivos de sesión guardados en la carpeta <strong>open2MUN</strong> de Google Drive.
                   </div>
                 ) : (
                   driveFilesList.map((file) => {

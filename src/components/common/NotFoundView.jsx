@@ -1,7 +1,7 @@
 import React from 'react';
 import { Home, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import OpenMunLogo from './OpenMunLogo';
+import Open2MunLogo from './Open2MunLogo';
 
 export default function NotFoundView({ isLight = false, onGoHome }) {
   const { t } = useTranslation();
@@ -32,7 +32,7 @@ export default function NotFoundView({ isLight = false, onGoHome }) {
         }`}
       >
         <div className="flex justify-center mb-6">
-          <OpenMunLogo className="h-10 text-blue-500" />
+          <Open2MunLogo className="h-10 text-blue-500" />
         </div>
 
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-500/10 text-blue-500 border border-blue-500/20 mb-6">
@@ -84,7 +84,7 @@ export default function NotFoundView({ isLight = false, onGoHome }) {
 
       {/* Footer hint */}
       <div className={`mt-8 text-xs relative z-10 ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
-        OpenMUN &copy; {new Date().getFullYear()} — Plataforma Web de Modelo de Naciones Unidas
+        Open2MUN &copy; {new Date().getFullYear()} — Plataforma Web de Modelo de Naciones Unidas
       </div>
     </div>
   );

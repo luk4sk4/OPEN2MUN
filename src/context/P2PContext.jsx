@@ -26,27 +26,27 @@ export const P2PProvider = ({ children }) => {
   const [roomId, setRoomId] = useState(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      return params.get('room') || localStorage.getItem('openmun_last_room_id') || generateRoomCode();
+      return params.get('room') || localStorage.getItem('open2mun_last_room_id') || localStorage.getItem('openmun_last_room_id') || generateRoomCode();
     }
     return generateRoomCode();
   });
 
   const [clientCountry, setClientCountry] = useState(() => {
-    return localStorage.getItem('openmun_last_country') || '';
+    return localStorage.getItem('open2mun_last_country') || localStorage.getItem('openmun_last_country') || '';
   });
 
   const [secretPassword, setSecretPassword] = useState(() => {
-    return localStorage.getItem('openmun_secret_pass') || 'secreto123';
+    return localStorage.getItem('open2mun_secret_pass') || localStorage.getItem('openmun_secret_pass') || 'secreto123';
   });
 
   const [backroomPassword, setBackroomPassword] = useState(() => {
-    return localStorage.getItem('openmun_backroom_pass') || 'crisis123';
+    return localStorage.getItem('open2mun_backroom_pass') || localStorage.getItem('openmun_backroom_pass') || 'crisis123';
   });
 
   // Ajustes de Sala y Permisos de Delegados
   const [roomSettings, setRoomSettings] = useState(() => {
     try {
-      const saved = localStorage.getItem('openmun_room_settings');
+      const saved = localStorage.getItem('open2mun_room_settings') || localStorage.getItem('openmun_room_settings');
       return saved ? { ...DEFAULT_ROOM_SETTINGS, ...JSON.parse(saved) } : { ...DEFAULT_ROOM_SETTINGS };
     } catch (e) {
       return { ...DEFAULT_ROOM_SETTINGS };
@@ -65,24 +65,26 @@ export const P2PProvider = ({ children }) => {
   useEffect(() => {
     const handleSessionImported = () => {
       try {
-        const savedSettings = localStorage.getItem('openmun_room_settings');
+        const savedSettings = localStorage.getItem('open2mun_room_settings') || localStorage.getItem('openmun_room_settings');
         if (savedSettings) {
           setRoomSettings(JSON.parse(savedSettings));
         }
-        const savedSecret = localStorage.getItem('openmun_secret_pass');
+        const savedSecret = localStorage.getItem('open2mun_secret_pass') || localStorage.getItem('openmun_secret_pass');
         if (savedSecret) setSecretPassword(savedSecret);
-        const savedBackroom = localStorage.getItem('openmun_backroom_pass');
+        const savedBackroom = localStorage.getItem('open2mun_backroom_pass') || localStorage.getItem('openmun_backroom_pass');
         if (savedBackroom) setBackroomPassword(savedBackroom);
-        const savedCountry = localStorage.getItem('openmun_last_country');
+        const savedCountry = localStorage.getItem('open2mun_last_country') || localStorage.getItem('openmun_last_country');
         if (savedCountry) setClientCountry(savedCountry);
       } catch (e) {
         console.error('Error sincronizando P2PContext tras importación:', e);
       }
     };
 
+    window.addEventListener('open2mun_session_imported', handleSessionImported);
     window.addEventListener('openmun_session_imported', handleSessionImported);
     window.addEventListener('storage', handleSessionImported);
     return () => {
+      window.removeEventListener('open2mun_session_imported', handleSessionImported);
       window.removeEventListener('openmun_session_imported', handleSessionImported);
       window.removeEventListener('storage', handleSessionImported);
     };
@@ -322,12 +324,12 @@ export const P2PProvider = ({ children }) => {
 
   // Guardar contraseñas y ajustes cuando cambien
   useEffect(() => {
-    localStorage.setItem('openmun_secret_pass', secretPassword);
-    localStorage.setItem('openmun_backroom_pass', backroomPassword);
+    localStorage.setItem('open2mun_secret_pass', secretPassword);
+    localStorage.setItem('open2mun_backroom_pass', backroomPassword);
   }, [secretPassword, backroomPassword]);
 
   useEffect(() => {
-    localStorage.setItem('openmun_room_settings', JSON.stringify(roomSettings));
+    localStorage.setItem('open2mun_room_settings', JSON.stringify(roomSettings));
   }, [roomSettings]);
 
   // ─────────────────────────────────────────────────────────────
@@ -336,7 +338,7 @@ export const P2PProvider = ({ children }) => {
   const updateRoomSettings = useCallback((newSettings) => {
     const merged = { ...roomSettings, ...newSettings };
     setRoomSettings(merged);
-    localStorage.setItem('openmun_room_settings', JSON.stringify(merged));
+    localStorage.setItem('open2mun_room_settings', JSON.stringify(merged));
 
     if (connectionStatus === 'host_active') {
       peerService.broadcastRoomSettings(merged);

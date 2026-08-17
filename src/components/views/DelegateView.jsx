@@ -32,7 +32,7 @@ import { getFlagEmoji } from '../../utils/flags';
 import { useP2P } from '../../context/P2PContext';
 import { useAccessibility } from '../../context/AccessibilityContext';
 import AccessibilityModal from '../modals/AccessibilityModal';
-import OpenMunLogo from '../common/OpenMunLogo';
+import Open2MunLogo from '../common/Open2MunLogo';
 import LanguageSelector from '../common/LanguageSelector';
 
 const DelegateView = ({ isLight: propIsLight, onExit }) => {
@@ -161,7 +161,7 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
         zIndex: 100
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <OpenMunLogo height={30} isLight={isLight} />
+          <Open2MunLogo height={30} isLight={isLight} />
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
               <span style={{ fontWeight: '800', fontSize: '1rem', letterSpacing: '-0.01em' }}>

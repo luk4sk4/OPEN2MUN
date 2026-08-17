@@ -33,7 +33,7 @@ import LiveSessionModal from '../components/modals/LiveSessionModal';
 import DriveSessionsModal from '../components/modals/DriveSessionsModal';
 import ExportSessionModal from '../components/modals/ExportSessionModal';
 import WidgetSidebar, { WIDGET_METADATA } from '../components/panels/WidgetSidebar';
-import OpenMunLogo from '../components/common/OpenMunLogo';
+import Open2MunLogo from '../components/common/Open2MunLogo';
 import LanguageSelector from '../components/common/LanguageSelector';
 import PermanentCrisisBanner from '../components/common/PermanentCrisisBanner';
 import HomePage from '../components/pages/HomePage';
@@ -294,7 +294,7 @@ const Dashboard = () => {
   // Sincronizar estado automáticamente a todos los peers conectados si el Chair está emitiendo
   useEffect(() => {
     broadcastCurrentState({
-      comision: nombreComite || 'Asamblea General - openMUN',
+      comision: nombreComite || 'Asamblea General - open2MUN',
       paises,
       oradoresCola,
       oradoresCaucus,
@@ -332,28 +332,28 @@ const Dashboard = () => {
     activeTabRef.current = activeTab;
     switch (activeTab) {
       case 'HOME':
-        document.title = 'OpenMUN - Plataforma Libre de Gestión para Modelos de Naciones Unidas (MUN)';
+        document.title = 'Open2MUN - Plataforma Libre de Gestión para Modelos de Naciones Unidas (MUN)';
         break;
       case 'COMIENZO':
-        document.title = 'OpenMUN - Configuración y Agenda de Comité';
+        document.title = 'Open2MUN - Configuración y Agenda de Comité';
         break;
       case 'GSL':
-        document.title = 'OpenMUN - Lista General de Oradores (GSL)';
+        document.title = 'Open2MUN - Lista General de Oradores (GSL)';
         break;
       case 'DEBATE':
-        document.title = 'OpenMUN - Cronómetros y Moderación de Debate';
+        document.title = 'Open2MUN - Cronómetros y Moderación de Debate';
         break;
       case 'VOTING':
-        document.title = 'OpenMUN - Sistema de Votación Oficial y Mapa de Votos';
+        document.title = 'Open2MUN - Sistema de Votación Oficial y Mapa de Votos';
         break;
       case 'INFO':
-        document.title = 'OpenMUN - Matriz de Quórum e Información de Delegaciones';
+        document.title = 'Open2MUN - Matriz de Quórum e Información de Delegaciones';
         break;
       case 'LIBRE':
-        document.title = 'OpenMUN - Panel de Widgets Personalizable';
+        document.title = 'Open2MUN - Panel de Widgets Personalizable';
         break;
       default:
-        document.title = 'OpenMUN - Plataforma Libre de Gestión para Modelos de Naciones Unidas (MUN)';
+        document.title = 'Open2MUN - Plataforma Libre de Gestión para Modelos de Naciones Unidas (MUN)';
         break;
     }
   }, [activeTab]);
@@ -462,7 +462,7 @@ const Dashboard = () => {
           }
         });
         if (ok) {
-          const cfg = parsed.config || parsed.openmun_config || (parsed.localStorageSnapshot && parsed.localStorageSnapshot.openmun_config);
+          const cfg = parsed.config || parsed.open2mun_config || parsed.openmun_config || (parsed.localStorageSnapshot && (parsed.localStorageSnapshot.open2mun_config || parsed.localStorageSnapshot.openmun_config));
           if (cfg) {
             try {
               const parsedCfg = typeof cfg === 'string' ? JSON.parse(cfg) : cfg;
@@ -813,9 +813,9 @@ const Dashboard = () => {
               <div
                 onClick={() => setActiveTab('HOME')}
                 style={{ cursor: 'pointer' }}
-                title="OpenMUN"
+                title="Open2MUN"
               >
-                <OpenMunLogo height={38} isLight={isLight} />
+                <Open2MunLogo height={38} isLight={isLight} />
               </div>
 
               {/* Botón Sesión en Vivo P2P */}

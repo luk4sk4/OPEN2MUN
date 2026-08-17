@@ -80,7 +80,7 @@ const HistoricoDelegaciones = () => {
   // Formato: { "TODOS_idPais": 60, "2026-08-15_idPais": 120 }
   const [preguntasExtras, setPreguntasExtras] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('openmun_historico_preguntas_extra')) || {};
+      return JSON.parse(localStorage.getItem('open2mun_historico_preguntas_extra')) || JSON.parse(localStorage.getItem('openmun_historico_preguntas_extra')) || {};
     } catch {
       return {};
     }
@@ -88,18 +88,18 @@ const HistoricoDelegaciones = () => {
 
   const [tiempoExtra, setTiempoExtra] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('openmun_historico_tiempo_extra')) || {};
+      return JSON.parse(localStorage.getItem('open2mun_historico_tiempo_extra')) || JSON.parse(localStorage.getItem('openmun_historico_tiempo_extra')) || {};
     } catch {
       return {};
     }
   });
 
   useEffect(() => {
-    localStorage.setItem('openmun_historico_preguntas_extra', JSON.stringify(preguntasExtras));
+    localStorage.setItem('open2mun_historico_preguntas_extra', JSON.stringify(preguntasExtras));
   }, [preguntasExtras]);
 
   useEffect(() => {
-    localStorage.setItem('openmun_historico_tiempo_extra', JSON.stringify(tiempoExtra));
+    localStorage.setItem('open2mun_historico_tiempo_extra', JSON.stringify(tiempoExtra));
   }, [tiempoExtra]);
 
   const listaMocionesFuente = (historicoMociones && historicoMociones.length > 0) ? historicoMociones : mociones;

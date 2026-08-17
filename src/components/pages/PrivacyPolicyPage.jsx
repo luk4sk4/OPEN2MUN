@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react';
 import { ShieldCheck, ArrowLeft, Cookie, HardDrive, Cpu, Cloud, Lock, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import OpenMunLogo from '../common/OpenMunLogo';
+import Open2MunLogo from '../common/Open2MunLogo';
 
 export default function PrivacyPolicyPage({ isLight = false, onBack }) {
   const { t } = useTranslation();
 
   useEffect(() => {
-    document.title = t('privacy.pageTitle', 'OpenMUN - Política de Privacidad');
+    document.title = t('privacy.pageTitle', 'Open2MUN - Política de Privacidad');
     window.scrollTo(0, 0);
   }, [t]);
 
@@ -28,8 +28,8 @@ export default function PrivacyPolicyPage({ isLight = false, onBack }) {
       <header style={{ sticky: 'top', top: 0, zIndex: 30, backgroundColor: headerBg, backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderBottom: `1px solid ${cardBorder}` }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <OpenMunLogo className="h-8 text-blue-500" style={{ height: '32px' }} />
-            <span style={{ fontWeight: '800', fontSize: '1.2rem', letterSpacing: '-0.02em' }}>OpenMUN</span>
+            <Open2MunLogo className="h-8 text-blue-500" style={{ height: '32px' }} />
+            <span style={{ fontWeight: '800', fontSize: '1.2rem', letterSpacing: '-0.02em' }}>Open2MUN</span>
           </div>
 
           <button
@@ -72,7 +72,7 @@ export default function PrivacyPolicyPage({ isLight = false, onBack }) {
           <p style={{ fontSize: '1.05rem', lineHeight: '1.6', color: textMuted, maxWidth: '600px', margin: '0 auto' }}>
             {t(
               'privacy.subtitle',
-              'OpenMUN ha sido diseñado desde cero bajo el principio de Privacidad por Diseño. Tus datos te pertenecen a ti y a tu comité.'
+              'Open2MUN ha sido diseñado desde cero bajo el principio de Privacidad por Diseño. Tus datos te pertenecen a ti y a tu comité.'
             )}
           </p>
         </div>
@@ -119,7 +119,7 @@ export default function PrivacyPolicyPage({ isLight = false, onBack }) {
               <p style={{ fontSize: '0.95rem', lineHeight: '1.6', color: isLight ? '#334155' : '#cbd5e1', margin: 0 }}>
                 {t(
                   'privacy.noCookiesDescription',
-                  'En OpenMUN NO instalamos ni leemos cookies de ningún tipo en tu navegador. No usamos cookies de seguimiento, no usamos cookies de terceros, ni utilizamos píxeles analíticos o publicitarios. Navegas y trabajas con total libertad e intimidad.'
+                  'En Open2MUN NO instalamos ni leemos cookies de ningún tipo en tu navegador. No usamos cookies de seguimiento, no usamos cookies de terceros, ni utilizamos píxeles analíticos o publicitarios. Navegas y trabajas con total libertad e intimidad.'
                 )}
               </p>
             </div>
@@ -141,13 +141,13 @@ export default function PrivacyPolicyPage({ isLight = false, onBack }) {
             <p style={{ fontSize: '0.92rem', lineHeight: '1.6', color: textMuted, margin: 0 }}>
               {t(
                 'privacy.localStorageDesc',
-                'Para garantizar que no pierdas tu trabajo si recargas la página o cierras el navegador, OpenMUN almacena los datos de tu sesión (nombre del comité, lista de delegados, mociones, cronómetros y preferencias de accesibilidad) exclusivamente de forma LOCAL en tu propio dispositivo utilizando LocalStorage.'
+                'Para garantizar que no pierdas tu trabajo si recargas la página o cierras el navegador, Open2MUN almacena los datos de tu sesión (nombre del comité, lista de delegados, mociones, cronómetros y preferencias de accesibilidad) exclusivamente de forma LOCAL en tu propio dispositivo utilizando LocalStorage.'
               )}
             </p>
             <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: textMuted }}>
                 <CheckCircle2 size={16} style={{ color: '#10b981', flexShrink: 0 }} />
-                <span>Tus datos de debate nunca se envían a servidores centrales de OpenMUN.</span>
+                <span>Tus datos de debate nunca se envían a servidores centrales de Open2MUN.</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: textMuted }}>
                 <CheckCircle2 size={16} style={{ color: '#10b981', flexShrink: 0 }} />
@@ -205,7 +205,7 @@ export default function PrivacyPolicyPage({ isLight = false, onBack }) {
             <p style={{ fontSize: '0.92rem', lineHeight: '1.6', color: textMuted, margin: 0 }}>
               {t(
                 'privacy.openSourceDesc',
-                'OpenMUN es un proyecto de Software Libre e independiente. Cualquiera puede auditar el código fuente público en GitHub para comprobar que no existen rastreadores ni recopilación oculta de datos.'
+                'Open2MUN es un proyecto de Software Libre e independiente. Cualquiera puede auditar el código fuente público en GitHub para comprobar que no existen rastreadores ni recopilación oculta de datos.'
               )}
             </p>
           </div>
@@ -213,12 +213,12 @@ export default function PrivacyPolicyPage({ isLight = false, onBack }) {
 
         {/* Footer */}
         <div style={{ marginTop: '3.5rem', textAlign: 'center', fontSize: '0.85rem', color: textMuted }}>
-          <p style={{ margin: '0 0 0.75rem 0' }}>Última actualización: Agosto {new Date().getFullYear()} — OpenMUN</p>
+          <p style={{ margin: '0 0 0.75rem 0' }}>Última actualización: Agosto {new Date().getFullYear()} — Open2MUN</p>
           <button
             onClick={onBack}
             style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontWeight: '700', fontSize: '0.9rem', textDecoration: 'underline' }}
           >
-            ← Volver al panel principal de OpenMUN
+            ← Volver al panel principal de Open2MUN
           </button>
         </div>
       </main>

@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Generador de Efectos de Sonido Sintetizados con Web Audio API para openMUN
+// Generador de Efectos de Sonido Sintetizados con Web Audio API para open2MUN
 // 100% autónomo, no requiere archivos de audio externos ni dependencias.
 // ─────────────────────────────────────────────────────────────────────────────
 

@@ -4,8 +4,9 @@
  */
 
 export const GOOGLE_CLIENT_ID = '917213180364-2jktmr4s9etrajiai697bfk8410u424r.apps.googleusercontent.com';
-export const OPENMUN_FOLDER_NAME = 'openMUN';
-export const DEFAULT_DRIVE_FILE_NAME = 'openmun_sesion_activa.json';
+export const OPEN2MUN_FOLDER_NAME = 'open2MUN';
+export const OPENMUN_FOLDER_NAME = OPEN2MUN_FOLDER_NAME;
+export const DEFAULT_DRIVE_FILE_NAME = 'open2mun_sesion_activa.json';
 const SCOPES = 'https://www.googleapis.com/auth/drive';
 
 class GoogleDriveService {
@@ -14,6 +15,7 @@ class GoogleDriveService {
     this.accessToken = null;
     this.tokenExpiresAt = null;
     this.userProfile = null;
+    this.open2MunFolderId = null;
     this.openMunFolderId = null;
   }
 
@@ -100,18 +102,19 @@ class GoogleDriveService {
           console.warn('No se pudo obtener información del perfil de Google:', e);
         }
 
-        // Buscar o crear la carpeta openMUN
+        // Buscar o crear la carpeta open2MUN
         try {
-          const folder = await this.obtenerOCrearCarpetaOpenMUN();
+          const folder = await this.obtenerOCrearCarpetaOpen2MUN();
+          this.open2MunFolderId = folder.id;
           this.openMunFolderId = folder.id;
         } catch (e) {
-          console.warn('Error al verificar carpeta openMUN:', e);
+          console.warn('Error al verificar carpeta open2MUN:', e);
         }
 
         resolve({
           accessToken: this.accessToken,
           user: this.userProfile,
-          folderId: this.openMunFolderId
+          folderId: this.open2MunFolderId
         });
       };
 
@@ -134,6 +137,7 @@ class GoogleDriveService {
     this.accessToken = null;
     this.tokenExpiresAt = null;
     this.userProfile = null;
+    this.open2MunFolderId = null;
     this.openMunFolderId = null;
   }
 
@@ -145,17 +149,17 @@ class GoogleDriveService {
   }
 
   /**
-   * Obtiene o crea automáticamente la carpeta 'openMUN' en Google Drive
+   * Obtiene o crea automáticamente la carpeta 'open2MUN' en Google Drive
    */
-  async obtenerOCrearCarpetaOpenMUN() {
+  async obtenerOCrearCarpetaOpen2MUN() {
     if (!this.isAuthenticated()) throw new Error('No autenticado en Google Drive');
 
-    if (this.openMunFolderId) {
-      return { id: this.openMunFolderId, name: OPENMUN_FOLDER_NAME };
+    if (this.open2MunFolderId) {
+      return { id: this.open2MunFolderId, name: OPEN2MUN_FOLDER_NAME };
     }
 
-    // 1. Buscar si ya existe la carpeta
-    const q = encodeURIComponent(`mimeType = 'application/vnd.google-apps.folder' and name = '${OPENMUN_FOLDER_NAME}' and trashed = false`);
+    // 1. Buscar si ya existe la carpeta (sea open2MUN u openMUN para compatibilidad)
+    const q = encodeURIComponent(`mimeType = 'application/vnd.google-apps.folder' and (name = '${OPEN2MUN_FOLDER_NAME}' or name = 'openMUN') and trashed = false`);
     const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&orderBy=createdTime desc`, {
       headers: { Authorization: `Bearer ${this.accessToken}` }
     });
@@ -163,6 +167,7 @@ class GoogleDriveService {
     if (searchRes.ok) {
       const data = await searchRes.json();
       if (data.files && data.files.length > 0) {
+        this.open2MunFolderId = data.files[0].id;
         this.openMunFolderId = data.files[0].id;
         return data.files[0];
       }
@@ -176,39 +181,44 @@ class GoogleDriveService {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        name: OPENMUN_FOLDER_NAME,
+        name: OPEN2MUN_FOLDER_NAME,
         mimeType: 'application/vnd.google-apps.folder',
-        description: 'Carpeta de sesiones y copias de seguridad de openMUN'
+        description: 'Carpeta de sesiones y copias de seguridad de open2MUN'
       })
     });
 
     if (!createRes.ok) {
       const err = await createRes.json().catch(() => ({}));
-      throw new Error(err.error?.message || `Error al crear carpeta openMUN en Drive (Status: ${createRes.status})`);
+      throw new Error(err.error?.message || `Error al crear carpeta open2MUN en Drive (Status: ${createRes.status})`);
     }
 
     const folderData = await createRes.json();
+    this.open2MunFolderId = folderData.id;
     this.openMunFolderId = folderData.id;
     return folderData;
   }
 
+  async obtenerOCrearCarpetaOpenMUN() {
+    return this.obtenerOCrearCarpetaOpen2MUN();
+  }
+
   /**
-   * Lista todos los archivos de sesión guardados en la carpeta openMUN
+   * Lista todos los archivos de sesión guardados en la carpeta open2MUN
    */
   async listarArchivosSesion(folderId = null) {
     if (!this.isAuthenticated()) throw new Error('No autenticado en Google Drive');
 
-    const targetFolderId = folderId || this.openMunFolderId || (await this.obtenerOCrearCarpetaOpenMUN()).id;
+    const targetFolderId = folderId || this.open2MunFolderId || (await this.obtenerOCrearCarpetaOpen2MUN()).id;
     
-    // Buscar archivos .json en la carpeta openMUN
-    const q = encodeURIComponent(`'${targetFolderId}' in parents and trashed = false`);
-    const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,modifiedTime,size,webViewLink,description)&orderBy=modifiedTime desc`, {
+    // Buscar archivos .json en la carpeta open2MUN
+    const q = encodeURIComponent(`'${targetFolderId}' in parents and mimeType = 'application/json' and trashed = false`);
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,mimeType,createdTime,modifiedTime,size,description)&orderBy=modifiedTime desc`, {
       headers: { Authorization: `Bearer ${this.accessToken}` }
     });
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || `Error al listar sesiones en Drive (Status: ${res.status})`);
+      throw new Error(err.error?.message || `Error al listar archivos de Drive (Status: ${res.status})`);
     }
 
     const data = await res.json();
@@ -216,29 +226,26 @@ class GoogleDriveService {
   }
 
   /**
-   * Busca un archivo por nombre exacto dentro de la carpeta openMUN
+   * Busca un archivo por nombre exacto dentro de la carpeta open2MUN
    */
-  async buscarArchivoSesion(nombreArchivo = DEFAULT_DRIVE_FILE_NAME, folderId = null) {
+  async buscarArchivoPorNombre(nombreArchivo, folderId = null) {
     if (!this.isAuthenticated()) throw new Error('No autenticado en Google Drive');
 
-    const targetFolderId = folderId || this.openMunFolderId || (await this.obtenerOCrearCarpetaOpenMUN()).id;
+    const targetFolderId = folderId || this.open2MunFolderId || (await this.obtenerOCrearCarpetaOpen2MUN()).id;
     const q = encodeURIComponent(`'${targetFolderId}' in parents and name = '${nombreArchivo}' and trashed = false`);
     
-    const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,modifiedTime,size,webViewLink)&orderBy=modifiedTime desc`, {
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,modifiedTime)`, {
       headers: { Authorization: `Bearer ${this.accessToken}` }
     });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || `Error al buscar archivo en Drive (Status: ${res.status})`);
-    }
+    if (!res.ok) return null;
 
     const data = await res.json();
-    return data.files && data.files.length > 0 ? data.files[0] : null;
+    return (data.files && data.files.length > 0) ? data.files[0] : null;
   }
 
   /**
-   * Descarga el contenido JSON del archivo desde Google Drive
+   * Descarga el contenido JSON de una sesión por su fileId
    */
   async descargarSesion(fileId) {
     if (!this.isAuthenticated()) throw new Error('No autenticado en Google Drive');
@@ -256,19 +263,19 @@ class GoogleDriveService {
   }
 
   /**
-   * Crea un nuevo archivo en Google Drive dentro de la carpeta openMUN
+   * Crea un nuevo archivo en Google Drive dentro de la carpeta open2MUN
    */
   async crearArchivoSesion(sesionData, nombreArchivo = DEFAULT_DRIVE_FILE_NAME, folderId = null) {
     if (!this.isAuthenticated()) throw new Error('No autenticado en Google Drive');
 
-    const targetFolderId = folderId || this.openMunFolderId || (await this.obtenerOCrearCarpetaOpenMUN()).id;
+    const targetFolderId = folderId || this.open2MunFolderId || (await this.obtenerOCrearCarpetaOpen2MUN()).id;
 
     // Asegurar que el nombre termine en .json
     const cleanFileName = nombreArchivo.endsWith('.json') ? nombreArchivo : `${nombreArchivo}.json`;
 
     const metadata = {
       name: cleanFileName,
-      description: `Sesión de openMUN - Comité: ${sesionData.comision || sesionData.nombreComite || 'General'}`,
+      description: `Sesión de open2MUN - Comité: ${sesionData.comision || sesionData.nombreComite || 'General'}`,
       mimeType: 'application/json',
       parents: [targetFolderId]
     };

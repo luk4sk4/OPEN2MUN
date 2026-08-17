@@ -143,7 +143,7 @@ const GestorCrisis = () => {
 
   // Estados persistentes de Crisis
   const [eventosCrisis, setEventosCrisis] = useState(() => {
-    const saved = localStorage.getItem('openmun_crisis_eventos');
+    const saved = localStorage.getItem('open2mun_crisis_eventos') || localStorage.getItem('openmun_crisis_eventos');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -174,7 +174,7 @@ const GestorCrisis = () => {
 
   // Reloj de Simulación
   const [relojSimulacion, setRelojSimulacion] = useState(() => {
-    const saved = localStorage.getItem('openmun_crisis_reloj');
+    const saved = localStorage.getItem('open2mun_crisis_reloj') || localStorage.getItem('openmun_crisis_reloj');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) { }
     }
@@ -285,7 +285,7 @@ const GestorCrisis = () => {
       }
 
       try {
-        const saved = localStorage.getItem('openmun_crisis_eventos');
+        const saved = localStorage.getItem('open2mun_crisis_eventos') || localStorage.getItem('openmun_crisis_eventos');
         if (saved) {
           const currentSerialized = JSON.stringify(eventosRef.current);
           if (saved !== currentSerialized) {
@@ -295,7 +295,7 @@ const GestorCrisis = () => {
             }
           }
         }
-        const savedReloj = localStorage.getItem('openmun_crisis_reloj');
+        const savedReloj = localStorage.getItem('open2mun_crisis_reloj') || localStorage.getItem('openmun_crisis_reloj');
         if (savedReloj) {
           const currentRelojSerialized = JSON.stringify(relojRef.current);
           if (savedReloj !== currentRelojSerialized) {
@@ -310,12 +310,16 @@ const GestorCrisis = () => {
       }
     };
 
+    window.addEventListener('open2mun_crisis_update', handleExternalCrisisUpdate);
     window.addEventListener('openmun_crisis_update', handleExternalCrisisUpdate);
+    window.addEventListener('open2mun_session_imported', handleExternalCrisisUpdate);
     window.addEventListener('openmun_session_imported', handleExternalCrisisUpdate);
     window.addEventListener('storage', handleExternalCrisisUpdate);
 
     return () => {
+      window.removeEventListener('open2mun_crisis_update', handleExternalCrisisUpdate);
       window.removeEventListener('openmun_crisis_update', handleExternalCrisisUpdate);
+      window.removeEventListener('open2mun_session_imported', handleExternalCrisisUpdate);
       window.removeEventListener('openmun_session_imported', handleExternalCrisisUpdate);
       window.removeEventListener('storage', handleExternalCrisisUpdate);
     };
@@ -327,12 +331,15 @@ const GestorCrisis = () => {
     const serialized = JSON.stringify(eventosCrisis);
     if (isFirstRenderEventos.current) {
       isFirstRenderEventos.current = false;
-      if (!localStorage.getItem('openmun_crisis_eventos')) {
-        localStorage.setItem('openmun_crisis_eventos', serialized);
+      if (!localStorage.getItem('open2mun_crisis_eventos')) {
+        localStorage.setItem('open2mun_crisis_eventos', serialized);
       }
       return;
     }
-    localStorage.setItem('openmun_crisis_eventos', serialized);
+    localStorage.setItem('open2mun_crisis_eventos', serialized);
+    window.dispatchEvent(new CustomEvent('open2mun_crisis_update', {
+      detail: { sourceId: instanceId, tipo: 'eventos', eventos: eventosCrisis }
+    }));
     window.dispatchEvent(new CustomEvent('openmun_crisis_update', {
       detail: { sourceId: instanceId, tipo: 'eventos', eventos: eventosCrisis }
     }));
@@ -343,12 +350,15 @@ const GestorCrisis = () => {
     const serialized = JSON.stringify(relojSimulacion);
     if (isFirstRenderReloj.current) {
       isFirstRenderReloj.current = false;
-      if (!localStorage.getItem('openmun_crisis_reloj')) {
-        localStorage.setItem('openmun_crisis_reloj', serialized);
+      if (!localStorage.getItem('open2mun_crisis_reloj')) {
+        localStorage.setItem('open2mun_crisis_reloj', serialized);
       }
       return;
     }
-    localStorage.setItem('openmun_crisis_reloj', serialized);
+    localStorage.setItem('open2mun_crisis_reloj', serialized);
+    window.dispatchEvent(new CustomEvent('open2mun_crisis_update', {
+      detail: { sourceId: instanceId, tipo: 'reloj', reloj: relojSimulacion }
+    }));
     window.dispatchEvent(new CustomEvent('openmun_crisis_update', {
       detail: { sourceId: instanceId, tipo: 'reloj', reloj: relojSimulacion }
     }));
@@ -358,7 +368,7 @@ const GestorCrisis = () => {
   const handleExportarCrisisJSON = () => {
     try {
       const dataToExport = {
-        tipo: 'openmun_crisis_export',
+        tipo: 'open2mun_crisis_export',
         version: '2.0',
         fechaExportacion: new Date().toISOString(),
         relojCrisis: relojSimulacion,
@@ -394,8 +404,8 @@ const GestorCrisis = () => {
         if (Array.isArray(parsed)) {
           importedEventos = parsed;
         } else if (parsed && typeof parsed === 'object') {
-          importedEventos = parsed.alertasCrisis || parsed.eventosCrisis || parsed.crisisEventos || parsed.eventos || parsed.crisis || (parsed.localStorageSnapshot && parsed.localStorageSnapshot.openmun_crisis_eventos);
-          importedReloj = parsed.relojCrisis || parsed.relojSimulacion || parsed.reloj || (parsed.localStorageSnapshot && parsed.localStorageSnapshot.openmun_crisis_reloj);
+          importedEventos = parsed.alertasCrisis || parsed.eventosCrisis || parsed.crisisEventos || parsed.eventos || parsed.crisis || (parsed.localStorageSnapshot && (parsed.localStorageSnapshot.open2mun_crisis_eventos || parsed.localStorageSnapshot.openmun_crisis_eventos));
+          importedReloj = parsed.relojCrisis || parsed.relojSimulacion || parsed.reloj || (parsed.localStorageSnapshot && (parsed.localStorageSnapshot.open2mun_crisis_reloj || parsed.localStorageSnapshot.openmun_crisis_reloj));
         }
 
         if (Array.isArray(importedEventos) && importedEventos.length > 0) {

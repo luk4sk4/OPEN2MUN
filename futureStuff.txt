@@ -8,7 +8,7 @@ tamaño de letra y modo claro
 	
 en ajustes Tambien load template and select style 
 
-minimalist // art nuveau // OPENMUNBASIC // OLDSCHOOL
+minimalist // art nuveau // OPEN2MUNBASIC // OLDSCHOOL
 
 
 mapa mundi en votaciones 

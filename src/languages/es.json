@@ -131,12 +131,12 @@
     "systemTools": "Herramientas del Sistema",
     "systemToolsSubtitle": "Módulos integrados para la moderación eficiente del debate parlamentario.",
     "faqTitle": "Preguntas Frecuentes",
-    "faqSubtitle": "Respuestas a las dudas habituales sobre el funcionamiento y privacidad de OpenMUN.",
+    "faqSubtitle": "Respuestas a las dudas habituales sobre el funcionamiento y privacidad de Open2MUN.",
     "faqSearchPlaceholder": "Buscar en preguntas frecuentes (ej. P2P, Excel, offline...)",
     "faqAllCategories": "Todas",
     "faqNoResults": "No se encontraron resultados para",
-    "donationBannerTitle": "¡Apoya el mantenimiento de OpenMUN!",
-    "donationBannerDesc": "OpenMUN es 100% gratuito, libre y sin publicidad. Tu donación nos ayuda a costear los servidores y mantener la plataforma activa para todas las delegaciones.",
+    "donationBannerTitle": "¡Apoya el mantenimiento de Open2MUN!",
+    "donationBannerDesc": "Open2MUN es 100% gratuito, libre y sin publicidad. Tu donación nos ayuda a costear los servidores y mantener la plataforma activa para todas las delegaciones.",
     "chairCardTitle": "Mesa de Presidencia",
     "chairCardDesc": "Panel de control completo para moderar debate, oradores, caucuses y votaciones.",
     "joinCardTitle": "Unirse a Sesión",
@@ -153,7 +153,7 @@
     "step3Title": "Conectar Pantallas en Vivo",
     "step3Desc": "Abre la vista de Secretaría para proyectar en aula o comparte la clave de sala con los delegados.",
     "communityTitle": "Sugerencias y Comunidad",
-    "communityDesc": "OpenMUN se mantiene en constante evolución. Si deseas reportar un error o sugerir una mejora, contáctanos directamente.",
+    "communityDesc": "Open2MUN se mantiene en constante evolución. Si deseas reportar un error o sugerir una mejora, contáctanos directamente.",
     "developedBy": "Desarrollado por",
     "footerDesc": "Software Libre para Modelos de Naciones Unidas",
     "footerTagline": "Por una cultura accesible para todos",
@@ -194,16 +194,16 @@
     },
     "faq": {
       "que-es": {
-        "pregunta": "¿Qué es OpenMUN y para qué sirve?",
-        "respuesta": "OpenMUN es una plataforma web de código abierto diseñada para facilitar la moderación y gestión de simulaciones de Modelos de Naciones Unidas (MUN). Permite a las Mesas de Presidencia llevar el control de oradores, cronómetros, mociones, votaciones, cálculo de quorum y transmitir el estado de la sesión en vivo a delegados y pantallas de proyección."
+        "pregunta": "¿Qué es Open2MUN y para qué sirve?",
+        "respuesta": "Open2MUN es una plataforma web de código abierto diseñada para facilitar la moderación y gestión de simulaciones de Modelos de Naciones Unidas (MUN). Permite a las Mesas de Presidencia llevar el control de oradores, cronómetros, mociones, votaciones, cálculo de quorum y transmitir el estado de la sesión en vivo a delegados y pantallas de proyección."
       },
       "gratuito": {
         "pregunta": "¿Es realmente 100% gratuito y de código abierto?",
-        "respuesta": "Sí, totalmente. OpenMUN es software libre bajo licencia GNU AGPLv3. No incluye pagos, suscripciones premium ni publicidad. Todo el código fuente está disponible públicamente en GitHub para ser auditado, utilizado o modificado por cualquier comité o institución."
+        "respuesta": "Sí, totalmente. Open2MUN es software libre bajo licencia GNU AGPLv3. No incluye pagos, suscripciones premium ni publicidad. Todo el código fuente está disponible públicamente en GitHub para ser auditado, utilizado o modificado por cualquier comité o institución."
       },
       "p2p-sync": {
         "pregunta": "¿Cómo funciona la sincronización en vivo P2P (Mesa, Delegados y Secretaría)?",
-        "respuesta": "OpenMUN utiliza comunicación Peer-to-Peer (WebRTC) y canales locales (BroadcastChannel). La Mesa de Presidencia actúa como nodo principal y comparte un código o código QR. Las actualizaciones de cronómetro, oradores y mociones se transmiten directamente entre dispositivos sin almacenar datos en servidores de terceros."
+        "respuesta": "Open2MUN utiliza comunicación Peer-to-Peer (WebRTC) y canales locales (BroadcastChannel). La Mesa de Presidencia actúa como nodo principal y comparte un código o código QR. Las actualizaciones de cronómetro, oradores y mociones se transmiten directamente entre dispositivos sin almacenar datos en servidores de terceros."
       },
       "instalacion-cuenta": {
         "pregunta": "¿Necesito instalar programas o registrar una cuenta?",
@@ -218,16 +218,16 @@
         "respuesta": "En la pestaña 'Comienzo' o mediante el widget de 'Importar Países', puedes cargar archivos Excel (.xlsx/.xls) o pegar una lista en formato de texto. El sistema genera automáticamente la matriz de países y el quorum de la sesión. Para tener banderas personalizadas puedes usar imágenes, emojis o SVG. Si son de países actuales, nosotros te cubrimos automáticamente."
       },
       "modo-offline": {
-        "pregunta": "¿Puedo usar OpenMUN sin conexión a internet (offline)?",
+        "pregunta": "¿Puedo usar Open2MUN sin conexión a internet (offline)?",
         "respuesta": "Sí. Una vez cargada la página, las herramientas de la Mesa (cronómetros, GSL, mociones, votaciones) funcionan 100% sin conexión a internet. Para proyectar en segunda pantalla offline, puedes abrir la vista de Secretaría en una ventana adicional. Perderás la función de conectarte con Backroom y delegaciones."
       },
       "donar": {
-        "pregunta": "¿Cómo se mantiene OpenMUN?",
-        "respuesta": "Para vosotros, OpenMUN es gratuito. Para nosotros no. Desarrollarla llevó esfuerzo, tiempo y dinero, y mantenerla otro tanto. No cobramos porque creemos que aquellos que puedan, algo nos donarán, mientras que los que no se lo puedan permitir podrán disfrutar de la herramienta igualmente."
+        "pregunta": "¿Cómo se mantiene Open2MUN?",
+        "respuesta": "Para vosotros, Open2MUN es gratuito. Para nosotros no. Desarrollarla llevó esfuerzo, tiempo y dinero, y mantenerla otro tanto. No cobramos porque creemos que aquellos que puedan, algo nos donarán, mientras que los que no se lo puedan permitir podrán disfrutar de la herramienta igualmente."
       },
       "colaborar": {
         "pregunta": "¿Cómo puedo colaborar, proponer mejoras o reportar fallos?",
-        "respuesta": "Puedes abrir un issue o Pull Request en el repositorio de GitHub, o escribirnos directamente a sugerencias@openmun.org. Toda contribución, reporte o sugerencia es bienvenida."
+        "respuesta": "Puedes abrir un issue o Pull Request en el repositorio de GitHub, o escribirnos directamente a sugerencias@open2mun.org. Toda contribución, reporte o sugerencia es bienvenida."
       }
     },
     "openSourceBadge": "Código Abierto & Gratuito",
@@ -385,7 +385,7 @@
       "activeDirectives": "Directivas Activas"
     },
     "join": {
-      "title": "Unirse a Sesión OpenMUN",
+      "title": "Unirse a Sesión Open2MUN",
       "subtitle": "Introduce el código de sala o escanea el QR proporcionado por la Mesa",
       "enterCode": "Código de Sala",
       "selectRole": "Tu Rol",
@@ -881,35 +881,35 @@
   "legalBanner": {
     "noCookiesBadge": "¡SIN COOKIES!",
     "title": "Aviso de Privacidad y Transparencia",
-    "description": "En OpenMUN priorizamos tu privacidad: esta web NO utiliza cookies de seguimiento ni de terceros. Solamente almacenamos la sesión de tu Modelo de Naciones Unidas de forma local en tu propio navegador (LocalStorage).",
+    "description": "En Open2MUN priorizamos tu privacidad: esta web NO utiliza cookies de seguimiento ni de terceros. Solamente almacenamos la sesión de tu Modelo de Naciones Unidas de forma local en tu propio navegador (LocalStorage).",
     "privacyLink": "Política de Privacidad",
     "termsLink": "Términos y Condiciones",
     "accept": "Entendido"
   },
   "privacy": {
-    "pageTitle": "OpenMUN - Política de Privacidad",
+    "pageTitle": "Open2MUN - Política de Privacidad",
     "badge": "Compromiso Total con la Privacidad",
     "title": "Política de Privacidad",
-    "subtitle": "OpenMUN ha sido diseñado desde cero bajo el principio de Privacidad por Diseño. Tus datos te pertenecen a ti y a tu comité.",
+    "subtitle": "Open2MUN ha sido diseñado desde cero bajo el principio de Privacidad por Diseño. Tus datos te pertenecen a ti y a tu comité.",
     "noCookiesTitle": "Garantía 100% Libre de Cookies",
     "noCookiesHeading": "NO Utilizamos Cookies",
-    "noCookiesDescription": "En OpenMUN NO instalamos ni leemos cookies de ningún tipo en tu navegador. No usamos cookies de seguimiento, no usamos cookies de terceros, ni utilizamos píxeles analíticos o publicitarios. Navegas y trabajas con total libertad e intimidad.",
+    "noCookiesDescription": "En Open2MUN NO instalamos ni leemos cookies de ningún tipo en tu navegador. No usamos cookies de seguimiento, no usamos cookies de terceros, ni utilizamos píxeles analíticos o publicitarios. Navegas y trabajas con total libertad e intimidad.",
     "localStorageTitle": "1. Almacenamiento Local (LocalStorage)",
-    "localStorageDesc": "Para garantizar que no pierdas tu trabajo si recargas la página o cierras el navegador, OpenMUN almacena los datos de tu sesión (nombre del comité, lista de delegados, mociones, cronómetros y preferencias de accesibilidad) exclusivamente de forma LOCAL en tu propio dispositivo utilizando LocalStorage.",
+    "localStorageDesc": "Para garantizar que no pierdas tu trabajo si recargas la página o cierras el navegador, Open2MUN almacena los datos de tu sesión (nombre del comité, lista de delegados, mociones, cronómetros y preferencias de accesibilidad) exclusivamente de forma LOCAL en tu propio dispositivo utilizando LocalStorage.",
     "p2pTitle": "2. Conexiones Peer-to-Peer (WebRTC & P2P)",
     "p2pDesc": "Las funciones de sincronización en vivo (como el modo Delegado, Secretaría o Backroom) utilizan WebRTC / PeerJS. La comunicación se realiza de punto a punto (peer-to-peer) entre el dispositivo de la Mesa de Presidencia y los dispositivos conectados.",
     "driveTitle": "3. Sincronización Opcional con Google Drive",
     "driveDesc": "Si decides vincular voluntariamente tu cuenta de Google Drive para realizar copias de seguridad de tus sesiones de MUN, el token de autorización se almacena de forma segura en tu propio navegador. Las copias de seguridad se transfieren directamente desde tu navegador a tu espacio personal de Google Drive, sin intermediarios.",
     "openSourceTitle": "4. Código Abierto y Transparencia",
-    "openSourceDesc": "OpenMUN es un proyecto de Software Libre e independiente. Cualquiera puede auditar el código fuente público en GitHub para comprobar que no existen rastreadores ni recopilación oculta de datos."
+    "openSourceDesc": "Open2MUN es un proyecto de Software Libre e independiente. Cualquiera puede auditar el código fuente público en GitHub para comprobar que no existen rastreadores ni recopilación oculta de datos."
   },
   "terms": {
-    "pageTitle": "OpenMUN - Términos y Condiciones",
-    "badge": "Condiciones de Uso y Licencia Libre",
-    "title": "Términos y Condiciones",
-    "subtitle": "Bienvenido a OpenMUN, una plataforma web gratuita y de código abierto creada para potenciar la gestión de Modelos de Naciones Unidas.",
-    "sec1Title": "1. Carácter Gratuito y Educativo",
-    "sec1Desc": "OpenMUN se ofrece libremente y sin costo para conferencias, instituciones educativas, mesas presidenciales y delegados. Su propósito fundamental es enriquecer la cultura académica, el debate constructivo y la diplomacia entre estudiantes.",
+    "pageTitle": "Open2MUN - Términos y Condiciones",
+    "badge": "Uso Gratuito y Responsable",
+    "title": "Términos y Condiciones de Uso",
+    "subtitle": "Bienvenido a Open2MUN, una plataforma web gratuita y de código abierto creada para potenciar la gestión de Modelos de Naciones Unidas.",
+    "sec1Title": "1. Licencia de Uso Gratuita y Propósito",
+    "sec1Desc": "Open2MUN se ofrece libremente y sin costo para conferencias, instituciones educativas, mesas presidenciales y delegados. Su propósito fundamental es enriquecer la cultura académica, el debate constructivo y la diplomacia entre estudiantes.",
     "sec2Title": "2. Propiedad Intelectual y Licencia Libre",
     "sec3Title": "3. Gestión de Datos y Copias de Seguridad",
     "sec4Title": "4. Exención de Garantías"

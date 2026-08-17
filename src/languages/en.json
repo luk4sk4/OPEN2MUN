@@ -131,12 +131,12 @@
     "systemTools": "System Tools",
     "systemToolsSubtitle": "Integrated modules for efficient parliamentary debate moderation.",
     "faqTitle": "Frequently Asked Questions",
-    "faqSubtitle": "Answers to common questions about OpenMUN operations and privacy.",
+    "faqSubtitle": "Answers to common questions about Open2MUN operations and privacy.",
     "faqSearchPlaceholder": "Search FAQ (e.g. P2P, Excel, offline...)",
     "faqAllCategories": "All",
     "faqNoResults": "No results found for",
-    "donationBannerTitle": "Support OpenMUN Maintenance!",
-    "donationBannerDesc": "OpenMUN is 100% free, open source, and ad-free. Your donation helps us cover server costs and maintain the platform active for all delegations.",
+    "donationBannerTitle": "Support Open2MUN Maintenance!",
+    "donationBannerDesc": "Open2MUN is 100% free, open source, and ad-free. Your donation helps us cover server costs and maintain the platform active for all delegations.",
     "chairCardTitle": "Chair Dais",
     "chairCardDesc": "Full control dashboard to moderate debate, speakers, caucuses, and voting.",
     "joinCardTitle": "Join Session",
@@ -153,7 +153,7 @@
     "step3Title": "Connect Live Screens",
     "step3Desc": "Open Secretariat view to project in hall or share room key with delegates.",
     "communityTitle": "Suggestions & Community",
-    "communityDesc": "OpenMUN is constantly evolving. If you want to report an issue or suggest an improvement, reach out directly.",
+    "communityDesc": "Open2MUN is constantly evolving. If you want to report an issue or suggest an improvement, reach out directly.",
     "developedBy": "Developed by",
     "footerDesc": "Open Source Software for Model United Nations",
     "footerTagline": "Accessible culture for everyone",
@@ -194,16 +194,16 @@
     },
     "faq": {
       "que-es": {
-        "pregunta": "What is OpenMUN and what is it used for?",
-        "respuesta": "OpenMUN is an open-source web platform designed to facilitate the moderation and management of Model United Nations (MUN) simulations. It allows Dais Chairs to manage speakers, timers, motions, voting, quorum calculations, and broadcast the live session to delegates and projector screens."
+        "pregunta": "What is Open2MUN and what is it used for?",
+        "respuesta": "Open2MUN is an open-source web platform designed to facilitate the moderation and management of Model United Nations (MUN) simulations. It allows Dais Chairs to manage speakers, timers, motions, voting, quorum calculations, and broadcast the live session to delegates and projector screens."
       },
       "gratuito": {
         "pregunta": "Is it really 100% free and open source?",
-        "respuesta": "Yes, absolutely. OpenMUN is free software under the GNU AGPLv3 license. It contains no paywalls, premium tiers, or advertisements. All source code is publicly accessible on GitHub to be audited, used, or modified by any committee or institution."
+        "respuesta": "Yes, absolutely. Open2MUN is free software under the GNU AGPLv3 license. It contains no paywalls, premium tiers, or advertisements. All source code is publicly accessible on GitHub to be audited, used, or modified by any committee or institution."
       },
       "p2p-sync": {
         "pregunta": "How does P2P live synchronization work (Dais, Delegates, Secretariat)?",
-        "respuesta": "OpenMUN uses Peer-to-Peer communication (WebRTC) and local channels (BroadcastChannel). The Chair acts as the primary node and shares a room PIN or QR code. Timer updates, speakers, and motions are transmitted directly between devices without storing session data on third-party servers."
+        "respuesta": "Open2MUN uses Peer-to-Peer communication (WebRTC) and local channels (BroadcastChannel). The Chair acts as the primary node and shares a room PIN or QR code. Timer updates, speakers, and motions are transmitted directly between devices without storing session data on third-party servers."
       },
       "instalacion-cuenta": {
         "pregunta": "Do I need to install software or create an account?",
@@ -218,16 +218,16 @@
         "respuesta": "In the 'Setup' tab or via the 'Import Countries' widget, you can upload Excel spreadsheets (.xlsx/.xls) or paste a plain text list. The system automatically creates the country matrix and calculates quorum. Banners, emojis, or SVGs are automatically matched for current countries."
       },
       "modo-offline": {
-        "pregunta": "Can I use OpenMUN offline without internet?",
+        "pregunta": "Can I use Open2MUN offline without internet?",
         "respuesta": "Yes. Once the page is loaded, all Chair tools (timers, GSL, motions, voting) work 100% offline. To project on a second screen offline, you can open the Secretariat view in an additional window."
       },
       "donar": {
-        "pregunta": "How is OpenMUN funded and maintained?",
-        "respuesta": "For you, OpenMUN is free. For us, building and hosting it requires time, effort, and money. We keep it free so anyone can use it, while relying on donations from those who can support our work."
+        "pregunta": "How is Open2MUN funded and maintained?",
+        "respuesta": "For you, Open2MUN is free. For us, building and hosting it requires time, effort, and money. We keep it free so anyone can use it, while relying on donations from those who can support our work."
       },
       "colaborar": {
         "pregunta": "How can I contribute, suggest improvements, or report bugs?",
-        "respuesta": "You can open an issue or Pull Request on our GitHub repository, or write directly to sugerencias@openmun.org. Every contribution and suggestion is warmly welcomed."
+        "respuesta": "You can open an issue or Pull Request on our GitHub repository, or write directly to sugerencias@open2mun.org. Every contribution and suggestion is warmly welcomed."
       }
     },
     "openSourceBadge": "Open Source & Free",
@@ -346,7 +346,7 @@
       "activeDirectives": "Active Directives"
     },
     "join": {
-      "title": "Join OpenMUN Session",
+      "title": "Join Open2MUN Session",
       "subtitle": "Enter the room code or scan the QR provided by the Dais",
       "enterCode": "Room Code",
       "selectRole": "Your Role",
@@ -816,35 +816,35 @@
   "legalBanner": {
     "noCookiesBadge": "ZERO COOKIES!",
     "title": "Privacy & Transparency Notice",
-    "description": "At OpenMUN we prioritize your privacy: this website DOES NOT use tracking or third-party cookies. We only store your Model UN session locally on your own browser (LocalStorage).",
+    "description": "At Open2MUN we prioritize your privacy: this website DOES NOT use tracking or third-party cookies. We only store your Model UN session locally on your own browser (LocalStorage).",
     "privacyLink": "Privacy Policy",
     "termsLink": "Terms & Conditions",
     "accept": "Got it"
   },
   "privacy": {
-    "pageTitle": "OpenMUN - Privacy Policy",
+    "pageTitle": "Open2MUN - Privacy Policy",
     "badge": "Total Commitment to Privacy",
     "title": "Privacy Policy",
-    "subtitle": "OpenMUN has been designed from the ground up on Privacy by Design principles. Your data belongs strictly to you and your committee.",
+    "subtitle": "Open2MUN has been designed from the ground up on Privacy by Design principles. Your data belongs strictly to you and your committee.",
     "noCookiesTitle": "100% Cookie-Free Guarantee",
     "noCookiesHeading": "We Do NOT Use Cookies",
-    "noCookiesDescription": "OpenMUN does NOT install or read cookies of any kind in your browser. We do not use tracking cookies, third-party cookies, or analytics/ad pixels. Browse and operate with total privacy.",
+    "noCookiesDescription": "Open2MUN does NOT install or read cookies of any kind in your browser. We do not use tracking cookies, third-party cookies, or analytics/ad pixels. Browse and operate with total privacy.",
     "localStorageTitle": "1. Local Storage (LocalStorage)",
-    "localStorageDesc": "To ensure you don't lose your work when refreshing or closing the browser, OpenMUN stores your session data (committee name, delegate list, motions, timers, accessibility settings) exclusively LOCAL on your own device using LocalStorage.",
+    "localStorageDesc": "To ensure you don't lose your work when refreshing or closing the browser, Open2MUN stores your session data (committee name, delegate list, motions, timers, accessibility settings) exclusively LOCAL on your own device using LocalStorage.",
     "p2pTitle": "2. Peer-to-Peer Connections (WebRTC & P2P)",
     "p2pDesc": "Live synchronization features (Delegate, Secretariat, or Backroom views) utilize WebRTC / PeerJS. Data is transmitted directly peer-to-peer between the Chair's device and connected delegates.",
     "driveTitle": "3. Optional Google Drive Sync",
     "driveDesc": "If you voluntarily link your Google Drive account for session backups, authorization tokens are kept securely in your own browser. Backups transfer directly from your browser to your personal Google Drive, with no middleman server.",
     "openSourceTitle": "4. Open Source & Transparency",
-    "openSourceDesc": "OpenMUN is free, open-source software. Anyone can audit the public source code on GitHub to verify zero trackers or hidden data collection."
+    "openSourceDesc": "Open2MUN is free, open-source software. Anyone can audit the public source code on GitHub to verify zero trackers or hidden data collection."
   },
   "terms": {
-    "pageTitle": "OpenMUN - Terms & Conditions",
+    "pageTitle": "Open2MUN - Terms & Conditions",
     "badge": "Terms of Use & Free License",
     "title": "Terms & Conditions",
-    "subtitle": "Welcome to OpenMUN, a free and open-source web platform for Model United Nations management.",
+    "subtitle": "Welcome to Open2MUN, a free and open-source web platform for Model United Nations management.",
     "sec1Title": "1. Free Educational Purpose",
-    "sec1Desc": "OpenMUN is provided free of charge for Model UN conferences, schools, universities, chairs, and delegates worldwide.",
+    "sec1Desc": "Open2MUN is provided free of charge for Model UN conferences, schools, universities, chairs, and delegates worldwide.",
     "sec2Title": "2. Open Source & License",
     "sec3Title": "3. Data Management & Backups",
     "sec4Title": "4. Disclaimer of Warranties"

@@ -1,4 +1,4 @@
-# 🌐 openMUN
+# 🌐 open2MUN
 
 **The Modern, Modular & Real-Time Model United Nations Chairing Platform**
 
@@ -23,7 +23,7 @@
 
 ## 📌 Descripción
 
-**openMUN** es una suite moderna para la gestión y proyección en vivo de comités de Model United Nations (MUN). Diseñada para optimizar el flujo de trabajo parlamentario, openMUN combina un sistema de **widgets modulares y arrastrables**, sincronización inalámbrica **Peer-to-Peer (P2P)** para proyectores y dispositivos secundarios, integración con **Google Drive**, soporte para **múltiples idiomas**, simulación de **crisis en tiempo real** y herramientas avanzadas de votación, cronómetros y control de quórum.
+**open2MUN** es una suite moderna para la gestión y proyección en vivo de comités de Model United Nations (MUN). Diseñada para optimizar el flujo de trabajo parlamentario, open2MUN combina un sistema de **widgets modulares y arrastrables**, sincronización inalámbrica **Peer-to-Peer (P2P)** para proyectores y dispositivos secundarios, integración con **Google Drive**, soporte para **múltiples idiomas**, simulación de **crisis en tiempo real** y herramientas avanzadas de votación, cronómetros y control de quórum.
 
 ---
 
@@ -66,7 +66,7 @@
 
 ## 👥 Vistas y Roles Multidispositivo
 
-openMUN se adapta a cada participante del debate:
+open2MUN se adapta a cada participante del debate:
 
 | Rol / Vista | Descripción |
 | :--- | :--- |
@@ -112,7 +112,7 @@ El dashboard modular permite organizar el espacio de trabajo con una cuadrícula
 
 ## 🎨 Accesibilidad e Internacionalización
 
-openMUN prioriza la inclusión en el entorno académico y de debate:
+open2MUN prioriza la inclusión en el entorno académico y de debate:
 - **Idiomas**: Alterna entre Español e Inglés desde el selector de idioma en la barra de navegación.
 - **Filtros de Visión**: Ajustes dedicados para acromatopsia, protanopia, deuteranopia y tritanopia.
 - **Tipografía OpenDyslexic**: Facilita la lectura a usuarios con dislexia.
@@ -160,7 +160,7 @@ openMUN prioriza la inclusión en el entorno académico y de debate:
 ## 📂 Estructura del Proyecto
 
 ```text
-openMUN/
+open2MUN/
 ├── public/                 # Recursos públicos, plantillas y assets estáticos
 ├── src/
 │   ├── assets/             # Banderas, iconos y recursos multimedia

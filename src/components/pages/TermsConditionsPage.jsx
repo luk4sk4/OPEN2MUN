@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react';
 import { FileText, ArrowLeft, Scale, Award, Heart, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import OpenMunLogo from '../common/OpenMunLogo';
+import Open2MunLogo from '../common/Open2MunLogo';
 
 export default function TermsConditionsPage({ isLight = false, onBack }) {
   const { t } = useTranslation();
 
   useEffect(() => {
-    document.title = t('terms.pageTitle', 'OpenMUN - Términos y Condiciones');
+    document.title = t('terms.pageTitle', 'Open2MUN - Términos y Condiciones');
     window.scrollTo(0, 0);
   }, [t]);
 
@@ -28,8 +28,8 @@ export default function TermsConditionsPage({ isLight = false, onBack }) {
       <header style={{ sticky: 'top', top: 0, zIndex: 30, backgroundColor: headerBg, backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderBottom: `1px solid ${cardBorder}` }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <OpenMunLogo className="h-8 text-blue-500" style={{ height: '32px' }} />
-            <span style={{ fontWeight: '800', fontSize: '1.2rem', letterSpacing: '-0.02em' }}>OpenMUN</span>
+            <Open2MunLogo className="h-8 text-blue-500" style={{ height: '32px' }} />
+            <span style={{ fontWeight: '800', fontSize: '1.2rem', letterSpacing: '-0.02em' }}>Open2MUN</span>
           </div>
 
           <button
@@ -72,7 +72,7 @@ export default function TermsConditionsPage({ isLight = false, onBack }) {
           <p style={{ fontSize: '1.05rem', lineHeight: '1.6', color: textMuted, maxWidth: '600px', margin: '0 auto' }}>
             {t(
               'terms.subtitle',
-              'Bienvenido a OpenMUN, una plataforma web gratuita y de código abierto creada para potenciar la gestión de Modelos de Naciones Unidas.'
+              'Bienvenido a Open2MUN, una plataforma web gratuita y de código abierto creada para potenciar la gestión de Modelos de Naciones Unidas.'
             )}
           </p>
         </div>
@@ -92,7 +92,7 @@ export default function TermsConditionsPage({ isLight = false, onBack }) {
             <p style={{ fontSize: '0.92rem', lineHeight: '1.6', color: textMuted, margin: 0 }}>
               {t(
                 'terms.sec1Desc',
-                'OpenMUN se ofrece libremente y sin costo para conferencias, instituciones educativas, mesas presidenciales y delegados. Su propósito fundamental es enriquecer la cultura académica, el debate constructivo y la diplomacia entre estudiantes.'
+                'Open2MUN se ofrece libremente y sin costo para conferencias, instituciones educativas, mesas presidenciales y delegados. Su propósito fundamental es enriquecer la cultura académica, el debate constructivo y la diplomacia entre estudiantes.'
               )}
             </p>
           </div>
@@ -108,7 +108,7 @@ export default function TermsConditionsPage({ isLight = false, onBack }) {
               </h3>
             </div>
             <p style={{ fontSize: '0.92rem', lineHeight: '1.6', color: textMuted, margin: 0 }}>
-              OpenMUN es desarrollado por Lucas R. Kowalski y distribuido como Software Libre. Eres libre de usarlo, compartirlo y adaptarlo respetando los derechos morales del autor y las licencias de código abierto publicadas en el repositorio oficial de GitHub.
+              Open2MUN es desarrollado por Lucas R. Kowalski y distribuido como Software Libre. Eres libre de usarlo, compartirlo y adaptarlo respetando los derechos morales del autor y las licencias de código abierto publicadas en el repositorio oficial de GitHub.
             </p>
           </div>
 
@@ -149,12 +149,12 @@ export default function TermsConditionsPage({ isLight = false, onBack }) {
 
         {/* Footer */}
         <div style={{ marginTop: '3.5rem', textAlign: 'center', fontSize: '0.85rem', color: textMuted }}>
-          <p style={{ margin: '0 0 0.75rem 0' }}>Última actualización: Agosto {new Date().getFullYear()} — OpenMUN</p>
+          <p style={{ margin: '0 0 0.75rem 0' }}>Última actualización: Agosto {new Date().getFullYear()} — Open2MUN</p>
           <button
             onClick={onBack}
             style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontWeight: '700', fontSize: '0.9rem', textDecoration: 'underline' }}
           >
-            ← Volver al panel principal de OpenMUN
+            ← Volver al panel principal de Open2MUN
           </button>
         </div>
       </main>

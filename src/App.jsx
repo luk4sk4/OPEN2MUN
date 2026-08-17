@@ -57,20 +57,20 @@ function AppContent() {
 
     switch (viewMode) {
       case 'backroom':
-        document.title = 'OpenMUN - Backroom';
+        document.title = 'Open2MUN - Backroom';
         break;
       case 'secretariat':
-        document.title = 'OpenMUN - Secretaría';
+        document.title = 'Open2MUN - Secretaría';
         break;
       case 'delegate':
-        document.title = 'OpenMUN - Delegación';
+        document.title = 'Open2MUN - Delegación';
         break;
       case 'join':
-        document.title = 'OpenMUN - Unirse a Sala';
+        document.title = 'Open2MUN - Unirse a Sala';
         break;
       case 'chair':
       default:
-        document.title = 'OpenMUN';
+        document.title = 'Open2MUN';
         break;
     }
   }, [viewMode, route]);

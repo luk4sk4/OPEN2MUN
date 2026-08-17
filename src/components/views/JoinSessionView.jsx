@@ -22,7 +22,7 @@ import { useTranslation } from 'react-i18next';
 import { useP2P } from '../../context/P2PContext';
 import { useAccessibility } from '../../context/AccessibilityContext';
 import AccessibilityModal from '../modals/AccessibilityModal';
-import OpenMunLogo from '../common/OpenMunLogo';
+import Open2MunLogo from '../common/Open2MunLogo';
 import LanguageSelector from '../common/LanguageSelector';
 
 const PAISES_DEFAULT = [
@@ -190,7 +190,7 @@ const JoinSessionView = ({ isLight: propIsLight, onBackToChair }) => {
       }}>
         {/* Encabezado y Logo */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '0.85rem' }}>
-          <OpenMunLogo height={46} isLight={isLight} />
+          <Open2MunLogo height={46} isLight={isLight} />
           <div>
             <h2 style={{ margin: 0, fontSize: '1.45rem', fontWeight: '800', letterSpacing: '-0.02em' }}>
               {t('views.join.title', 'Unirse a Sala en Vivo')}

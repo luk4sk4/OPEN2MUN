@@ -192,7 +192,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
   const [internalIsLight, setInternalIsLight] = useState(() => {
     if (propIsLight !== undefined) return propIsLight;
     try {
-      const saved = localStorage.getItem('openmun_config');
+      const saved = localStorage.getItem('open2mun_config') || localStorage.getItem('openmun_config');
       if (saved) {
         const parsed = JSON.parse(saved);
         return parsed?.accessibility?.themeMode === 'light';
@@ -211,7 +211,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
   useEffect(() => {
     const handleThemeCheck = () => {
       try {
-        const saved = localStorage.getItem('openmun_config');
+        const saved = localStorage.getItem('open2mun_config') || localStorage.getItem('openmun_config');
         if (saved) {
           const parsed = JSON.parse(saved);
           if (parsed?.accessibility?.themeMode) {
@@ -222,9 +222,11 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
     };
 
     window.addEventListener('storage', handleThemeCheck);
+    window.addEventListener('open2mun_theme_change', handleThemeCheck);
     window.addEventListener('openmun_theme_change', handleThemeCheck);
     return () => {
       window.removeEventListener('storage', handleThemeCheck);
+      window.removeEventListener('open2mun_theme_change', handleThemeCheck);
       window.removeEventListener('openmun_theme_change', handleThemeCheck);
     };
   }, []);

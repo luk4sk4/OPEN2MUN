@@ -10,7 +10,7 @@ const ExportSessionModal = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     if (isOpen) {
-      const comiteClean = (nombreComite || 'openMUN').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+      const comiteClean = (nombreComite || 'open2MUN').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
       const fecha = new Date().toISOString().slice(0, 10);
       setFileName(`sesion_${comiteClean}_${fecha}.json`);
     }

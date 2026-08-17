@@ -21,7 +21,7 @@ const resources = {
 };
 
 const savedLanguage = typeof window !== 'undefined' 
-  ? localStorage.getItem('openmun_language') || 'es' 
+  ? localStorage.getItem('open2mun_language') || localStorage.getItem('openmun_language') || 'es' 
   : 'es';
 
 i18n
@@ -38,7 +38,7 @@ i18n
 export const changeAppLanguage = (langCode) => {
   i18n.changeLanguage(langCode);
   if (typeof window !== 'undefined') {
-    localStorage.setItem('openmun_language', langCode);
+    localStorage.setItem('open2mun_language', langCode);
   }
 };
 

@@ -69,7 +69,7 @@ export const AccessibilityProvider = ({ children }) => {
   // Cargar configuración desde localStorage si existe, o usar configMaster por defecto
   const [config, setConfig] = useState(() => {
     try {
-      const saved = localStorage.getItem('openmun_config');
+      const saved = localStorage.getItem('open2mun_config') || localStorage.getItem('openmun_config');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && parsed.layouts) {
@@ -142,18 +142,19 @@ export const AccessibilityProvider = ({ children }) => {
 
     // 5. Guardar en localStorage y emitir evento para sincronización entre ventanas
     try {
-      localStorage.setItem('openmun_config', JSON.stringify(config));
+      localStorage.setItem('open2mun_config', JSON.stringify(config));
     } catch (err) {
       console.error('Error guardando config en localStorage:', err);
     }
 
+    window.dispatchEvent(new CustomEvent('open2mun_config_updated', { detail: config }));
     window.dispatchEvent(new CustomEvent('openmun_config_updated', { detail: config }));
   }, [config]);
 
   // Escuchar cambios de almacenamiento y eventos custom para sincronizar entre pestañas/ventanas abiertas
   useEffect(() => {
     const handleStorage = (e) => {
-      if (e.key === 'openmun_config' && e.newValue) {
+      if ((e.key === 'open2mun_config' || e.key === 'openmun_config') && e.newValue) {
         try {
           const parsed = JSON.parse(e.newValue);
           if (parsed) {

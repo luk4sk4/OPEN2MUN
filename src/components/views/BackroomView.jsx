@@ -32,7 +32,7 @@ import { useTranslation } from 'react-i18next';
 import { useP2P } from '../../context/P2PContext';
 import { useAccessibility } from '../../context/AccessibilityContext';
 import AccessibilityModal from '../modals/AccessibilityModal';
-import OpenMunLogo from '../common/OpenMunLogo';
+import Open2MunLogo from '../common/Open2MunLogo';
 import LanguageSelector from '../common/LanguageSelector';
 import peerService from '../../services/peerService';
 import GestorCrisis from '../widgets/GestorCrisis';
@@ -127,7 +127,7 @@ const BackroomView = ({ isLight: propIsLight, onExit }) => {
         zIndex: 100
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
-          <OpenMunLogo height={32} isLight={isLight} />
+          <Open2MunLogo height={32} isLight={isLight} />
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
               <span style={{ fontWeight: '800', fontSize: '1.05rem', letterSpacing: '-0.01em', color: '#f97316' }}>
