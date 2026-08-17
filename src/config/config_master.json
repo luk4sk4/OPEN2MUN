@@ -102,6 +102,22 @@
         "rowSpan": 6
       }
     ],
+    "ENMIENDAS": [
+      {
+        "i": "controlador_enmiendas",
+        "col": 0,
+        "row": 0,
+        "colSpan": 7,
+        "rowSpan": 6
+      },
+      {
+        "i": "mini_votacion",
+        "col": 7,
+        "row": 0,
+        "colSpan": 5,
+        "rowSpan": 6
+      }
+    ],
     "INFO": [
       {
         "i": "matriz_paises",

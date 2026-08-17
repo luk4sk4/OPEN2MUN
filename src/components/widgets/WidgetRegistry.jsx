@@ -17,6 +17,8 @@ import GestorCrisis from './GestorCrisis';
 import TeleNoticiasCrisis from './TeleNoticiasCrisis';
 import PizarraInteractiva from './PizarraInteractiva';
 import MapaVotacion from './MapaVotacion';
+import MiniVotacion from './MiniVotacion';
+import ControladorEnmiendas from './ControladorEnmiendas';
 
 const WidgetRegistry = {
   // Widgets Canónicos Únicos
@@ -30,6 +32,8 @@ const WidgetRegistry = {
   "pizarra_mociones": PizarraMociones,
   "anadir_paises_debate": AnadirPaisesDebate,
   "votacion_oficial": VotacionOficial,
+  "mini_votacion": MiniVotacion,
+  "controlador_enmiendas": ControladorEnmiendas,
   "mapa_votacion": MapaVotacion,
   "matriz_paises": MatrizPaises,
   "historico_delegaciones": HistoricoDelegaciones,
@@ -39,6 +43,11 @@ const WidgetRegistry = {
   "pizarra_interactiva": PizarraInteractiva,
 
   // Alias y Compatibilidad Retroactiva
+  "mini_voting": MiniVotacion,
+  "votacion_rapida": MiniVotacion,
+  "gestor_enmiendas": ControladorEnmiendas,
+  "enmiendas": ControladorEnmiendas,
+  "amendments_controller": ControladorEnmiendas,
   "configurar_comite": EstablecerAgenda,
   "comite_agenda": EstablecerAgenda,
   "anadir_paises": AnadirPaises,

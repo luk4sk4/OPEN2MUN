@@ -26,7 +26,8 @@ import {
   LogOut,
   FolderOpen,
   FolderArchive,
-  Cloud
+  Cloud,
+  FileSignature
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import configMaster from '../config/config_master.json';
@@ -66,6 +67,7 @@ const TAB_CONFIG = {
   GSL: { labelKey: 'tabs.gsl', label: 'GSL', Icon: Mic },
   DEBATE: { labelKey: 'tabs.debate', label: 'Debate', Icon: Timer },
   VOTING: { labelKey: 'tabs.voting', label: 'Votación', Icon: Vote },
+  ENMIENDAS: { labelKey: 'tabs.amendments', label: 'Enmiendas', Icon: FileSignature },
   INFO: { labelKey: 'tabs.info', label: 'Info', Icon: BarChart2 },
   LIBRE: { labelKey: 'tabs.custom', label: 'Libre', Icon: LayoutGrid },
 };
@@ -256,6 +258,7 @@ const Dashboard = () => {
     mociones,
     historicoMociones,
     registroIntervenciones,
+    enmiendasSesion,
     agregarOrador,
     agregarOradorCaucus,
     agregarMocion,
@@ -311,10 +314,11 @@ const Dashboard = () => {
       nombreComite,
       votacionSesion,
       relojGSLState,
+      enmiendasSesion,
       roomSettings,
       speakingRequests
     });
-  }, [broadcastCurrentState, paises, oradoresCola, oradoresCaucus, registroIntervenciones, mociones, historicoMociones, caucusActivo, agendaSesion, nombreComite, votacionSesion, relojGSLState, roomSettings, speakingRequests]);
+  }, [broadcastCurrentState, paises, oradoresCola, oradoresCaucus, registroIntervenciones, mociones, historicoMociones, caucusActivo, agendaSesion, nombreComite, votacionSesion, relojGSLState, enmiendasSesion, roomSettings, speakingRequests]);
 
   // Configuración global y accesibilidad desde el contexto
   const {
@@ -350,6 +354,9 @@ const Dashboard = () => {
         break;
       case 'VOTING':
         document.title = 'OpenMUN - Sistema de Votación Oficial y Mapa de Votos';
+        break;
+      case 'ENMIENDAS':
+        document.title = 'OpenMUN - Controlador de Enmiendas y Proyecto de Resolución';
         break;
       case 'INFO':
         document.title = 'OpenMUN - Matriz de Quórum e Información de Delegaciones';
@@ -553,7 +560,7 @@ const Dashboard = () => {
     e.target.value = '';
   };
 
-  const tabs = ['HOME', 'COMIENZO', 'GSL', 'DEBATE', 'VOTING', 'INFO', 'LIBRE'];
+  const tabs = ['HOME', 'COMIENZO', 'GSL', 'DEBATE', 'VOTING', 'ENMIENDAS', 'INFO', 'LIBRE'];
   const widgets = (config?.layouts && config.layouts[activeTab]) || configMaster.layouts[activeTab] || [];
 
   // Actualizador seguro para la pestaña activa sin stale closures

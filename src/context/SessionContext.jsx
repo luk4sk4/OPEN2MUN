@@ -79,6 +79,16 @@ export const SessionProvider = ({ children }) => {
     return localStorage.getItem('openmun_comite') || '';
   });
 
+  const [enmiendasSesion, setEnmiendasSesionState] = useState(() => {
+    const saved = localStorage.getItem('openmun_enmiendas');
+    return saved ? JSON.parse(saved) : {
+      tituloProyecto: 'Proyecto de Resolución A/RES/79/1',
+      textoResolucion: '',
+      articulos: [],
+      enmiendas: []
+    };
+  });
+
   const [relojGSLState, setRelojGSLState] = useState({ segundosRestantes: 60, tiempoInicial: 60, corriendo: false });
   const [yieldEvento, setYieldEvento] = useState(null);
 
@@ -104,6 +114,7 @@ export const SessionProvider = ({ children }) => {
     votacionSesion,
     agendaSesion,
     nombreComite,
+    enmiendasSesion,
     relojGSLState
   });
 
@@ -119,9 +130,10 @@ export const SessionProvider = ({ children }) => {
       votacionSesion,
       agendaSesion,
       nombreComite,
+      enmiendasSesion,
       relojGSLState
     };
-  }, [paises, oradoresCola, oradoresCaucus, registroIntervenciones, mociones, historicoMociones, caucusActivo, votacionSesion, agendaSesion, nombreComite, relojGSLState]);
+  }, [paises, oradoresCola, oradoresCaucus, registroIntervenciones, mociones, historicoMociones, caucusActivo, votacionSesion, agendaSesion, nombreComite, enmiendasSesion, relojGSLState]);
 
   // PERSISTENCIA EN LOCALSTORAGE
   useEffect(() => {
@@ -135,6 +147,7 @@ export const SessionProvider = ({ children }) => {
     localStorage.setItem('openmun_votacion', JSON.stringify(votacionSesion));
     localStorage.setItem('openmun_agenda', JSON.stringify(agendaSesion));
     localStorage.setItem('openmun_comite', nombreComite);
+    localStorage.setItem('openmun_enmiendas', JSON.stringify(enmiendasSesion));
 
     const sesionDataCompleta = {
       version: '1.0',
@@ -148,11 +161,12 @@ export const SessionProvider = ({ children }) => {
       historicoMociones,
       caucusActivo,
       votacionSesion,
-      agendaSesion
+      agendaSesion,
+      enmiendasSesion
     };
 
     localStorage.setItem('sesion_activa.json', JSON.stringify(sesionDataCompleta, null, 2));
-  }, [paises, oradoresCola, oradoresCaucus, registroIntervenciones, mociones, historicoMociones, caucusActivo, votacionSesion, agendaSesion, nombreComite]);
+  }, [paises, oradoresCola, oradoresCaucus, registroIntervenciones, mociones, historicoMociones, caucusActivo, votacionSesion, agendaSesion, nombreComite, enmiendasSesion]);
 
   // EMITIR ACCIONES A CANALES LOCALES Y EVENTOS DOM PARA P2P
   const emitirAccion = useCallback((accion, payload) => {
@@ -214,6 +228,9 @@ export const SessionProvider = ({ children }) => {
       setNombreComiteState(nuevoEstado.nombreComite);
     } else if (typeof nuevoEstado.comision === 'string' && nuevoEstado.comision) {
       setNombreComiteState(nuevoEstado.comision);
+    }
+    if (nuevoEstado.enmiendasSesion && typeof nuevoEstado.enmiendasSesion === 'object') {
+      setEnmiendasSesionState(nuevoEstado.enmiendasSesion);
     }
     if (nuevoEstado.relojGSLState && typeof nuevoEstado.relojGSLState === 'object') {
       setRelojGSLState(nuevoEstado.relojGSLState);
@@ -723,6 +740,130 @@ export const SessionProvider = ({ children }) => {
   }, [emitirAccion]);
 
   // ─────────────────────────────────────────────────────────────
+  // CONTROLADOR DE ENMIENDAS Y RESOLUCIÓN
+  // ─────────────────────────────────────────────────────────────
+  const setEnmiendasSesion = useCallback((nuevaData, emitir = true) => {
+    setEnmiendasSesionState(nuevaData);
+    if (emitir) {
+      emitirAccion('setEnmiendasSesion', { enmiendasSesion: nuevaData });
+    }
+  }, [emitirAccion]);
+
+  const guardarResolucionEnmiendas = useCallback(({ titulo, texto, articulos }, emitir = true) => {
+    setEnmiendasSesionState(prev => ({
+      ...prev,
+      tituloProyecto: titulo !== undefined ? titulo : prev.tituloProyecto,
+      textoResolucion: texto !== undefined ? texto : prev.textoResolucion,
+      articulos: articulos !== undefined ? articulos : prev.articulos
+    }));
+    if (emitir) {
+      emitirAccion('guardarResolucionEnmiendas', { titulo, texto, articulos });
+    }
+  }, [emitirAccion]);
+
+  const agregarEnmiendaResolucion = useCallback((enmiendaData, emitir = true) => {
+    const nueva = {
+      id: enmiendaData.id || `enm_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      tipo: enmiendaData.tipo || 'modificacion', // 'adicion' | 'supresion' | 'modificacion'
+      articuloId: enmiendaData.articuloId || null,
+      articuloNumero: enmiendaData.articuloNumero || '',
+      paisProponente: enmiendaData.paisProponente || '',
+      textoOriginal: enmiendaData.textoOriginal || '',
+      textoPropuesto: enmiendaData.textoPropuesto || '',
+      justificacion: enmiendaData.justificacion || '',
+      estado: 'pendiente', // 'pendiente' | 'aceptada' | 'rechazada'
+      fecha: new Date().toISOString()
+    };
+    setEnmiendasSesionState(prev => ({
+      ...prev,
+      enmiendas: [nueva, ...(prev.enmiendas || [])]
+    }));
+    if (emitir) {
+      emitirAccion('agregarEnmiendaResolucion', { enmiendaData: nueva });
+    }
+  }, [emitirAccion]);
+
+  const resolverEnmiendaResolucion = useCallback((enmiendaId, nuevoEstado, emitir = true) => {
+    setEnmiendasSesionState(prev => {
+      const enmiendasActuales = prev.enmiendas || [];
+      const target = enmiendasActuales.find(e => e.id === enmiendaId);
+      if (!target) return prev;
+
+      let nuevosArticulos = [...(prev.articulos || [])];
+      let nuevoTextoResolucion = prev.textoResolucion || '';
+
+      // Si se acepta la enmienda, modificamos automáticamente el artículo y el texto de la resolución
+      if (nuevoEstado === 'aceptada') {
+        if (target.articuloId) {
+          nuevosArticulos = nuevosArticulos.map(art => {
+            if (art.id === target.articuloId) {
+              let textoActualizado = art.texto || '';
+              if (target.tipo === 'adicion') {
+                textoActualizado = (textoActualizado ? textoActualizado + ' ' : '') + target.textoPropuesto;
+              } else if (target.tipo === 'supresion') {
+                if (target.textoOriginal && textoActualizado.includes(target.textoOriginal)) {
+                  textoActualizado = textoActualizado.replace(target.textoOriginal, '').replace(/\s+/g, ' ').trim();
+                } else {
+                  textoActualizado = `[SUPRIMIDO] ${textoActualizado}`;
+                }
+              } else if (target.tipo === 'modificacion') {
+                if (target.textoOriginal && textoActualizado.includes(target.textoOriginal)) {
+                  textoActualizado = textoActualizado.replace(target.textoOriginal, target.textoPropuesto);
+                } else {
+                  textoActualizado = target.textoPropuesto;
+                }
+              }
+              return { ...art, texto: textoActualizado, modificado: true };
+            }
+            return art;
+          });
+
+          // Reconstruir el texto global consolidado si hay artículos
+          if (nuevosArticulos.length > 0) {
+            nuevoTextoResolucion = nuevosArticulos.map(a => `${a.prefijo ? a.prefijo + ' ' : ''}${a.texto}`).join('\n\n');
+          }
+        } else if (target.tipo === 'adicion') {
+          // Si es adición de nuevo artículo global
+          const nuevoArt = {
+            id: `art_${Date.now()}`,
+            numero: nuevosArticulos.length + 1,
+            prefijo: `Artículo ${nuevosArticulos.length + 1}.`,
+            texto: target.textoPropuesto,
+            modificado: true
+          };
+          nuevosArticulos.push(nuevoArt);
+          nuevoTextoResolucion = nuevosArticulos.map(a => `${a.prefijo ? a.prefijo + ' ' : ''}${a.texto}`).join('\n\n');
+        }
+      }
+
+      const enmiendasActualizadas = enmiendasActuales.map(e =>
+        e.id === enmiendaId ? { ...e, estado: nuevoEstado } : e
+      );
+
+      return {
+        ...prev,
+        articulos: nuevosArticulos,
+        textoResolucion: nuevoTextoResolucion,
+        enmiendas: enmiendasActualizadas
+      };
+    });
+
+    if (emitir) {
+      emitirAccion('resolverEnmiendaResolucion', { enmiendaId, nuevoEstado });
+    }
+  }, [emitirAccion]);
+
+  const eliminarEnmiendaResolucion = useCallback((enmiendaId, emitir = true) => {
+    setEnmiendasSesionState(prev => ({
+      ...prev,
+      enmiendas: (prev.enmiendas || []).filter(e => e.id !== enmiendaId)
+    }));
+    if (emitir) {
+      emitirAccion('eliminarEnmiendaResolucion', { enmiendaId });
+    }
+  }, [emitirAccion]);
+
+  // ─────────────────────────────────────────────────────────────
   // DESPACHADOR CENTRAL DE ACCIONES RECIBIDAS (DESDE OTRO NODO / CANAL)
   // ─────────────────────────────────────────────────────────────
   const ejecutarAccion = useCallback((accion, payload) => {
@@ -840,6 +981,21 @@ export const SessionProvider = ({ children }) => {
       case 'actualizarRelojGSL':
         actualizarRelojGSL(payload.segundosRestantes, payload.tiempoInicial, payload.corriendo, false);
         break;
+      case 'setEnmiendasSesion':
+        setEnmiendasSesion(payload.enmiendasSesion, false);
+        break;
+      case 'guardarResolucionEnmiendas':
+        guardarResolucionEnmiendas(payload, false);
+        break;
+      case 'agregarEnmiendaResolucion':
+        agregarEnmiendaResolucion(payload.enmiendaData, false);
+        break;
+      case 'resolverEnmiendaResolucion':
+        resolverEnmiendaResolucion(payload.enmiendaId, payload.nuevoEstado, false);
+        break;
+      case 'eliminarEnmiendaResolucion':
+        eliminarEnmiendaResolucion(payload.enmiendaId, false);
+        break;
       default:
         console.warn(`Acción desconocida en SessionContext: ${accion}`);
     }
@@ -851,7 +1007,8 @@ export const SessionProvider = ({ children }) => {
     vaciarOradoresDebate, ordenarOradoresDebateAlfabetico, reordenarOradoresDebate, moverOradorCaucus,
     setCaucusActivo, establecerAgenda, cambiarTemaActual, setNombreComite, agregarMocion, activarMocion,
     votarMocion, eliminarMocion, reordenarMociones, ordenarMocionesDisruptividad, registrarIntervencion,
-    actualizarRelojGSL
+    actualizarRelojGSL, setEnmiendasSesion, guardarResolucionEnmiendas, agregarEnmiendaResolucion,
+    resolverEnmiendaResolucion, eliminarEnmiendaResolucion
   ]);
 
   // ─────────────────────────────────────────────────────────────
@@ -950,6 +1107,7 @@ export const SessionProvider = ({ children }) => {
     localStorageSnapshot['openmun_votacion'] = votacionSesion;
     localStorageSnapshot['openmun_agenda'] = agendaSesion;
     localStorageSnapshot['openmun_comite'] = nombreComite;
+    localStorageSnapshot['openmun_enmiendas'] = enmiendasSesion;
 
     // Recuperar alertas y eventos de crisis
     let crisisEventosExport = [];
@@ -981,13 +1139,14 @@ export const SessionProvider = ({ children }) => {
       votacionSesion,
       agendaSesion,
       nombreComite,
+      enmiendasSesion,
       alertasCrisis: crisisEventosExport,
       eventosCrisis: crisisEventosExport,
       relojCrisis: crisisRelojExport,
       config: localStorageSnapshot['openmun_config'] || undefined,
       localStorageSnapshot
     };
-  }, [paises, oradoresCola, oradoresCaucus, registroIntervenciones, mociones, historicoMociones, caucusActivo, votacionSesion, agendaSesion, nombreComite]);
+  }, [paises, oradoresCola, oradoresCaucus, registroIntervenciones, mociones, historicoMociones, caucusActivo, votacionSesion, agendaSesion, nombreComite, enmiendasSesion]);
 
   // 2. EXPORTAR sesion_activa.json A ARCHIVO LOCAL
   const descargarSesionJSON = (customFileName) => {
@@ -1234,7 +1393,7 @@ export const SessionProvider = ({ children }) => {
     }, 2500);
 
     return () => clearTimeout(debounceTimer);
-  }, [paises, oradoresCola, oradoresCaucus, registroIntervenciones, mociones, historicoMociones, caucusActivo, votacionSesion, agendaSesion, nombreComite, isDriveLinked, driveFileId, generarSnapshotSesion]);
+  }, [paises, oradoresCola, oradoresCaucus, registroIntervenciones, mociones, historicoMociones, caucusActivo, votacionSesion, agendaSesion, nombreComite, enmiendasSesion, isDriveLinked, driveFileId, generarSnapshotSesion]);
 
   // 2. CARGAR sesion_activa.json
   const cargarSesionJSON = (rawSesionData, onConfigLoaded) => {
@@ -1316,6 +1475,12 @@ export const SessionProvider = ({ children }) => {
       if (typeof comiteData === 'string' && comiteData) {
         setNombreComiteState(comiteData);
         localStorage.setItem('openmun_comite', comiteData);
+      }
+
+      const enmiendasData = sesionData.enmiendasSesion || snapshot.openmun_enmiendas;
+      if (enmiendasData && typeof enmiendasData === 'object') {
+        setEnmiendasSesionState(enmiendasData);
+        localStorage.setItem('openmun_enmiendas', JSON.stringify(enmiendasData));
       }
 
       // Alertas y Eventos de Crisis
@@ -1413,6 +1578,12 @@ export const SessionProvider = ({ children }) => {
       registrarVotoPais,
       configurarVotacion,
       resetearVotacion,
+      enmiendasSesion,
+      setEnmiendasSesion,
+      guardarResolucionEnmiendas,
+      agregarEnmiendaResolucion,
+      resolverEnmiendaResolucion,
+      eliminarEnmiendaResolucion,
       agendaSesion,
       establecerAgenda,
       cambiarTemaActual,

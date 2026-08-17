@@ -33,7 +33,8 @@ import {
   Tv,
   PenTool,
   Palette,
-  Map
+  Map,
+  FileSignature
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import WidgetRegistry from '../widgets/WidgetRegistry';
@@ -42,6 +43,26 @@ import { PRESET_TEMPLATES } from '../../plantillas/widgets';
 
 // Metadata rica para cada widget disponible
 export const WIDGET_METADATA = {
+  controlador_enmiendas: {
+    title: 'Controlador de Enmiendas & Resolución',
+    category: 'Debate',
+    description: 'Gestión y procesamiento de borradores de resolución (.txt, .md, Google Docs), desglose artículo por artículo y formulación de mociones de adición, supresión y modificación con actualización automática.',
+    icon: FileSignature,
+    iconBg: 'rgba(16, 185, 129, 0.2)',
+    iconColor: '#10b981',
+    defaultColSpan: 7,
+    defaultRowSpan: 6,
+  },
+  mini_votacion: {
+    title: 'Mini Sistema de Votación (Roll Call)',
+    category: 'Votaciones',
+    description: 'Votación nominal sincronizada en tiempo real para enmiendas, flujo ágil de Roll Call con pasadas en 2da ronda, ajustes rápidos y vista expandible a pantalla completa.',
+    icon: Vote,
+    iconBg: 'rgba(59, 130, 246, 0.2)',
+    iconColor: '#3b82f6',
+    defaultColSpan: 5,
+    defaultRowSpan: 6,
+  },
   mapa_votacion: {
     title: 'Mapa Mundial de Votación',
     category: 'Votaciones',
@@ -226,6 +247,8 @@ export const CANONICAL_WIDGET_IDS = [
   'pizarra_mociones',
   'anadir_paises_debate',
   'votacion_oficial',
+  'mini_votacion',
+  'controlador_enmiendas',
   'mapa_votacion',
   'matriz_paises',
   'historico_delegaciones',
@@ -241,6 +264,7 @@ export const DEFAULT_WIDGETS_BY_TAB = {
   GSL: ['lista_oradores', 'cronometro_principal', 'anadir_paises_gsl'],
   DEBATE: ['cronometro_dual', 'pizarra_mociones', 'anadir_paises_debate'],
   VOTING: ['votacion_oficial', 'matriz_paises', 'mapa_votacion'],
+  ENMIENDAS: ['controlador_enmiendas', 'mini_votacion'],
   INFO: ['matriz_paises', 'historico_delegaciones'],
   LIBRE: [],
   HOME: ['lista_oradores', 'cronometro_principal', 'pizarra_mociones', 'votacion_oficial', 'matriz_paises']
@@ -251,10 +275,11 @@ export const RECOMMENDED_BY_TAB = {
   COMIENZO: ['establecer_agenda', 'importar_paises', 'matriz_paises'],
   GSL: ['lista_oradores', 'cronometro_principal', 'anadir_paises_gsl', 'selector_aleatorio'],
   DEBATE: ['cronometro_dual', 'pizarra_mociones', 'anadir_paises_debate', 'cronometro_only_time', 'selector_aleatorio', 'gestor_crisis', 'tele_noticias', 'pizarra_interactiva', 'mapa_votacion'],
-  VOTING: ['votacion_oficial', 'matriz_paises', 'mapa_votacion'],
+  VOTING: ['votacion_oficial', 'matriz_paises', 'mapa_votacion', 'mini_votacion'],
+  ENMIENDAS: ['controlador_enmiendas', 'mini_votacion', 'votacion_oficial', 'matriz_paises'],
   INFO: ['matriz_paises', 'historico_delegaciones'],
-  LIBRE: ['mapa_votacion', 'pizarra_interactiva', 'selector_aleatorio', 'gestor_crisis', 'tele_noticias'],
-  HOME: ['lista_oradores', 'cronometro_principal', 'pizarra_mociones', 'votacion_oficial', 'matriz_paises', 'mapa_votacion', 'pizarra_interactiva', 'establecer_agenda', 'selector_aleatorio', 'gestor_crisis', 'tele_noticias']
+  LIBRE: ['mapa_votacion', 'pizarra_interactiva', 'selector_aleatorio', 'gestor_crisis', 'tele_noticias', 'controlador_enmiendas', 'mini_votacion'],
+  HOME: ['lista_oradores', 'cronometro_principal', 'pizarra_mociones', 'votacion_oficial', 'matriz_paises', 'mapa_votacion', 'pizarra_interactiva', 'establecer_agenda', 'selector_aleatorio', 'gestor_crisis', 'tele_noticias', 'controlador_enmiendas', 'mini_votacion']
 };
 
 // Re-exportar plantillas predefinidas importadas modularmente
