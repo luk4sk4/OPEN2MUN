@@ -147,11 +147,11 @@ export default function PrivacyPolicyPage({ isLight = false, onBack }) {
             <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: textMuted }}>
                 <CheckCircle2 size={16} style={{ color: '#10b981', flexShrink: 0 }} />
-                <span>Tus datos de debate nunca se envían a servidores centrales de OpenMUN.</span>
+                <span>{t('privacy.localStorageCheck1', 'Tus datos de debate nunca se envían a servidores centrales de OpenMUN.')}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: textMuted }}>
                 <CheckCircle2 size={16} style={{ color: '#10b981', flexShrink: 0 }} />
-                <span>Puedes borrar todo en cualquier momento limpiando los datos de tu navegador.</span>
+                <span>{t('privacy.localStorageCheck2', 'Puedes borrar todo en cualquier momento limpiando los datos de tu navegador.')}</span>
               </div>
             </div>
           </div>
@@ -213,12 +213,12 @@ export default function PrivacyPolicyPage({ isLight = false, onBack }) {
 
         {/* Footer */}
         <div style={{ marginTop: '3.5rem', textAlign: 'center', fontSize: '0.85rem', color: textMuted }}>
-          <p style={{ margin: '0 0 0.75rem 0' }}>Última actualización: Agosto {new Date().getFullYear()} — OpenMUN</p>
+          <p style={{ margin: '0 0 0.75rem 0' }}>{t('common.lastUpdated', 'Última actualización:')} {t('common.august', 'Agosto')} {new Date().getFullYear()} — OpenMUN</p>
           <button
             onClick={onBack}
             style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontWeight: '700', fontSize: '0.9rem', textDecoration: 'underline' }}
           >
-            ← Volver al panel principal de OpenMUN
+            {t('common.backToMainPanel', '← Volver al panel principal de OpenMUN')}
           </button>
         </div>
       </main>

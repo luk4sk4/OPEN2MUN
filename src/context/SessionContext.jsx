@@ -1238,8 +1238,22 @@ export const SessionProvider = ({ children }) => {
   // 2. CARGAR sesion_activa.json
   const cargarSesionJSON = (sesionData, onConfigLoaded) => {
     try {
-      if (!sesionData || typeof sesionData !== 'object') {
-        throw new Error('Formato de JSON inválido');
+      if (!sesionData || typeof sesionData !== 'object' || Array.isArray(sesionData)) {
+        throw new Error('El contenido del archivo no es un objeto JSON válido');
+      }
+
+      const snapshot = sesionData.localStorageSnapshot || {};
+      
+      // Verificar si el JSON contiene alguna clave reconocida de OpenMUN
+      const tieneClavesReconocidas = 
+        sesionData.paises || sesionData.oradoresCola || sesionData.oradoresGSL ||
+        sesionData.registroIntervenciones || sesionData.mociones || sesionData.agendaSesion ||
+        sesionData.config || sesionData.openmun_config || sesionData.nombreComite ||
+        snapshot.openmun_paises || snapshot.openmun_config || snapshot.openmun_oradores ||
+        Object.keys(sesionData).some(k => k.startsWith('openmun_'));
+
+      if (!tieneClavesReconocidas) {
+        throw new Error('El archivo JSON no contiene una estructura de sesión válida de OpenMUN.');
       }
 
       if (sesionData.localStorageSnapshot && typeof sesionData.localStorageSnapshot === 'object') {
@@ -1250,8 +1264,6 @@ export const SessionProvider = ({ children }) => {
           }
         });
       }
-
-      const snapshot = sesionData.localStorageSnapshot || {};
 
       const paisesData = sesionData.paises || snapshot.openmun_paises;
       if (Array.isArray(paisesData)) {
@@ -1327,10 +1339,12 @@ export const SessionProvider = ({ children }) => {
 
       const configData = sesionData.config || sesionData.openmun_config || snapshot.openmun_config;
       if (configData) {
-        const parsedConfig = typeof configData === 'string' ? JSON.parse(configData) : configData;
-        localStorage.setItem('openmun_config', JSON.stringify(parsedConfig));
-        if (typeof onConfigLoaded === 'function') {
-          onConfigLoaded(parsedConfig);
+        let parsedConfig = typeof configData === 'string' ? JSON.parse(configData) : configData;
+        if (parsedConfig && typeof parsedConfig === 'object') {
+          localStorage.setItem('openmun_config', JSON.stringify(parsedConfig));
+          if (typeof onConfigLoaded === 'function') {
+            onConfigLoaded(parsedConfig);
+          }
         }
       }
 
@@ -1350,7 +1364,6 @@ export const SessionProvider = ({ children }) => {
       return true;
     } catch (err) {
       console.error('Error al cargar la sesión JSON:', err);
-      alert('Error al cargar el archivo sesion_activa.json: ' + err.message);
       return false;
     }
   };

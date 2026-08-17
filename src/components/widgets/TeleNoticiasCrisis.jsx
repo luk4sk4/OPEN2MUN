@@ -202,7 +202,7 @@ const TeleNoticiasCrisis = () => {
     : CATEGORIAS.CRITICA;
   const CategoryIcon = catMeta.icon || Flame;
 
-  const formatoHora = `Día ${relojSimulacion.dia || 1} · ${String(relojSimulacion.horas || 8).padStart(2, '0')}:${String(relojSimulacion.minutos || 0).padStart(2, '0')} hrs`;
+  const formatoHora = `${t('timers.day', 'Día')} ${relojSimulacion.dia || 1} · ${String(relojSimulacion.horas || 8).padStart(2, '0')}:${String(relojSimulacion.minutos || 0).padStart(2, '0')} hrs`;
 
   return (
     <div style={{

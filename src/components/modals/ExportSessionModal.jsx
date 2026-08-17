@@ -69,7 +69,7 @@ const ExportSessionModal = ({ isOpen, onClose }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <FileJson size={18} style={{ color: '#3b82f6' }} />
             <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '700' }}>
-              Exportar Sesión a JSON
+              {t('exportModal.title', 'Exportar Sesión a JSON')}
             </h3>
           </div>
           <button
@@ -91,14 +91,14 @@ const ExportSessionModal = ({ isOpen, onClose }) => {
         <form onSubmit={handleExport} style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--muted-text)', marginBottom: '0.4rem' }}>
-              Nombre del archivo a exportar:
+              {t('exportModal.fileNameLabel', 'Nombre del archivo a exportar:')}
             </label>
             <div style={{ position: 'relative' }}>
               <input
                 type="text"
                 value={fileName}
                 onChange={(e) => setFileName(e.target.value)}
-                placeholder="sesion_activa.json"
+                placeholder={t('exportModal.placeholder', 'sesion_activa.json')}
                 style={{
                   width: '100%',
                   background: 'var(--input-bg, rgba(0,0,0,0.3))',
@@ -114,7 +114,7 @@ const ExportSessionModal = ({ isOpen, onClose }) => {
               />
             </div>
             <div style={{ fontSize: '0.7rem', color: 'var(--muted-text)', marginTop: '0.4rem' }}>
-              Este archivo contiene la copia completa de delegaciones, oradores, agenda, mociones y configuraciones.
+              {t('exportModal.fileNameHint', 'Este archivo contiene la copia completa de delegaciones, oradores, agenda, mociones y configuraciones.')}
             </div>
           </div>
 
@@ -132,7 +132,7 @@ const ExportSessionModal = ({ isOpen, onClose }) => {
                 cursor: 'pointer'
               }}
             >
-              Cancelar
+              {t('common.cancel', 'Cancelar')}
             </button>
             <button
               type="submit"
@@ -152,7 +152,7 @@ const ExportSessionModal = ({ isOpen, onClose }) => {
               }}
             >
               <Download size={13} />
-              <span>Descargar Archivo</span>
+              <span>{t('exportModal.downloadButton', 'Descargar Archivo')}</span>
             </button>
           </div>
         </form>

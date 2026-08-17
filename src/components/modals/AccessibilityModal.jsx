@@ -17,12 +17,12 @@ const AccessibilityModal = ({
   const config = propConfig || context?.config;
   const setConfig = propSetConfig || context?.setConfig;
 
-  if (!isOpen || !config) return null;
-
   const [bannerCrisisHabilitado, setBannerCrisisHabilitado] = useState(() => {
     const saved = localStorage.getItem('openmun_permanent_banner_enabled');
     return saved !== null ? saved === 'true' : true;
   });
+
+  if (!isOpen || !config) return null;
 
   const handleToggleBannerCrisis = () => {
     const nuevoValor = !bannerCrisisHabilitado;

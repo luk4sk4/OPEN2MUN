@@ -128,8 +128,8 @@ const HistoricoDelegaciones = () => {
       key: fStr,
       numeroDia: index + 1,
       esHoy: fStr === hoyStr,
-      labelCorta: `Día ${index + 1} (${formatearFechaCorta(fStr)})`,
-      labelCompleta: `Día ${index + 1} - ${formatearFechaCorta(fStr)}`
+      labelCorta: `${t('timers.day', 'Día')} ${index + 1} (${formatearFechaCorta(fStr)})`,
+      labelCompleta: `${t('timers.day', 'Día')} ${index + 1} - ${formatearFechaCorta(fStr)}`
     }));
   }, [registroIntervenciones, listaMocionesFuente]);
 

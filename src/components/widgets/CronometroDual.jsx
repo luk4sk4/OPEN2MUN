@@ -938,7 +938,7 @@ const CronometroDual = ({ modoInicial = null }) => {
               <span>{oradorActual.nombre}</span>
               {oradorActual.esProponenteUltimo && (
                 <span style={{ fontSize: '0.68rem', backgroundColor: 'rgba(255,255,255,0.12)', color: 'var(--text-color)', padding: '0.12rem 0.4rem', borderRadius: '4px', fontWeight: '700' }}>
-                  PROPONENTE
+                  {t('timers.proposer', 'PROPONENTE')}
                 </span>
               )}
             </div>
@@ -955,7 +955,7 @@ const CronometroDual = ({ modoInicial = null }) => {
               {formatTimeWithNegative(tiempoOradorSeg)}
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '0.6rem', alignItems: 'center', marginTop: '0.3rem' }}>
-              <span style={{ fontSize: '0.78rem', opacity: 0.75, fontWeight: '600' }}>Límite ({limiteOradorSeg}s)</span>
+              <span style={{ fontSize: '0.78rem', opacity: 0.75, fontWeight: '600' }}>{t('timers.limit', 'Límite')} ({limiteOradorSeg}s)</span>
               
               {/* Flechas estilizadas para sumar/quitar tiempo al orador */}
               <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>

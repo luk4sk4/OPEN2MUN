@@ -27,18 +27,46 @@ class ErrorBoundary extends React.Component {
     console.error("ErrorBoundary caught an error", error, errorInfo);
   }
 
+  handleReset = () => {
+    try {
+      localStorage.removeItem('openmun_config');
+    } catch (e) {}
+    window.location.reload();
+  };
+
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: '2rem', color: 'red', backgroundColor: '#fff', height: '100vh', overflow: 'auto' }}>
-          <h2>Something went wrong.</h2>
-          <details style={{ whiteSpace: 'pre-wrap' }}>
-            <summary>Click for error details</summary>
-            <br />
-            {this.state.error && this.state.error.toString()}
-            <br />
-            {this.state.errorInfo && this.state.errorInfo.componentStack}
-          </details>
+        <div style={{ padding: '2.5rem', color: '#ef4444', backgroundColor: '#0f172a', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
+          <div style={{ backgroundColor: '#1e293b', border: '1px solid #334155', padding: '2rem', borderRadius: '12px', maxWidth: '600px', width: '100%', color: '#f8fafc', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}>
+            <h2 style={{ margin: '0 0 1rem 0', color: '#f87171', fontSize: '1.5rem' }}>⚠️ Ocurrió un error inesperado</h2>
+            <p style={{ color: '#94a3b8', fontSize: '0.95rem', marginBottom: '1.5rem' }}>
+              El archivo JSON importado o los datos guardados en la sesión contenían un formato no reconocido. Hemos prevenido que tu trabajo sufra daños.
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+              <button
+                onClick={this.handleReset}
+                style={{
+                  padding: '0.65rem 1.25rem',
+                  backgroundColor: '#3b82f6',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                Restablecer configuración y recargar
+              </button>
+            </div>
+            <details style={{ whiteSpace: 'pre-wrap', fontSize: '0.8rem', color: '#cbd5e1', backgroundColor: '#0f172a', padding: '1rem', borderRadius: '6px' }}>
+              <summary style={{ cursor: 'pointer', fontWeight: 'bold' }}>Ver detalles del error</summary>
+              <br />
+              {this.state.error && this.state.error.toString()}
+              <br />
+              {this.state.errorInfo && this.state.errorInfo.componentStack}
+            </details>
+          </div>
         </div>
       );
     }

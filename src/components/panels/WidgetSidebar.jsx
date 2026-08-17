@@ -630,21 +630,40 @@ const WidgetSidebar = ({
         {/* Notificación Toast Flotante */}
         {feedbackToast && (
           <div style={{
-            margin: '0.75rem 1.5rem 0 1.5rem',
-            padding: '0.5rem 0.85rem',
-            backgroundColor: feedbackToast.type === 'error' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)',
-            border: `1px solid ${feedbackToast.type === 'error' ? '#ef4444' : '#22c55e'}`,
-            borderRadius: '6px',
-            color: feedbackToast.type === 'error' ? '#fca5a5' : '#86efac',
-            fontSize: '0.78rem',
+            margin: '0.85rem 1.5rem 0 1.5rem',
+            padding: '0.65rem 1rem',
+            background: feedbackToast.type === 'error'
+              ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.18) 0%, rgba(185, 28, 28, 0.25) 100%)'
+              : 'linear-gradient(135deg, rgba(34, 197, 94, 0.18) 0%, rgba(21, 128, 61, 0.25) 100%)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            border: `1px solid ${feedbackToast.type === 'error' ? 'rgba(239, 68, 68, 0.45)' : 'rgba(34, 197, 94, 0.45)'}`,
+            boxShadow: feedbackToast.type === 'error'
+              ? '0 8px 20px rgba(239, 68, 68, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+              : '0 8px 20px rgba(34, 197, 94, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+            borderRadius: '10px',
+            color: '#f8fafc',
+            fontSize: '0.82rem',
             fontWeight: '600',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
-            animation: 'fadeIn 0.2s ease-out'
+            gap: '0.6rem',
+            animation: 'fadeIn 0.22s ease-out'
           }}>
-            {feedbackToast.type === 'error' ? <X size={15} /> : <Check size={15} />}
-            <span>{feedbackToast.message}</span>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '24px',
+              height: '24px',
+              borderRadius: '50%',
+              backgroundColor: feedbackToast.type === 'error' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(34, 197, 94, 0.3)',
+              color: feedbackToast.type === 'error' ? '#f87171' : '#4ade80',
+              flexShrink: 0
+            }}>
+              {feedbackToast.type === 'error' ? <X size={14} /> : <Check size={14} />}
+            </div>
+            <span style={{ flexGrow: 1, letterSpacing: '0.01em', lineHeight: '1.35' }}>{feedbackToast.message}</span>
           </div>
         )}
 

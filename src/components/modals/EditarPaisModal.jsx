@@ -90,11 +90,11 @@ const EditarPaisModal = ({ isOpen, onClose, pais, onGuardar, onEliminar }) => {
             try {
               const base64 = await procesarImagenBandera(file);
               setBandera(base64);
-              setMensajeFeedback('¡Imagen pegada del portapapeles con éxito!');
+              setMensajeFeedback(t('editCountry.pastedFeedback', '¡Imagen pegada del portapapeles con éxito!'));
               setTimeout(() => setMensajeFeedback(''), 3000);
             } catch (err) {
               console.error('Error al procesar imagen del portapapeles:', err);
-              setMensajeFeedback('Error al procesar imagen');
+              setMensajeFeedback(t('editCountry.pasteError', 'Error al procesar imagen'));
             }
           }
           break;
@@ -104,7 +104,7 @@ const EditarPaisModal = ({ isOpen, onClose, pais, onGuardar, onEliminar }) => {
 
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
-  }, [isOpen]);
+  }, [isOpen, t]);
 
   if (!isOpen || !pais) return null;
 
@@ -115,11 +115,11 @@ const EditarPaisModal = ({ isOpen, onClose, pais, onGuardar, onEliminar }) => {
     try {
       const base64 = await procesarImagenBandera(file);
       setBandera(base64);
-      setMensajeFeedback('Imagen cargada correctamente');
+      setMensajeFeedback(t('editCountry.loadedFeedback', 'Imagen cargada correctamente'));
       setTimeout(() => setMensajeFeedback(''), 3000);
     } catch (err) {
-      console.error('Error al subir imagen:', err);
-      alert('No se pudo procesar la imagen seleccionada.');
+      console.error('Error al subir archivo:', err);
+      setMensajeFeedback(t('editCountry.loadError', 'Error al cargar imagen'));
     }
   };
 
@@ -471,7 +471,7 @@ const EditarPaisModal = ({ isOpen, onClose, pais, onGuardar, onEliminar }) => {
                 <button
                   type="button"
                   onClick={() => {
-                    if (confirm(t('editCountry.confirmDelete', `¿Eliminar definitivamente la delegación de "${nombre}" del comité?`))) {
+                    if (confirm(t('editCountry.confirmDelete', '¿Eliminar definitivamente la delegación de "{{name}}" del comité?', { name: nombre }))) {
                       onEliminar(pais.id);
                       onClose();
                     }

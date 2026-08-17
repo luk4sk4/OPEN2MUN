@@ -71,12 +71,12 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
 
   const handleCargarArchivo = (file) => {
     setConfirmConfig({
-      title: '¿Cargar Sesión de Google Drive?',
-      message: 'Esta acción descargará y aplicará todos los datos de la sesión seleccionada.',
+      title: t('driveModal.loadConfirmTitle', '¿Cargar Sesión de Google Drive?'),
+      message: t('driveModal.loadConfirmMsg', 'Esta acción descargará y aplicará todos los datos de la sesión seleccionada.'),
       highlightText: file.name,
-      submessage: '⚠️ Los datos actuales del navegador se reemplazarán por los del archivo.',
-      confirmText: 'Cargar Sesión',
-      cancelText: 'Cancelar',
+      submessage: t('driveModal.loadConfirmSub', '⚠️ Los datos actuales del navegador se reemplazarán por los del archivo.'),
+      confirmText: t('driveModal.loadConfirmBtn', 'Cargar Sesión'),
+      cancelText: t('common.cancel', 'Cancelar'),
       type: 'load',
       onConfirm: async () => {
         setConfirmConfig(null);
@@ -84,7 +84,7 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
         const ok = await cargarSesionDesdeDrive(file.id, file.name);
         setLoading(false);
         if (ok) {
-          showNotification(`Sesión "${file.name}" cargada correctamente`);
+          showNotification(t('driveModal.sessionLoaded', 'Sesión "{{name}}" cargada correctamente', { name: file.name }));
         }
       }
     });
@@ -97,19 +97,19 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
     const res = await guardarNuevaSesionEnDrive(nuevoNombre.trim());
     setLoading(false);
     if (res) {
-      showNotification(`Sesión guardada en Drive como "${res.name}"`);
+      showNotification(t('driveModal.sessionSaved', 'Sesión guardada en Drive como "{{name}}"', { name: res.name }));
       setMostrarCrear(false);
     }
   };
 
   const handleEliminar = (file) => {
     setConfirmConfig({
-      title: '¿Eliminar archivo de Drive?',
-      message: '¿Estás seguro de que deseas eliminar permanentemente este archivo de tu Google Drive?',
+      title: t('driveModal.deleteConfirmTitle', '¿Eliminar archivo de Drive?'),
+      message: t('driveModal.deleteConfirmMsg', '¿Estás seguro de que deseas eliminar permanentemente este archivo de tu Google Drive?'),
       highlightText: file.name,
-      submessage: 'Esta acción no se puede deshacer.',
-      confirmText: 'Eliminar Archivo',
-      cancelText: 'Cancelar',
+      submessage: t('driveModal.deleteConfirmSub', 'Esta acción no se puede deshacer.'),
+      confirmText: t('common.delete', 'Eliminar Archivo'),
+      cancelText: t('common.cancel', 'Cancelar'),
       type: 'danger',
       onConfirm: async () => {
         setConfirmConfig(null);
@@ -117,7 +117,7 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
         const ok = await eliminarSesionDrive(file.id);
         setLoading(false);
         if (ok) {
-          showNotification(`Archivo "${file.name}" eliminado de Drive`);
+          showNotification(t('driveModal.sessionDeleted', 'Archivo "{{name}}" eliminado de Drive', { name: file.name }));
         }
       }
     });
@@ -182,11 +182,11 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
             </svg>
             <div>
               <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '700' }}>
-                Gestor de Sesiones en Google Drive
+                {t('driveModal.title', 'Gestor de Sesiones en Google Drive')}
               </h3>
               <div style={{ fontSize: '0.72rem', color: 'var(--muted-text, #94a3b8)', display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '2px' }}>
                 <Folder size={12} />
-                <span>Carpeta dedicada: <strong>Google Drive &gt; openMUN</strong></span>
+                <span>{t('driveModal.folderLocation', 'Carpeta dedicada: Google Drive > openMUN')}</span>
               </div>
             </div>
           </div>
@@ -212,17 +212,26 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
         {mensajeFeedback && (
           <div
             style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: mensajeFeedback.type === 'success' ? 'rgba(0, 172, 71, 0.15)' : 'rgba(234, 67, 53, 0.15)',
-              borderBottom: `1px solid ${mensajeFeedback.type === 'success' ? 'rgba(0, 172, 71, 0.3)' : 'rgba(234, 67, 53, 0.3)'}`,
-              color: mensajeFeedback.type === 'success' ? '#4ade80' : '#f87171',
-              fontSize: '0.78rem',
+              padding: '0.65rem 1rem',
+              margin: '0.75rem 1.5rem 0 1.5rem',
+              background: mensajeFeedback.type === 'success'
+                ? 'linear-gradient(135deg, rgba(6, 26, 16, 0.9) 0%, rgba(10, 40, 22, 0.95) 100%)'
+                : 'linear-gradient(135deg, rgba(24, 10, 15, 0.9) 0%, rgba(40, 14, 20, 0.95) 100%)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              border: `1px solid ${mensajeFeedback.type === 'success' ? 'rgba(34, 197, 94, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
+              borderRadius: '8px',
+              color: '#f8fafc',
+              fontSize: '0.8rem',
+              fontWeight: '600',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.4rem'
+              gap: '0.5rem',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+              animation: 'fadeIn 0.2s ease-out'
             }}
           >
-            {mensajeFeedback.type === 'success' ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+            {mensajeFeedback.type === 'success' ? <CheckCircle2 size={16} color="#4ade80" /> : <AlertCircle size={16} color="#f87171" />}
             <span>{mensajeFeedback.msg}</span>
           </div>
         )}
@@ -233,9 +242,9 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
           {!isDriveLinked ? (
             <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
               <HardDrive size={42} style={{ color: 'var(--muted-text)', marginBottom: '0.8rem', opacity: 0.7 }} />
-              <h4 style={{ margin: '0 0 0.4rem 0', fontSize: '1rem' }}>Conecta tu cuenta de Google</h4>
+              <h4 style={{ margin: '0 0 0.4rem 0', fontSize: '1rem' }}>{t('driveModal.connectHeader', 'Conecta tu cuenta de Google')}</h4>
               <p style={{ fontSize: '0.8rem', color: 'var(--muted-text)', maxWidth: '420px', margin: '0 auto 1.2rem auto' }}>
-                Guarda tus sesiones organizadas automáticamente en la carpeta <strong>openMUN/</strong> de tu Google Drive y continúa tu debate en cualquier dispositivo.
+                {t('driveModal.connectDesc', 'Guarda tus sesiones organizadas automáticamente en la carpeta openMUN/ de tu Google Drive y continúa tu debate en cualquier dispositivo.')}
               </p>
               <button
                 onClick={conectarGoogleDrive}
@@ -257,10 +266,10 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
                 {driveSyncStatus === 'connecting' ? (
                   <>
                     <RefreshCw size={15} className="spin-animation" />
-                    <span>Conectando...</span>
+                    <span>{t('common.connecting', 'Conectando...')}</span>
                   </>
                 ) : (
-                  <span>Conectar con Google Drive</span>
+                  <span>{t('header.driveConnect', 'Conectar con Google Drive')}</span>
                 )}
               </button>
 
@@ -279,10 +288,10 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#38bdf8', fontWeight: '600', marginBottom: '0.25rem' }}>
                   <AlertCircle size={14} />
-                  <span>Privacidad y uso de datos</span>
+                  <span>{t('driveModal.privacyTitle', 'Privacidad y uso de datos')}</span>
                 </div>
                 <p style={{ margin: 0 }}>
-                  La aplicación es 100% cliente/local. Tu información <strong>navega exclusivamente entre tu Google Drive y tu ordenador</strong>. Ningún dato pasa ni se almacena jamás en servidores externos o a los que nosotros tengamos acceso.
+                  {t('driveModal.privacyDesc', 'La aplicación es 100% cliente/local. Tu información navega exclusivamente entre tu Google Drive y tu ordenador. Ningún dato pasa ni se almacena jamás en servidores externos o a los que nosotros tengamos acceso.')}
                 </p>
               </div>
             </div>
@@ -303,20 +312,20 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
                 }}
               >
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--muted-text)' }}>Cuenta vinculada:</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--muted-text)' }}>{t('driveModal.linkedAccount', 'Cuenta vinculada:')}</div>
                   <div style={{ fontSize: '0.85rem', fontWeight: '600' }}>
                     {driveUser?.name || 'Google Drive'} {driveUser?.email && <span style={{ fontWeight: 'normal', color: 'var(--muted-text)', fontSize: '0.78rem' }}>({driveUser.email})</span>}
                   </div>
                   <div style={{ fontSize: '0.72rem', color: '#00ac47', display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '3px' }}>
                     <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#00ac47' }} />
-                    <span>Sincronizando activamente con: <strong>{driveFileName || 'sesion_activa.json'}</strong></span>
+                    <span>{t('driveModal.activelySyncing', 'Sincronizando activamente con:')} <strong>{driveFileName || 'sesion_activa.json'}</strong></span>
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.4rem' }}>
                   <button
                     onClick={sincronizarDriveManual}
-                    title="Forzar sincronización ahora"
+                    title={t('header.driveSyncNow', 'Sincronizar ahora')}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -332,7 +341,7 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
                     }}
                   >
                     <RefreshCw size={13} className={driveSyncStatus === 'syncing' ? 'spin-animation' : ''} />
-                    <span>Sincronizar</span>
+                    <span>{t('driveModal.sync', 'Sincronizar')}</span>
                   </button>
 
                   <button
@@ -340,7 +349,7 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
                       desconectarGoogleDrive();
                       onClose();
                     }}
-                    title="Desconectar cuenta"
+                    title={t('header.driveDisconnect', 'Desconectar Google Drive')}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -356,7 +365,7 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
                     }}
                   >
                     <LogOut size={13} />
-                    <span>Desconectar</span>
+                    <span>{t('driveModal.disconnect', 'Desconectar')}</span>
                   </button>
                 </div>
               </div>
@@ -365,7 +374,7 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
               {!mostrarCrear ? (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '0.82rem', fontWeight: '700', color: 'var(--text-color)' }}>
-                    Archivos en Google Drive ({driveFilesList.length})
+                    {t('driveModal.filesInDrive', 'Archivos en Google Drive')} ({driveFilesList.length})
                   </span>
                   <div style={{ display: 'flex', gap: '0.4rem' }}>
                     <button
@@ -385,7 +394,7 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
                       }}
                     >
                       <RefreshCw size={12} className={loading ? 'spin-animation' : ''} />
-                      <span>Actualizar</span>
+                      <span>{t('driveModal.refresh', 'Actualizar')}</span>
                     </button>
 
                     <button
@@ -405,7 +414,7 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
                       }}
                     >
                       <Plus size={13} />
-                      <span>Guardar como nuevo archivo...</span>
+                      <span>{t('driveModal.saveAsNew', 'Guardar como nuevo archivo...')}</span>
                     </button>
                   </div>
                 </div>
@@ -423,14 +432,14 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
                   }}
                 >
                   <div style={{ fontSize: '0.8rem', fontWeight: '600', color: '#2684fc' }}>
-                    Guardar sesión actual como nuevo archivo en Drive
+                    {t('driveModal.saveCurrentAsNew', 'Guardar sesión actual como nuevo archivo en Drive')}
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <input
                       type="text"
                       value={nuevoNombre}
                       onChange={(e) => setNuevoNombre(e.target.value)}
-                      placeholder="Nombre del archivo (ej. comite_seguridad.json)"
+                      placeholder={t('driveModal.namePlaceholder', 'Nombre del archivo (ej. comite_seguridad.json)')}
                       style={{
                         flex: 1,
                         background: 'var(--input-bg, rgba(0,0,0,0.3))',
@@ -456,7 +465,7 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
                         cursor: 'pointer'
                       }}
                     >
-                      Guardar
+                      {t('common.save', 'Guardar')}
                     </button>
                     <button
                       type="button"
@@ -471,7 +480,7 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
                         cursor: 'pointer'
                       }}
                     >
-                      Cancelar
+                      {t('common.cancel', 'Cancelar')}
                     </button>
                   </div>
                 </form>
@@ -481,7 +490,7 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', maxHeight: '350px', overflowY: 'auto' }}>
                 {driveFilesList.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--muted-text)', fontSize: '0.8rem' }}>
-                    No hay archivos de sesión guardados en la carpeta <strong>openMUN</strong> de Google Drive.
+                    {t('driveModal.noFilesSaved', 'No hay archivos de sesión guardados en la carpeta openMUN de Google Drive.')}
                   </div>
                 ) : (
                   driveFilesList.map((file) => {
@@ -525,12 +534,12 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
                                   color: '#2684fc',
                                   fontWeight: 'bold'
                                 }}>
-                                  Activo
+                                  {t('common.active', 'Activo')}
                                 </span>
                               )}
                             </div>
                             <div style={{ fontSize: '0.7rem', color: 'var(--muted-text)', display: 'flex', gap: '0.8rem', marginTop: '2px' }}>
-                              <span>Modificado: {file.modifiedTime ? new Date(file.modifiedTime).toLocaleString() : '---'}</span>
+                              <span>{t('driveModal.modified', 'Modificado:')} {file.modifiedTime ? new Date(file.modifiedTime).toLocaleString() : '---'}</span>
                               {file.size && <span>{formatFileSize(file.size)}</span>}
                             </div>
                           </div>
@@ -540,7 +549,7 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
                           <button
                             onClick={() => handleCargarArchivo(file)}
-                            title="Cargar esta sesión y reemplazar estado local"
+                            title={t('driveModal.loadTitle', 'Cargar esta sesión y reemplazar estado local')}
                             style={{
                               display: 'flex',
                               alignItems: 'center',
@@ -556,16 +565,16 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
                             }}
                           >
                             <Download size={12} />
-                            <span>Cargar</span>
+                            <span>{t('driveModal.load', 'Cargar')}</span>
                           </button>
 
                           {!isCurrent && (
                             <button
                               onClick={async () => {
                                 await vincularArchivoDrive(file.id, file.name);
-                                showNotification(`Sincronización vinculada a "${file.name}"`);
+                                showNotification(t('driveModal.linkedNotification', 'Sincronización vinculada a "{{name}}"', { name: file.name }));
                               }}
-                              title="Vincular guardado automático a este archivo"
+                              title={t('driveModal.linkTitle', 'Vincular guardado automático a este archivo')}
                               style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -580,22 +589,22 @@ const DriveSessionsModal = ({ isOpen, onClose }) => {
                               }}
                             >
                               <Link size={12} />
-                              <span>Vincular</span>
+                              <span>{t('driveModal.link', 'Vincular')}</span>
                             </button>
                           )}
 
                           <button
                             onClick={() => handleEliminar(file)}
-                            title="Eliminar archivo de Drive"
+                            title={t('driveModal.deleteTitle', 'Eliminar de Google Drive')}
                             style={{
-                              display: 'flex',
-                              alignItems: 'center',
                               background: 'transparent',
-                              border: '1px solid transparent',
-                              color: 'var(--muted-text)',
-                              borderRadius: '5px',
+                              border: 'none',
+                              color: '#ef4444',
+                              borderRadius: '4px',
                               padding: '4px',
                               cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
                               opacity: 0.7
                             }}
                             onMouseEnter={(e) => { e.currentTarget.style.color = '#ea4335'; e.currentTarget.style.opacity = '1'; }}

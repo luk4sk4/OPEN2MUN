@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { CheckCircle2, AlertCircle, Info, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Info, AlertTriangle, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import peerService, { MSG_TYPES, generateRoomCode, DEFAULT_ROOM_SETTINGS } from '../services/peerService';
 
 const P2PContext = createContext();
 
 export const P2PProvider = ({ children }) => {
+  const { t } = useTranslation();
   const [viewMode, setViewMode] = useState(() => {
     // Detectar si la URL contiene parámetros de unión directa (?room=... o ?mode=...)
     if (typeof window !== 'undefined') {
@@ -122,7 +124,7 @@ export const P2PProvider = ({ children }) => {
         setRoomId(data.roomId);
         if (data.roomSettings) setRoomSettings(data.roomSettings);
         localStorage.setItem('openmun_last_room_id', data.roomId);
-        addNotification(`Sala P2P iniciada con éxito (${data.roomId})`, 'success');
+        addNotification(t('liveSession.notifications.roomStarted', { roomId: data.roomId }), 'success');
       }
 
       if (event === 'connected') {
@@ -138,7 +140,7 @@ export const P2PProvider = ({ children }) => {
         }
         if (data.roomSettings) setRoomSettings(data.roomSettings);
         if (data.speakingRequests) setSpeakingRequests(data.speakingRequests);
-        addNotification(`Conectado a la sala como ${data.country || data.role}`, 'success');
+        addNotification(t('liveSession.notifications.connectedAs', { roleOrCountry: data.country || data.role }), 'success');
       }
 
       if (event === 'session_action') {
@@ -150,7 +152,7 @@ export const P2PProvider = ({ children }) => {
 
       if (event === 'disconnected') {
         setConnectionStatus('disconnected');
-        addNotification(data.reason || 'Desconectado de la sala', 'warning');
+        addNotification(data.reason || t('liveSession.notifications.disconnectedFromRoom'), 'warning');
       }
 
       if (event === 'error') {
@@ -164,19 +166,19 @@ export const P2PProvider = ({ children }) => {
       }
 
       if (event === 'peer_authenticated') {
-        addNotification(`${data.meta.country || data.meta.role} se ha unido a la sala`, 'info');
+        addNotification(t('liveSession.notifications.peerJoined', { peer: data.meta.country || data.meta.role }), 'info');
       }
 
       if (event === 'peer_disconnected') {
         if (data.meta) {
-          addNotification(`${data.meta.country || data.meta.role} se ha desconectado`, 'info');
+          addNotification(t('liveSession.notifications.peerDisconnected', { peer: data.meta.country || data.meta.role }), 'info');
         }
       }
 
       if (event === 'room_settings_updated') {
         setRoomSettings(data);
         localStorage.setItem('openmun_room_settings', JSON.stringify(data));
-        addNotification('Ajustes de sala y permisos actualizados', 'info');
+        addNotification(t('liveSession.notifications.roomSettingsUpdated'), 'info');
       }
 
       // Solicitud directa de orador (Host auto-adiciona a la sesión)
@@ -186,12 +188,12 @@ export const P2PProvider = ({ children }) => {
           if (sessionActionHandlersRef.current.onAddSpeakerGSL) {
             sessionActionHandlersRef.current.onAddSpeakerGSL({ nombre: country, bandera: '🇺🇳' });
           }
-          addNotification(`${country} se ha añadido a la Lista de Oradores (Directo)`, 'success');
+          addNotification(t('liveSession.notifications.addedToSpeakersListDirect', { country }), 'success');
         } else if (speechType === 'CAUCUS') {
           if (sessionActionHandlersRef.current.onAddSpeakerCaucus) {
             sessionActionHandlersRef.current.onAddSpeakerCaucus({ nombre: country, bandera: '🇺🇳' });
           }
-          addNotification(`${country} se ha añadido al Caucus Moderado (Directo)`, 'success');
+          addNotification(t('liveSession.notifications.addedToCaucusDirect', { country }), 'success');
         }
       }
 
@@ -210,16 +212,16 @@ export const P2PProvider = ({ children }) => {
             sessionActionHandlersRef.current.onAddSpeakerCaucus({ nombre: requestData.country, bandera: '🇺🇳' });
           } else if (requestData.speechType === 'POINT_MOTION' && sessionActionHandlersRef.current.onAddMotion) {
             sessionActionHandlersRef.current.onAddMotion({
-              tipo: requestData.details?.tipo || 'Punto de Orden',
+              tipo: requestData.details?.tipo || t('liveSession.defaultMotionType', 'Punto de Orden'),
               proponente: requestData.country,
-              tema: requestData.details?.tema || 'Solicitud de Delegación',
+              tema: requestData.details?.tema || t('liveSession.defaultMotionTopic', 'Solicitud de Delegación'),
               tiempoTotal: requestData.details?.tiempoTotal || 0,
               tiempoOrador: requestData.details?.tiempoOrador || 0
             });
           }
-          addNotification(`Solicitud de ${requestData.country} aprobada por Secretaría`, 'success');
+          addNotification(t('liveSession.notifications.requestApprovedBySec', { country: requestData.country }), 'success');
         } else if (action === 'reject') {
-          addNotification(`Solicitud rechazada por Secretaría`, 'info');
+          addNotification(t('liveSession.notifications.requestRejectedBySec'), 'info');
         }
       }
 
@@ -229,14 +231,14 @@ export const P2PProvider = ({ children }) => {
         if (sessionActionHandlersRef.current.onCastVote) {
           sessionActionHandlersRef.current.onCastVote(country, vote);
         }
-        addNotification(`Voto registrado de ${country}: ${vote}`, 'info');
+        addNotification(t('liveSession.notifications.voteRegistered', { country, vote }), 'info');
       }
 
       // Recepción de Notas
       if (event === 'note_for_chair') {
         setNotes(prev => [data, ...prev]);
         setUnreadNotesCount(prev => prev + 1);
-        addNotification(`Nota de ${data.from} para ${data.to}`, 'info');
+        addNotification(t('liveSession.notifications.noteFromTo', { from: data.from, to: data.to }), 'info');
       }
 
       // Mensajes recibidos en Host desde clientes
@@ -255,7 +257,7 @@ export const P2PProvider = ({ children }) => {
             peerService.broadcastSpeakingRequests(next);
             return next;
           });
-          addNotification(`${senderMeta.country} ha solicitado turno (${message.payload.speechType})`, 'info');
+          addNotification(t('liveSession.notifications.turnRequested', { country: senderMeta.country, speechType: message.payload.speechType }), 'info');
         }
       }
 
@@ -295,22 +297,22 @@ export const P2PProvider = ({ children }) => {
           setSpeakingRequests(message.payload || []);
         } else if (message.type === MSG_TYPES.ROOM_SETTINGS_UPDATED) {
           setRoomSettings(message.payload);
-          addNotification('Ajustes de sala y permisos actualizados por la Mesa', 'info');
+          addNotification(t('liveSession.notifications.settingsUpdatedByChair'), 'info');
         } else if (message.type === MSG_TYPES.SPEAKING_PROCESSED) {
           const { success, mode, message: msgText } = message.payload || {};
-          addNotification(msgText || (success ? 'Solicitud procesada' : 'No se pudo procesar'), success ? 'success' : 'warning');
+          addNotification(msgText || (success ? t('liveSession.notifications.requestProcessed') : t('liveSession.notifications.couldNotProcess')), success ? 'success' : 'warning');
         } else if (message.type === MSG_TYPES.NOTE_RECEIVED) {
           setNotes(prev => [message.payload, ...prev]);
           setUnreadNotesCount(prev => prev + 1);
-          addNotification(`Nueva nota de ${message.payload.from}`, 'info');
+          addNotification(t('liveSession.notifications.newNoteFrom', { from: message.payload.from }), 'info');
         } else if (message.type === MSG_TYPES.CRISIS_ALERT) {
-          addNotification(`AVISO DE CRISIS: ${message.payload.title || 'Comunicado oficial'}`, 'error');
+          addNotification(t('liveSession.notifications.crisisNotice', { title: message.payload.title || t('liveSession.officialCommunique', 'Comunicado oficial') }), 'error');
         } else if (message.type === MSG_TYPES.KICK) {
           peerService.destroy();
           setConnectionStatus('disconnected');
           setRole('none');
           setViewMode('join');
-          addNotification('Has sido desconectado de la sala por la Mesa.', 'warning');
+          addNotification(t('liveSession.notifications.kickedByChair'), 'warning');
         }
       }
     });
@@ -318,7 +320,7 @@ export const P2PProvider = ({ children }) => {
     return () => {
       unsubscribe();
     };
-  }, [addNotification]);
+  }, [addNotification, t]);
 
   // Guardar contraseñas y ajustes cuando cambien
   useEffect(() => {
@@ -343,8 +345,8 @@ export const P2PProvider = ({ children }) => {
     } else if (connectionStatus === 'connected' && (role === 'secretariat' || role === 'chair')) {
       peerService.updateRoomSettingsAsClient(merged);
     }
-    addNotification('Ajustes de sala guardados', 'success');
-  }, [roomSettings, connectionStatus, role, addNotification]);
+    addNotification(t('liveSession.notifications.roomSettingsSaved'), 'success');
+  }, [roomSettings, connectionStatus, role, addNotification, t]);
 
   const startHosting = useCallback(async (customRoomId, secPass, bckPass, customSettings = null) => {
     const finalRoomId = customRoomId || roomId || generateRoomCode();
@@ -373,8 +375,8 @@ export const P2PProvider = ({ children }) => {
     setConnectionStatus('disconnected');
     setConnectedPeers([]);
     setRole('none');
-    addNotification('Sala P2P finalizada', 'info');
-  }, [addNotification]);
+    addNotification(t('liveSession.notifications.roomEnded'), 'info');
+  }, [addNotification, t]);
 
   const joinRoom = useCallback(async ({ targetRoomId, targetRole, password, country, isLocalBroadcast = false }) => {
     setConnectionStatus('connecting');
@@ -440,9 +442,9 @@ export const P2PProvider = ({ children }) => {
         sessionActionHandlersRef.current.onAddSpeakerCaucus({ nombre: req.country, bandera: '🇺🇳' });
       } else if (req.speechType === 'POINT_MOTION' && sessionActionHandlersRef.current.onAddMotion) {
         sessionActionHandlersRef.current.onAddMotion({
-          tipo: req.details?.tipo || 'Punto de Orden',
+          tipo: req.details?.tipo || t('liveSession.defaultMotionType', 'Punto de Orden'),
           proponente: req.country,
-          tema: req.details?.tema || 'Solicitud de Delegación',
+          tema: req.details?.tema || t('liveSession.defaultMotionTopic', 'Solicitud de Delegación'),
           tiempoTotal: req.details?.tiempoTotal || 0,
           tiempoOrador: req.details?.tiempoOrador || 0
         });
@@ -452,14 +454,14 @@ export const P2PProvider = ({ children }) => {
         peerService.broadcastSpeakingRequests(next);
         return next;
       });
-      addNotification(`Aceptada solicitud de ${req.country}`, 'success');
+      addNotification(t('liveSession.notifications.requestAcceptedFor', { country: req.country }), 'success');
     } else {
       // Si somos Secretaría (cliente remoto o local), enviamos el comando al host
       peerService.processSpeakingRequestAsClient(req.id, 'accept', req);
       setSpeakingRequests(prev => prev.filter(r => r.id !== req.id));
-      addNotification(`Aprobación enviada para ${req.country}`, 'info');
+      addNotification(t('liveSession.notifications.approvalSentFor', { country: req.country }), 'info');
     }
-  }, [connectionStatus, addNotification]);
+  }, [connectionStatus, addNotification, t]);
 
   const rejectSpeakingRequest = useCallback((reqId) => {
     if (connectionStatus === 'host_active') {
@@ -472,15 +474,15 @@ export const P2PProvider = ({ children }) => {
       peerService.processSpeakingRequestAsClient(reqId, 'reject');
       setSpeakingRequests(prev => prev.filter(r => r.id !== reqId));
     }
-    addNotification('Solicitud rechazada', 'info');
-  }, [connectionStatus, addNotification]);
+    addNotification(t('liveSession.notifications.requestRejected'), 'info');
+  }, [connectionStatus, addNotification, t]);
 
   const castVote = useCallback((voteOption) => {
     if (connectionStatus === 'connected' && role === 'delegate') {
       peerService.castVoteAsClient(clientCountry, voteOption);
-      addNotification(`Voto emitido: ${voteOption}`, 'success');
+      addNotification(t('liveSession.notifications.voteCast', { vote: voteOption }), 'success');
     }
-  }, [connectionStatus, role, clientCountry, addNotification]);
+  }, [connectionStatus, role, clientCountry, addNotification, t]);
 
   const kickPeer = useCallback((peerId) => {
     if (connectionStatus === 'host_active') {
@@ -565,39 +567,84 @@ export const P2PProvider = ({ children }) => {
       {notifications.length > 0 && (
         <div style={{
           position: 'fixed',
-          bottom: '20px',
-          right: '20px',
+          bottom: '24px',
+          right: '24px',
           zIndex: 100000,
           display: 'flex',
           flexDirection: 'column',
-          gap: '0.5rem',
+          gap: '0.65rem',
           pointerEvents: 'none'
         }}>
           {notifications.map(n => {
             const IconComponent = n.type === 'error' ? AlertCircle : (n.type === 'success' ? CheckCircle2 : (n.type === 'warning' ? AlertTriangle : Info));
-            const iconColor = n.type === 'error' ? '#ef4444' : (n.type === 'success' ? '#22c55e' : (n.type === 'warning' ? '#f59e0b' : '#3b82f6'));
+            const iconColor = n.type === 'error' ? '#f87171' : (n.type === 'success' ? '#4ade80' : (n.type === 'warning' ? '#fbbf24' : '#60a5fa'));
+            const accentBg = n.type === 'error' ? 'rgba(239, 68, 68, 0.22)' : (n.type === 'success' ? 'rgba(34, 197, 94, 0.22)' : (n.type === 'warning' ? 'rgba(245, 158, 11, 0.22)' : 'rgba(59, 130, 246, 0.22)'));
+            const borderColor = n.type === 'error' ? 'rgba(239, 68, 68, 0.35)' : (n.type === 'success' ? 'rgba(34, 197, 94, 0.35)' : (n.type === 'warning' ? 'rgba(245, 158, 11, 0.35)' : 'rgba(59, 130, 246, 0.35)'));
+            const bgGradient = n.type === 'error'
+              ? 'linear-gradient(135deg, rgba(24, 10, 15, 0.95) 0%, rgba(40, 14, 20, 0.98) 100%)'
+              : (n.type === 'success'
+                ? 'linear-gradient(135deg, rgba(6, 26, 16, 0.95) 0%, rgba(10, 40, 22, 0.98) 100%)'
+                : (n.type === 'warning'
+                  ? 'linear-gradient(135deg, rgba(28, 22, 10, 0.95) 0%, rgba(42, 32, 12, 0.98) 100%)'
+                  : 'linear-gradient(135deg, rgba(10, 20, 36, 0.95) 0%, rgba(16, 30, 54, 0.98) 100%)'));
 
             return (
               <div
                 key={n.id}
                 style={{
-                  backgroundColor: n.type === 'error' ? '#450a0a' : (n.type === 'success' ? '#052e16' : '#18181b'),
-                  border: `1px solid ${n.type === 'error' ? '#ef4444' : (n.type === 'success' ? '#22c55e' : '#3f3f46')}`,
-                  color: '#ffffff',
-                  padding: '0.65rem 1rem',
-                  borderRadius: '8px',
-                  fontSize: '0.85rem',
+                  background: bgGradient,
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
+                  border: `1px solid ${borderColor}`,
+                  borderLeft: `4px solid ${iconColor}`,
+                  color: '#f8fafc',
+                  padding: '0.8rem 1.15rem',
+                  borderRadius: '12px',
+                  fontSize: '0.86rem',
                   fontWeight: '600',
-                  boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-                  animation: 'slideInRight 0.2s ease',
+                  boxShadow: `0 14px 36px rgba(0, 0, 0, 0.5), 0 0 15px ${borderColor}`,
+                  animation: 'slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.5rem',
-                  maxWidth: '380px'
+                  gap: '0.8rem',
+                  maxWidth: '430px',
+                  pointerEvents: 'auto'
                 }}
               >
-                <IconComponent size={16} color={iconColor} style={{ flexShrink: 0 }} />
-                <span>{n.text}</span>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '8px',
+                  backgroundColor: accentBg,
+                  flexShrink: 0
+                }}>
+                  <IconComponent size={17} color={iconColor} />
+                </div>
+                <span style={{ flexGrow: 1, lineHeight: '1.4', letterSpacing: '0.01em' }}>{n.text}</span>
+                <button
+                  onClick={() => setNotifications(prev => prev.filter(item => item.id !== n.id))}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'rgba(255, 255, 255, 0.45)',
+                    cursor: 'pointer',
+                    padding: '3px',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    transition: 'all 0.15s ease'
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.color = '#ffffff'; e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255, 255, 255, 0.45)'; e.currentTarget.style.backgroundColor = 'transparent'; }}
+                  title="Cerrar"
+                >
+                  <X size={14} />
+                </button>
               </div>
             );
           })}

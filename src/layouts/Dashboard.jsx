@@ -276,7 +276,8 @@ const Dashboard = () => {
     broadcastCurrentState,
     registerSessionHandlers,
     roomSettings,
-    setViewMode
+    setViewMode,
+    addNotification
   } = useP2P();
 
   // Registrar handlers de sesión para solicitudes P2P automáticas, acciones remotas y sincronización
@@ -449,51 +450,77 @@ const Dashboard = () => {
   // El ancho del tablero se gestiona a través del callback ref (boardRef)
 
   const handleFileUpload = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const parsed = JSON.parse(event.target.result);
+        let parsed;
+        try {
+          parsed = JSON.parse(event.target.result);
+        } catch (jsonErr) {
+          const msg = t('dashboard.invalidJsonSyntax', 'El archivo seleccionado no es un archivo JSON válido o contiene errores de sintaxis.');
+          if (addNotification) addNotification(msg, 'error');
+          return;
+        }
+
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+          const msg = t('dashboard.invalidJsonFormat', 'El archivo importado no contiene una estructura JSON válida de objeto.');
+          if (addNotification) addNotification(msg, 'error');
+          return;
+        }
+
         const ok = cargarSesionJSON(parsed, (newConfig) => {
-          if (newConfig) {
+          if (newConfig && typeof newConfig === 'object') {
             setConfig(newConfig);
           }
         });
+
         if (ok) {
           const cfg = parsed.config || parsed.openmun_config || (parsed.localStorageSnapshot && parsed.localStorageSnapshot.openmun_config);
           if (cfg) {
             try {
               const parsedCfg = typeof cfg === 'string' ? JSON.parse(cfg) : cfg;
-              setConfig(parsedCfg);
+              if (parsedCfg && typeof parsedCfg === 'object') {
+                setConfig(parsedCfg);
+              }
             } catch (err) {
               console.error('Error parseando config importada:', err);
             }
           }
-          alert('¡Sesión activa y todos los datos importados exitosamente!');
+          const msg = t('dashboard.importSuccess', '¡Sesión activa y todos los datos importados exitosamente!');
+          if (addNotification) addNotification(msg, 'success');
+        } else {
+          const msg = t('dashboard.importInvalidError', 'El archivo JSON importado no corresponde a una sesión válida de OpenMUN. Se canceló la importación y tu sesión actual se mantiene intacta.');
+          if (addNotification) addNotification(msg, 'error');
         }
       } catch (err) {
-        alert('Error al leer el archivo JSON: ' + err.message);
+        const msg = `${t('dashboard.importError', 'Error al leer el archivo JSON:')} ${err.message}`;
+        if (addNotification) addNotification(msg, 'error');
       }
+    };
+    reader.onerror = () => {
+      const msg = 'Error al leer el archivo desde el disco.';
+      if (addNotification) addNotification(msg, 'error');
     };
     reader.readAsText(file);
     e.target.value = '';
   };
 
   const tabs = ['HOME', 'COMIENZO', 'GSL', 'DEBATE', 'VOTING', 'INFO', 'LIBRE'];
-  const widgets = config.layouts[activeTab] || [];
+  const widgets = config?.layouts?.[activeTab] || configMaster?.layouts?.[activeTab] || [];
 
   // Actualizador seguro para la pestaña activa sin stale closures
   const updateActiveLayout = useCallback((updater) => {
     const currentTab = activeTabRef.current;
     setConfig(prev => {
-      const currentWidgets = prev.layouts[currentTab] || [];
+      const currentWidgets = prev?.layouts?.[currentTab] || configMaster?.layouts?.[currentTab] || [];
       const newWidgets = typeof updater === 'function' ? updater(currentWidgets) : updater;
       return {
         ...prev,
         layouts: {
-          ...prev.layouts,
+          ...(prev?.layouts || configMaster?.layouts),
           [currentTab]: newWidgets
         }
       };
@@ -506,7 +533,7 @@ const Dashboard = () => {
     e.preventDefault();
     e.stopPropagation();
     setFocusedWidgetId(widgetId);
-    const currentLayout = config.layouts[activeTabRef.current] || [];
+    const currentLayout = config?.layouts?.[activeTabRef.current] || configMaster?.layouts?.[activeTabRef.current] || [];
     const targetWidget = currentLayout.find(w => w.i === widgetId);
     if (!targetWidget) return;
 
@@ -532,7 +559,7 @@ const Dashboard = () => {
     e.preventDefault();
     e.stopPropagation();
     setFocusedWidgetId(widgetId);
-    const currentLayout = config.layouts[activeTabRef.current] || [];
+    const currentLayout = config?.layouts?.[activeTabRef.current] || configMaster?.layouts?.[activeTabRef.current] || [];
     const targetWidget = currentLayout.find(w => w.i === widgetId);
     if (!targetWidget) return;
 
@@ -616,7 +643,7 @@ const Dashboard = () => {
   const handleToggleWidget = useCallback((widgetId, shouldBeActive) => {
     const currentTab = activeTabRef.current;
     setConfig(prev => {
-      const currentWidgets = prev.layouts[currentTab] || [];
+      const currentWidgets = prev?.layouts?.[currentTab] || configMaster?.layouts?.[currentTab] || [];
       const exists = currentWidgets.some(w => w.i === widgetId);
 
       let nextWidgets = [...currentWidgets];
@@ -639,7 +666,7 @@ const Dashboard = () => {
       return {
         ...prev,
         layouts: {
-          ...prev.layouts,
+          ...(prev?.layouts || configMaster?.layouts),
           [currentTab]: nextWidgets
         }
       };
@@ -671,7 +698,7 @@ const Dashboard = () => {
       return {
         ...prev,
         layouts: {
-          ...prev.layouts,
+          ...(prev?.layouts || configMaster?.layouts),
           [currentTab]: newWidgets
         }
       };
@@ -683,7 +710,7 @@ const Dashboard = () => {
     setConfig(prev => ({
       ...prev,
       layouts: {
-        ...prev.layouts,
+        ...(prev?.layouts || configMaster?.layouts),
         [currentTab]: []
       }
     }));
@@ -695,7 +722,7 @@ const Dashboard = () => {
     setConfig(prev => ({
       ...prev,
       layouts: {
-        ...prev.layouts,
+        ...(prev?.layouts || configMaster?.layouts),
         [tabToReset]: JSON.parse(JSON.stringify(defaultWidgets))
       }
     }));
@@ -706,7 +733,7 @@ const Dashboard = () => {
     setConfig(prev => ({
       ...prev,
       layouts: {
-        ...prev.layouts,
+        ...(prev?.layouts || configMaster?.layouts),
         [tabToApply]: JSON.parse(JSON.stringify(templateWidgets))
       }
     }));

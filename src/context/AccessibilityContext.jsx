@@ -67,24 +67,41 @@ export const getThemeCssVars = (theme, accessibility) => {
 
 export const AccessibilityProvider = ({ children }) => {
   // Cargar configuración desde localStorage si existe, o usar configMaster por defecto
-  const [config, setConfig] = useState(() => {
+  const sanitizeConfig = useCallback((rawConfig, fallback = configMaster) => {
+    if (!rawConfig || typeof rawConfig !== 'object') return fallback;
+    const layouts = (rawConfig.layouts && typeof rawConfig.layouts === 'object')
+      ? { ...configMaster.layouts, ...rawConfig.layouts }
+      : (fallback?.layouts || configMaster.layouts);
+    if (layouts.LAB !== undefined && layouts.LIBRE === undefined) {
+      delete layouts.LAB;
+      layouts.LIBRE = [];
+    }
+    return {
+      ...configMaster,
+      ...rawConfig,
+      layouts
+    };
+  }, []);
+
+  const [config, setConfigRaw] = useState(() => {
     try {
       const saved = localStorage.getItem('openmun_config');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.layouts) {
-          if (parsed.layouts.LAB !== undefined && parsed.layouts.LIBRE === undefined) {
-            delete parsed.layouts.LAB;
-            parsed.layouts.LIBRE = [];
-          }
-        }
-        return parsed;
+        return sanitizeConfig(parsed);
       }
     } catch (err) {
       console.error('Error al leer config de localStorage:', err);
     }
     return configMaster;
   });
+
+  const setConfig = useCallback((updater) => {
+    setConfigRaw(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      return sanitizeConfig(next, prev);
+    });
+  }, [sanitizeConfig]);
 
   const [isAccessOpen, setIsAccessOpen] = useState(false);
 

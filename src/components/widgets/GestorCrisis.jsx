@@ -245,7 +245,7 @@ const GestorCrisis = () => {
 
     setRelojSimulacion(nuevoReloj);
     setModalAjusteReloj(false);
-    showToast(`Reloj ajustado: Día ${diaNum} · ${String(horasNum).padStart(2, '0')}:${String(minutosNum).padStart(2, '0')} hrs`);
+    showToast(`${t('crisis.clockAdjusted', 'Reloj ajustado:')} ${t('timers.day', 'Día')} ${diaNum} · ${String(horasNum).padStart(2, '0')}:${String(minutosNum).padStart(2, '0')} hrs`);
   };
 
   // Saltos rápidos en el formulario de ajuste
@@ -468,7 +468,7 @@ const GestorCrisis = () => {
   };
 
   // Formato legible del reloj de simulación
-  const formatoHoraSimulada = `Día ${relojSimulacion.dia} · ${String(relojSimulacion.horas).padStart(2, '0')}:${String(relojSimulacion.minutos).padStart(2, '0')} hrs`;
+  const formatoHoraSimulada = `${t('timers.day', 'Día')} ${relojSimulacion.dia} · ${String(relojSimulacion.horas).padStart(2, '0')}:${String(relojSimulacion.minutos).padStart(2, '0')} hrs`;
 
   // Evento activo fijado como "Última Hora"
   const eventoBannerActivo = useMemo(() => {

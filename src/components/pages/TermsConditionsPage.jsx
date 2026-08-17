@@ -108,7 +108,10 @@ export default function TermsConditionsPage({ isLight = false, onBack }) {
               </h3>
             </div>
             <p style={{ fontSize: '0.92rem', lineHeight: '1.6', color: textMuted, margin: 0 }}>
-              OpenMUN es desarrollado por Lucas R. Kowalski y distribuido como Software Libre. Eres libre de usarlo, compartirlo y adaptarlo respetando los derechos morales del autor y las licencias de código abierto publicadas en el repositorio oficial de GitHub.
+              {t(
+                'terms.sec2Desc',
+                'OpenMUN es desarrollado por Lucas R. Kowalski y distribuido como Software Libre. Eres libre de usarlo, compartirlo y adaptarlo respetando los derechos morales del autor y las licencias de código abierto publicadas en el repositorio oficial de GitHub.'
+              )}
             </p>
           </div>
 
@@ -123,11 +126,14 @@ export default function TermsConditionsPage({ isLight = false, onBack }) {
               </h3>
             </div>
             <p style={{ fontSize: '0.92rem', lineHeight: '1.6', color: textMuted, margin: 0 }}>
-              Dado que las sesiones se guardan de forma local en el navegador o en tu propio Google Drive, la responsabilidad de guardar exportaciones en archivo JSON o mantener la sesión antes de limpiar el historial del navegador corresponde al usuario.
+              {t(
+                'terms.sec3Desc',
+                'Dado que las sesiones se guardan de forma local en el navegador o en tu propio Google Drive, la responsabilidad de guardar exportaciones en archivo JSON o mantener la sesión antes de limpiar el historial del navegador corresponde al usuario.'
+              )}
             </p>
             <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: textMuted }}>
               <CheckCircle2 size={16} style={{ color: '#3b82f6', flexShrink: 0 }} />
-              <span>Te recomendamos exportar tu sesión (.json) periódicamente en debates extensos.</span>
+              <span>{t('terms.sec3Check1', 'Te recomendamos exportar tu sesión (.json) periódicamente en debates extensos.')}</span>
             </div>
           </div>
 
@@ -142,19 +148,22 @@ export default function TermsConditionsPage({ isLight = false, onBack }) {
               </h3>
             </div>
             <p style={{ fontSize: '0.92rem', lineHeight: '1.6', color: textMuted, margin: 0 }}>
-              El software se proporciona "tal cual" (AS IS), sin garantías explícitas o implícitas de disponibilidad ininterrumpida. Si bien se aplican los máximos estándares de calidad tecnológica, el equipo no se responsabiliza por fallos de conectividad de red local de terceros durante los debates.
+              {t(
+                'terms.sec4Desc',
+                'El software se proporciona "tal cual" (AS IS), sin garantías explícitas o implícitas de disponibilidad ininterrumpida. Si bien se aplican los máximos estándares de calidad tecnológica, el equipo no se responsabiliza por fallos de conectividad de red local de terceros durante los debates.'
+              )}
             </p>
           </div>
         </div>
 
         {/* Footer */}
         <div style={{ marginTop: '3.5rem', textAlign: 'center', fontSize: '0.85rem', color: textMuted }}>
-          <p style={{ margin: '0 0 0.75rem 0' }}>Última actualización: Agosto {new Date().getFullYear()} — OpenMUN</p>
+          <p style={{ margin: '0 0 0.75rem 0' }}>{t('common.lastUpdated', 'Última actualización:')} {t('common.august', 'Agosto')} {new Date().getFullYear()} — OpenMUN</p>
           <button
             onClick={onBack}
             style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontWeight: '700', fontSize: '0.9rem', textDecoration: 'underline' }}
           >
-            ← Volver al panel principal de OpenMUN
+            {t('common.backToMainPanel', '← Volver al panel principal de OpenMUN')}
           </button>
         </div>
       </main>

@@ -637,7 +637,7 @@ const ImportarPaises = () => {
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '800', fontSize: '0.86rem' }}>
-              <span>Importar Países</span>
+              <span>{t('countries.importTitle', 'Importar Países')}</span>
               <span style={{
                 fontSize: '0.68rem',
                 backgroundColor: 'rgba(59, 130, 246, 0.18)',
@@ -646,7 +646,7 @@ const ImportarPaises = () => {
                 borderRadius: '4px',
                 fontWeight: '700'
               }}>
-                {paises.length} en sesión
+                {paises.length} {t('countries.inSession', 'en sesión')}
               </span>
               {totalVetosSesion > 0 && (
                 <span style={{
@@ -660,7 +660,7 @@ const ImportarPaises = () => {
                   gap: '2px',
                   fontWeight: '700'
                 }}>
-                  <Crown size={10} /> {totalVetosSesion} Veto
+                  <Crown size={10} /> {totalVetosSesion} {t('countries.veto', 'Veto')}
                 </span>
               )}
             </div>
@@ -672,7 +672,7 @@ const ImportarPaises = () => {
           <button
             type="button"
             onClick={handleDescargarPlantilla}
-            title="Descargar plantilla de Excel / CSV lista para rellenar"
+            title={t('countries.downloadTemplateHint', 'Descargar plantilla de Excel / CSV lista para rellenar')}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -689,7 +689,7 @@ const ImportarPaises = () => {
             }}
           >
             <Download size={12} color="#3b82f6" />
-            <span>Plantilla</span>
+            <span>{t('countries.downloadTemplate', 'Plantilla')}</span>
           </button>
 
           {paises.length > 0 && !confirmandoVaciar && (
@@ -709,29 +709,29 @@ const ImportarPaises = () => {
                 fontWeight: '600',
                 cursor: 'pointer'
               }}
-              title="Borrar todas las delegaciones de la sesión"
+              title={t('countries.clearAllHint', 'Borrar todas las delegaciones de la sesión')}
             >
               <Trash2 size={12} />
-              <span>Vaciar</span>
+              <span>{t('countries.clear', 'Vaciar')}</span>
             </button>
           )}
 
           {confirmandoVaciar && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', backgroundColor: 'rgba(239,68,68,0.2)', padding: '0.15rem 0.4rem', borderRadius: '5px', border: '1px solid #ef4444' }}>
-              <span style={{ fontSize: '0.68rem', color: '#ef4444', fontWeight: '700' }}>¿Vaciar?</span>
+              <span style={{ fontSize: '0.68rem', color: '#ef4444', fontWeight: '700' }}>{t('countries.confirmClear', '¿Vaciar?')}</span>
               <button
                 type="button"
                 onClick={handleVaciarLista}
                 style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: '3px', padding: '1px 6px', fontSize: '0.66rem', fontWeight: '700', cursor: 'pointer' }}
               >
-                Sí
+                {t('common.yes', 'Sí')}
               </button>
               <button
                 type="button"
                 onClick={() => setConfirmandoVaciar(false)}
                 style={{ background: 'transparent', color: 'var(--text-color)', border: 'none', padding: '1px 4px', fontSize: '0.66rem', cursor: 'pointer' }}
               >
-                No
+                {t('common.no', 'No')}
               </button>
             </div>
           )}
@@ -749,10 +749,10 @@ const ImportarPaises = () => {
         border: '1px solid var(--border-color)'
       }}>
         {[
-          { key: 'archivo', label: t('countries.tabFile', 'Archivo'), icon: Upload, desc: 'Excel, CSV, JSON' },
-          { key: 'pegar', label: t('countries.tabPaste', 'Pegar'), icon: ClipboardPaste, desc: 'Texto directo' },
-          { key: 'individual', label: t('countries.tabSingle', '1 País'), icon: UserPlus, desc: 'Añadir único' },
-          { key: 'presets', label: t('countries.tabPresets', 'Plantillas'), icon: Sparkles, desc: 'Comités listos' }
+          { key: 'archivo', label: t('countries.tabFile', 'Archivo'), icon: Upload, desc: t('countries.tabFileDesc', 'Excel, CSV, JSON') },
+          { key: 'pegar', label: t('countries.tabPaste', 'Pegar'), icon: ClipboardPaste, desc: t('countries.tabPasteDesc', 'Texto directo') },
+          { key: 'individual', label: t('countries.tabSingle', '1 País'), icon: UserPlus, desc: t('countries.tabSingleDesc', 'Añadir único') },
+          { key: 'presets', label: t('countries.tabPresets', 'Plantillas'), icon: Sparkles, desc: t('countries.tabPresetsDesc', 'Comités listos') }
         ].map(m => {
           const Icon = m.icon;
           const activo = tab === m.key && !preview;
@@ -882,7 +882,7 @@ const ImportarPaises = () => {
             </div>
 
             <div style={{ fontWeight: '800', fontSize: '0.88rem', color: 'var(--text-color)' }}>
-              {isDraggingFile ? '¡Suelta el archivo aquí!' : 'Arrastra tu archivo o haz clic para explorar'}
+              {isDraggingFile ? t('countries.dropHere', '¡Suelta el archivo aquí!') : t('countries.dragOrClick', 'Arrastra tu archivo o haz clic para explorar')}
             </div>
 
             <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -912,7 +912,7 @@ const ImportarPaises = () => {
                 fontWeight: '700'
               }}>
                 <Clock size={14} className="animate-spin" />
-                <span>Analizando archivo y banderas...</span>
+                <span>{t('countries.analyzingFile', 'Analizando archivo y banderas...')}</span>
               </div>
             )}
           </div>
@@ -939,7 +939,7 @@ const ImportarPaises = () => {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                 <FileSpreadsheet size={13} color="#3b82f6" />
-                <span>Columnas Soportadas</span>
+                <span>{t('countries.supportedColumns', 'Columnas Soportadas')}</span>
               </div>
               <button
                 type="button"
@@ -954,15 +954,15 @@ const ImportarPaises = () => {
                   textDecoration: 'underline'
                 }}
               >
-                Descargar Ejemplo
+                {t('countries.downloadExample', 'Descargar Ejemplo')}
               </button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.4rem' }}>
               {[
-                { col: 'Nombre / Pais', req: true, desc: 'Nombre delegación (ej: España)' },
-                { col: 'Bandera / ISO', req: false, desc: 'Código ISO (es, us) o URL' },
-                { col: 'Veto / P5', req: false, desc: 'true/si/1 para derecho a veto' }
+                { col: t('countries.nameCountryCol', 'Nombre / Pais'), req: true, desc: t('countries.nameCountryDesc', 'Nombre delegación (ej: España)') },
+                { col: t('countries.flagIsoCol', 'Bandera / ISO'), req: false, desc: t('countries.flagIsoDesc', 'Código ISO (es, us) o URL') },
+                { col: t('countries.vetoP5Col', 'Veto / P5'), req: false, desc: t('countries.vetoP5Desc', 'true/si/1 para derecho a veto') }
               ].map(c => (
                 <div key={c.col} style={{
                   backgroundColor: 'rgba(255, 255, 255, 0.03)',
@@ -1016,7 +1016,7 @@ const ImportarPaises = () => {
                 }}
               >
                 <ClipboardPaste size={12} />
-                <span>Pegar Portapapeles</span>
+                <span>{t('countries.pasteClipboard', 'Pegar Portapapeles')}</span>
               </button>
 
               <button
@@ -1032,7 +1032,7 @@ const ImportarPaises = () => {
                   cursor: 'pointer'
                 }}
               >
-                Ejemplo Lista
+                {t('countries.exampleList', 'Ejemplo Lista')}
               </button>
 
               <button
@@ -1048,7 +1048,7 @@ const ImportarPaises = () => {
                   cursor: 'pointer'
                 }}
               >
-                Ejemplo CSV
+                {t('countries.exampleCsv', 'Ejemplo CSV')}
               </button>
             </div>
 
@@ -1067,7 +1067,7 @@ const ImportarPaises = () => {
                   gap: '2px'
                 }}
               >
-                <Trash2 size={11} /> Limpiar
+                <Trash2 size={11} /> {t('countries.clearText', 'Limpiar')}
               </button>
             )}
           </div>
@@ -1076,7 +1076,7 @@ const ImportarPaises = () => {
             <textarea
               value={textoPegar}
               onChange={(e) => setTextoPegar(e.target.value)}
-              placeholder="Pega nombres de países (uno por línea o separados por coma):&#10;España&#10;Francia&#10;Estados Unidos&#10;Reino Unido&#10;China&#10;Japón..."
+              placeholder={t('countries.pastePlaceholder', "Pega nombres de países (uno por línea o separados por coma):\nEspaña\nFrancia\nEstados Unidos\nReino Unido\nChina\nJapón...")}
               style={{
                 flex: 1,
                 minHeight: '120px',
@@ -1103,7 +1103,7 @@ const ImportarPaises = () => {
                 fontSize: '0.65rem',
                 color: 'var(--muted-text)'
               }}>
-                {textoPegar.split(/\r?\n/).filter(Boolean).length} líneas
+                {textoPegar.split(/\r?\n/).filter(Boolean).length} {t('countries.lines', 'líneas')}
               </div>
             )}
           </div>
@@ -1128,7 +1128,7 @@ const ImportarPaises = () => {
             }}
           >
             <Sparkles size={14} />
-            <span>Interpretar y Previsualizar</span>
+            <span>{t('countries.interpretAndPreview', 'Interpretar y Previsualizar')}</span>
           </button>
         </div>
       )}
@@ -1151,19 +1151,19 @@ const ImportarPaises = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
               <CountryFlag
                 bandera={banderaDetectadaIndividual}
-                nombre={nuevoNombre || 'Delegación'}
+                nombre={nuevoNombre || t('countries.delegationName', 'Delegación')}
                 size="lg"
               />
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <span style={{ fontWeight: '800', fontSize: '0.92rem', color: 'var(--text-color)' }}>
-                    {nuevoNombre.trim() || 'Nombre de la Delegación'}
+                    {nuevoNombre.trim() || t('countries.delegationName', 'Nombre de la Delegación')}
                   </span>
-                  {nuevoVeto && <Crown size={14} color="#3b82f6" fill="#3b82f6" title="Miembro Permanente con Veto" />}
+                  {nuevoVeto && <Crown size={14} color="#3b82f6" fill="#3b82f6" title={t('countries.hasVetoTitle', 'Miembro Permanente con Veto')} />}
                 </div>
                 <div style={{ fontSize: '0.68rem', color: 'var(--muted-text)', display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '2px' }}>
                   <span style={{ color: '#22c55e', fontWeight: '700' }}>
-                    {nuevaBandera ? 'Imagen Personalizada' : `Bandera: ${banderaDetectadaIndividual.toUpperCase()}`}
+                    {nuevaBandera ? t('countries.customImage', 'Imagen Personalizada') : `${t('countries.flagLabel', 'Bandera')}: ${banderaDetectadaIndividual.toUpperCase()}`}
                   </span>
                 </div>
               </div>
@@ -1171,15 +1171,15 @@ const ImportarPaises = () => {
 
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
               <span style={{ fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--muted-text)' }}>
-                Vista Previa
+                {t('countries.previewLabel', 'Vista Previa')}
               </span>
               {nuevoVeto ? (
                 <span style={{ fontSize: '0.68rem', color: '#3b82f6', fontWeight: '700' }}>
-                  Con Veto (P5)
+                  {t('countries.withVetoP5', 'Con Veto (P5)')}
                 </span>
               ) : (
                 <span style={{ fontSize: '0.68rem', color: 'var(--muted-text)' }}>
-                  Miembro Regular
+                  {t('countries.regularMember', 'Miembro Regular')}
                 </span>
               )}
             </div>
@@ -1188,13 +1188,13 @@ const ImportarPaises = () => {
           {/* Campo Nombre con Autocompletado */}
           <div style={{ position: 'relative' }}>
             <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', marginBottom: '0.25rem', color: 'var(--text-color)' }}>
-              Nombre de la Delegación / País:
+              {t('countries.delegationNameLabel', 'Nombre de la Delegación / País:')}
             </label>
             <input
               type="text"
               value={nuevoNombre}
               onChange={(e) => setNuevoNombre(e.target.value)}
-              placeholder="Ej: España, Japón, Unión Europea, Cruz Roja..."
+              placeholder={t('countries.delegationNamePlaceholder', 'Ej: España, Japón, Unión Europea, Cruz Roja...')}
               style={{
                 width: '100%',
                 padding: '0.5rem 0.65rem',
@@ -1269,7 +1269,7 @@ const ImportarPaises = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                 <ImageIcon size={13} color="#3b82f6" />
                 <span style={{ fontSize: '0.7rem', fontWeight: '600' }}>
-                  {nuevaBandera ? 'Imagen lista' : 'Bandera ISO'}
+                  {nuevaBandera ? t('countries.imageReady', 'Imagen lista') : t('countries.flagIsoLabel', 'Bandera ISO')}
                 </span>
               </div>
 
@@ -1287,7 +1287,7 @@ const ImportarPaises = () => {
                       textDecoration: 'underline'
                     }}
                   >
-                    Limpiar
+                    {t('countries.clearText', 'Limpiar')}
                   </button>
                 )}
 
@@ -1308,7 +1308,7 @@ const ImportarPaises = () => {
                     fontWeight: '600'
                   }}
                 >
-                  <Upload size={11} /> Subir
+                  <Upload size={11} /> {t('countries.uploadBtn', 'Subir')}
                 </button>
                 <input
                   ref={individualFileInputRef}
@@ -1338,11 +1338,11 @@ const ImportarPaises = () => {
               <input
                 type="checkbox"
                 checked={nuevoVeto}
-                onChange={(e) => setNuevoVeto(e.target.checked)}
+                onChange={(e) => setNuevoVeto(e.target.value)}
                 style={{ accentColor: '#3b82f6' }}
               />
               <Crown size={13} color={nuevoVeto ? '#3b82f6' : 'var(--muted-text)'} />
-              <span>Veto / P5</span>
+              <span>{t('countries.vetoP5Label', 'Veto / P5')}</span>
             </label>
           </div>
 
@@ -1367,7 +1367,7 @@ const ImportarPaises = () => {
             }}
           >
             <Plus size={15} />
-            <span>Añadir Delegación a la Sesión</span>
+            <span>{t('countries.addDelegationToSession', 'Añadir Delegación a la Sesión')}</span>
           </button>
         </form>
       )}
@@ -1388,7 +1388,7 @@ const ImportarPaises = () => {
             <Search size={13} style={{ color: 'var(--muted-text)', flexShrink: 0 }} />
             <input
               type="text"
-              placeholder="Buscar plantilla de comité (.json)..."
+              placeholder={t('countries.searchPresetPlaceholder', 'Buscar plantilla de comité (.json)...')}
               value={busquedaPreset}
               onChange={e => setBusquedaPreset(e.target.value)}
               style={{
@@ -1475,11 +1475,11 @@ const ImportarPaises = () => {
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                       <span style={{ fontSize: '0.68rem', fontWeight: '700', color: '#3b82f6' }}>
-                        {p.paises.length} delegaciones
+                        {p.paises.length} {t('countries.delegationsCount', 'delegaciones')}
                       </span>
                       {vetosCount > 0 && (
                         <span style={{ fontSize: '0.64rem', color: '#22c55e', display: 'inline-flex', alignItems: 'center', gap: '1px', fontWeight: '700' }}>
-                          • <Crown size={10} /> {vetosCount} Veto
+                          • <Crown size={10} /> {vetosCount} {t('countries.veto', 'Veto')}
                         </span>
                       )}
                     </div>
@@ -1506,7 +1506,7 @@ const ImportarPaises = () => {
                       }}
                     >
                       <Edit2 size={11} />
-                      <span>Revisar / Editar</span>
+                      <span>{t('countries.reviewEdit', 'Revisar / Editar')}</span>
                     </button>
 
                     <button
@@ -1528,7 +1528,7 @@ const ImportarPaises = () => {
                       }}
                     >
                       <Check size={12} />
-                      <span>Cargar Inmediato</span>
+                      <span>{t('countries.quickLoad', 'Cargar Inmediato')}</span>
                     </button>
                   </div>
                 </div>
@@ -1554,7 +1554,7 @@ const ImportarPaises = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <Sparkles size={14} color="#3b82f6" />
               <span style={{ fontWeight: '800', fontSize: '0.8rem' }}>
-                Revisión: <strong style={{ color: '#3b82f6' }}>{preview.length} delegaciones</strong>
+                {t('countries.reviewHeader', 'Revisión:')} <strong style={{ color: '#3b82f6' }}>{preview.length} {t('countries.delegationsCount', 'delegaciones')}</strong>
               </span>
             </div>
 
@@ -1562,7 +1562,7 @@ const ImportarPaises = () => {
               <button
                 type="button"
                 onClick={handleOrdenarPreviewAZ}
-                title="Ordenar alfabéticamente A-Z"
+                title={t('countries.sortAZ', 'Ordenar alfabéticamente A-Z')}
                 style={{
                   padding: '0.2rem 0.45rem',
                   fontSize: '0.68rem',
@@ -1590,7 +1590,7 @@ const ImportarPaises = () => {
                   cursor: 'pointer',
                   padding: '2px'
                 }}
-                title="Cancelar y volver"
+                title={t('common.cancel', 'Cancelar')}
               >
                 <X size={14} />
               </button>
@@ -1612,7 +1612,7 @@ const ImportarPaises = () => {
               <Search size={12} style={{ color: 'var(--muted-text)' }} />
               <input
                 type="text"
-                placeholder="Filtrar delegación..."
+                placeholder={t('countries.filterDelegationPlaceholder', 'Filtrar delegación...')}
                 value={busquedaPreview}
                 onChange={(e) => setBusquedaPreview(e.target.value)}
                 style={{
@@ -1641,7 +1641,7 @@ const ImportarPaises = () => {
                   fontWeight: '700'
                 }}
               >
-                <Crown size={11} style={{ display: 'inline', marginRight: '2px' }} /> Solo Veto
+                <Crown size={11} style={{ display: 'inline', marginRight: '2px' }} /> {t('countries.onlyVeto', 'Solo Veto')}
               </button>
             </div>
           </div>
@@ -1656,7 +1656,7 @@ const ImportarPaises = () => {
             padding: '0.15rem 0.2rem'
           }}>
             <Camera size={12} color="#3b82f6" />
-            <span>Haz clic en una fila y presiona <strong>Ctrl+V</strong> o el icono de cámara para cambiar la bandera.</span>
+            <span>{t('countries.changeFlagHint', 'Haz clic en una fila y presiona Ctrl+V o el icono de cámara para cambiar la bandera.')}</span>
           </div>
 
           {/* Lista de Delegaciones en Previsualización (Sin selector de estatus, siempre Ausente de base) */}
@@ -1674,7 +1674,7 @@ const ImportarPaises = () => {
           }}>
             {previewFiltrada.length === 0 ? (
               <div style={{ margin: 'auto', textAlign: 'center', color: 'var(--muted-text)', fontSize: '0.75rem', padding: '1rem' }}>
-                No se encontraron delegaciones con el filtro actual.
+                {t('countries.noDelegationsFound', 'No se encontraron delegaciones con el filtro actual.')}
               </div>
             ) : (
               previewFiltrada.map((p, idx) => {
@@ -1704,7 +1704,7 @@ const ImportarPaises = () => {
                     {/* Botón rápido de cámara para imagen */}
                     <button
                       type="button"
-                      title="Cambiar imagen de bandera"
+                      title={t('countries.changeFlagTitle', 'Cambiar imagen de bandera')}
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedPreviewIndex(originalIndex);
@@ -1759,7 +1759,7 @@ const ImportarPaises = () => {
                           return copy;
                         });
                       }}
-                      title={p.veto ? 'Tiene derecho a veto (P5)' : 'Sin derecho a veto'}
+                      title={p.veto ? t('countries.hasVetoTitle', 'Tiene derecho a veto (P5)') : t('countries.noVetoTitle', 'Sin derecho a veto')}
                       style={{
                         background: 'transparent',
                         border: 'none',
@@ -1788,7 +1788,7 @@ const ImportarPaises = () => {
                         cursor: 'pointer',
                         padding: '2px'
                       }}
-                      title="Eliminar de la lista"
+                      title={t('countries.removeFromList', 'Eliminar de la lista')}
                     >
                       <X size={13} />
                     </button>
