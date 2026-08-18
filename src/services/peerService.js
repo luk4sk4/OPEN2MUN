@@ -122,6 +122,28 @@ class PeerService {
     });
   }
 
+  startSignalingHeartbeat() {
+    this.stopSignalingHeartbeat();
+    this.heartbeatTimer = setInterval(() => {
+      if (this.peer && !this.peer.destroyed) {
+        if (this.peer.disconnected) {
+          try { this.peer.reconnect(); } catch (e) {}
+        } else if (this.peer.socket && typeof this.peer.socket.send === 'function') {
+          try {
+            this.peer.socket.send({ type: 'HEARTBEAT' });
+          } catch (e) {}
+        }
+      }
+    }, 12000);
+  }
+
+  stopSignalingHeartbeat() {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
+  }
+
   // ─────────────────────────────────────────────────────────────
   // INICIALIZACIÓN DEL HOST (CHAIR)
   // ─────────────────────────────────────────────────────────────
@@ -162,6 +184,7 @@ class PeerService {
       this.peer.on('open', (id) => {
         if (!isResolved) {
           isResolved = true;
+          this.startSignalingHeartbeat();
           this.emit('host_ready', { roomId: id, roomSettings: this.roomSettings });
           resolve(id);
         }
@@ -186,7 +209,7 @@ class PeerService {
       });
 
       this.peer.on('disconnected', () => {
-        console.warn('Host desconectado del servidor de señalización. Intentando reconexión silenciosa...');
+        console.warn('Host desconectado del servidor de señalización. Reconectando...');
         if (this.peer && !this.peer.destroyed) {
           try { this.peer.reconnect(); } catch (e) { }
         }
@@ -248,6 +271,8 @@ class PeerService {
     // Cliente P2P remoto
     return new Promise((resolve, reject) => {
       let isSettled = false;
+      let retryCount = 0;
+      let currentConn = null;
 
       const safeReject = (err) => {
         if (!isSettled) {
@@ -269,7 +294,7 @@ class PeerService {
 
       const connectTimeout = setTimeout(() => {
         safeReject(`Tiempo de espera agotado al conectar con la sala "${cleanRoomId}". Asegúrate de que el Chair tenga la sala iniciada.`);
-      }, 15000);
+      }, 18000);
 
       try {
         this.peer = new Peer({
@@ -283,20 +308,21 @@ class PeerService {
         return;
       }
 
-      this.peer.on('open', () => {
-        try {
-          const conn = this.peer.connect(cleanRoomId);
+      const attemptConnect = () => {
+        if (isSettled || !this.peer || this.peer.destroyed) return;
 
-          conn.on('open', () => {
-            this.hostConn = conn;
-            // Enviar credenciales / solicitud de rol
-            conn.send({
+        try {
+          currentConn = this.peer.connect(cleanRoomId);
+
+          currentConn.on('open', () => {
+            this.hostConn = currentConn;
+            currentConn.send({
               type: MSG_TYPES.AUTH,
               payload: { role, password, country }
             });
           });
 
-          conn.on('data', (data) => {
+          currentConn.on('data', (data) => {
             if (data?.type === MSG_TYPES.AUTH_RESULT) {
               if (data.payload?.success) {
                 if (data.payload.roomSettings) {
@@ -314,7 +340,7 @@ class PeerService {
                 });
                 safeResolve(data.payload);
               } else {
-                conn.close();
+                currentConn.close();
                 safeReject(data.payload?.message || 'Acceso denegado');
               }
               return;
@@ -322,14 +348,18 @@ class PeerService {
             this.emit('message', data);
           });
 
-          conn.on('close', () => {
+          currentConn.on('close', () => {
             this.emit('disconnected', { reason: 'Conexión con el Chair cerrada' });
           });
 
-          conn.on('error', (err) => {
+          currentConn.on('error', (err) => {
             console.warn('Error en conexión con el host:', err);
             const errText = err?.message || String(err);
-            if (errText.includes('Negotiation') || errText.includes('negotiation')) {
+            if ((errText.includes('Negotiation') || errText.includes('negotiation')) && retryCount < 1) {
+              retryCount++;
+              console.log('Reintentando negociación P2P...');
+              setTimeout(attemptConnect, 600);
+            } else if (errText.includes('Negotiation') || errText.includes('negotiation')) {
               safeReject(`Error de negociación WebRTC con la sala "${cleanRoomId}". Verifica que la sala esté iniciada por el Chair.`);
             } else {
               safeReject(errText);
@@ -338,6 +368,11 @@ class PeerService {
         } catch (err) {
           safeReject(err);
         }
+      };
+
+      this.peer.on('open', () => {
+        this.startSignalingHeartbeat();
+        attemptConnect();
       });
 
       this.peer.on('error', (err) => {
@@ -347,6 +382,10 @@ class PeerService {
 
         if (errType === 'peer-unavailable') {
           safeReject(`La sala "${cleanRoomId}" no se encuentra activa. Verifica el código o asegúrate de que el Chair haya iniciado la sala.`);
+        } else if ((errType === 'negotiation-failed' || errMsg.includes('Negotiation') || errMsg.includes('negotiation')) && retryCount < 1) {
+          retryCount++;
+          console.log('Reintentando negociación tras fallo de peer...');
+          setTimeout(attemptConnect, 600);
         } else if (errType === 'negotiation-failed' || errMsg.includes('Negotiation') || errMsg.includes('negotiation')) {
           safeReject(`Error de negociación WebRTC al conectar con la sala "${cleanRoomId}". Asegúrate de que el Chair tenga la sala iniciada.`);
         } else {
@@ -925,6 +964,7 @@ class PeerService {
   // LIMPIEZA
   // ─────────────────────────────────────────────────────────────
   destroy() {
+    this.stopSignalingHeartbeat();
     if (this.connections) {
       this.connections.forEach(conn => {
         try { conn.close(); } catch (e) { }
