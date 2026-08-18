@@ -20,6 +20,8 @@ export const DEFAULT_ROOM_SETTINGS = {
 export const MSG_TYPES = {
   AUTH: 'AUTH',
   AUTH_RESULT: 'AUTH_RESULT',
+  SELECT_COUNTRY: 'SELECT_COUNTRY',
+  SELECT_COUNTRY_RESULT: 'SELECT_COUNTRY_RESULT',
   SYNC_STATE: 'SYNC_STATE',
   SESSION_ACTION: 'SESSION_ACTION',
   UPDATE_ROOM_SETTINGS: 'UPDATE_ROOM_SETTINGS',
@@ -336,18 +338,19 @@ class PeerService {
       if (isLocal) {
         authorized = true;
       } else if (role === 'delegate') {
-        if (!country || !country.trim()) {
-          errorMsg = 'Debes seleccionar un país';
-        } else {
+        if (country && country.trim()) {
           // Validar si el país ya está conectado
           const yaConectado = Array.from(this.peerMetadata.values()).some(
-            m => m.role === 'delegate' && m.country.toLowerCase() === country.toLowerCase()
+            m => m.role === 'delegate' && m.country && m.country.toLowerCase() === country.trim().toLowerCase()
           );
           if (yaConectado) {
             errorMsg = `La delegación de ${country} ya está conectada`;
           } else {
             authorized = true;
           }
+        } else {
+          // El delegado se conecta para elegir país de la lista oficial que le envía el Host
+          authorized = true;
         }
       } else if (role === 'secretariat') {
         if (password === this.secretPassword) {
@@ -368,10 +371,10 @@ class PeerService {
       if (conn) {
         if (authorized) {
           this.connections.set(peerId, conn);
-          const meta = { role, country: country || (role === 'backroom' ? 'Backroom' : 'Secretaría'), connectedAt: Date.now() };
+          const meta = { role, country: country?.trim() || null, connectedAt: Date.now() };
           this.peerMetadata.set(peerId, meta);
 
-          const roleNotes = this.getNotesForRole(role, meta.country);
+          const roleNotes = meta.country ? this.getNotesForRole(role, meta.country) : [];
 
           conn.send({
             type: MSG_TYPES.AUTH_RESULT,
@@ -409,6 +412,57 @@ class PeerService {
           }
         });
       }
+      return;
+    }
+
+    // 1.1 Selección / Toma de País por parte del Delegado (desde el array de países enviado por el Host)
+    if (message.type === MSG_TYPES.SELECT_COUNTRY) {
+      const selectedCountry = (message.payload?.country || '').trim();
+      if (!selectedCountry) {
+        if (conn) {
+          conn.send({
+            type: MSG_TYPES.SELECT_COUNTRY_RESULT,
+            payload: { success: false, message: 'Por favor selecciona un país válido' }
+          });
+        }
+        return;
+      }
+
+      // Validar si otro peer ya tiene asignado este país
+      const yaOcupado = Array.from(this.peerMetadata.entries()).some(
+        ([id, m]) => id !== peerId && m.role === 'delegate' && m.country && m.country.toLowerCase() === selectedCountry.toLowerCase()
+      );
+
+      if (yaOcupado) {
+        if (conn) {
+          conn.send({
+            type: MSG_TYPES.SELECT_COUNTRY_RESULT,
+            payload: { success: false, message: `La delegación de ${selectedCountry} ya ha sido seleccionada por otro participante.` }
+          });
+        }
+        return;
+      }
+
+      // Asignar el país al peer
+      const currentMeta = this.peerMetadata.get(peerId) || { role: 'delegate', connectedAt: Date.now() };
+      const updatedMeta = { ...currentMeta, country: selectedCountry };
+      this.peerMetadata.set(peerId, updatedMeta);
+
+      const roleNotes = this.getNotesForRole('delegate', selectedCountry);
+
+      if (conn) {
+        conn.send({
+          type: MSG_TYPES.SELECT_COUNTRY_RESULT,
+          payload: {
+            success: true,
+            country: selectedCountry,
+            notes: roleNotes
+          }
+        });
+      }
+
+      this.emit('peer_authenticated', { peerId, meta: updatedMeta });
+      this.broadcastPeerList();
       return;
     }
 
@@ -787,6 +841,13 @@ class PeerService {
       requestId,
       action, // 'accept' | 'reject'
       requestData
+    });
+  }
+
+  selectCountryAsClient(country) {
+    return this.sendToServer(MSG_TYPES.SELECT_COUNTRY, {
+      country,
+      timestamp: Date.now()
     });
   }
 

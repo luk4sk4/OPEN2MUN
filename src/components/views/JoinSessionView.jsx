@@ -25,12 +25,6 @@ import AccessibilityModal from '../modals/AccessibilityModal';
 import OpenMunLogo from '../common/OpenMunLogo';
 import LanguageSelector from '../common/LanguageSelector';
 
-const PAISES_DEFAULT = [
-  "Alemania", "Argentina", "Brasil", "Canadá", "China", "Colombia", "Corea del Sur",
-  "Egipto", "España", "Estados Unidos", "Federación Rusa", "Francia", "India", "Italia",
-  "Japón", "México", "Noruega", "Reino Unido", "Sudáfrica", "Turquía", "Ucrania"
-];
-
 const JoinSessionView = ({ isLight: propIsLight, onBackToChair }) => {
   const { t } = useTranslation();
   const { joinRoom, connectionStatus, error, roomId: defaultRoomId } = useP2P();
@@ -40,8 +34,6 @@ const JoinSessionView = ({ isLight: propIsLight, onBackToChair }) => {
 
   const [roomIdInput, setRoomIdInput] = useState('');
   const [selectedRole, setSelectedRole] = useState('delegate'); // 'delegate' | 'secretariat' | 'backroom'
-  const [selectedCountry, setSelectedCountry] = useState('');
-  const [customCountry, setCustomCountry] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [mostrarPassword, setMostrarPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -68,18 +60,12 @@ const JoinSessionView = ({ isLight: propIsLight, onBackToChair }) => {
       return;
     }
 
-    const finalCountry = customCountry.trim() || selectedCountry;
-    if (selectedRole === 'delegate' && !finalCountry) {
-      alert('Por favor selecciona o escribe tu país / delegación');
-      return;
-    }
-
     setIsSubmitting(true);
     const success = await joinRoom({
       targetRoomId: roomIdInput.trim().toUpperCase(),
       targetRole: selectedRole,
       password: passwordInput,
-      country: finalCountry
+      country: ''
     });
     setIsSubmitting(false);
   };
@@ -328,55 +314,36 @@ const JoinSessionView = ({ isLight: propIsLight, onBackToChair }) => {
 
           {/* Formulario según el Rol seleccionado */}
           {selectedRole === 'delegate' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                País o Delegación
-              </label>
-
-              <select
-                value={selectedCountry}
-                onChange={e => {
-                  setSelectedCountry(e.target.value);
-                  if (e.target.value) setCustomCountry('');
-                }}
-                style={{
-                  backgroundColor: 'var(--card-header-bg)',
-                  border: '1px solid var(--subborder-color)',
-                  borderRadius: '10px',
-                  padding: '0.7rem 0.9rem',
-                  color: 'var(--text-color)',
-                  fontWeight: '700',
-                  fontSize: '0.88rem'
-                }}
-              >
-                <option value="">Selecciona un país de la lista...</option>
-                {PAISES_DEFAULT.map(p => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
-
-              <div style={{ textAlign: 'center', fontSize: '0.72rem', color: 'var(--muted-text)', fontWeight: '700' }}>
-                — O escribe el nombre si no está en la lista —
+            <div style={{
+              backgroundColor: 'rgba(34, 197, 94, 0.08)',
+              border: '1px solid rgba(34, 197, 94, 0.25)',
+              borderRadius: '12px',
+              padding: '1rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.85rem'
+            }}>
+              <div style={{
+                width: '38px',
+                height: '38px',
+                borderRadius: '10px',
+                backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#22c55e',
+                flexShrink: 0
+              }}>
+                <Globe size={20} />
               </div>
-
-              <input
-                type="text"
-                placeholder="Nombre de la delegación (ej: Singapur)"
-                value={customCountry}
-                onChange={e => {
-                  setCustomCountry(e.target.value);
-                  if (e.target.value) setSelectedCountry('');
-                }}
-                style={{
-                  backgroundColor: 'var(--card-header-bg)',
-                  border: '1px solid var(--subborder-color)',
-                  borderRadius: '10px',
-                  padding: '0.7rem 0.9rem',
-                  color: 'var(--text-color)',
-                  fontWeight: '700',
-                  fontSize: '0.88rem'
-                }}
-              />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-color)' }}>
+                  Acceso de Delegaciones Oficiales
+                </div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--muted-text)', lineHeight: '1.35' }}>
+                  Al conectar, recibirás la lista oficial de países configurada en la sesión para que elijas tu delegación asignada.
+                </div>
+              </div>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

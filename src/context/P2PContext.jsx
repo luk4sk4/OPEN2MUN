@@ -163,7 +163,11 @@ export const P2PProvider = ({ children }) => {
         setConnectionStatus('connected');
         setRole(data.role);
         setError(null);
-        if (data.country) setClientCountry(data.country);
+        if (data.country) {
+          setClientCountry(data.country);
+        } else if (data.role === 'delegate') {
+          setClientCountry('');
+        }
         if (data.sessionState) {
           setRemoteSessionState(data.sessionState);
           if (sessionActionHandlersRef.current.onSyncState) {
@@ -172,7 +176,7 @@ export const P2PProvider = ({ children }) => {
         }
         if (data.roomSettings) setRoomSettings(data.roomSettings);
         if (data.speakingRequests) setSpeakingRequests(data.speakingRequests);
-        addNotification(`Conectado a la sala como ${data.country || data.role}`, 'success');
+        addNotification(data.country ? `Conectado a la sala como ${data.country}` : `Conectado a la sala (${data.role})`, 'success');
       }
 
       if (event === 'session_action') {
@@ -330,6 +334,25 @@ export const P2PProvider = ({ children }) => {
               }
             }
           }
+        } else if (message.type === MSG_TYPES.SELECT_COUNTRY_RESULT) {
+          if (message.payload?.success) {
+            const countryName = message.payload.country;
+            if (countryName) {
+              setClientCountry(countryName);
+              localStorage.setItem('openmun_last_country', countryName);
+            }
+            if (Array.isArray(message.payload.notes) && message.payload.notes.length > 0) {
+              setNotes(prev => {
+                const map = new Map();
+                message.payload.notes.forEach(n => { if (n && n.id) map.set(n.id, n); });
+                prev.forEach(n => { if (n && n.id && !map.has(n.id)) map.set(n.id, n); });
+                return Array.from(map.values()).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+              });
+            }
+            addNotification(`Delegación asignada: ${countryName}`, 'success');
+          } else {
+            addNotification(message.payload?.message || 'Error al seleccionar país', 'error');
+          }
         } else if (message.type === MSG_TYPES.SYNC_STATE) {
           setRemoteSessionState(message.payload);
           if (sessionActionHandlersRef.current.onSyncState) {
@@ -437,7 +460,7 @@ export const P2PProvider = ({ children }) => {
         roomId: targetRoomId || roomId,
         role: targetRole,
         password,
-        country,
+        country: country || null,
         isLocalBroadcast
       });
       setRole(targetRole);
@@ -445,6 +468,9 @@ export const P2PProvider = ({ children }) => {
       if (country) {
         setClientCountry(country);
         localStorage.setItem('openmun_last_country', country);
+      } else if (targetRole === 'delegate') {
+        // Inicializar sin país seleccionado para que elija de la lista del Host
+        setClientCountry('');
       }
       return true;
     } catch (err) {
@@ -453,6 +479,50 @@ export const P2PProvider = ({ children }) => {
       return false;
     }
   }, [roomId]);
+
+  const selectCountry = useCallback((countryName) => {
+    if (!countryName || !countryName.trim()) {
+      return Promise.resolve({ success: false, message: 'País no válido' });
+    }
+    const cleanName = countryName.trim();
+    return new Promise((resolve) => {
+      let resolved = false;
+      const unsubscribe = peerService.subscribe((event, data) => {
+        if (event === 'message' && data?.type === MSG_TYPES.SELECT_COUNTRY_RESULT) {
+          if (!resolved) {
+            resolved = true;
+            unsubscribe();
+            if (data.payload?.success) {
+              resolve({ success: true, country: data.payload.country || cleanName });
+            } else {
+              resolve({ success: false, message: data.payload?.message || 'País no disponible' });
+            }
+          }
+        }
+      });
+
+      const sent = peerService.selectCountryAsClient(cleanName);
+      if (!sent) {
+        resolved = true;
+        unsubscribe();
+        resolve({ success: false, message: 'No se pudo comunicar con la Mesa Principal' });
+        return;
+      }
+
+      setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          unsubscribe();
+          resolve({ success: false, message: 'Tiempo de espera agotado al seleccionar país' });
+        }
+      }, 8000);
+    });
+  }, []);
+
+  const resetCountrySelection = useCallback(() => {
+    setClientCountry('');
+    localStorage.removeItem('openmun_last_country');
+  }, []);
 
   const leaveRoom = useCallback(() => {
     peerService.destroy();
@@ -628,6 +698,8 @@ export const P2PProvider = ({ children }) => {
       stopHosting,
       joinRoom,
       leaveRoom,
+      selectCountry,
+      resetCountrySelection,
       sendNote,
       requestSpeaking,
       kickPeer,

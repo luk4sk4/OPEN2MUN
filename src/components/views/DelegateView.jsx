@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Radio, 
   Send, 
@@ -24,7 +24,13 @@ import {
   AlertCircle,
   Eye,
   Sun,
-  Moon
+  Moon,
+  Search,
+  Globe,
+  RefreshCw,
+  UserCheck,
+  UserX,
+  ChevronRight
 } from 'lucide-react';
 import CountryFlag from '../common/CountryFlag';
 import { useTranslation } from 'react-i18next';
@@ -52,8 +58,18 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
     roomSettings,
     castVote,
     submitAmendment,
-    leaveRoom
+    leaveRoom,
+    selectCountry,
+    resetCountrySelection,
+    connectedPeers
   } = useP2P();
+
+  // Estados para Selección de País / Delegación inicial
+  const [busquedaPais, setBusquedaPais] = useState('');
+  const [paisSeleccionadoTemp, setPaisSeleccionadoTemp] = useState('');
+  const [paisPersonalizadoInput, setPaisPersonalizadoInput] = useState('');
+  const [isSubmittingCountry, setIsSubmittingCountry] = useState(false);
+  const [countrySelectError, setCountrySelectError] = useState(null);
 
   const [activeTab, setActiveTab] = useState('DEBATE'); // 'DEBATE' | 'NOTAS' | 'ENMIENDAS'
   const [destinatario, setDestinatario] = useState('CHAIR');
@@ -94,6 +110,84 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
   const oradorActualCaucus = oradoresCaucus[0]?.nombre || 'Ninguno';
   const temaActual = agendaSesion.temaActual || caucusActivo.tema || 'Sesión General en curso';
   const paisesDisponibles = state.paises || [];
+
+  // Países ocupados por otros peers conectados
+  const paisesOcupadosSet = useMemo(() => {
+    const set = new Set();
+    (connectedPeers || []).forEach(peer => {
+      if (peer.country && peer.role === 'delegate') {
+        set.add(peer.country.toLowerCase().trim());
+      }
+    });
+    return set;
+  }, [connectedPeers]);
+
+  // Lista normalizada de países
+  const listaPaisesNormalizada = useMemo(() => {
+    if (!Array.isArray(paisesDisponibles) || paisesDisponibles.length === 0) {
+      return [
+        { id: '1', nombre: 'Alemania', bandera: '🇩🇪' },
+        { id: '2', nombre: 'Argentina', bandera: '🇦🇷' },
+        { id: '3', nombre: 'Brasil', bandera: '🇧🇷' },
+        { id: '4', nombre: 'Canadá', bandera: '🇨🇦' },
+        { id: '5', nombre: 'China', bandera: '🇨🇳' },
+        { id: '6', nombre: 'Colombia', bandera: '🇨🇴' },
+        { id: '7', nombre: 'Corea del Sur', bandera: '🇰🇷' },
+        { id: '8', nombre: 'Egipto', bandera: '🇪🇬' },
+        { id: '9', nombre: 'España', bandera: '🇪🇸' },
+        { id: '10', nombre: 'Estados Unidos', bandera: '🇺🇸' },
+        { id: '11', nombre: 'Federación Rusa', bandera: '🇷🇺' },
+        { id: '12', nombre: 'Francia', bandera: '🇫🇷' },
+        { id: '13', nombre: 'India', bandera: '🇮🇳' },
+        { id: '14', nombre: 'Italia', bandera: '🇮🇹' },
+        { id: '15', nombre: 'Japón', bandera: '🇯🇵' },
+        { id: '16', nombre: 'México', bandera: '🇲🇽' },
+        { id: '17', nombre: 'Noruega', bandera: '🇳🇴' },
+        { id: '18', nombre: 'Reino Unido', bandera: '🇬🇧' },
+        { id: '19', nombre: 'Sudáfrica', bandera: '🇿🇦' },
+        { id: '20', nombre: 'Turquía', bandera: '🇹🇷' },
+        { id: '21', nombre: 'Ucrania', bandera: '🇺🇦' }
+      ];
+    }
+
+    return paisesDisponibles.map((p, idx) => {
+      if (typeof p === 'string') {
+        return { id: `p-${idx}`, nombre: p, bandera: getFlagEmoji(null, p) };
+      }
+      return {
+        id: p.id || `p-${idx}`,
+        nombre: p.nombre || p.name || 'Delegación',
+        bandera: p.bandera || getFlagEmoji(p.bandera, p.nombre)
+      };
+    });
+  }, [paisesDisponibles]);
+
+  const paisesFiltrados = useMemo(() => {
+    if (!busquedaPais.trim()) return listaPaisesNormalizada;
+    const query = busquedaPais.toLowerCase().trim();
+    return listaPaisesNormalizada.filter(p => p.nombre.toLowerCase().includes(query));
+  }, [listaPaisesNormalizada, busquedaPais]);
+
+  const handleConfirmCountrySelection = async (countryName) => {
+    const finalName = (countryName || paisPersonalizadoInput || paisSeleccionadoTemp || '').trim();
+    if (!finalName) {
+      setCountrySelectError('Por favor selecciona o introduce el nombre de tu país');
+      return;
+    }
+
+    setIsSubmittingCountry(true);
+    setCountrySelectError(null);
+    try {
+      const res = await selectCountry(finalName);
+      if (!res.success) {
+        setCountrySelectError(res.message || 'No se pudo seleccionar este país');
+      }
+    } catch (err) {
+      setCountrySelectError(err.message || 'Error de conexión');
+    } finally {
+      setIsSubmittingCountry(false);
+    }
+  };
 
   // Manejador de Solicitud de Turno GSL
   const handlePedirGSL = () => {
@@ -179,6 +273,409 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
     n.to?.toUpperCase() === 'TODOS'
   );
 
+  // Si aún no ha seleccionado su país / delegación oficial de la sesión
+  if (!clientCountry) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: 'var(--bg-color)',
+        color: 'var(--text-color)',
+        fontFamily: 'var(--font-family, Inter, system-ui, sans-serif)',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        <AccessibilityModal isOpen={isAccessModalOpen} onClose={() => setIsAccessModalOpen(false)} />
+
+        {/* Header Superior */}
+        <header style={{
+          padding: '0.85rem 1.5rem',
+          backgroundColor: 'var(--header-bg)',
+          borderBottom: '1px solid var(--subborder-color)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          position: 'sticky',
+          top: 0,
+          zIndex: 100
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+            <OpenMunLogo height={32} isLight={isLight} />
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontWeight: '800', fontSize: '1.05rem', letterSpacing: '-0.01em' }}>
+                  {state.comision || state.nombreComite || 'Sesión en Vivo'}
+                </span>
+                <span style={{
+                  fontSize: '0.7rem',
+                  fontWeight: '700',
+                  backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                  color: '#22c55e',
+                  padding: '0.15rem 0.5rem',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#22c55e' }} />
+                  Sala {roomId}
+                </span>
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--muted-text)', marginTop: '2px' }}>
+                Conectado como participante • Selección de Delegación Oficial
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <button
+              onClick={() => setIsAccessModalOpen(true)}
+              style={{
+                background: 'transparent',
+                border: '1px solid var(--subborder-color)',
+                borderRadius: '8px',
+                color: 'var(--text-color)',
+                padding: '0.45rem 0.75rem',
+                fontSize: '0.78rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                transition: 'all 0.15s ease'
+              }}
+              title={t('accessibility.title', "Accesibilidad y Tema")}
+            >
+              <Eye size={14} /> {t('accessibility.title', 'Accesibilidad')}
+            </button>
+
+            <button
+              onClick={toggleThemeMode}
+              style={{
+                background: 'transparent',
+                border: '1px solid var(--subborder-color)',
+                borderRadius: '8px',
+                color: 'var(--text-color)',
+                padding: '0.45rem 0.65rem',
+                fontSize: '0.78rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                transition: 'all 0.15s ease'
+              }}
+              title={isLight ? t('header.darkMode', "Cambiar a Modo Oscuro") : t('header.lightMode', "Cambiar a Modo Claro")}
+            >
+              {isLight ? <Moon size={14} /> : <Sun size={14} />}
+            </button>
+
+            <LanguageSelector showIcon={false} />
+
+            <button
+              onClick={() => {
+                if (confirm('¿Deseas desconectarte de la sala?')) {
+                  leaveRoom();
+                  if (onExit) onExit();
+                }
+              }}
+              style={{
+                background: 'transparent',
+                border: '1px solid var(--subborder-color)',
+                borderRadius: '8px',
+                color: 'var(--muted-text)',
+                padding: '0.45rem 0.75rem',
+                fontSize: '0.78rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem'
+              }}
+            >
+              <LogOut size={14} /> {t('common.exit', 'Salir')}
+            </button>
+          </div>
+        </header>
+
+        {/* Cuerpo Principal de Selección */}
+        <main style={{
+          padding: '2rem 1.25rem 3rem 1.25rem',
+          maxWidth: '960px',
+          margin: '0 auto',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1.5rem',
+          flex: 1
+        }}>
+          {/* Banner de Bienvenida y Comité */}
+          <div style={{
+            backgroundColor: 'var(--panel-color)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '16px',
+            padding: '1.75rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.65rem',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{
+                backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                color: '#22c55e',
+                borderRadius: '8px',
+                padding: '0.35rem 0.75rem',
+                fontSize: '0.75rem',
+                fontWeight: '800',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase'
+              }}>
+                <Globe size={14} /> Lista Oficial de la Sesión
+              </div>
+              <span style={{ fontSize: '0.8rem', color: 'var(--muted-text)' }}>
+                {paisesFiltrados.length} delegaciones disponibles
+              </span>
+            </div>
+
+            <h2 style={{ margin: 0, fontSize: '1.65rem', fontWeight: '800', letterSpacing: '-0.02em' }}>
+              Selecciona tu Delegación
+            </h2>
+            <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--muted-text)', lineHeight: '1.5' }}>
+              El Chair ha transmitido el listado oficial de países de esta sesión. Haz clic sobre tu delegación para identificarte en los debates, lista de oradores, votaciones telemáticas y mensajería oficial.
+            </p>
+          </div>
+
+          {/* Mensaje de Error */}
+          {countrySelectError && (
+            <div style={{
+              backgroundColor: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid rgba(239, 68, 68, 0.35)',
+              borderRadius: '12px',
+              padding: '0.85rem 1.15rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.65rem',
+              color: '#f87171',
+              fontSize: '0.85rem'
+            }}>
+              <AlertCircle size={18} style={{ flexShrink: 0 }} />
+              <span>{countrySelectError}</span>
+            </div>
+          )}
+
+          {/* Barra de Búsqueda */}
+          <div style={{ position: 'relative', width: '100%' }}>
+            <input
+              type="text"
+              placeholder="Buscar tu país o delegación..."
+              value={busquedaPais}
+              onChange={e => setBusquedaPais(e.target.value)}
+              style={{
+                width: '100%',
+                backgroundColor: 'var(--card-header-bg)',
+                border: '1px solid var(--subborder-color)',
+                borderRadius: '10px',
+                padding: '0.75rem 1rem 0.75rem 2.4rem',
+                color: 'var(--text-color)',
+                fontWeight: '600',
+                fontSize: '0.9rem'
+              }}
+            />
+            <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted-text)' }} />
+            {busquedaPais && (
+              <button
+                onClick={() => setBusquedaPais('')}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--muted-text)',
+                  cursor: 'pointer'
+                }}
+              >
+                <X size={15} />
+              </button>
+            )}
+          </div>
+
+          {/* Grid de Países */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+            gap: '0.75rem'
+          }}>
+            {paisesFiltrados.map((p) => {
+              const estaOcupado = paisesOcupadosSet.has(p.nombre.toLowerCase().trim());
+              const isSelected = paisSeleccionadoTemp === p.nombre;
+
+              return (
+                <div
+                  key={p.id || p.nombre}
+                  onClick={() => {
+                    if (estaOcupado || isSubmittingCountry) return;
+                    setPaisSeleccionadoTemp(p.nombre);
+                    setPaisPersonalizadoInput('');
+                  }}
+                  onDoubleClick={() => {
+                    if (estaOcupado || isSubmittingCountry) return;
+                    handleConfirmCountrySelection(p.nombre);
+                  }}
+                  style={{
+                    backgroundColor: isSelected
+                      ? 'rgba(34, 197, 94, 0.12)'
+                      : (estaOcupado ? 'rgba(255,255,255,0.015)' : 'var(--panel-color)'),
+                    border: `1.5px solid ${
+                      isSelected
+                        ? '#22c55e'
+                        : (estaOcupado ? 'var(--subborder-color)' : 'var(--border-color)')
+                    }`,
+                    borderRadius: '12px',
+                    padding: '0.9rem 1rem',
+                    cursor: estaOcupado ? 'not-allowed' : 'pointer',
+                    opacity: estaOcupado ? 0.45 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '0.75rem',
+                    transition: 'all 0.15s ease',
+                    boxShadow: isSelected ? '0 0 16px rgba(34, 197, 94, 0.2)' : 'none'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
+                    <CountryFlag bandera={p.bandera} nombre={p.nombre} size="md" />
+                    <span style={{
+                      fontWeight: isSelected ? '800' : '700',
+                      fontSize: '0.88rem',
+                      color: isSelected ? '#22c55e' : 'var(--text-color)',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}>
+                      {p.nombre}
+                    </span>
+                  </div>
+
+                  {estaOcupado ? (
+                    <span style={{
+                      fontSize: '0.65rem',
+                      fontWeight: '800',
+                      color: '#ef4444',
+                      backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                      padding: '0.15rem 0.45rem',
+                      borderRadius: '4px',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      Ocupado
+                    </span>
+                  ) : isSelected ? (
+                    <CheckCircle2 size={18} color="#22c55e" style={{ flexShrink: 0 }} />
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Opción de país personalizado */}
+          <div style={{
+            backgroundColor: 'var(--panel-color)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '14px',
+            padding: '1.25rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem'
+          }}>
+            <div style={{ fontSize: '0.82rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              ¿Tu delegación no aparece en la lista anterior?
+            </div>
+            <div style={{ display: 'flex', gap: '0.65rem' }}>
+              <input
+                type="text"
+                placeholder="Escribe el nombre de tu delegación (ej: Santa Sede, Observador ONU...)"
+                value={paisPersonalizadoInput}
+                onChange={e => {
+                  setPaisPersonalizadoInput(e.target.value);
+                  if (e.target.value) setPaisSeleccionadoTemp('');
+                }}
+                style={{
+                  flex: 1,
+                  backgroundColor: 'var(--card-header-bg)',
+                  border: '1px solid var(--subborder-color)',
+                  borderRadius: '10px',
+                  padding: '0.7rem 1rem',
+                  color: 'var(--text-color)',
+                  fontWeight: '600',
+                  fontSize: '0.88rem'
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Botón de Confirmación Flotante */}
+          <div style={{
+            position: 'sticky',
+            bottom: '16px',
+            backgroundColor: 'var(--panel-color)',
+            border: '1.5px solid var(--subborder-color)',
+            borderRadius: '14px',
+            padding: '1rem 1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem',
+            boxShadow: '0 15px 35px rgba(0,0,0,0.45)',
+            zIndex: 90
+          }}>
+            <div>
+              <div style={{ fontSize: '0.72rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                Delegación seleccionada:
+              </div>
+              <div style={{ fontSize: '1.05rem', fontWeight: '800', color: (paisSeleccionadoTemp || paisPersonalizadoInput) ? '#22c55e' : 'var(--muted-text)', marginTop: '2px' }}>
+                {paisSeleccionadoTemp || paisPersonalizadoInput || 'Ningún país seleccionado'}
+              </div>
+            </div>
+
+            <button
+              disabled={(!paisSeleccionadoTemp && !paisPersonalizadoInput.trim()) || isSubmittingCountry}
+              onClick={() => handleConfirmCountrySelection(paisSeleccionadoTemp || paisPersonalizadoInput)}
+              style={{
+                backgroundColor: (!paisSeleccionadoTemp && !paisPersonalizadoInput.trim()) ? 'rgba(255,255,255,0.05)' : 'var(--btn-bg)',
+                color: (!paisSeleccionadoTemp && !paisPersonalizadoInput.trim()) ? 'var(--muted-text)' : 'var(--btn-text)',
+                border: 'none',
+                borderRadius: '10px',
+                padding: '0.75rem 1.5rem',
+                fontWeight: '800',
+                fontSize: '0.9rem',
+                cursor: (!paisSeleccionadoTemp && !paisPersonalizadoInput.trim()) || isSubmittingCountry ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                boxShadow: (!paisSeleccionadoTemp && !paisPersonalizadoInput.trim()) ? 'none' : '0 4px 16px rgba(0,0,0,0.3)',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              {isSubmittingCountry ? (
+                <>
+                  <RefreshCw size={16} className="animate-spin" /> Conectando...
+                </>
+              ) : (
+                <>
+                  <Check size={16} /> Entrar a la Sesión
+                </>
+              )}
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -206,9 +703,33 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
           <OpenMunLogo height={30} isLight={isLight} />
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+              <CountryFlag nombre={clientCountry} size="sm" />
               <span style={{ fontWeight: '800', fontSize: '1rem', letterSpacing: '-0.01em' }}>
                 {clientCountry || 'Delegación'}
               </span>
+              <button
+                onClick={() => {
+                  if (confirm('¿Deseas cambiar tu delegación asignada?')) {
+                    resetCountrySelection();
+                  }
+                }}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--subborder-color)',
+                  borderRadius: '6px',
+                  color: 'var(--muted-text)',
+                  padding: '0.15rem 0.45rem',
+                  fontSize: '0.68rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '3px'
+                }}
+                title="Cambiar de país asignado"
+              >
+                <RefreshCw size={11} /> Cambiar
+              </button>
               <span style={{
                 fontSize: '0.68rem',
                 fontWeight: '700',
