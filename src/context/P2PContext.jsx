@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { CheckCircle2, AlertCircle, Info, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Info, AlertTriangle, Lock, X } from 'lucide-react';
 import peerService, { MSG_TYPES, generateRoomCode, DEFAULT_ROOM_SETTINGS } from '../services/peerService';
 
 const P2PContext = createContext();
@@ -23,6 +23,8 @@ export const P2PProvider = ({ children }) => {
   const [role, setRole] = useState('none'); // 'chair' | 'delegate' | 'secretariat' | 'backroom' | 'none'
   const [connectionStatus, setConnectionStatus] = useState('disconnected'); // 'disconnected' | 'connecting' | 'connected' | 'host_active' | 'error'
   const [error, setError] = useState(null);
+  const [isTurnRelay, setIsTurnRelay] = useState(false);
+  const [isTurnWarningDismissed, setIsTurnWarningDismissed] = useState(false);
   const [roomId, setRoomId] = useState(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -188,7 +190,13 @@ export const P2PProvider = ({ children }) => {
 
       if (event === 'disconnected') {
         setConnectionStatus('disconnected');
+        setIsTurnRelay(false);
+        setIsTurnWarningDismissed(false);
         addNotification(data.reason || 'Desconectado de la sala', 'warning');
+      }
+
+      if (event === 'connection_type') {
+        setIsTurnRelay(!!data?.isRelay);
       }
 
       if (event === 'error') {
@@ -467,6 +475,8 @@ export const P2PProvider = ({ children }) => {
     setConnectionStatus('disconnected');
     setConnectedPeers([]);
     setRole('none');
+    setIsTurnRelay(false);
+    setIsTurnWarningDismissed(false);
     addNotification('Sala P2P finalizada', 'info');
   }, [addNotification]);
 
@@ -546,6 +556,8 @@ export const P2PProvider = ({ children }) => {
     peerService.destroy();
     setConnectionStatus('disconnected');
     setRole('none');
+    setIsTurnRelay(false);
+    setIsTurnWarningDismissed(false);
     setViewMode('chair');
   }, []);
 
@@ -716,6 +728,9 @@ export const P2PProvider = ({ children }) => {
       eliminarEnmiendaPropuesta,
       castVote,
       remoteSessionState,
+      isTurnRelay,
+      isTurnWarningDismissed,
+      dismissTurnWarning: () => setIsTurnWarningDismissed(true),
       isLiveModalOpen,
       openLiveModal,
       closeLiveModal,
@@ -735,6 +750,90 @@ export const P2PProvider = ({ children }) => {
       notifications
     }}>
       {children}
+
+      {/* Banner de Aviso de Conexión TURN Server (Relay) con botón de cierre [X] */}
+      {(connectionStatus === 'connected' || connectionStatus === 'host_active') && isTurnRelay && !isTurnWarningDismissed && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '16px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 100001,
+            backgroundColor: 'rgba(24, 24, 27, 0.96)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid #f59e0b',
+            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.5), 0 0 15px rgba(245, 158, 11, 0.2)',
+            borderRadius: '10px',
+            padding: '0.75rem 1rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.85rem',
+            maxWidth: '680px',
+            width: 'calc(100% - 32px)',
+            animation: 'slideInDown 0.3s ease',
+            color: '#f4f4f5'
+          }}
+        >
+          <div style={{
+            backgroundColor: 'rgba(245, 158, 11, 0.15)',
+            border: '1px solid rgba(245, 158, 11, 0.4)',
+            borderRadius: '8px',
+            padding: '0.45rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <Lock size={20} color="#f59e0b" />
+          </div>
+
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.15rem' }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#fbbf24' }}>
+                Conexión vía TURN Relay (Red Restringida)
+              </span>
+              <span style={{
+                fontSize: '0.7rem',
+                backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                color: '#4ade80',
+                border: '1px solid rgba(34, 197, 94, 0.35)',
+                padding: '1px 6px',
+                borderRadius: '4px',
+                fontWeight: '600'
+              }}>
+                Ahorro de Datos Activo
+              </span>
+            </div>
+            <p style={{ margin: 0, fontSize: '0.78rem', color: '#d4d4d8', lineHeight: '1.35' }}>
+              Conexión no establecida por P2P directo, usando <strong>TURN server</strong> para poder comunicarse. Todo el tráfico está <strong>encriptado de extremo a extremo (E2EE/DTLS)</strong>.
+            </p>
+          </div>
+
+          <button
+            onClick={() => setIsTurnWarningDismissed(true)}
+            aria-label="Cerrar aviso de conexión TURN"
+            title="Cerrar aviso"
+            style={{
+              backgroundColor: 'transparent',
+              border: 'none',
+              color: '#a1a1aa',
+              cursor: 'pointer',
+              padding: '0.3rem',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.15s ease',
+              flexShrink: 0
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = '#ffffff'; e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = '#a1a1aa'; e.currentTarget.style.backgroundColor = 'transparent'; }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+      )}
 
       {/* Renderizado de Notificaciones Toasts Globales */}
       {notifications.length > 0 && (

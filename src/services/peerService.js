@@ -149,6 +149,30 @@ class PeerService {
     } catch (e) { }
     this.hostConn = null;
     this.heartbeatTimer = null;
+    this.isTurnRelay = false;
+    this.lastBroadcastedStateHash = null;
+  }
+
+  /**
+   * Determina si la conexión WebRTC actual está pasando por un servidor TURN (relay)
+   */
+  async checkConnectionRelay(pc) {
+    if (!pc || typeof pc.getStats !== 'function') return false;
+    try {
+      const stats = await pc.getStats();
+      for (const report of stats.values()) {
+        if (report.type === 'candidate-pair' && (report.selected || report.state === 'succeeded' || report.nominated)) {
+          const localCandidate = stats.get(report.localCandidateId);
+          const remoteCandidate = stats.get(report.remoteCandidateId);
+          if (localCandidate?.candidateType === 'relay' || remoteCandidate?.candidateType === 'relay') {
+            return true;
+          }
+        }
+      }
+    } catch (e) {
+      // Ignorar errores transitorios de stats
+    }
+    return false;
   }
 
   // Filtrar histórico de notas según el rol y país del receptor
@@ -193,7 +217,7 @@ class PeerService {
     });
   }
 
-  // Keep-alive para el WebSocket del servidor de señalización (Render cierra WebSockets ociosos tras ~55s)
+  // Keep-alive optimizado para el WebSocket del servidor de señalización (25s para minimizar MB)
   startSignalingHeartbeat() {
     this.stopSignalingHeartbeat();
     this.heartbeatTimer = setInterval(() => {
@@ -209,7 +233,7 @@ class PeerService {
           } catch (e) { }
         }
       }
-    }, 12000);
+    }, 25000);
   }
 
   stopSignalingHeartbeat() {
@@ -327,6 +351,20 @@ class PeerService {
   handleIncomingConnection(conn) {
     conn.on('open', () => {
       // Conexión DataChannel abierta con el peer
+      setTimeout(async () => {
+        if (conn.peerConnection) {
+          const isRelay = await this.checkConnectionRelay(conn.peerConnection);
+          const meta = this.peerMetadata.get(conn.peer);
+          if (meta) meta.isRelay = isRelay;
+          const anyRelay = isRelay || Array.from(this.peerMetadata.values()).some(m => m.isRelay);
+          this.isTurnRelay = anyRelay;
+          this.emit('connection_type', {
+            isRelay: anyRelay,
+            type: anyRelay ? 'relay' : 'direct',
+            mode: anyRelay ? 'TURN Server (Relay)' : 'P2P Directo'
+          });
+        }
+      }, 1000);
     });
 
     conn.on('data', (data) => {
@@ -437,6 +475,29 @@ class PeerService {
               type: MSG_TYPES.AUTH,
               payload: { role, password, country }
             });
+
+            // Detectar si la conexión es vía TURN Relay y emitir estado
+            const checkRelay = async () => {
+              if (currentConn?.peerConnection) {
+                const isRelay = await this.checkConnectionRelay(currentConn.peerConnection);
+                this.isTurnRelay = isRelay;
+                this.emit('connection_type', {
+                  isRelay,
+                  type: isRelay ? 'relay' : 'direct',
+                  mode: isRelay ? 'TURN Server (Relay)' : 'P2P Directo'
+                });
+              }
+            };
+            setTimeout(checkRelay, 1200);
+            try {
+              if (currentConn.peerConnection) {
+                currentConn.peerConnection.addEventListener('iceconnectionstatechange', () => {
+                  if (currentConn?.peerConnection?.iceConnectionState === 'connected' || currentConn?.peerConnection?.iceConnectionState === 'completed') {
+                    checkRelay();
+                  }
+                });
+              }
+            } catch (e) { }
           });
 
           currentConn.on('data', (data) => {
@@ -918,7 +979,7 @@ class PeerService {
 
     const target = note.to; // País destinatario, 'CHAIR', 'BACKROOM', 'TODOS'
 
-    // A. Enviar a destinatarios remotos correspondientes
+    // A. Enviar a destinatarios remotos correspondientes (Optimización de Privacidad y Ancho de Banda)
     this.connections.forEach((conn, peerId) => {
       const meta = this.peerMetadata.get(peerId);
       if (!meta) return;
@@ -926,17 +987,21 @@ class PeerService {
       let shouldReceive = false;
 
       if (meta.role === 'delegate') {
-        // Un delegado SOLO recibe notas destinadas a su país o a TODOS
-        if (target.toLowerCase() === meta.country.toLowerCase() || target.toUpperCase() === 'TODOS') {
+        // Un delegado SOLO recibe notas dirigidas a su país, enviadas por él o para TODOS
+        const myCountry = (meta.country || '').toLowerCase().trim();
+        const targetClean = (target || '').toLowerCase().trim();
+        const fromClean = (formattedNote.from || '').toLowerCase().trim();
+
+        if (myCountry && (targetClean === myCountry || targetClean === 'todos' || fromClean === myCountry)) {
           shouldReceive = true;
         }
       } else if (meta.role === 'backroom') {
-        // El backroom recibe notas destinadas a BACKROOM o enviadas por el propio BACKROOM o a TODOS
+        // El backroom recibe notas destinadas a BACKROOM, enviadas por BACKROOM o a TODOS
         if (target.toUpperCase() === 'BACKROOM' || formattedNote.fromRole === 'backroom' || target.toUpperCase() === 'TODOS') {
           shouldReceive = true;
         }
       } else if (meta.role === 'secretariat') {
-        // La secretaría tiene el feed completo de notas de toda la sala
+        // La secretaría tiene la consola completa de notas
         shouldReceive = true;
       }
 
@@ -965,12 +1030,30 @@ class PeerService {
   // ─────────────────────────────────────────────────────────────
   // EMISIÓN Y SINCRONIZACIÓN DESDE EL CHAIR
   // ─────────────────────────────────────────────────────────────
+  getPublicSessionState(state) {
+    if (!state || typeof state !== 'object') return {};
+    return {
+      paises: state.paises || [],
+      agendaSesion: state.agendaSesion || {},
+      caucusActivo: state.caucusActivo || {},
+      oradoresCola: state.oradoresCola || [],
+      oradoresCaucus: state.oradoresCaucus || [],
+      votacionSesion: state.votacionSesion || {},
+      documento: state.documento || null,
+      isPaused: state.isPaused,
+      tiempoRestante: state.tiempoRestante,
+      temaActual: state.temaActual || state.agendaSesion?.temaActual || ''
+    };
+  }
+
   broadcastStateToClients(state) {
     this.latestSessionState = state;
+    const publicState = this.getPublicSessionState(state);
+
     const msg = {
       type: MSG_TYPES.SYNC_STATE,
       payload: {
-        ...state,
+        ...publicState,
         roomSettings: this.roomSettings,
         speakingRequests: this.latestSpeakingRequests || []
       }
@@ -1176,6 +1259,7 @@ class PeerService {
     }
     this.isHost = false;
     this.roomId = null;
+    this.isTurnRelay = false;
   }
 }
 
