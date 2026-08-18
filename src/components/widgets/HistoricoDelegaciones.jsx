@@ -12,7 +12,8 @@ import {
   Mic, 
   TrendingUp, 
   Flame,
-  RotateCcw
+  RotateCcw,
+  FileSignature
 } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
@@ -69,10 +70,16 @@ const formatTiempoCompacto = (totalSeg) => {
 
 const HistoricoDelegaciones = () => {
   const { t } = useTranslation();
-  const { paises, mociones = [], historicoMociones = [], registroIntervenciones = [] } = useSession();
+  const { 
+    paises, 
+    mociones = [], 
+    historicoMociones = [], 
+    registroIntervenciones = [],
+    enmiendasSesion 
+  } = useSession();
 
   const [busqueda, setBusqueda] = useState('');
-  const [columnaOrden, setColumnaOrden] = useState('tiempoHablado'); // 'nombre' | 'mociones' | 'aprobadas' | 'tiempoHablado' | 'preguntas'
+  const [columnaOrden, setColumnaOrden] = useState('tiempoHablado'); // 'nombre' | 'mociones' | 'aprobadas' | 'enmiendas' | 'enmiendasAprobadas' | 'tiempoHablado' | 'preguntas'
   const [ordenAsc, setOrdenAsc] = useState(false);
   const [diaSeleccionado, setDiaSeleccionado] = useState('TODOS'); // 'TODOS' | 'YYYY-MM-DD'
 
@@ -103,6 +110,7 @@ const HistoricoDelegaciones = () => {
   }, [tiempoExtra]);
 
   const listaMocionesFuente = (historicoMociones && historicoMociones.length > 0) ? historicoMociones : mociones;
+  const listaEnmiendasFuente = useMemo(() => enmiendasSesion?.enmiendas || [], [enmiendasSesion]);
 
   // 1. Detectar y ordenar cronológicamente todos los días registrados en el MUN
   const diasDisponibles = useMemo(() => {
@@ -122,6 +130,11 @@ const HistoricoDelegaciones = () => {
       if (f) fechasSet.add(f);
     });
 
+    listaEnmiendasFuente.forEach(item => {
+      const f = extraerClaveFecha(item);
+      if (f) fechasSet.add(f);
+    });
+
     const fechasOrdenadas = Array.from(fechasSet).sort();
 
     return fechasOrdenadas.map((fStr, index) => ({
@@ -131,7 +144,7 @@ const HistoricoDelegaciones = () => {
       labelCorta: `Día ${index + 1} (${formatearFechaCorta(fStr)})`,
       labelCompleta: `Día ${index + 1} - ${formatearFechaCorta(fStr)}`
     }));
-  }, [registroIntervenciones, listaMocionesFuente]);
+  }, [registroIntervenciones, listaMocionesFuente, listaEnmiendasFuente]);
 
   // Helpers para ajustes manuales
   const getAdjustmentKey = (paisId) => `${diaSeleccionado}_${paisId}`;
@@ -160,7 +173,7 @@ const HistoricoDelegaciones = () => {
     }));
   };
 
-  // 2. Filtrar intervenciones y mociones según el día seleccionado
+  // 2. Filtrar intervenciones, mociones y enmiendas según el día seleccionado
   const intervencionesFiltradas = useMemo(() => {
     if (diaSeleccionado === 'TODOS') return registroIntervenciones;
     return registroIntervenciones.filter(i => extraerClaveFecha(i) === diaSeleccionado);
@@ -170,6 +183,11 @@ const HistoricoDelegaciones = () => {
     if (diaSeleccionado === 'TODOS') return listaMocionesFuente;
     return listaMocionesFuente.filter(m => extraerClaveFecha(m) === diaSeleccionado);
   }, [listaMocionesFuente, diaSeleccionado]);
+
+  const enmiendasFiltradas = useMemo(() => {
+    if (diaSeleccionado === 'TODOS') return listaEnmiendasFuente;
+    return listaEnmiendasFuente.filter(e => extraerClaveFecha(e) === diaSeleccionado);
+  }, [listaEnmiendasFuente, diaSeleccionado]);
 
   // 3. Calcular métricas para cada país
   const datosPaises = useMemo(() => {
@@ -182,6 +200,16 @@ const HistoricoDelegaciones = () => {
         m.proponente?.toLowerCase().trim() === nombreNorm && 
         (m.estado === 'Aprobada' || m.estado === 'Aprobado')
       ).length;
+
+      // Enmiendas en el filtro activo (propuestas y aprobadas/aceptadas)
+      const enmPresentadas = enmiendasFiltradas.filter(e => 
+        (e.paisProponente || e.proponente || '').toLowerCase().trim() === nombreNorm
+      ).length;
+      const enmAprobadas = enmiendasFiltradas.filter(e => {
+        const pProp = (e.paisProponente || e.proponente || '').toLowerCase().trim();
+        const st = (e.estado || '').toLowerCase().trim();
+        return pProp === nombreNorm && (st === 'aceptada' || st === 'aceptado' || st === 'aprobada' || st === 'aprobado');
+      }).length;
 
       // Intervenciones en el filtro activo
       const intervencionesPais = intervencionesFiltradas.filter(i => {
@@ -213,6 +241,8 @@ const HistoricoDelegaciones = () => {
         ...p,
         mocPresentadas,
         mocAprobadas,
+        enmPresentadas,
+        enmAprobadas,
         segHablados,
         segGlobalHablados,
         minutosExactos,
@@ -220,7 +250,7 @@ const HistoricoDelegaciones = () => {
         intervencionesCount: intervencionesPais.length
       };
     });
-  }, [paises, intervencionesFiltradas, mocionesFiltradas, registroIntervenciones, tiempoExtra, preguntasExtras, diaSeleccionado]);
+  }, [paises, intervencionesFiltradas, mocionesFiltradas, enmiendasFiltradas, registroIntervenciones, tiempoExtra, preguntasExtras, diaSeleccionado]);
 
   // Cómputo global de todo el comité para las métricas de cabecera
   const estadisticasGenerales = useMemo(() => {
@@ -229,6 +259,12 @@ const HistoricoDelegaciones = () => {
     const totalIntervenciones = datosPaises.reduce((acc, p) => acc + p.intervencionesCount, 0);
     const totalMociones = mocionesFiltradas.length;
     const totalMocionesAprobadas = mocionesFiltradas.filter(m => m.estado === 'Aprobada' || m.estado === 'Aprobado').length;
+
+    const totalEnmiendas = enmiendasFiltradas.length;
+    const totalEnmiendasAprobadas = enmiendasFiltradas.filter(e => {
+      const st = (e.estado || '').toLowerCase().trim();
+      return st === 'aceptada' || st === 'aceptado' || st === 'aprobada' || st === 'aprobado';
+    }).length;
 
     // Delegación con más tiempo hablado
     const paisLider = [...datosPaises].sort((a, b) => b.segHablados - a.segHablados)[0];
@@ -240,9 +276,12 @@ const HistoricoDelegaciones = () => {
       totalMociones,
       totalMocionesAprobadas,
       tasaAprobacion: totalMociones > 0 ? Math.round((totalMocionesAprobadas / totalMociones) * 100) : 0,
+      totalEnmiendas,
+      totalEnmiendasAprobadas,
+      tasaAprobacionEnmiendas: totalEnmiendas > 0 ? Math.round((totalEnmiendasAprobadas / totalEnmiendas) * 100) : 0,
       paisLider: paisLider && paisLider.segHablados > 0 ? paisLider : null
     };
-  }, [datosPaises, mocionesFiltradas]);
+  }, [datosPaises, mocionesFiltradas, enmiendasFiltradas]);
 
   // Filtrar por búsqueda
   const paisesFiltrados = useMemo(() => {
@@ -263,6 +302,12 @@ const HistoricoDelegaciones = () => {
       } else if (columnaOrden === 'aprobadas') {
         valA = a.mocAprobadas;
         valB = b.mocAprobadas;
+      } else if (columnaOrden === 'enmiendas') {
+        valA = a.enmPresentadas;
+        valB = b.enmPresentadas;
+      } else if (columnaOrden === 'enmiendasAprobadas') {
+        valA = a.enmAprobadas;
+        valB = b.enmAprobadas;
       } else if (columnaOrden === 'tiempoHablado') {
         valA = a.segHablados;
         valB = b.segHablados;
@@ -523,7 +568,29 @@ const HistoricoDelegaciones = () => {
           </div>
         </div>
 
-        {/* KPI 4: Delegación Más Activa */}
+        {/* KPI 4: Enmiendas Aprobadas */}
+        <div style={{
+          backgroundColor: 'rgba(168, 85, 247, 0.08)',
+          border: '1px solid rgba(168, 85, 247, 0.25)',
+          borderRadius: '8px',
+          padding: '0.5rem 0.7rem',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#c084fc', fontSize: '0.66rem', fontWeight: '700' }}>
+            <span>{t('history.amendmentsPassed', 'ENMIENDAS APROBADAS')}</span>
+            <FileSignature size={13} />
+          </div>
+          <div style={{ fontSize: '1.05rem', fontWeight: '900', color: '#c084fc', marginTop: '2px' }}>
+            {estadisticasGenerales.totalEnmiendasAprobadas} <span style={{ fontSize: '0.72rem', fontWeight: '600', color: 'var(--muted-text)' }}>/ {estadisticasGenerales.totalEnmiendas}</span>
+          </div>
+          <div style={{ fontSize: '0.64rem', color: 'var(--muted-text)' }}>
+            {estadisticasGenerales.tasaAprobacionEnmiendas}% {t('history.approvalRate', 'de aprobación')}
+          </div>
+        </div>
+
+        {/* KPI 5: Delegación Más Activa */}
         <div style={{
           backgroundColor: 'rgba(234, 179, 8, 0.08)',
           border: '1px solid rgba(234, 179, 8, 0.25)',
@@ -575,6 +642,12 @@ const HistoricoDelegaciones = () => {
               <th onClick={() => cambiarOrden('aprobadas')} style={{ padding: '0.45rem 0.6rem', textAlign: 'center', cursor: 'pointer', userSelect: 'none' }}>
                 {t('history.motionsPassedCol', 'MOC. APROBADAS')} <ArrowUpDown size={11} style={{ display: 'inline', opacity: 0.7 }} />
               </th>
+              <th onClick={() => cambiarOrden('enmiendas')} style={{ padding: '0.45rem 0.6rem', textAlign: 'center', cursor: 'pointer', userSelect: 'none' }}>
+                {t('history.amendmentsPresented', 'ENM. PROPUESTAS')} <ArrowUpDown size={11} style={{ display: 'inline', opacity: 0.7 }} />
+              </th>
+              <th onClick={() => cambiarOrden('enmiendasAprobadas')} style={{ padding: '0.45rem 0.6rem', textAlign: 'center', cursor: 'pointer', userSelect: 'none' }}>
+                {t('history.amendmentsPassedCol', 'ENM. APROBADAS')} <ArrowUpDown size={11} style={{ display: 'inline', opacity: 0.7 }} />
+              </th>
               <th onClick={() => cambiarOrden('tiempoHablado')} style={{ padding: '0.45rem 0.6rem', textAlign: 'center', cursor: 'pointer', userSelect: 'none' }}>
                 {t('history.speakingTimeCol', 'TIEMPO HABLADO & MINUTOS')} <ArrowUpDown size={11} style={{ display: 'inline', opacity: 0.7 }} />
               </th>
@@ -589,7 +662,7 @@ const HistoricoDelegaciones = () => {
           <tbody>
             {paisesOrdenados.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted-text)' }}>
+                <td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted-text)' }}>
                   {t('history.noMatchingDelegations', 'No hay delegaciones que coincidan con los filtros aplicados.')}
                 </td>
               </tr>
@@ -623,6 +696,16 @@ const HistoricoDelegaciones = () => {
                     {/* Mociones Aprobadas */}
                     <td style={{ padding: '0.45rem 0.6rem', textAlign: 'center', fontWeight: '700', color: p.mocAprobadas > 0 ? '#22c55e' : 'inherit' }}>
                       {p.mocAprobadas}
+                    </td>
+
+                    {/* Enmiendas Propuestas */}
+                    <td style={{ padding: '0.45rem 0.6rem', textAlign: 'center', fontWeight: '700', color: p.enmPresentadas > 0 ? '#c084fc' : 'inherit' }}>
+                      {p.enmPresentadas}
+                    </td>
+
+                    {/* Enmiendas Aprobadas */}
+                    <td style={{ padding: '0.45rem 0.6rem', textAlign: 'center', fontWeight: '700', color: p.enmAprobadas > 0 ? '#10b981' : 'inherit' }}>
+                      {p.enmAprobadas}
                     </td>
 
                     {/* Tiempo Hablado (Cómputo de minutos y ajuste manual) */}
