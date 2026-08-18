@@ -1,7 +1,7 @@
 {
   "name": "OpenMUN - Plataforma Web de Modelo de Naciones Unidas",
   "short_name": "OpenMUN",
-  "description": "Herramienta web moderna y completa para la gestión de debates, mociones, oradores y votaciones en Modelos de Naciones Unidas.",
+  "description": "Herramienta web gratuita y opensource para la gestión de debates, mociones y votaciones en Modelos de Naciones Unidas.",
   "icons": [
     {
       "src": "/favicon.svg",

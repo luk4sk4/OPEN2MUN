@@ -70,7 +70,7 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
   // Generar URL completa para que los delegados entren con un solo clic o escaneando QR
   const shareableJoinUrl = typeof window !== 'undefined'
     ? `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(roomId)}`
-    : `https://openmun.org/?room=${roomId}`;
+    : `https://openmun.app/?room=${roomId}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareableJoinUrl);

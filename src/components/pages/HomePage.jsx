@@ -125,8 +125,8 @@ const FEATURES = [
 
 const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
   const { t } = useTranslation();
-  // Estado para visibilidad del banner de donaciones
-  const [showDonationBanner, setShowDonationBanner] = useState(true);
+  // Estado para visibilidad del banner de donaciones (desactivado temporalmente)
+  const [showDonationBanner, setShowDonationBanner] = useState(false);
 
   // Estado para notas de presidencia
   const [notasUsuario, setNotasUsuario] = useState(() => {
@@ -408,7 +408,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
             letterSpacing: '-0.02em',
             color: textPrimary
           }}>
-            {t('home.heroTitle', 'La plataforma abierta y definitiva para Modelos de Naciones Unidas')}
+            {t('home.heroTitle', 'La plataforma gratuita y open source para Modelos de Naciones Unidas')}
           </h1>
 
           {/* Subtítulo sobrio y directo */}

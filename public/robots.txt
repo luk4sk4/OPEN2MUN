@@ -3,7 +3,7 @@ User-agent: *
 Allow: /
 
 # Host
-Host: https://open2mun.vercel.app
+Host: https://openmun.app
 
 # Sitemaps
-Sitemap: https://open2mun.vercel.app/sitemap.xml
+Sitemap: https://openmun.app/sitemap.xml
