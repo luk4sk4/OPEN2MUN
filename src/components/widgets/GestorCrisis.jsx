@@ -156,19 +156,6 @@ const GestorCrisis = () => {
       } catch (e) { }
     }
     return [
-      {
-        id: 'ev_init_1',
-        titulo: 'Movilización Inesperada de Fuerzas en Frontera',
-        categoria: 'CRITICA',
-        fuente: 'Reuters / UN Situation Center',
-        descripcion: 'Las tensiones diplomáticas escalan tras el despliegue no anunciado de unidades blindadas. La presidencia del comité solicita posturas oficiales urgentes.',
-        imagen: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&auto=format&fit=crop&q=80',
-        horaSimulada: 'Día 1 - 08:30 hrs',
-        horaReal: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        paisesInvolucrados: (paises || []).slice(0, 2).map(p => p.nombre),
-        estado: 'Activo',
-        fijadoComoBanner: true
-      }
     ];
   });
 

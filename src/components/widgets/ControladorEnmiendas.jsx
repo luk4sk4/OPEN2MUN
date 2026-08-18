@@ -30,12 +30,20 @@ import {
   Send,
   Inbox,
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  Loader2,
+  FileDown
 } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 import { useP2P } from '../../context/P2PContext';
 import CountryFlag from '../common/CountryFlag';
 import { useTranslation } from 'react-i18next';
+import {
+  extraerTextoDeArchivo,
+  descargarResolucionDocx,
+  descargarResolucionPdf,
+  descargarResolucionTxt
+} from '../../utils/documentHandlers';
 
 // Plantilla de ejemplo de resolución MUN
 const RESOLUCION_EJEMPLO = `# PROYECTO DE RESOLUCIÓN A/RES/79/L.4
@@ -212,6 +220,10 @@ const ControladorEnmiendas = () => {
   // Estado del editor de importación / pegado
   const [rawInputTexto, setRawInputTexto] = useState(textoResolucion || '');
   const [rawInputTitulo, setRawInputTitulo] = useState(tituloProyecto || '');
+  const [isDragging, setIsDragging] = useState(false);
+  const [cargandoArchivo, setCargandoArchivo] = useState(false);
+  const [errorArchivo, setErrorArchivo] = useState(null);
+  const [descargandoFormato, setDescargandoFormato] = useState(null);
   const fileInputRef = useRef(null);
 
   // Países asistentes para el selector de proponentes y cronómetro
@@ -283,28 +295,72 @@ const ControladorEnmiendas = () => {
     });
   }, [enmiendas, articulosActuales, filtroEstado]);
 
-  // Manejador de subida de archivos (.txt, .md)
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
+  // Procesamiento unificado de archivos (.docx, .pdf, .txt, .md)
+  const procesarArchivoSubido = async (file) => {
     if (!file) return;
+    setCargandoArchivo(true);
+    setErrorArchivo(null);
 
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const content = ev.target.result;
-      const parsed = parsearResolucion(content);
-      const nombreLimpio = file.name.replace(/\.[^/.]+$/, "");
-      
+    try {
+      const { texto, nombre } = await extraerTextoDeArchivo(file);
+      if (!texto || !texto.trim()) {
+        throw new Error('No se pudo extraer texto del archivo o el documento está vacío.');
+      }
+
+      const parsed = parsearResolucion(texto);
+      const tituloFinal = nombre || 'Proyecto de Resolución';
+
       guardarResolucionEnmiendas({
-        titulo: nombreLimpio,
-        texto: content,
+        titulo: tituloFinal,
+        texto: texto,
         articulos: parsed
       });
-      setRawInputTexto(content);
-      setRawInputTitulo(nombreLimpio);
+
+      setRawInputTexto(texto);
+      setRawInputTitulo(tituloFinal);
       setTabInterna('articulos');
-    };
-    reader.readAsText(file);
+    } catch (err) {
+      console.error('Error al procesar archivo:', err);
+      const msg = err.message || 'Error al procesar el archivo seleccionado.';
+      setErrorArchivo(msg);
+      alert(`Error al procesar el archivo: ${msg}`);
+    } finally {
+      setCargandoArchivo(false);
+    }
+  };
+
+  // Manejador de evento input file
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await procesarArchivoSubido(file);
+    }
     e.target.value = '';
+  };
+
+  // Manejadores de Drag and Drop
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragging) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.currentTarget.contains(e.relatedTarget)) return;
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      await procesarArchivoSubido(files[0]);
+    }
   };
 
   // Cargar borrador de ejemplo
@@ -415,17 +471,31 @@ const ControladorEnmiendas = () => {
     alert('¡Texto de la resolución copiado al portapapeles!');
   };
 
-  // Descargar archivo de la resolución
-  const handleDescargarResolucion = (formato = 'md') => {
-    const texto = articulosActuales.map(a => `${a.prefijo ? a.prefijo + ' ' : ''}${a.texto}`).join('\n\n') || textoResolucion;
-    const blob = new Blob([texto], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${(tituloProyecto || 'resolucion').toLowerCase().replace(/\s+/g, '_')}.${formato}`;
-    a.click();
-    URL.revokeObjectURL(url);
+  // Descargar archivo de la resolución en formatos .docx, .pdf o .txt
+  const handleDescargarResolucion = async (formato = 'docx') => {
+    setDescargandoFormato(formato);
+    try {
+      const payload = {
+        titulo: tituloProyecto || 'Proyecto de Resolucion',
+        articulos: articulosActuales,
+        textoRaw: textoResolucion
+      };
+
+      if (formato === 'docx') {
+        await descargarResolucionDocx(payload);
+      } else if (formato === 'pdf') {
+        descargarResolucionPdf(payload);
+      } else {
+        descargarResolucionTxt(payload);
+      }
+    } catch (err) {
+      console.error('Error al exportar resolución:', err);
+      alert(`Error al generar el archivo ${formato.toUpperCase()}: ${err.message}`);
+    } finally {
+      setDescargandoFormato(null);
+    }
   };
+
 
   // Estadísticas y contadores corregidos
   const totalEnmiendas = enmiendas.length;
@@ -443,16 +513,92 @@ const ControladorEnmiendas = () => {
   };
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%',
-      backgroundColor: 'var(--panel-bg)',
-      color: 'var(--text-color)',
-      borderRadius: '8px',
-      overflow: 'hidden',
-      position: 'relative'
-    }}>
+    <div
+      onDragOver={handleDragOver}
+      onDragEnter={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        backgroundColor: 'var(--panel-bg)',
+        color: 'var(--text-color)',
+        borderRadius: '8px',
+        overflow: 'hidden',
+        position: 'relative'
+      }}
+    >
+      {/* ── OVERLAY VISUAL DE ARRASTRE DE ARCHIVOS ── */}
+      {isDragging && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.88)',
+          border: '3px dashed #3b82f6',
+          borderRadius: '8px',
+          zIndex: 160,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backdropFilter: 'blur(6px)',
+          gap: '0.85rem',
+          pointerEvents: 'none'
+        }}>
+          <div style={{
+            backgroundColor: 'rgba(59, 130, 246, 0.25)',
+            padding: '1.25rem',
+            borderRadius: '50%',
+            color: '#60a5fa',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <Upload size={42} />
+          </div>
+          <div style={{ fontSize: '1.15rem', fontWeight: '800', color: '#ffffff' }}>
+            Suelta aquí tu archivo de resolución
+          </div>
+          <div style={{ fontSize: '0.78rem', color: '#93c5fd', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <span style={{ backgroundColor: 'rgba(37, 99, 235, 0.3)', padding: '0.2rem 0.55rem', borderRadius: '4px', border: '1px solid rgba(59, 130, 246, 0.4)' }}>📄 Word (.docx)</span>
+            <span style={{ backgroundColor: 'rgba(220, 38, 38, 0.3)', padding: '0.2rem 0.55rem', borderRadius: '4px', border: '1px solid rgba(239, 68, 68, 0.4)' }}>📑 PDF (.pdf)</span>
+            <span style={{ backgroundColor: 'rgba(16, 185, 129, 0.3)', padding: '0.2rem 0.55rem', borderRadius: '4px', border: '1px solid rgba(16, 185, 129, 0.4)' }}>📝 Texto (.txt, .md)</span>
+          </div>
+        </div>
+      )}
+
+      {/* ── OVERLAY DE PROCESAMIENTO DE ARCHIVOS ── */}
+      {cargandoArchivo && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.85)',
+          borderRadius: '8px',
+          zIndex: 160,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backdropFilter: 'blur(5px)',
+          gap: '0.85rem'
+        }}>
+          <Loader2 size={38} color="#3b82f6" style={{ animation: 'spin 1s linear infinite' }} />
+          <div style={{ fontSize: '0.95rem', fontWeight: '800', color: '#ffffff' }}>
+            Extrayendo y parseando resolución...
+          </div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--muted-text)' }}>
+            Detectando cláusulas preambulatorias y operativas
+          </div>
+        </div>
+      )}
+
       {/* ── HEADER DEL CONTROLADOR DE ENMIENDAS ── */}
       <div style={{
         padding: '0.65rem 0.85rem',
@@ -803,24 +949,55 @@ const ControladorEnmiendas = () => {
             justifyContent: 'center',
             flex: 1,
             textAlign: 'center',
-            padding: '2rem 1rem',
+            padding: '1.5rem 1rem',
             color: 'var(--muted-text)',
             gap: '1rem'
           }}>
-            <div style={{
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              padding: '1rem',
-              borderRadius: '50%',
-              color: '#3b82f6'
-            }}>
-              <FileText size={40} />
-            </div>
-            <div>
-              <div style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--text-color)', marginBottom: '0.25rem' }}>
-                No hay ningún proyecto de resolución cargado
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                width: '100%',
+                maxWidth: '460px',
+                border: '2px dashed var(--subborder-color)',
+                borderRadius: '12px',
+                padding: '1.5rem 1.25rem',
+                backgroundColor: 'var(--card-hover, rgba(255,255,255,0.02))',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '0.75rem',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <div style={{
+                backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                padding: '0.9rem',
+                borderRadius: '50%',
+                color: '#3b82f6'
+              }}>
+                <Upload size={32} />
               </div>
-              <div style={{ fontSize: '0.78rem', maxWidth: '420px', lineHeight: 1.4 }}>
-                Sube un archivo (.txt o Markdown), pega el texto de un Google Doc o carga una resolución de ejemplo para empezar a gestionar enmiendas artículo por artículo.
+              <div>
+                <div style={{ fontSize: '0.95rem', fontWeight: '800', color: 'var(--text-color)', marginBottom: '0.25rem' }}>
+                  Arrastra o selecciona un archivo de resolución
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--muted-text)', lineHeight: 1.4 }}>
+                  Compatible con documentos Word (.docx), PDF (.pdf) y texto plano (.txt, .md)
+                </div>
+              </div>
+
+              {/* Badges de formatos soportados */}
+              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <span style={{ fontSize: '0.65rem', fontWeight: '700', backgroundColor: 'rgba(37, 99, 235, 0.15)', color: '#60a5fa', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
+                  DOCX / Word
+                </span>
+                <span style={{ fontSize: '0.65rem', fontWeight: '700', backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#f87171', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
+                  PDF
+                </span>
+                <span style={{ fontSize: '0.65rem', fontWeight: '700', backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#34d399', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
+                  TXT / Markdown
+                </span>
               </div>
             </div>
 
@@ -832,42 +1009,42 @@ const ControladorEnmiendas = () => {
                   border: '1px solid rgba(16, 185, 129, 0.4)',
                   color: '#10b981',
                   fontWeight: '700',
-                  padding: '0.5rem 0.85rem',
+                  padding: '0.45rem 0.85rem',
                   borderRadius: '6px',
                   cursor: 'pointer',
-                  fontSize: '0.78rem',
+                  fontSize: '0.76rem',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.35rem'
                 }}
               >
-                <Sparkles size={15} /> Cargar Resolución de Ejemplo
+                <Sparkles size={14} /> Cargar Resolución de Ejemplo
               </button>
 
               <button
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => setTabInterna('importar')}
                 style={{
-                  backgroundColor: 'var(--btn-bg)',
-                  color: 'var(--btn-text)',
-                  border: 'none',
+                  backgroundColor: 'var(--card-hover, rgba(255,255,255,0.05))',
+                  border: '1px solid var(--subborder-color)',
+                  color: 'var(--text-color)',
                   fontWeight: '700',
-                  padding: '0.5rem 0.85rem',
+                  padding: '0.45rem 0.85rem',
                   borderRadius: '6px',
                   cursor: 'pointer',
-                  fontSize: '0.78rem',
+                  fontSize: '0.76rem',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.35rem'
                 }}
               >
-                <Upload size={15} /> Subir Archivo (.txt / .md)
+                <Edit3 size={14} /> Pegar Texto Manualmente
               </button>
             </div>
             <input
               type="file"
               ref={fileInputRef}
               onChange={handleFileUpload}
-              accept=".txt,.md,.text"
+              accept=".docx,.doc,.pdf,.txt,.md,.text,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown"
               style={{ display: 'none' }}
             />
           </div>
@@ -1071,47 +1248,111 @@ const ControladorEnmiendas = () => {
             )}
           </div>
         ) : tabInterna === 'consolidado' ? (
-          /* ── VISTA CONSOLIDADA FINAL ── */
+          /* ── VISTA CONSOLIDADA FINAL Y EXPORTACIÓN MULTIFORMATO (DOCX, PDF, TXT) ── */
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
               <div style={{ fontSize: '0.85rem', fontWeight: '800' }}>Texto Consolidado de la Resolución</div>
-              <div style={{ display: 'flex', gap: '0.4rem' }}>
+              
+              <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', alignItems: 'center' }}>
                 <button
                   onClick={handleCopiarResolucion}
                   style={{
-                    backgroundColor: 'rgba(59, 130, 246, 0.15)',
-                    border: '1px solid rgba(59, 130, 246, 0.3)',
-                    color: '#3b82f6',
-                    padding: '0.35rem 0.65rem',
+                    backgroundColor: 'var(--card-hover, rgba(255,255,255,0.06))',
+                    border: '1px solid var(--subborder-color)',
+                    color: 'var(--text-color)',
+                    padding: '0.3rem 0.55rem',
                     borderRadius: '5px',
-                    fontSize: '0.74rem',
+                    fontSize: '0.72rem',
                     fontWeight: '700',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.3rem'
+                    gap: '0.25rem'
                   }}
+                  title="Copiar texto al portapapeles"
                 >
-                  <Copy size={13} /> Copiar Texto
+                  <Copy size={12} /> Copiar
                 </button>
 
+                {/* Descargar en Word (.docx) */}
                 <button
-                  onClick={() => handleDescargarResolucion('md')}
+                  onClick={() => handleDescargarResolucion('docx')}
+                  disabled={descargandoFormato === 'docx'}
+                  title="Descargar documento Microsoft Word (.docx)"
                   style={{
-                    backgroundColor: 'var(--btn-bg)',
-                    border: 'none',
-                    color: 'var(--btn-text)',
-                    padding: '0.35rem 0.65rem',
+                    backgroundColor: 'rgba(37, 99, 235, 0.2)',
+                    border: '1px solid #3b82f6',
+                    color: '#60a5fa',
+                    padding: '0.3rem 0.55rem',
                     borderRadius: '5px',
-                    fontSize: '0.74rem',
-                    fontWeight: '700',
+                    fontSize: '0.72rem',
+                    fontWeight: '800',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.3rem'
+                    gap: '0.25rem'
                   }}
                 >
-                  <Download size={13} /> Descargar .md
+                  {descargandoFormato === 'docx' ? (
+                    <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                  ) : (
+                    <FileDown size={12} />
+                  )}
+                  <span>Word (.docx)</span>
+                </button>
+
+                {/* Descargar en PDF (.pdf) */}
+                <button
+                  onClick={() => handleDescargarResolucion('pdf')}
+                  disabled={descargandoFormato === 'pdf'}
+                  title="Descargar documento formal en PDF (.pdf)"
+                  style={{
+                    backgroundColor: 'rgba(220, 38, 38, 0.2)',
+                    border: '1px solid #ef4444',
+                    color: '#f87171',
+                    padding: '0.3rem 0.55rem',
+                    borderRadius: '5px',
+                    fontSize: '0.72rem',
+                    fontWeight: '800',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem'
+                  }}
+                >
+                  {descargandoFormato === 'pdf' ? (
+                    <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                  ) : (
+                    <FileDown size={12} />
+                  )}
+                  <span>PDF (.pdf)</span>
+                </button>
+
+                {/* Descargar en Texto (.txt) */}
+                <button
+                  onClick={() => handleDescargarResolucion('txt')}
+                  disabled={descargandoFormato === 'txt'}
+                  title="Descargar como archivo de texto (.txt)"
+                  style={{
+                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                    border: '1px solid #10b981',
+                    color: '#34d399',
+                    padding: '0.3rem 0.55rem',
+                    borderRadius: '5px',
+                    fontSize: '0.72rem',
+                    fontWeight: '800',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem'
+                  }}
+                >
+                  {descargandoFormato === 'txt' ? (
+                    <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                  ) : (
+                    <Download size={12} />
+                  )}
+                  <span>Texto (.txt)</span>
                 </button>
               </div>
             </div>
@@ -1133,13 +1374,55 @@ const ControladorEnmiendas = () => {
             </div>
           </div>
         ) : (
-          /* ── VISTA DE IMPORTACIÓN Y PEGADO ── */
+          /* ── VISTA DE IMPORTACIÓN Y PEGADO CON DROPZONE ── */
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div style={{ fontSize: '0.85rem', fontWeight: '800' }}>Cargar Proyecto de Resolución</div>
             <div style={{ fontSize: '0.74rem', color: 'var(--muted-text)' }}>
-              Pega el texto directamente desde Google Docs, Word o un archivo de texto. Nuestro parser segmentará automáticamente las cláusulas y artículos.
+              Arrastra un archivo o pega el texto directamente desde Google Docs o Word. El sistema segmentará automáticamente las cláusulas y artículos.
             </div>
 
+            {/* Dropzone interactivo de subida */}
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                border: '2px dashed var(--subborder-color)',
+                borderRadius: '8px',
+                padding: '1.25rem 1rem',
+                backgroundColor: 'var(--card-hover, rgba(255,255,255,0.02))',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                textAlign: 'center'
+              }}
+            >
+              <div style={{
+                backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                padding: '0.6rem',
+                borderRadius: '50%',
+                color: '#3b82f6'
+              }}>
+                <Upload size={22} />
+              </div>
+              <div style={{ fontSize: '0.82rem', fontWeight: '700', color: 'var(--text-color)' }}>
+                Haz clic o arrastra aquí tu archivo Word (.docx), PDF (.pdf) o Texto (.txt / .md)
+              </div>
+              <div style={{ fontSize: '0.68rem', color: 'var(--muted-text)' }}>
+                Se detectará el título y se estructurarán las cláusulas automáticamente
+              </div>
+            </div>
+
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept=".docx,.doc,.pdf,.txt,.md,.text,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown"
+              style={{ display: 'none' }}
+            />
+
+            {/* Formulario de pegado manual */}
             <form onSubmit={handleGuardarTextoPegado} style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
               <div>
                 <label style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--muted-text)', display: 'block', marginBottom: '0.2rem' }}>
@@ -1169,7 +1452,7 @@ const ControladorEnmiendas = () => {
                 <textarea
                   value={rawInputTexto}
                   onChange={e => setRawInputTexto(e.target.value)}
-                  rows={12}
+                  rows={10}
                   style={{
                     width: '100%',
                     padding: '0.6rem',
