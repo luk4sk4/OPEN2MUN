@@ -165,7 +165,8 @@ class PeerService {
       this.connections.delete(conn.peer);
       this.peerMetadata.delete(conn.peer);
       this.emit('peer_disconnected', { peerId: conn.peer, meta });
-      this.broadcastPeerList();
+      this.broadcastPeerList(); ç
+      console.log();
     });
 
     conn.on('error', (err) => {
