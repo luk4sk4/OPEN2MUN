@@ -105,6 +105,8 @@
     "importSession": "Load Session (JSON)",
     "importSessionDesc": "Restore data from .json file",
     "exportSessionDesc": "Save session backup as JSON",
+    "clearLocalData": "Clear local data",
+    "clearLocalDataDesc": "Reset committee, speakers and session state",
     "driveExplore": "Explore / Manage Sessions",
     "driveConnectedAs": "Connected as",
     "committee": "Committee",
@@ -119,7 +121,13 @@
     "invalidJsonSyntaxDesc": "The selected file does not contain valid JSON syntax or is corrupted.",
     "invalidSessionFormatTitle": "Invalid Session Format",
     "invalidSessionFormatDesc": "The file does not match a recognized OpenMUN session structure.",
-    "importErrorTitle": "Error Importing Session"
+    "importErrorTitle": "Error Importing Session",
+    "confirmClearSessionTitle": "Clear all local session data?",
+    "confirmClearSessionDesc": "This action will reset the current committee, speakers list, voting records, and browser saved data. This cannot be undone unless you have a backup file.",
+    "confirmClearSessionBtn": "Clear local data",
+    "cancelBtn": "Cancel",
+    "sessionClearedTitle": "Local data cleared!",
+    "sessionClearedDesc": "The local session has been completely reset."
   },
   "home": {
     "heroTitle": "The ultimate open-source platform for Model United Nations",

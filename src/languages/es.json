@@ -107,6 +107,8 @@
     "importSession": "Cargar Sesión (JSON)",
     "importSessionDesc": "Restaurar datos desde archivo .json",
     "exportSessionDesc": "Guardar copia de seguridad en JSON",
+    "clearLocalData": "Borrar datos locales",
+    "clearLocalDataDesc": "Restablecer comités, oradores y estado",
     "driveExplore": "Explorar / Gestionar Sesiones",
     "driveConnectedAs": "Conectado como",
     "committee": "Comité",
@@ -121,7 +123,13 @@
     "invalidJsonSyntaxDesc": "El archivo seleccionado no tiene un formato JSON válido o está corrupto.",
     "invalidSessionFormatTitle": "Estructura de Sesión Inválida",
     "invalidSessionFormatDesc": "El archivo no contiene una estructura reconocida de sesión de OpenMUN.",
-    "importErrorTitle": "Error al Importar Sesión"
+    "importErrorTitle": "Error al Importar Sesión",
+    "confirmClearSessionTitle": "¿Borrar todos los datos locales?",
+    "confirmClearSessionDesc": "Esta acción restablecerá el comité actual, lista de oradores, votaciones y datos guardados en el navegador. No se puede deshacer si no tienes una copia de seguridad.",
+    "confirmClearSessionBtn": "Borrar datos locales",
+    "cancelBtn": "Cancelar",
+    "sessionClearedTitle": "¡Datos locales borrados!",
+    "sessionClearedDesc": "Se ha restablecido la sesión local por completo."
   },
   "home": {
     "heroTitle": "La plataforma abierta y definitiva para Modelos de Naciones Unidas",

@@ -1530,6 +1530,83 @@ export const SessionProvider = ({ children }) => {
     }
   };
 
+  // VACIAR / BORRAR TODOS LOS DATOS LOCALES DE LA SESIÓN
+  const borrarDatosLocales = useCallback(() => {
+    setPaisesState(PAISES_INICIALES);
+    setOradoresColaState([]);
+    setOradoresCaucusState([]);
+    setRegistroIntervencionesState([]);
+    setMocionesState([]);
+    setHistoricoMocionesState([]);
+    setCaucusActivoState({
+      activo: false,
+      proponente: '',
+      posicionProponente: 'Primero',
+      tipo: 'Caucus Moderado',
+      varianteConsulta: '',
+      tema: '',
+      tiempoTotal: 600,
+      tiempoOrador: 45
+    });
+    setVotacionSesionState({
+      asunto: 'Proyecto de Resolución / Moción',
+      tipoVotacion: 'procedural',
+      tipoMayoria: 'simple',
+      aplicarVeto: true,
+      votos: {}
+    });
+    setAgendaSesionState({
+      establecida: false,
+      temaActual: '',
+      temasPropuestos: []
+    });
+    setNombreComiteState('');
+    setEnmiendasSesionState({
+      tituloProyecto: 'Proyecto de Resolución A/RES/79/1',
+      textoResolucion: '',
+      articulos: [],
+      enmiendas: []
+    });
+    setRelojGSLState({ segundosRestantes: 60, tiempoInicial: 60, corriendo: false });
+    setYieldEvento(null);
+
+    const keysToRemove = [
+      'openmun_paises',
+      'openmun_oradores',
+      'openmun_oradores_caucus',
+      'openmun_intervenciones',
+      'openmun_mociones',
+      'openmun_historico_mociones',
+      'openmun_caucus',
+      'openmun_votacion',
+      'openmun_agenda',
+      'openmun_comite',
+      'openmun_enmiendas',
+      'sesion_activa.json',
+      'openmun_crisis_eventos',
+      'openmun_crisis_reloj',
+      'openmun_cronometros',
+      'openmun_oradores_historial',
+      'openmun_cronometro_enmiendas'
+    ];
+    keysToRemove.forEach(k => {
+      try {
+        localStorage.removeItem(k);
+      } catch (e) {
+        console.warn('Error eliminando clave de localStorage:', k, e);
+      }
+    });
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('openmun_crisis_update', { 
+        detail: { eventos: [], reloj: { dia: 1, hora: 9, minutos: 0, activo: false } } 
+      }));
+      window.dispatchEvent(new CustomEvent('openmun_session_cleared'));
+    }
+    emitirAccion('RESET_SESSION', {});
+  }, [emitirAccion]);
+
   return (
     <SessionContext.Provider value={{
       paises,
@@ -1561,6 +1638,7 @@ export const SessionProvider = ({ children }) => {
       registrarIntervencion,
       descargarSesionJSON,
       cargarSesionJSON,
+      borrarDatosLocales,
       mociones,
       historicoMociones,
       agregarMocion,

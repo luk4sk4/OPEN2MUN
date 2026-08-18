@@ -27,7 +27,8 @@ import {
   FolderOpen,
   FolderArchive,
   Cloud,
-  FileSignature
+  FileSignature,
+  Trash2
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import configMaster from '../config/config_master.json';
@@ -247,6 +248,7 @@ const Dashboard = () => {
   const {
     descargarSesionJSON,
     cargarSesionJSON,
+    borrarDatosLocales,
     agendaSesion,
     nombreComite,
     paises,
@@ -410,9 +412,32 @@ const Dashboard = () => {
   // Sistema de Notificaciones Toasts Estilizadas
   const [toasts, setToasts] = useState([]);
 
-  const addToast = useCallback(({ type = 'info', title, message, duration = 4000 }) => {
+  const addToast = useCallback((toastData) => {
+    if (!toastData) return null;
+    const {
+      type = 'info',
+      title,
+      message,
+      duration = 4000,
+      onConfirm,
+      onCancel,
+      confirmText,
+      cancelText,
+      isLarge
+    } = toastData;
     const id = `toast_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    setToasts(prev => [...prev, { id, type, title, message, duration }]);
+    setToasts(prev => [...prev, {
+      id,
+      type,
+      title,
+      message,
+      duration,
+      onConfirm,
+      onCancel,
+      confirmText,
+      cancelText,
+      isLarge
+    }]);
     return id;
   }, []);
 
@@ -1165,6 +1190,67 @@ const Dashboard = () => {
                         </span>
                         <span style={{ fontSize: '0.68rem', color: 'var(--muted-text)' }}>
                           {t('header.exportSessionDesc', 'Guardar copia de seguridad en JSON')}
+                        </span>
+                      </div>
+                    </button>
+
+                    {/* Botón Borrar Datos Locales */}
+                    <button
+                      onClick={() => {
+                        setSessionMenuOpen(false);
+                        addToast({
+                          type: 'confirm',
+                          isLarge: true,
+                          title: t('toast.confirmClearSessionTitle', '¿Borrar todos los datos locales?'),
+                          message: t('toast.confirmClearSessionDesc', 'Esta acción restablecerá el comité actual, lista de oradores, votaciones y datos guardados en el navegador. No se puede deshacer si no tienes una copia de seguridad.'),
+                          confirmText: t('toast.confirmClearSessionBtn', 'Borrar datos locales'),
+                          cancelText: t('toast.cancelBtn', 'Cancelar'),
+                          onConfirm: () => {
+                            borrarDatosLocales();
+                            addToast({
+                              type: 'success',
+                              title: t('toast.sessionClearedTitle', '¡Datos locales borrados!'),
+                              message: t('toast.sessionClearedDesc', 'Se ha restablecido la sesión local por completo.'),
+                              duration: 3500
+                            });
+                          }
+                        });
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.6rem',
+                        padding: '0.5rem 0.6rem',
+                        borderRadius: '7px',
+                        border: 'none',
+                        backgroundColor: 'transparent',
+                        color: 'var(--text-color)',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'background-color 0.15s ease'
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = isLight ? 'rgba(239, 68, 68, 0.08)' : 'rgba(239, 68, 68, 0.12)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                    >
+                      <div style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '6px',
+                        backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                        color: '#ef4444',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}>
+                        <Trash2 size={15} />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: '600', color: '#ef4444' }}>
+                          {t('header.clearLocalData', 'Borrar datos locales')}
+                        </span>
+                        <span style={{ fontSize: '0.68rem', color: 'var(--muted-text)' }}>
+                          {t('header.clearLocalDataDesc', 'Restablecer comités, oradores y estado')}
                         </span>
                       </div>
                     </button>
