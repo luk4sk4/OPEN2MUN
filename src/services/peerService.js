@@ -49,6 +49,13 @@ export function generateRoomCode() {
   return `MUN-${randomNum}`;
 }
 
+export const DEFAULT_ICE_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:stun.cloudflare.com:3478' }
+];
+
 class PeerService {
   constructor() {
     this.peer = null;
@@ -143,25 +150,21 @@ class PeerService {
     }
 
     return new Promise((resolve, reject) => {
+      let isResolved = false;
+
       this.peer = new Peer(this.roomId, {
         debug: 1,
         config: {
-          iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' },
-            { urls: 'stun:stun3.l.google.com:19302' },
-            { urls: 'stun:stun4.l.google.com:19302' },
-            { urls: 'stun:stun.cloudflare.com:3478' },
-            { urls: 'stun:openrelay.metered.ca:80' },
-            { urls: 'stun:global.stun.twilio.com:3478' }
-          ]
+          iceServers: DEFAULT_ICE_SERVERS
         }
       });
 
       this.peer.on('open', (id) => {
-        this.emit('host_ready', { roomId: id, roomSettings: this.roomSettings });
-        resolve(id);
+        if (!isResolved) {
+          isResolved = true;
+          this.emit('host_ready', { roomId: id, roomSettings: this.roomSettings });
+          resolve(id);
+        }
       });
 
       this.peer.on('connection', (conn) => {
@@ -170,14 +173,19 @@ class PeerService {
 
       this.peer.on('error', (err) => {
         console.error('Error en PeerJS Host:', err);
-        this.emit('error', { error: err.message || 'Error en conexión P2P' });
-        if (err.type === 'unavailable-id') {
-          reject(new Error(`El código de sala "${this.roomId}" ya está en uso. Por favor genera otro o reinicia la sala.`));
+        const errMsg = err?.message || 'Error en conexión P2P';
+        this.emit('error', { error: errMsg });
+        if (!isResolved) {
+          isResolved = true;
+          if (err.type === 'unavailable-id') {
+            reject(new Error(`El código de sala "${this.roomId}" ya está en uso. Por favor genera otro o reinicia la sala.`));
+          } else {
+            reject(new Error(`Error al iniciar la sala: ${errMsg}`));
+          }
         }
       });
 
       this.peer.on('disconnected', () => {
-        // No destruir la sala si solo se desconectó el socket de señalización momentáneamente
         console.warn('Host desconectado del servidor de señalización. Intentando reconexión silenciosa...');
         if (this.peer && !this.peer.destroyed) {
           try { this.peer.reconnect(); } catch (e) { }
@@ -189,7 +197,7 @@ class PeerService {
   // Manejar conexión entrante al Host
   handleIncomingConnection(conn) {
     conn.on('open', () => {
-      // Esperar mensaje AUTH del cliente
+      // Conexión abierta con el peer
     });
 
     conn.on('data', (data) => {
@@ -239,85 +247,110 @@ class PeerService {
 
     // Cliente P2P remoto
     return new Promise((resolve, reject) => {
-      this.peer = new Peer({
-        debug: 1,
-        config: {
-          iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' },
-            { urls: 'stun:stun3.l.google.com:19302' },
-            { urls: 'stun:stun4.l.google.com:19302' },
-            { urls: 'stun:stun.cloudflare.com:3478' },
-            { urls: 'stun:openrelay.metered.ca:80' },
-            { urls: 'stun:global.stun.twilio.com:3478' }
-          ]
+      let isSettled = false;
+
+      const safeReject = (err) => {
+        if (!isSettled) {
+          isSettled = true;
+          if (connectTimeout) clearTimeout(connectTimeout);
+          this.destroy();
+          const message = typeof err === 'string' ? err : (err?.message || 'Error de conexión P2P');
+          reject(new Error(message));
+        }
+      };
+
+      const safeResolve = (data) => {
+        if (!isSettled) {
+          isSettled = true;
+          if (connectTimeout) clearTimeout(connectTimeout);
+          resolve(data);
+        }
+      };
+
+      const connectTimeout = setTimeout(() => {
+        safeReject(`Tiempo de espera agotado al conectar con la sala "${cleanRoomId}". Asegúrate de que el Chair tenga la sala iniciada.`);
+      }, 15000);
+
+      try {
+        this.peer = new Peer({
+          debug: 1,
+          config: {
+            iceServers: DEFAULT_ICE_SERVERS
+          }
+        });
+      } catch (err) {
+        safeReject(`Error inicializando WebRTC: ${err.message}`);
+        return;
+      }
+
+      this.peer.on('open', () => {
+        try {
+          const conn = this.peer.connect(cleanRoomId);
+
+          conn.on('open', () => {
+            this.hostConn = conn;
+            // Enviar credenciales / solicitud de rol
+            conn.send({
+              type: MSG_TYPES.AUTH,
+              payload: { role, password, country }
+            });
+          });
+
+          conn.on('data', (data) => {
+            if (data?.type === MSG_TYPES.AUTH_RESULT) {
+              if (data.payload?.success) {
+                if (data.payload.roomSettings) {
+                  this.roomSettings = data.payload.roomSettings;
+                }
+                if (data.payload.speakingRequests) {
+                  this.latestSpeakingRequests = data.payload.speakingRequests;
+                }
+                this.emit('connected', {
+                  role: data.payload.role,
+                  country: data.payload.country,
+                  sessionState: data.payload.sessionState,
+                  roomSettings: data.payload.roomSettings,
+                  speakingRequests: data.payload.speakingRequests || []
+                });
+                safeResolve(data.payload);
+              } else {
+                conn.close();
+                safeReject(data.payload?.message || 'Acceso denegado');
+              }
+              return;
+            }
+            this.emit('message', data);
+          });
+
+          conn.on('close', () => {
+            this.emit('disconnected', { reason: 'Conexión con el Chair cerrada' });
+          });
+
+          conn.on('error', (err) => {
+            console.warn('Error en conexión con el host:', err);
+            const errText = err?.message || String(err);
+            if (errText.includes('Negotiation') || errText.includes('negotiation')) {
+              safeReject(`Error de negociación WebRTC con la sala "${cleanRoomId}". Verifica que la sala esté iniciada por el Chair.`);
+            } else {
+              safeReject(errText);
+            }
+          });
+        } catch (err) {
+          safeReject(err);
         }
       });
 
-      const connectTimeout = setTimeout(() => {
-        if (this.peer) this.peer.destroy();
-        reject(new Error(`Tiempo de espera agotado al conectar con la sala "${cleanRoomId}". Asegúrate de que el Chair haya iniciado la sala en vivo.`));
-      }, 15000);
-
-      this.peer.on('open', () => {
-        const conn = this.peer.connect(cleanRoomId, {
-          reliable: true
-        });
-
-        conn.on('open', () => {
-          clearTimeout(connectTimeout);
-          this.hostConn = conn;
-          // Enviar credenciales / solicitud de rol
-          conn.send({
-            type: MSG_TYPES.AUTH,
-            payload: { role, password, country }
-          });
-        });
-
-        conn.on('data', (data) => {
-          if (data?.type === MSG_TYPES.AUTH_RESULT) {
-            if (data.payload?.success) {
-              if (data.payload.roomSettings) {
-                this.roomSettings = data.payload.roomSettings;
-              }
-              if (data.payload.speakingRequests) {
-                this.latestSpeakingRequests = data.payload.speakingRequests;
-              }
-              this.emit('connected', {
-                role: data.payload.role,
-                country: data.payload.country,
-                sessionState: data.payload.sessionState,
-                roomSettings: data.payload.roomSettings,
-                speakingRequests: data.payload.speakingRequests || []
-              });
-              resolve(data.payload);
-            } else {
-              conn.close();
-              reject(new Error(data.payload?.message || 'Acceso denegado'));
-            }
-            return;
-          }
-          this.emit('message', data);
-        });
-
-        conn.on('close', () => {
-          this.emit('disconnected', { reason: 'Conexión con el Chair cerrada' });
-        });
-
-        conn.on('error', (err) => {
-          clearTimeout(connectTimeout);
-          reject(err);
-        });
-      });
-
       this.peer.on('error', (err) => {
-        clearTimeout(connectTimeout);
         console.error('Error en PeerJS Cliente:', err);
-        if (err.type === 'peer-unavailable') {
-          reject(new Error(`La sala "${cleanRoomId}" no se encuentra activa. Verifica el código o pídele al Chair que inicie la sala.`));
+        const errType = err.type;
+        const errMsg = err.message || '';
+
+        if (errType === 'peer-unavailable') {
+          safeReject(`La sala "${cleanRoomId}" no se encuentra activa. Verifica el código o asegúrate de que el Chair haya iniciado la sala.`);
+        } else if (errType === 'negotiation-failed' || errMsg.includes('Negotiation') || errMsg.includes('negotiation')) {
+          safeReject(`Error de negociación WebRTC al conectar con la sala "${cleanRoomId}". Asegúrate de que el Chair tenga la sala iniciada.`);
         } else {
-          reject(new Error(`No se pudo conectar a la sala: ${err.message || 'Error de red'}`));
+          safeReject(`No se pudo conectar a la sala: ${errMsg || 'Error de red'}`);
         }
       });
     });
