@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Search, Trash2, Plus, ArrowUpDown, GripVertical, Users } from 'lucide-react';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
@@ -21,10 +21,16 @@ const ListaOradores = () => {
   const [dragOverIndex, setDragOverIndex] = useState(null);
 
   // Filtrar lista de países disponibles que no estén en la cola
-  const paisesDisponibles = paises.filter(p => 
-    p.nombre.toLowerCase().includes(busqueda.toLowerCase()) &&
-    !oradoresCola.some(o => o.nombre === p.nombre)
-  );
+  const paisesDisponibles = useMemo(() => {
+    // Usar Set para búsqueda O(1) de exclusión
+    const oradoresNombres = new Set(oradoresCola.map(o => o.nombre));
+    const busquedaLower = busqueda.toLowerCase();
+
+    return paises.filter(p =>
+      p.nombre.toLowerCase().includes(busquedaLower) &&
+      !oradoresNombres.has(p.nombre)
+    );
+  }, [paises, busqueda, oradoresCola]);
 
   const handleSeleccionarPaisAñadir = (paisObj) => {
     agregarOrador(paisObj);
