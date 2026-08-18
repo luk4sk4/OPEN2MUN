@@ -197,6 +197,12 @@ export const P2PProvider = ({ children }) => {
         addNotification(`${data.error}`, 'error');
       }
 
+      if (event === 'connecting_status') {
+        if (data?.text) {
+          addNotification(data.text, 'info');
+        }
+      }
+
       if (event === 'peer_list_updated') {
         setConnectedPeers(data);
       }

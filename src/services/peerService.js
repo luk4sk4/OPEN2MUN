@@ -3,7 +3,7 @@ import { Peer } from 'peerjs';
 export const LOCAL_BROADCAST_CHANNEL_NAME = 'openmun_local_secret_channel';
 
 /**
- * Tipos de mensajes normalizados
+ * Ajustes de sala por defecto
  */
 export const DEFAULT_ROOM_SETTINGS = {
   speakerRequestMode: 'approval', // 'direct' | 'approval' | 'disabled'
@@ -49,12 +49,78 @@ export function generateRoomCode() {
   return `MUN-${randomNum}`;
 }
 
+/**
+ * Servidores ICE: STUN y TURN (Metered.ca Relay + Google STUN + Cloudflare STUN)
+ * Garantiza conectividad 100% incluso en Wi-Fi escolar, redes con NAT simétrica y 4G/5G.
+ */
 export const DEFAULT_ICE_SERVERS = [
+  {
+    urls: 'stun:stun.relay.metered.ca:80'
+  },
+  {
+    urls: 'turn:global.relay.metered.ca:80',
+    username: '0438b14d85f2705b8e015817',
+    credential: 'lKwHeQnxL+Hecz8h'
+  },
+  {
+    urls: 'turn:global.relay.metered.ca:80?transport=tcp',
+    username: '0438b14d85f2705b8e015817',
+    credential: 'lKwHeQnxL+Hecz8h'
+  },
+  {
+    urls: 'turn:global.relay.metered.ca:443',
+    username: '0438b14d85f2705b8e015817',
+    credential: 'lKwHeQnxL+Hecz8h'
+  },
+  {
+    urls: 'turns:global.relay.metered.ca:443?transport=tcp',
+    username: '0438b14d85f2705b8e015817',
+    credential: 'lKwHeQnxL+Hecz8h'
+  },
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
   { urls: 'stun:stun2.l.google.com:19302' },
   { urls: 'stun:stun.cloudflare.com:3478' }
 ];
+
+/**
+ * Servidor de Señalización propio en Render
+ */
+export const DEFAULT_SIGNALING_CONFIG = {
+  host: 'openmun-signaling.onrender.com',
+  port: 443,
+  path: '/',
+  secure: true
+};
+
+/**
+ * Obtener opciones de configuración de PeerJS combinando defaults con localStorage
+ */
+export function getPeerConfig(overrideOptions = {}) {
+  let signaling = { ...DEFAULT_SIGNALING_CONFIG };
+  try {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('openmun_signaling_config');
+      if (saved) {
+        signaling = { ...signaling, ...JSON.parse(saved) };
+      }
+    }
+  } catch (e) {}
+
+  return {
+    debug: 1,
+    host: signaling.host || 'openmun-signaling.onrender.com',
+    port: signaling.port ? Number(signaling.port) : 443,
+    path: signaling.path || '/',
+    secure: signaling.secure !== false,
+    config: {
+      iceServers: DEFAULT_ICE_SERVERS,
+      iceCandidatePoolSize: 10,
+      sdpSemantics: 'unified-plan'
+    },
+    ...overrideOptions
+  };
+}
 
 class PeerService {
   constructor() {
@@ -78,6 +144,7 @@ class PeerService {
       }
     } catch (e) {}
     this.hostConn = null;
+    this.heartbeatTimer = null;
   }
 
   // Filtrar histórico de notas según el rol y país del receptor
@@ -122,12 +189,16 @@ class PeerService {
     });
   }
 
+  // Keep-alive para el WebSocket del servidor de señalización (Render cierra WebSockets ociosos tras ~55s)
   startSignalingHeartbeat() {
     this.stopSignalingHeartbeat();
     this.heartbeatTimer = setInterval(() => {
       if (this.peer && !this.peer.destroyed) {
         if (this.peer.disconnected) {
-          try { this.peer.reconnect(); } catch (e) {}
+          try {
+            console.log('Reconectando Peer al servidor de señalización...');
+            this.peer.reconnect();
+          } catch (e) {}
         } else if (this.peer.socket && typeof this.peer.socket.send === 'function') {
           try {
             this.peer.socket.send({ type: 'HEARTBEAT' });
@@ -173,57 +244,92 @@ class PeerService {
 
     return new Promise((resolve, reject) => {
       let isResolved = false;
+      let hasTriedFallback = false;
 
-      this.peer = new Peer(this.roomId, {
-        debug: 1,
-        config: {
-          iceServers: DEFAULT_ICE_SERVERS
-        }
-      });
-
-      this.peer.on('open', (id) => {
-        if (!isResolved) {
-          isResolved = true;
-          this.startSignalingHeartbeat();
-          this.emit('host_ready', { roomId: id, roomSettings: this.roomSettings });
-          resolve(id);
-        }
-      });
-
-      this.peer.on('connection', (conn) => {
-        this.handleIncomingConnection(conn);
-      });
-
-      this.peer.on('error', (err) => {
-        console.error('Error en PeerJS Host:', err);
-        const errMsg = err?.message || 'Error en conexión P2P';
-        this.emit('error', { error: errMsg });
-        if (!isResolved) {
-          isResolved = true;
-          if (err.type === 'unavailable-id') {
-            reject(new Error(`El código de sala "${this.roomId}" ya está en uso. Por favor genera otro o reinicia la sala.`));
+      const createHostPeer = (useCloudFallback = false) => {
+        try {
+          if (useCloudFallback) {
+            console.warn('Iniciando Host en PeerJS Cloud como fallback...');
+            this.peer = new Peer(this.roomId, {
+              debug: 1,
+              config: {
+                iceServers: DEFAULT_ICE_SERVERS,
+                iceCandidatePoolSize: 10
+              }
+            });
           } else {
-            reject(new Error(`Error al iniciar la sala: ${errMsg}`));
+            const config = getPeerConfig(options.peerConfig || {});
+            this.peer = new Peer(this.roomId, config);
           }
+        } catch (err) {
+          if (!isResolved) {
+            isResolved = true;
+            reject(new Error(`Error inicializando Host: ${err.message}`));
+          }
+          return;
         }
-      });
 
-      this.peer.on('disconnected', () => {
-        console.warn('Host desconectado del servidor de señalización. Reconectando...');
-        if (this.peer && !this.peer.destroyed) {
-          try { this.peer.reconnect(); } catch (e) { }
-        }
-      });
+        this.peer.on('open', (id) => {
+          if (!isResolved) {
+            isResolved = true;
+            this.startSignalingHeartbeat();
+            this.emit('host_ready', { roomId: id, roomSettings: this.roomSettings });
+            resolve(id);
+          }
+        });
+
+        this.peer.on('connection', (conn) => {
+          this.handleIncomingConnection(conn);
+        });
+
+        this.peer.on('error', (err) => {
+          console.error('Error en PeerJS Host:', err);
+          const errMsg = err?.message || 'Error en conexión P2P';
+          const errType = err?.type;
+
+          // Si el servidor de señalización de Render falla (ej: dormido o error de socket), intentar fallback a nube pública una vez
+          if (!isResolved && !hasTriedFallback && (errType === 'server-error' || errType === 'socket-error' || errType === 'socket-closed')) {
+            hasTriedFallback = true;
+            console.warn('Servidor de señalización primario no disponible. Reintentando Host en PeerJS Cloud...');
+            try { this.peer.destroy(); } catch (e) {}
+            createHostPeer(true);
+            return;
+          }
+
+          this.emit('error', { error: errMsg });
+          if (!isResolved) {
+            isResolved = true;
+            if (errType === 'unavailable-id') {
+              reject(new Error(`El código de sala "${this.roomId}" ya está en uso. Por favor genera otro o reinicia la sala.`));
+            } else {
+              reject(new Error(`Error al iniciar la sala: ${errMsg}`));
+            }
+          }
+        });
+
+        this.peer.on('disconnected', () => {
+          console.warn('Host desconectado del servidor de señalización. Reconectando...');
+          if (this.peer && !this.peer.destroyed) {
+            try { this.peer.reconnect(); } catch (e) { }
+          }
+        });
+      };
+
+      createHostPeer(false);
     });
   }
 
   // Manejar conexión entrante al Host
   handleIncomingConnection(conn) {
     conn.on('open', () => {
-      // Conexión abierta con el peer
+      // Conexión DataChannel abierta con el peer
     });
 
     conn.on('data', (data) => {
+      if (data?.type === MSG_TYPES.PING) {
+        try { conn.send({ type: MSG_TYPES.PONG, timestamp: Date.now() }); } catch (e) {}
+        return;
+      }
       this.handleIncomingMessage(conn.peer, data, false, conn);
     });
 
@@ -268,16 +374,20 @@ class PeerService {
       throw new Error('BroadcastChannel no soportado en este navegador');
     }
 
-    // Cliente P2P remoto
+    // Cliente P2P remoto con reintentos progresivos y soporte TURN
     return new Promise((resolve, reject) => {
       let isSettled = false;
-      let retryCount = 0;
+      let attempt = 0;
+      const MAX_ATTEMPTS = 3;
       let currentConn = null;
+      let hasTriedFallback = false;
+      let retryTimer = null;
 
       const safeReject = (err) => {
         if (!isSettled) {
           isSettled = true;
           if (connectTimeout) clearTimeout(connectTimeout);
+          if (retryTimer) clearTimeout(retryTimer);
           this.destroy();
           const message = typeof err === 'string' ? err : (err?.message || 'Error de conexión P2P');
           reject(new Error(message));
@@ -288,31 +398,34 @@ class PeerService {
         if (!isSettled) {
           isSettled = true;
           if (connectTimeout) clearTimeout(connectTimeout);
+          if (retryTimer) clearTimeout(retryTimer);
           resolve(data);
         }
       };
 
+      // Timeout global adaptativo (30 segundos para permitir activación de Render y relay TURN)
       const connectTimeout = setTimeout(() => {
-        safeReject(`Tiempo de espera agotado al conectar con la sala "${cleanRoomId}". Asegúrate de que el Chair tenga la sala iniciada.`);
-      }, 18000);
+        safeReject(`Tiempo de espera agotado al conectar con la sala "${cleanRoomId}". Verifica que el código sea correcto y que el Chair tenga la sala iniciada.`);
+      }, 30000);
 
-      try {
-        this.peer = new Peer({
-          debug: 1,
-          config: {
-            iceServers: DEFAULT_ICE_SERVERS
-          }
-        });
-      } catch (err) {
-        safeReject(`Error inicializando WebRTC: ${err.message}`);
-        return;
-      }
-
-      const attemptConnect = () => {
+      const establishDataConnection = () => {
         if (isSettled || !this.peer || this.peer.destroyed) return;
 
+        attempt++;
+        if (attempt > 1) {
+          this.emit('connecting_status', { attempt, max: MAX_ATTEMPTS, text: `Reintentando conexión con la sala (${attempt}/${MAX_ATTEMPTS})...` });
+        }
+
         try {
-          currentConn = this.peer.connect(cleanRoomId);
+          if (currentConn) {
+            try { currentConn.close(); } catch (e) {}
+            currentConn = null;
+          }
+
+          // Conexión DataChannel con reliable: true para garantizar orden y entrega
+          currentConn = this.peer.connect(cleanRoomId, {
+            reliable: true
+          });
 
           currentConn.on('open', () => {
             this.hostConn = currentConn;
@@ -323,6 +436,11 @@ class PeerService {
           });
 
           currentConn.on('data', (data) => {
+            if (data?.type === MSG_TYPES.PING) {
+              try { currentConn.send({ type: MSG_TYPES.PONG, timestamp: Date.now() }); } catch (e) {}
+              return;
+            }
+
             if (data?.type === MSG_TYPES.AUTH_RESULT) {
               if (data.payload?.success) {
                 if (data.payload.roomSettings) {
@@ -353,12 +471,11 @@ class PeerService {
           });
 
           currentConn.on('error', (err) => {
-            console.warn('Error en conexión con el host:', err);
+            console.warn(`Error en conexión con el host (intento ${attempt}):`, err);
             const errText = err?.message || String(err);
-            if ((errText.includes('Negotiation') || errText.includes('negotiation')) && retryCount < 1) {
-              retryCount++;
-              console.log('Reintentando negociación P2P...');
-              setTimeout(attemptConnect, 600);
+
+            if (attempt < MAX_ATTEMPTS && !isSettled) {
+              retryTimer = setTimeout(establishDataConnection, 1800);
             } else if (errText.includes('Negotiation') || errText.includes('negotiation')) {
               safeReject(`Error de negociación WebRTC con la sala "${cleanRoomId}". Verifica que la sala esté iniciada por el Chair.`);
             } else {
@@ -366,32 +483,72 @@ class PeerService {
             }
           });
         } catch (err) {
-          safeReject(err);
+          if (attempt < MAX_ATTEMPTS && !isSettled) {
+            retryTimer = setTimeout(establishDataConnection, 1800);
+          } else {
+            safeReject(err);
+          }
         }
       };
 
-      this.peer.on('open', () => {
-        this.startSignalingHeartbeat();
-        attemptConnect();
-      });
-
-      this.peer.on('error', (err) => {
-        console.error('Error en PeerJS Cliente:', err);
-        const errType = err.type;
-        const errMsg = err.message || '';
-
-        if (errType === 'peer-unavailable') {
-          safeReject(`La sala "${cleanRoomId}" no se encuentra activa. Verifica el código o asegúrate de que el Chair haya iniciado la sala.`);
-        } else if ((errType === 'negotiation-failed' || errMsg.includes('Negotiation') || errMsg.includes('negotiation')) && retryCount < 1) {
-          retryCount++;
-          console.log('Reintentando negociación tras fallo de peer...');
-          setTimeout(attemptConnect, 600);
-        } else if (errType === 'negotiation-failed' || errMsg.includes('Negotiation') || errMsg.includes('negotiation')) {
-          safeReject(`Error de negociación WebRTC al conectar con la sala "${cleanRoomId}". Asegúrate de que el Chair tenga la sala iniciada.`);
-        } else {
-          safeReject(`No se pudo conectar a la sala: ${errMsg || 'Error de red'}`);
+      const createClientPeer = (useCloudFallback = false) => {
+        try {
+          if (useCloudFallback) {
+            console.warn('Iniciando Cliente en PeerJS Cloud como fallback...');
+            this.peer = new Peer({
+              debug: 1,
+              config: {
+                iceServers: DEFAULT_ICE_SERVERS,
+                iceCandidatePoolSize: 10
+              }
+            });
+          } else {
+            const config = getPeerConfig();
+            this.peer = new Peer(config);
+          }
+        } catch (err) {
+          safeReject(`Error inicializando WebRTC: ${err.message}`);
+          return;
         }
-      });
+
+        this.peer.on('open', () => {
+          this.startSignalingHeartbeat();
+          establishDataConnection();
+        });
+
+        this.peer.on('error', (err) => {
+          console.error('Error en PeerJS Cliente:', err);
+          const errType = err.type;
+          const errMsg = err.message || '';
+
+          // Fallback a nube si el servidor de señalización primario tiene fallo de socket
+          if (!isSettled && !hasTriedFallback && (errType === 'server-error' || errType === 'socket-error' || errType === 'socket-closed')) {
+            hasTriedFallback = true;
+            console.warn('Servidor de señalización primario no disponible. Reintentando Cliente en PeerJS Cloud...');
+            try { this.peer.destroy(); } catch (e) {}
+            createClientPeer(true);
+            return;
+          }
+
+          if (errType === 'peer-unavailable') {
+            if (attempt < MAX_ATTEMPTS && !isSettled) {
+              console.log(`Sala aún no disponible en señalización. Reintentando en 2s (intento ${attempt + 1}/${MAX_ATTEMPTS})...`);
+              retryTimer = setTimeout(establishDataConnection, 2000);
+              return;
+            }
+            safeReject(`La sala "${cleanRoomId}" no se encuentra activa en el servidor. Asegúrate de que el Chair haya iniciado la sala primero.`);
+          } else if ((errType === 'negotiation-failed' || errMsg.includes('Negotiation') || errMsg.includes('negotiation')) && attempt < MAX_ATTEMPTS) {
+            console.log(`Reintentando negociación WebRTC (intento ${attempt + 1}/${MAX_ATTEMPTS})...`);
+            retryTimer = setTimeout(establishDataConnection, 1500);
+          } else if (errType === 'negotiation-failed' || errMsg.includes('Negotiation') || errMsg.includes('negotiation')) {
+            safeReject(`Error de negociación WebRTC al conectar con la sala "${cleanRoomId}".`);
+          } else {
+            safeReject(`No se pudo conectar a la sala: ${errMsg || 'Error de red'}`);
+          }
+        });
+      };
+
+      createClientPeer(false);
     });
   }
 
@@ -993,4 +1150,3 @@ class PeerService {
 
 export const peerService = new PeerService();
 export default peerService;
-
