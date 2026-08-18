@@ -35,6 +35,7 @@ export const MSG_TYPES = {
   CRISIS_ALERT: 'CRISIS_ALERT',
   CAST_VOTE: 'CAST_VOTE',
   SUBMIT_AMENDMENT: 'SUBMIT_AMENDMENT',
+  REQUEST_SYNC: 'REQUEST_SYNC',
   KICK: 'KICK',
   KICK_PEER: 'KICK_PEER',
   PING: 'PING',
@@ -685,6 +686,9 @@ class PeerService {
           payload: {
             success: true,
             country: selectedCountry,
+            roomSettings: this.roomSettings,
+            sessionState: this.latestSessionState || null,
+            speakingRequests: this.latestSpeakingRequests || [],
             notes: roleNotes
           }
         });
@@ -860,6 +864,26 @@ class PeerService {
           payload: message.payload?.payload,
           timestamp: message.payload?.timestamp || Date.now()
         });
+      }
+      return;
+    }
+
+    // 9. Solicitud de Sincronización de Estado (ej: Recargar Documento / Estado desde Delegado o Secretaría)
+    if (message.type === MSG_TYPES.REQUEST_SYNC) {
+      const syncMsg = {
+        type: MSG_TYPES.SYNC_STATE,
+        payload: {
+          ...(this.latestSessionState || {}),
+          roomSettings: this.roomSettings,
+          speakingRequests: this.latestSpeakingRequests || []
+        }
+      };
+      if (conn) {
+        try {
+          conn.send(syncMsg);
+        } catch (e) {}
+      } else if (isLocal) {
+        this.broadcastLocal(syncMsg);
       }
       return;
     }
@@ -1090,6 +1114,10 @@ class PeerService {
 
   submitAmendmentAsClient(amendmentData) {
     return this.sendToServer(MSG_TYPES.SUBMIT_AMENDMENT, amendmentData);
+  }
+
+  requestStateSyncAsClient() {
+    return this.sendToServer(MSG_TYPES.REQUEST_SYNC, { timestamp: Date.now() });
   }
 
   sendSessionActionAsClient(action, payload) {

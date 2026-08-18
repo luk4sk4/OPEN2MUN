@@ -347,6 +347,18 @@ export const P2PProvider = ({ children }) => {
               setClientCountry(countryName);
               localStorage.setItem('openmun_last_country', countryName);
             }
+            if (message.payload.roomSettings) {
+              setRoomSettings(message.payload.roomSettings);
+            }
+            if (message.payload.speakingRequests) {
+              setSpeakingRequests(message.payload.speakingRequests);
+            }
+            if (message.payload.sessionState) {
+              setRemoteSessionState(message.payload.sessionState);
+              if (sessionActionHandlersRef.current.onSyncState) {
+                sessionActionHandlersRef.current.onSyncState(message.payload.sessionState);
+              }
+            }
             if (Array.isArray(message.payload.notes) && message.payload.notes.length > 0) {
               setNotes(prev => {
                 const map = new Map();
@@ -661,6 +673,13 @@ export const P2PProvider = ({ children }) => {
     setEnmiendasPropuestas(prev => prev.filter(p => p.id !== propId));
   }, []);
 
+  const requestStateSync = useCallback(() => {
+    if (connectionStatus === 'connected') {
+      peerService.requestStateSyncAsClient();
+      addNotification('Recargando documento y estado de la sesión...', 'info');
+    }
+  }, [connectionStatus, addNotification]);
+
   const openLiveModal = useCallback(() => setIsLiveModalOpen(true), []);
   const closeLiveModal = useCallback(() => setIsLiveModalOpen(false), []);
 
@@ -709,6 +728,7 @@ export const P2PProvider = ({ children }) => {
       sendNote,
       requestSpeaking,
       kickPeer,
+      requestStateSync,
       broadcastCurrentState,
       sendSessionAction,
       registerSessionHandlers,

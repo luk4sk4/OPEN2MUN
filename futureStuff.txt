@@ -1,38 +1,34 @@
 
-
-templatescomittes
-
-
-tamaño de letra y modo claro
-
-	
-en ajustes Tambien load template and select style 
-
-minimalist // art nuveau // OPENMUNBASIC // OLDSCHOOL
+COMO FUNCIONAN LOS RECURSOS EN CRISIS???
 
 
-mapa mundi en votaciones 
+modo claro va mal en alguna cosa
+rehaul P2P - no conecta
+en el P2P que aparezcan los paises que estan dentro de la matriz de ese momento
+tema idiomas
+¿temas y estilos?
+with rights
+	link to drive
 
 
-rehaul P2P
-
-modo crisis
-
-quitarle IA
-
-modo claro 
+enmiendas
+- los menus de seleccion se ven feos
+- que los delegados puedan proponerlas desde la app (teniendo que aceptarlo los presis)
+- a ñadir las enmiendas propuestas y aprobadas al info
 
 
-tamaño letra
+widget periodico noticias
 
 
 
+control de versions Mas reciente menos reciente ¿que pasa? comprobar
 
 
 
+___________
 
+NO FUNCIONA EL VOTO 
 
+PROPOSICIONES DE CAUSUS MODERADO Y ASI FUNCIONAN PERO RARO
 
-	
-
-
+Proponer Enmienda a la Mesa Directiva: NO CARGA EL DOCUMENTO, PONER BOTON DE "RECARGAR DOCUMENTO"

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Radio, 
   Send, 
@@ -30,7 +30,8 @@ import {
   RefreshCw,
   UserCheck,
   UserX,
-  ChevronRight
+  ChevronRight,
+  ChevronDown
 } from 'lucide-react';
 import CountryFlag from '../common/CountryFlag';
 import { useTranslation } from 'react-i18next';
@@ -58,6 +59,7 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
     roomSettings,
     castVote,
     submitAmendment,
+    requestStateSync,
     leaveRoom,
     selectCountry,
     resetCountrySelection,
@@ -93,6 +95,8 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
   const [justificacionDel, setJustificacionDel] = useState('');
   const [enmiendaEnviadaFeedback, setEnmiendaEnviadaFeedback] = useState(false);
   const [misEnmiendasEnviadas, setMisEnmiendasEnviadas] = useState([]);
+  const [isReloadingDoc, setIsReloadingDoc] = useState(false);
+  const [mostrarDocCompleto, setMostrarDocCompleto] = useState(false);
 
   // Estado sincronizado desde el Chair
   const state = remoteSessionState || {};
@@ -232,6 +236,23 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
   const handleEmitirVoto = (opcion) => {
     castVote(opcion);
     setMiVotoEmitido(opcion);
+  };
+
+  // Sincronizar automáticamente cuando el delegado entra en la pestaña de Enmiendas
+  useEffect(() => {
+    if (activeTab === 'ENMIENDAS' && requestStateSync) {
+      requestStateSync();
+    }
+  }, [activeTab, requestStateSync]);
+
+  const handleRecargarDocumento = () => {
+    setIsReloadingDoc(true);
+    if (requestStateSync) {
+      requestStateSync();
+    }
+    setTimeout(() => {
+      setIsReloadingDoc(false);
+    }, 900);
   };
 
   const handleEnviarEnmiendaDelegado = (e) => {
@@ -1537,275 +1558,530 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
         )}
 
         {/* ── PESTAÑA DE ENMIENDAS Y RESOLUCIONES ── */}
-        {activeTab === 'ENMIENDAS' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {/* Notificación de envío exitoso */}
-            {enmiendaEnviadaFeedback && (
+        {activeTab === 'ENMIENDAS' && (() => {
+          const articulosList = state.enmiendasSesion?.articulos || [];
+          const tituloProyecto = state.enmiendasSesion?.tituloProyecto || 'Proyecto de Resolución';
+          const textoResolucion = state.enmiendasSesion?.textoResolucion || '';
+          const articuloSeleccionadoObj = articulosList.find(a => a.id === artIdDel);
+
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {/* Tarjeta de Estado del Documento y Botón Recargar */}
               <div style={{
-                backgroundColor: 'rgba(34, 197, 94, 0.15)',
-                border: '1px solid rgba(34, 197, 94, 0.4)',
-                color: '#22c55e',
-                borderRadius: '8px',
-                padding: '0.75rem 1rem',
-                fontSize: '0.82rem',
-                fontWeight: '700',
+                backgroundColor: 'var(--panel-color)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '12px',
+                padding: '1rem 1.25rem',
                 display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                animation: 'scaleUp 0.2s ease'
+                flexDirection: 'column',
+                gap: '0.75rem',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
               }}>
-                <CheckCircle2 size={16} /> ¡Propuesta de enmienda enviada a la Mesa Directiva para su revisión!
-              </div>
-            )}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                    <div style={{
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '8px',
+                      backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#3b82f6',
+                      flexShrink: 0
+                    }}>
+                      <FileText size={20} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        Documento Oficial de la Sesión
+                      </div>
+                      <div style={{ fontSize: '0.98rem', fontWeight: '800', color: 'var(--text-color)', marginTop: '1px' }}>
+                        {tituloProyecto}
+                      </div>
+                    </div>
+                  </div>
 
-            {/* Formulario de Propuesta de Enmienda Telemática */}
-            <form onSubmit={handleEnviarEnmiendaDelegado} style={{
-              backgroundColor: 'var(--panel-color)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '12px',
-              padding: '1.25rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.85rem',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <FileText size={18} color="#3b82f6" />
-                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '800' }}>
-                  Proponer Enmienda a la Mesa Directiva
-                </h3>
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--muted-text)' }}>
-                Envía tu propuesta de modificación, adición o supresión de cláusula directamente a la mesa para ser evaluada y sometida a debate.
-              </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {/* Botón de Recargar Documento */}
+                    <button
+                      type="button"
+                      onClick={handleRecargarDocumento}
+                      disabled={isReloadingDoc}
+                      style={{
+                        backgroundColor: 'var(--card-header-bg)',
+                        border: '1.5px solid var(--subborder-color)',
+                        color: 'var(--text-color)',
+                        borderRadius: '8px',
+                        padding: '0.5rem 0.95rem',
+                        fontSize: '0.82rem',
+                        fontWeight: '800',
+                        cursor: isReloadingDoc ? 'not-allowed' : 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.45rem',
+                        transition: 'all 0.15s ease',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+                      }}
+                      title="Recargar y sincronizar el documento de resolución y artículos desde la Presidencia"
+                    >
+                      <RefreshCw size={14} className={isReloadingDoc ? 'animate-spin' : ''} style={{ color: '#3b82f6' }} />
+                      {isReloadingDoc ? 'Recargando...' : 'Recargar Documento'}
+                    </button>
 
-              {/* Selector de Naturaleza */}
-              <div>
-                <label style={{ fontSize: '0.74rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
-                  Tipo de Enmienda
-                </label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.4rem', marginTop: '0.35rem' }}>
-                  <button
-                    type="button"
-                    onClick={() => setTipoEnmiendaDel('adicion')}
-                    style={{
-                      padding: '0.45rem',
-                      borderRadius: '6px',
-                      border: `1px solid ${tipoEnmiendaDel === 'adicion' ? '#22c55e' : 'var(--subborder-color)'}`,
-                      backgroundColor: tipoEnmiendaDel === 'adicion' ? 'rgba(34, 197, 94, 0.2)' : 'transparent',
-                      color: tipoEnmiendaDel === 'adicion' ? '#22c55e' : 'var(--text-color)',
-                      fontWeight: '700',
-                      fontSize: '0.75rem',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    + Adición
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setTipoEnmiendaDel('supresion')}
-                    style={{
-                      padding: '0.45rem',
-                      borderRadius: '6px',
-                      border: `1px solid ${tipoEnmiendaDel === 'supresion' ? '#ef4444' : 'var(--subborder-color)'}`,
-                      backgroundColor: tipoEnmiendaDel === 'supresion' ? 'rgba(239, 68, 68, 0.2)' : 'transparent',
-                      color: tipoEnmiendaDel === 'supresion' ? '#ef4444' : 'var(--text-color)',
-                      fontWeight: '700',
-                      fontSize: '0.75rem',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    - Supresión
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setTipoEnmiendaDel('modificacion')}
-                    style={{
-                      padding: '0.45rem',
-                      borderRadius: '6px',
-                      border: `1px solid ${tipoEnmiendaDel === 'modificacion' ? '#3b82f6' : 'var(--subborder-color)'}`,
-                      backgroundColor: tipoEnmiendaDel === 'modificacion' ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
-                      color: tipoEnmiendaDel === 'modificacion' ? '#3b82f6' : 'var(--text-color)',
-                      fontWeight: '700',
-                      fontSize: '0.75rem',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    ➔ Modificación
-                  </button>
+                    {/* Botón para previsualizar texto completo si existe */}
+                    {textoResolucion.trim().length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setMostrarDocCompleto(prev => !prev)}
+                        style={{
+                          backgroundColor: mostrarDocCompleto ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                          border: `1px solid ${mostrarDocCompleto ? '#3b82f6' : 'var(--subborder-color)'}`,
+                          color: mostrarDocCompleto ? '#3b82f6' : 'var(--muted-text)',
+                          borderRadius: '8px',
+                          padding: '0.5rem 0.8rem',
+                          fontSize: '0.8rem',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.35rem'
+                        }}
+                      >
+                        <Eye size={14} />
+                        {mostrarDocCompleto ? 'Ocultar Texto' : 'Ver Texto'}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* Selector de Artículo */}
-              <div>
-                <label style={{ fontSize: '0.74rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
-                  Artículo / Cláusula
-                </label>
-                <select
-                  value={artIdDel}
-                  onChange={e => setArtIdDel(e.target.value)}
-                  style={{
-                    width: '100%',
-                    marginTop: '0.35rem',
+                {/* Subinfo de estado de artículos */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem' }}>
+                  {articulosList.length > 0 ? (
+                    <span style={{
+                      backgroundColor: 'rgba(34, 197, 94, 0.12)',
+                      color: '#22c55e',
+                      padding: '0.2rem 0.55rem',
+                      borderRadius: '6px',
+                      fontWeight: '700',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      <Check size={13} /> {articulosList.length} cláusula(s) / artículo(s) disponible(s) para enmendar
+                    </span>
+                  ) : (
+                    <span style={{
+                      backgroundColor: 'rgba(234, 179, 8, 0.12)',
+                      color: '#eab308',
+                      padding: '0.2rem 0.55rem',
+                      borderRadius: '6px',
+                      fontWeight: '700',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      <AlertTriangle size={13} /> Sin artículos cargados aún en la sesión
+                    </span>
+                  )}
+                </div>
+
+                {/* Visor desplegable del Texto Completo de la Resolución */}
+                {mostrarDocCompleto && textoResolucion && (
+                  <div style={{
+                    marginTop: '0.5rem',
                     backgroundColor: 'var(--card-header-bg)',
                     border: '1px solid var(--subborder-color)',
                     borderRadius: '8px',
-                    padding: '0.6rem',
-                    color: 'var(--text-color)',
-                    fontSize: '0.8rem',
-                    fontWeight: '600'
-                  }}
-                >
-                  <option value="">-- Añadir como Nuevo Artículo al Final / General --</option>
-                  {(state.enmiendasSesion?.articulos || []).map(art => (
-                    <option key={art.id} value={art.id}>
-                      {art.prefijo || `Artículo ${art.numero}`} - {art.texto?.substring(0, 45)}...
-                    </option>
-                  ))}
-                </select>
+                    padding: '0.85rem 1rem',
+                    maxHeight: '260px',
+                    overflowY: 'auto',
+                    fontSize: '0.82rem',
+                    lineHeight: '1.55',
+                    whiteSpace: 'pre-wrap',
+                    fontFamily: 'inherit'
+                  }}>
+                    {textoResolucion}
+                  </div>
+                )}
               </div>
 
-              {/* Texto original */}
-              {(tipoEnmiendaDel === 'supresion' || tipoEnmiendaDel === 'modificacion') && (
-                <div>
-                  <label style={{ fontSize: '0.74rem', fontWeight: '700', color: '#ef4444', textTransform: 'uppercase' }}>
-                    {tipoEnmiendaDel === 'supresion' ? 'Texto a Suprimir' : 'Texto Original a Modificar'}
-                  </label>
-                  <textarea
-                    rows={2}
-                    placeholder="Fragmento del texto a suprimir o reemplazar..."
-                    value={textoOriginalDel}
-                    onChange={e => setTextoOriginalDel(e.target.value)}
-                    style={{
-                      width: '100%',
-                      marginTop: '0.35rem',
-                      backgroundColor: 'rgba(239, 68, 68, 0.05)',
-                      border: '1px solid rgba(239, 68, 68, 0.3)',
-                      borderRadius: '8px',
-                      padding: '0.55rem',
-                      color: 'var(--text-color)',
-                      fontSize: '0.8rem'
-                    }}
-                  />
+              {/* Aviso si no hay artículos y botón directo de recarga */}
+              {articulosList.length === 0 && (
+                <div style={{
+                  backgroundColor: 'rgba(234, 179, 8, 0.08)',
+                  border: '1.5px dashed rgba(234, 179, 8, 0.35)',
+                  borderRadius: '12px',
+                  padding: '1.15rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.65rem'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#eab308', fontWeight: '800', fontSize: '0.88rem' }}>
+                    <AlertTriangle size={17} />
+                    El documento aún no está cargado o se cargó más tarde
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--muted-text)', lineHeight: '1.45' }}>
+                    Si la Mesa Directiva ha importado o pegado el Proyecto de Resolución recientemente, presiona el botón para solicitar los artículos actualizados en tiempo real.
+                  </div>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={handleRecargarDocumento}
+                      disabled={isReloadingDoc}
+                      style={{
+                        backgroundColor: '#eab308',
+                        color: '#000000',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '0.55rem 1.15rem',
+                        fontSize: '0.84rem',
+                        fontWeight: '800',
+                        cursor: isReloadingDoc ? 'not-allowed' : 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.45rem',
+                        boxShadow: '0 4px 12px rgba(234, 179, 8, 0.2)'
+                      }}
+                    >
+                      <RefreshCw size={15} className={isReloadingDoc ? 'animate-spin' : ''} />
+                      {isReloadingDoc ? 'Sincronizando con la Mesa...' : 'Recargar Documento de la Mesa'}
+                    </button>
+                  </div>
                 </div>
               )}
 
-              {/* Texto propuesto */}
-              {(tipoEnmiendaDel === 'adicion' || tipoEnmiendaDel === 'modificacion') && (
-                <div>
-                  <label style={{ fontSize: '0.74rem', fontWeight: '700', color: '#22c55e', textTransform: 'uppercase' }}>
-                    Texto Propuesto
-                  </label>
-                  <textarea
-                    rows={3}
-                    placeholder="Escribe la redacción propuesta..."
-                    required
-                    value={textoPropuestoDel}
-                    onChange={e => setTextoPropuestoDel(e.target.value)}
-                    style={{
-                      width: '100%',
-                      marginTop: '0.35rem',
-                      backgroundColor: 'rgba(34, 197, 94, 0.05)',
-                      border: '1px solid rgba(34, 197, 94, 0.3)',
-                      borderRadius: '8px',
-                      padding: '0.55rem',
-                      color: 'var(--text-color)',
-                      fontSize: '0.8rem'
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* Justificación */}
-              <div>
-                <label style={{ fontSize: '0.74rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
-                  Motivación / Justificación (Opcional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej: Fomenta la inclusión tecnológica en países en desarrollo"
-                  value={justificacionDel}
-                  onChange={e => setJustificacionDel(e.target.value)}
-                  style={{
-                    width: '100%',
-                    marginTop: '0.35rem',
-                    backgroundColor: 'var(--card-header-bg)',
-                    border: '1px solid var(--subborder-color)',
-                    borderRadius: '8px',
-                    padding: '0.55rem',
-                    color: 'var(--text-color)',
-                    fontSize: '0.8rem'
-                  }}
-                />
-              </div>
-
-              <button
-                type="submit"
-                style={{
-                  backgroundColor: 'var(--btn-bg)',
-                  color: 'var(--btn-text)',
-                  border: 'none',
+              {/* Notificación de envío exitoso */}
+              {enmiendaEnviadaFeedback && (
+                <div style={{
+                  backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                  border: '1px solid rgba(34, 197, 94, 0.4)',
+                  color: '#22c55e',
                   borderRadius: '8px',
-                  padding: '0.65rem',
-                  fontWeight: '800',
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
+                  padding: '0.75rem 1rem',
+                  fontSize: '0.82rem',
+                  fontWeight: '700',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
                   gap: '0.4rem',
-                  marginTop: '0.25rem'
-                }}
-              >
-                <Send size={15} /> Enviar Propuesta a la Mesa Directiva
-              </button>
-            </form>
-
-            {/* Historial de Propuestas Enviadas por este Delegado */}
-            {misEnmiendasEnviadas.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
-                  Tus Propuestas Enviadas ({misEnmiendasEnviadas.length})
+                  animation: 'scaleUp 0.2s ease'
+                }}>
+                  <CheckCircle2 size={16} /> ¡Propuesta de enmienda enviada a la Mesa Directiva para su revisión!
                 </div>
-                {misEnmiendasEnviadas.map(prop => (
-                  <div
-                    key={prop.id}
+              )}
+
+              {/* Formulario de Propuesta de Enmienda Telemática */}
+              <form onSubmit={handleEnviarEnmiendaDelegado} style={{
+                backgroundColor: 'var(--panel-color)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '12px',
+                padding: '1.25rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.85rem',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <FileText size={18} color="#3b82f6" />
+                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '800' }}>
+                      Proponer Enmienda a la Mesa Directiva
+                    </h3>
+                  </div>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--muted-text)' }}>
+                  Envía tu propuesta de modificación, adición o supresión de cláusula directamente a la mesa para ser evaluada y sometida a debate.
+                </div>
+
+                {/* Selector de Naturaleza */}
+                <div>
+                  <label style={{ fontSize: '0.74rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                    Tipo de Enmienda
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.4rem', marginTop: '0.35rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTipoEnmiendaDel('adicion');
+                      }}
+                      style={{
+                        padding: '0.45rem',
+                        borderRadius: '6px',
+                        border: `1px solid ${tipoEnmiendaDel === 'adicion' ? '#22c55e' : 'var(--subborder-color)'}`,
+                        backgroundColor: tipoEnmiendaDel === 'adicion' ? 'rgba(34, 197, 94, 0.2)' : 'transparent',
+                        color: tipoEnmiendaDel === 'adicion' ? '#22c55e' : 'var(--text-color)',
+                        fontWeight: '700',
+                        fontSize: '0.75rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      + Adición
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTipoEnmiendaDel('supresion');
+                        if (articuloSeleccionadoObj && !textoOriginalDel.trim()) {
+                          setTextoOriginalDel(articuloSeleccionadoObj.texto || '');
+                        }
+                      }}
+                      style={{
+                        padding: '0.45rem',
+                        borderRadius: '6px',
+                        border: `1px solid ${tipoEnmiendaDel === 'supresion' ? '#ef4444' : 'var(--subborder-color)'}`,
+                        backgroundColor: tipoEnmiendaDel === 'supresion' ? 'rgba(239, 68, 68, 0.2)' : 'transparent',
+                        color: tipoEnmiendaDel === 'supresion' ? '#ef4444' : 'var(--text-color)',
+                        fontWeight: '700',
+                        fontSize: '0.75rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      - Supresión
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTipoEnmiendaDel('modificacion');
+                        if (articuloSeleccionadoObj && !textoOriginalDel.trim()) {
+                          setTextoOriginalDel(articuloSeleccionadoObj.texto || '');
+                        }
+                      }}
+                      style={{
+                        padding: '0.45rem',
+                        borderRadius: '6px',
+                        border: `1px solid ${tipoEnmiendaDel === 'modificacion' ? '#3b82f6' : 'var(--subborder-color)'}`,
+                        backgroundColor: tipoEnmiendaDel === 'modificacion' ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
+                        color: tipoEnmiendaDel === 'modificacion' ? '#3b82f6' : 'var(--text-color)',
+                        fontWeight: '700',
+                        fontSize: '0.75rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ➔ Modificación
+                    </button>
+                  </div>
+                </div>
+
+                {/* Selector de Artículo */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <label style={{ fontSize: '0.74rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                      Artículo / Cláusula a Enmendar
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleRecargarDocumento}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#3b82f6',
+                        fontSize: '0.7rem',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '3px',
+                        padding: 0
+                      }}
+                      title="Recargar lista de artículos"
+                    >
+                      <RefreshCw size={11} className={isReloadingDoc ? 'animate-spin' : ''} />
+                      Actualizar lista
+                    </button>
+                  </div>
+
+                  <select
+                    value={artIdDel}
+                    onChange={e => {
+                      const newId = e.target.value;
+                      setArtIdDel(newId);
+                      const targetArt = articulosList.find(a => a.id === newId);
+                      if (targetArt && (tipoEnmiendaDel === 'modificacion' || tipoEnmiendaDel === 'supresion')) {
+                        setTextoOriginalDel(targetArt.texto || '');
+                      }
+                    }}
                     style={{
+                      width: '100%',
+                      marginTop: '0.35rem',
                       backgroundColor: 'var(--card-header-bg)',
                       border: '1px solid var(--subborder-color)',
                       borderRadius: '8px',
-                      padding: '0.75rem',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.3rem'
+                      padding: '0.6rem',
+                      color: 'var(--text-color)',
+                      fontSize: '0.8rem',
+                      fontWeight: '600'
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '0.74rem', fontWeight: '800', color: '#60a5fa' }}>
-                        {prop.tipo?.toUpperCase()} · {prop.articuloNumero}
-                      </span>
-                      <span style={{ fontSize: '0.65rem', color: 'var(--muted-text)' }}>
-                        Enviada
-                      </span>
+                    <option value="">-- Añadir como Nuevo Artículo al Final / General --</option>
+                    {articulosList.map(art => (
+                      <option key={art.id} value={art.id}>
+                        {art.prefijo || `Artículo ${art.numero}`} - {art.texto?.substring(0, 50)}...
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Previsualización del artículo seleccionado si existe */}
+                  {articuloSeleccionadoObj && (
+                    <div style={{
+                      marginTop: '0.35rem',
+                      backgroundColor: 'rgba(255,255,255,0.03)',
+                      border: '1px solid var(--subborder-color)',
+                      borderRadius: '6px',
+                      padding: '0.5rem 0.75rem',
+                      fontSize: '0.75rem',
+                      color: 'var(--muted-text)',
+                      lineHeight: '1.4'
+                    }}>
+                      <span style={{ fontWeight: '800', color: 'var(--text-color)' }}>
+                        {articuloSeleccionadoObj.prefijo || `Artículo ${articuloSeleccionadoObj.numero}`}:
+                      </span>{' '}
+                      {articuloSeleccionadoObj.texto}
                     </div>
-                    {prop.textoPropuesto && (
-                      <div style={{ fontSize: '0.75rem', color: '#22c55e', fontWeight: '600' }}>
-                        + {prop.textoPropuesto}
-                      </div>
-                    )}
-                    {prop.justificacion && (
-                      <div style={{ fontSize: '0.68rem', color: 'var(--muted-text)', fontStyle: 'italic' }}>
-                        {prop.justificacion}
-                      </div>
-                    )}
+                  )}
+                </div>
+
+                {/* Texto original */}
+                {(tipoEnmiendaDel === 'supresion' || tipoEnmiendaDel === 'modificacion') && (
+                  <div>
+                    <label style={{ fontSize: '0.74rem', fontWeight: '700', color: '#ef4444', textTransform: 'uppercase' }}>
+                      {tipoEnmiendaDel === 'supresion' ? 'Texto a Suprimir' : 'Texto Original a Modificar'}
+                    </label>
+                    <textarea
+                      rows={2}
+                      placeholder="Fragmento del texto a suprimir o reemplazar..."
+                      value={textoOriginalDel}
+                      onChange={e => setTextoOriginalDel(e.target.value)}
+                      style={{
+                        width: '100%',
+                        marginTop: '0.35rem',
+                        backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        borderRadius: '8px',
+                        padding: '0.55rem',
+                        color: 'var(--text-color)',
+                        fontSize: '0.8rem'
+                      }}
+                    />
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                )}
+
+                {/* Texto propuesto */}
+                {(tipoEnmiendaDel === 'adicion' || tipoEnmiendaDel === 'modificacion') && (
+                  <div>
+                    <label style={{ fontSize: '0.74rem', fontWeight: '700', color: '#22c55e', textTransform: 'uppercase' }}>
+                      Texto Propuesto
+                    </label>
+                    <textarea
+                      rows={3}
+                      placeholder="Escribe la redacción propuesta..."
+                      required
+                      value={textoPropuestoDel}
+                      onChange={e => setTextoPropuestoDel(e.target.value)}
+                      style={{
+                        width: '100%',
+                        marginTop: '0.35rem',
+                        backgroundColor: 'rgba(34, 197, 94, 0.05)',
+                        border: '1px solid rgba(34, 197, 94, 0.3)',
+                        borderRadius: '8px',
+                        padding: '0.55rem',
+                        color: 'var(--text-color)',
+                        fontSize: '0.8rem'
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Justificación */}
+                <div>
+                  <label style={{ fontSize: '0.74rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                    Motivación / Justificación (Opcional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Fomenta la inclusión tecnológica en países en desarrollo"
+                    value={justificacionDel}
+                    onChange={e => setJustificacionDel(e.target.value)}
+                    style={{
+                      width: '100%',
+                      marginTop: '0.35rem',
+                      backgroundColor: 'var(--card-header-bg)',
+                      border: '1px solid var(--subborder-color)',
+                      borderRadius: '8px',
+                      padding: '0.55rem',
+                      color: 'var(--text-color)',
+                      fontSize: '0.8rem'
+                    }}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  style={{
+                    backgroundColor: 'var(--btn-bg)',
+                    color: 'var(--btn-text)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '0.65rem',
+                    fontWeight: '800',
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.4rem',
+                    marginTop: '0.25rem'
+                  }}
+                >
+                  <Send size={15} /> Enviar Propuesta a la Mesa Directiva
+                </button>
+              </form>
+
+              {/* Historial de Propuestas Enviadas por este Delegado */}
+              {misEnmiendasEnviadas.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                    Tus Propuestas Enviadas ({misEnmiendasEnviadas.length})
+                  </div>
+                  {misEnmiendasEnviadas.map(prop => (
+                    <div
+                      key={prop.id}
+                      style={{
+                        backgroundColor: 'var(--card-header-bg)',
+                        border: '1px solid var(--subborder-color)',
+                        borderRadius: '8px',
+                        padding: '0.75rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.3rem'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '0.74rem', fontWeight: '800', color: '#60a5fa' }}>
+                          {prop.tipo?.toUpperCase()} · {prop.articuloNumero}
+                        </span>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--muted-text)' }}>
+                          Enviada
+                        </span>
+                      </div>
+                      {prop.textoPropuesto && (
+                        <div style={{ fontSize: '0.75rem', color: '#22c55e', fontWeight: '600' }}>
+                          + {prop.textoPropuesto}
+                        </div>
+                      )}
+                      {prop.justificacion && (
+                        <div style={{ fontSize: '0.68rem', color: 'var(--muted-text)', fontStyle: 'italic' }}>
+                          {prop.justificacion}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </main>
 
       {/* ── Modal para Proponer Moción ── */}
