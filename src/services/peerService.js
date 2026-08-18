@@ -90,7 +90,7 @@ export const DEFAULT_ICE_SERVERS = [
 export const DEFAULT_SIGNALING_CONFIG = {
   host: 'openmun-signaling.onrender.com',
   port: 443,
-  path: '/',
+  path: '/openmun',
   secure: true
 };
 
