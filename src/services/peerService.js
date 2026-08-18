@@ -61,7 +61,40 @@ class PeerService {
     this.roomSettings = { ...DEFAULT_ROOM_SETTINGS };
     this.latestSpeakingRequests = [];
     this.latestSessionState = null;
+    this.latestNotes = [];
+    try {
+      if (typeof window !== 'undefined') {
+        const savedNotes = localStorage.getItem('openmun_notes');
+        if (savedNotes) this.latestNotes = JSON.parse(savedNotes);
+      }
+    } catch (e) {}
     this.hostConn = null;
+  }
+
+  // Filtrar histórico de notas según el rol y país del receptor
+  getNotesForRole(role, country) {
+    if (!Array.isArray(this.latestNotes)) return [];
+    if (role === 'secretariat' || role === 'chair') {
+      return this.latestNotes;
+    }
+    if (role === 'backroom') {
+      return this.latestNotes.filter(n =>
+        n.to?.toUpperCase() === 'BACKROOM' ||
+        n.fromRole === 'backroom' ||
+        n.from?.toUpperCase() === 'BACKROOM' ||
+        n.to?.toUpperCase() === 'TODOS' ||
+        n.type === 'crisis'
+      );
+    }
+    if (role === 'delegate' && country) {
+      const cleanCountry = country.toLowerCase().trim();
+      return this.latestNotes.filter(n =>
+        (n.to && n.to.toLowerCase().trim() === cleanCountry) ||
+        (n.from && n.from.toLowerCase().trim() === cleanCountry) ||
+        n.to?.toUpperCase() === 'TODOS'
+      );
+    }
+    return [];
   }
 
   // Suscripción a eventos de red
@@ -338,6 +371,8 @@ class PeerService {
           const meta = { role, country: country || (role === 'backroom' ? 'Backroom' : 'Secretaría'), connectedAt: Date.now() };
           this.peerMetadata.set(peerId, meta);
 
+          const roleNotes = this.getNotesForRole(role, meta.country);
+
           conn.send({
             type: MSG_TYPES.AUTH_RESULT,
             payload: {
@@ -346,7 +381,8 @@ class PeerService {
               country: meta.country,
               roomSettings: this.roomSettings,
               speakingRequests: this.latestSpeakingRequests || [],
-              sessionState: this.latestSessionState || null
+              sessionState: this.latestSessionState || null,
+              notes: roleNotes
             }
           });
 
@@ -368,7 +404,8 @@ class PeerService {
             country: 'Secretaría Local',
             roomSettings: this.roomSettings,
             speakingRequests: this.latestSpeakingRequests || [],
-            sessionState: this.latestSessionState || null
+            sessionState: this.latestSessionState || null,
+            notes: this.latestNotes || []
           }
         });
       }
@@ -557,6 +594,17 @@ class PeerService {
       fromRole: senderMeta.role,
       timestamp: note.timestamp || Date.now()
     };
+
+    // Guardar en el histórico del Host
+    if (!this.latestNotes) this.latestNotes = [];
+    if (!this.latestNotes.some(n => n.id === formattedNote.id)) {
+      this.latestNotes = [formattedNote, ...this.latestNotes];
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('openmun_notes', JSON.stringify(this.latestNotes));
+        }
+      } catch (e) {}
+    }
 
     const target = note.to; // País destinatario, 'CHAIR', 'BACKROOM', 'TODOS'
 

@@ -84,7 +84,9 @@ export function validateSessionJSON(rawInput) {
     'eventosCrisis',
     'crisisEventos',
     'relojCrisis',
-    'relojSimulacion'
+    'relojSimulacion',
+    'notes',
+    'openmun_notes'
   ];
 
   const hasDirectSessionKey = directSessionKeys.some(k => k in parsed);

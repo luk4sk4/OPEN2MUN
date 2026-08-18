@@ -1121,8 +1121,16 @@ export const SessionProvider = ({ children }) => {
       if (savedReloj) crisisRelojExport = JSON.parse(savedReloj);
     } catch (e) {}
 
+    // Recuperar mensajes y notas
+    let notesExport = [];
+    try {
+      const savedNotes = localStorage.getItem('openmun_notes');
+      if (savedNotes) notesExport = JSON.parse(savedNotes);
+    } catch (e) {}
+
     localStorageSnapshot['openmun_crisis_eventos'] = crisisEventosExport;
     if (crisisRelojExport) localStorageSnapshot['openmun_crisis_reloj'] = crisisRelojExport;
+    if (notesExport && notesExport.length > 0) localStorageSnapshot['openmun_notes'] = notesExport;
 
     return {
       version: '2.0',
@@ -1143,6 +1151,7 @@ export const SessionProvider = ({ children }) => {
       alertasCrisis: crisisEventosExport,
       eventosCrisis: crisisEventosExport,
       relojCrisis: crisisRelojExport,
+      notes: notesExport,
       config: localStorageSnapshot['openmun_config'] || undefined,
       localStorageSnapshot
     };
@@ -1493,6 +1502,12 @@ export const SessionProvider = ({ children }) => {
       const relojData = sesionData.relojCrisis || sesionData.relojSimulacion || sesionData.reloj || snapshot.openmun_crisis_reloj;
       if (relojData && typeof relojData === 'object') {
         localStorage.setItem('openmun_crisis_reloj', JSON.stringify(relojData));
+      }
+
+      // Mensajes y Notas (Chairs - Backroom - Delegados)
+      const notesData = sesionData.notes || sesionData.openmun_notes || snapshot.openmun_notes;
+      if (Array.isArray(notesData)) {
+        localStorage.setItem('openmun_notes', JSON.stringify(notesData));
       }
 
       const configData = sesionData.config || sesionData.openmun_config || snapshot.openmun_config;

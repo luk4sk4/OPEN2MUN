@@ -54,7 +54,14 @@ export const P2PProvider = ({ children }) => {
   });
 
   const [connectedPeers, setConnectedPeers] = useState([]);
-  const [notes, setNotes] = useState([]);
+  const [notes, setNotes] = useState(() => {
+    try {
+      const saved = localStorage.getItem('openmun_notes');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
   const [unreadNotesCount, setUnreadNotesCount] = useState(0);
   const [speakingRequests, setSpeakingRequests] = useState([]);
   const [enmiendasPropuestas, setEnmiendasPropuestas] = useState(() => {
@@ -73,7 +80,14 @@ export const P2PProvider = ({ children }) => {
     localStorage.setItem('openmun_enmiendas_propuestas', JSON.stringify(enmiendasPropuestas));
   }, [enmiendasPropuestas]);
 
-  // Sincronizar ajustes P2P si se importan datos a localStorage
+  useEffect(() => {
+    localStorage.setItem('openmun_notes', JSON.stringify(notes));
+    if (peerService) {
+      peerService.latestNotes = notes;
+    }
+  }, [notes]);
+
+  // Sincronizar ajustes P2P y notas si se importan datos a localStorage
   useEffect(() => {
     const handleSessionImported = () => {
       try {
@@ -87,6 +101,14 @@ export const P2PProvider = ({ children }) => {
         if (savedBackroom) setBackroomPassword(savedBackroom);
         const savedCountry = localStorage.getItem('openmun_last_country');
         if (savedCountry) setClientCountry(savedCountry);
+        const savedNotes = localStorage.getItem('openmun_notes');
+        if (savedNotes) {
+          const parsedNotes = JSON.parse(savedNotes);
+          if (Array.isArray(parsedNotes)) {
+            setNotes(parsedNotes);
+            if (peerService) peerService.latestNotes = parsedNotes;
+          }
+        }
       } catch (e) {
         console.error('Error sincronizando P2PContext tras importación:', e);
       }
@@ -291,6 +313,16 @@ export const P2PProvider = ({ children }) => {
             if (message.payload.speakingRequests) {
               setSpeakingRequests(message.payload.speakingRequests);
             }
+            if (Array.isArray(message.payload.notes) && message.payload.notes.length > 0) {
+              setNotes(prev => {
+                const map = new Map();
+                // Añadir notas entrantes del Host
+                message.payload.notes.forEach(n => { if (n && n.id) map.set(n.id, n); });
+                // Combinar con las locales que pudieran existir
+                prev.forEach(n => { if (n && n.id && !map.has(n.id)) map.set(n.id, n); });
+                return Array.from(map.values()).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+              });
+            }
             if (message.payload.sessionState) {
               setRemoteSessionState(message.payload.sessionState);
               if (sessionActionHandlersRef.current.onSyncState) {
@@ -318,7 +350,10 @@ export const P2PProvider = ({ children }) => {
           const { success, mode, message: msgText } = message.payload || {};
           addNotification(msgText || (success ? 'Solicitud procesada' : 'No se pudo procesar'), success ? 'success' : 'warning');
         } else if (message.type === MSG_TYPES.NOTE_RECEIVED) {
-          setNotes(prev => [message.payload, ...prev]);
+          setNotes(prev => {
+            if (prev.some(n => n.id === message.payload.id)) return prev;
+            return [message.payload, ...prev];
+          });
           setUnreadNotesCount(prev => prev + 1);
           addNotification(`Nueva nota de ${message.payload.from}`, 'info');
         } else if (message.type === MSG_TYPES.CRISIS_ALERT) {

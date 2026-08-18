@@ -344,12 +344,19 @@ const GestorCrisis = () => {
   // Exportar Alertas de Crisis como archivo JSON descargable
   const handleExportarCrisisJSON = () => {
     try {
+      let savedNotes = [];
+      try {
+        const rawNotes = localStorage.getItem('openmun_notes');
+        if (rawNotes) savedNotes = JSON.parse(rawNotes);
+      } catch (e) {}
+
       const dataToExport = {
         tipo: 'openmun_crisis_export',
         version: '2.0',
         fechaExportacion: new Date().toISOString(),
         relojCrisis: relojSimulacion,
-        alertasCrisis: eventosCrisis
+        alertasCrisis: eventosCrisis,
+        notes: savedNotes
       };
       const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -360,7 +367,7 @@ const GestorCrisis = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      showToast('Alertas de crisis exportadas en JSON');
+      showToast('Alertas y mensajes de crisis exportados en JSON');
     } catch (err) {
       showToast('Error al exportar alertas: ' + err.message, 'error');
     }
@@ -377,12 +384,14 @@ const GestorCrisis = () => {
         const parsed = JSON.parse(event.target.result);
         let importedEventos = null;
         let importedReloj = null;
+        let importedNotes = null;
 
         if (Array.isArray(parsed)) {
           importedEventos = parsed;
         } else if (parsed && typeof parsed === 'object') {
           importedEventos = parsed.alertasCrisis || parsed.eventosCrisis || parsed.crisisEventos || parsed.eventos || parsed.crisis || (parsed.localStorageSnapshot && parsed.localStorageSnapshot.openmun_crisis_eventos);
           importedReloj = parsed.relojCrisis || parsed.relojSimulacion || parsed.reloj || (parsed.localStorageSnapshot && parsed.localStorageSnapshot.openmun_crisis_reloj);
+          importedNotes = parsed.notes || parsed.openmun_notes || (parsed.localStorageSnapshot && parsed.localStorageSnapshot.openmun_notes);
         }
 
         if (Array.isArray(importedEventos) && importedEventos.length > 0) {
@@ -404,6 +413,11 @@ const GestorCrisis = () => {
           setEventosCrisis(sanitizedEventos);
           if (importedReloj && typeof importedReloj === 'object') {
             setRelojSimulacion(importedReloj);
+          }
+          if (Array.isArray(importedNotes) && importedNotes.length > 0) {
+            localStorage.setItem('openmun_notes', JSON.stringify(importedNotes));
+            window.dispatchEvent(new Event('storage'));
+            window.dispatchEvent(new CustomEvent('openmun_session_imported', { detail: { notes: importedNotes } }));
           }
           showToast(`¡${sanitizedEventos.length} alertas de crisis importadas!`);
         } else {
