@@ -1,25 +1,27 @@
-import CronometroPrincipal from './CronometroPrincipal';
-import ListaOradores from './ListaOradores';
-import PizarraMociones from './PizarraMociones';
-import CronometroDual from './CronometroDual';
-import CronometroOnlyTime from './CronometroOnlyTime';
-import MatrizPaises from './MatrizPaises';
-import HistoricoDelegaciones from './HistoricoDelegaciones';
-import VotacionOficial from './VotacionOficial';
-import EstablecerAgenda from './EstablecerAgenda';
-import ImportarPaises from './ImportarPaises';
-import ConfigurarComite from './ConfigurarComite';
-import AnadirPaises from './AnadirPaises';
-import AnadirPaisesGSL from './AnadirPaisesGSL';
-import AnadirPaisesDebate from './AnadirPaisesDebate';
-import SelectorAleatorio from './SelectorAleatorio';
-import GestorCrisis from './GestorCrisis';
-import TeleNoticiasCrisis from './TeleNoticiasCrisis';
-import PizarraInteractiva from './PizarraInteractiva';
-import MapaVotacion from './MapaVotacion';
-import MiniVotacion from './MiniVotacion';
-import ControladorEnmiendas from './ControladorEnmiendas';
-import CronometroEnmiendas from './CronometroEnmiendas';
+import React, { lazy } from 'react';
+
+const CronometroPrincipal = lazy(() => import('./CronometroPrincipal'));
+const ListaOradores = lazy(() => import('./ListaOradores'));
+const PizarraMociones = lazy(() => import('./PizarraMociones'));
+const CronometroDual = lazy(() => import('./CronometroDual'));
+const CronometroOnlyTime = lazy(() => import('./CronometroOnlyTime'));
+const MatrizPaises = lazy(() => import('./MatrizPaises'));
+const HistoricoDelegaciones = lazy(() => import('./HistoricoDelegaciones'));
+const VotacionOficial = lazy(() => import('./VotacionOficial'));
+const EstablecerAgenda = lazy(() => import('./EstablecerAgenda'));
+const ImportarPaises = lazy(() => import('./ImportarPaises'));
+const ConfigurarComite = lazy(() => import('./ConfigurarComite'));
+const AnadirPaises = lazy(() => import('./AnadirPaises'));
+const AnadirPaisesGSL = lazy(() => import('./AnadirPaisesGSL'));
+const AnadirPaisesDebate = lazy(() => import('./AnadirPaisesDebate'));
+const SelectorAleatorio = lazy(() => import('./SelectorAleatorio'));
+const GestorCrisis = lazy(() => import('./GestorCrisis'));
+const TeleNoticiasCrisis = lazy(() => import('./TeleNoticiasCrisis'));
+const PizarraInteractiva = lazy(() => import('./PizarraInteractiva'));
+const MapaVotacion = lazy(() => import('./MapaVotacion'));
+const MiniVotacion = lazy(() => import('./MiniVotacion'));
+const ControladorEnmiendas = lazy(() => import('./ControladorEnmiendas'));
+const CronometroEnmiendas = lazy(() => import('./CronometroEnmiendas'));
 
 const WidgetRegistry = {
   // Widgets Canónicos Únicos

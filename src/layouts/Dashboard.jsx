@@ -1759,7 +1759,11 @@ const Dashboard = () => {
                     borderRadius: 'var(--border-radius)',
                     pointerEvents: isInteracting ? 'none' : 'auto'
                   }}>
-                    {WidgetComponent ? <WidgetComponent isLight={isLight} /> : (
+                    {WidgetComponent ? (
+                      <React.Suspense fallback={<div style={{ padding: '1rem', opacity: 0.5, textAlign: 'center' }}>Cargando widget...</div>}>
+                        <WidgetComponent isLight={isLight} />
+                      </React.Suspense>
+                    ) : (
                       <div style={{ padding: '1rem', opacity: 0.5, textAlign: 'center' }}>
                         Widget: {w.i}
                       </div>
