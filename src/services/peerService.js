@@ -1,5 +1,8 @@
 import { Peer } from 'peerjs';
 
+
+const jitter = Math.floor(Math.random() * 1000);
+
 export const LOCAL_BROADCAST_CHANNEL_NAME = 'openmun_local_secret_channel';
 
 /**
@@ -106,7 +109,7 @@ export function getPeerConfig(overrideOptions = {}) {
         signaling = { ...signaling, ...JSON.parse(saved) };
       }
     }
-  } catch (e) {}
+  } catch (e) { }
 
   return {
     debug: 1,
@@ -143,7 +146,7 @@ class PeerService {
         const savedNotes = localStorage.getItem('openmun_notes');
         if (savedNotes) this.latestNotes = JSON.parse(savedNotes);
       }
-    } catch (e) {}
+    } catch (e) { }
     this.hostConn = null;
     this.heartbeatTimer = null;
   }
@@ -199,11 +202,11 @@ class PeerService {
           try {
             console.log('Reconectando Peer al servidor de señalización...');
             this.peer.reconnect();
-          } catch (e) {}
+          } catch (e) { }
         } else if (this.peer.socket && typeof this.peer.socket.send === 'function') {
           try {
             this.peer.socket.send({ type: 'HEARTBEAT' });
-          } catch (e) {}
+          } catch (e) { }
         }
       }
     }, 12000);
@@ -292,7 +295,7 @@ class PeerService {
           if (!isResolved && !hasTriedFallback && (errType === 'server-error' || errType === 'socket-error' || errType === 'socket-closed')) {
             hasTriedFallback = true;
             console.warn('Servidor de señalización primario no disponible. Reintentando Host en PeerJS Cloud...');
-            try { this.peer.destroy(); } catch (e) {}
+            try { this.peer.destroy(); } catch (e) { }
             createHostPeer(true);
             return;
           }
@@ -328,7 +331,7 @@ class PeerService {
 
     conn.on('data', (data) => {
       if (data?.type === MSG_TYPES.PING) {
-        try { conn.send({ type: MSG_TYPES.PONG, timestamp: Date.now() }); } catch (e) {}
+        try { conn.send({ type: MSG_TYPES.PONG, timestamp: Date.now() }); } catch (e) { }
         return;
       }
       this.handleIncomingMessage(conn.peer, data, false, conn);
@@ -419,7 +422,7 @@ class PeerService {
 
         try {
           if (currentConn) {
-            try { currentConn.close(); } catch (e) {}
+            try { currentConn.close(); } catch (e) { }
             currentConn = null;
           }
 
@@ -438,7 +441,7 @@ class PeerService {
 
           currentConn.on('data', (data) => {
             if (data?.type === MSG_TYPES.PING) {
-              try { currentConn.send({ type: MSG_TYPES.PONG, timestamp: Date.now() }); } catch (e) {}
+              try { currentConn.send({ type: MSG_TYPES.PONG, timestamp: Date.now() }); } catch (e) { }
               return;
             }
 
@@ -526,7 +529,7 @@ class PeerService {
           if (!isSettled && !hasTriedFallback && (errType === 'server-error' || errType === 'socket-error' || errType === 'socket-closed')) {
             hasTriedFallback = true;
             console.warn('Servidor de señalización primario no disponible. Reintentando Cliente en PeerJS Cloud...');
-            try { this.peer.destroy(); } catch (e) {}
+            try { this.peer.destroy(); } catch (e) { }
             createClientPeer(true);
             return;
           }
@@ -534,7 +537,7 @@ class PeerService {
           if (errType === 'peer-unavailable') {
             if (attempt < MAX_ATTEMPTS && !isSettled) {
               console.log(`Sala aún no disponible en señalización. Reintentando en 2s (intento ${attempt + 1}/${MAX_ATTEMPTS})...`);
-              retryTimer = setTimeout(establishDataConnection, 2000);
+              retryTimer = setTimeout(establishDataConnection, 2000 + jitter);
               return;
             }
             safeReject(`La sala "${cleanRoomId}" no se encuentra activa en el servidor. Asegúrate de que el Chair haya iniciado la sala primero.`);
@@ -881,7 +884,7 @@ class PeerService {
       if (conn) {
         try {
           conn.send(syncMsg);
-        } catch (e) {}
+        } catch (e) { }
       } else if (isLocal) {
         this.broadcastLocal(syncMsg);
       }
@@ -910,7 +913,7 @@ class PeerService {
         if (typeof window !== 'undefined') {
           localStorage.setItem('openmun_notes', JSON.stringify(this.latestNotes));
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const target = note.to; // País destinatario, 'CHAIR', 'BACKROOM', 'TODOS'
