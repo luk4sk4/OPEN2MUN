@@ -259,14 +259,14 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
             gap: '1.25rem',
             padding: '1rem 1.25rem',
             borderRadius: '14px',
-            background: isLight 
-              ? 'linear-gradient(135deg, rgba(254, 243, 199, 0.95) 0%, rgba(253, 230, 138, 0.75) 100%)' 
+            background: isLight
+              ? 'linear-gradient(135deg, rgba(254, 243, 199, 0.95) 0%, rgba(253, 230, 138, 0.75) 100%)'
               : 'linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(180, 83, 9, 0.1) 100%)',
-            border: isLight 
-              ? '1px solid rgba(245, 158, 11, 0.4)' 
+            border: isLight
+              ? '1px solid rgba(245, 158, 11, 0.4)'
               : '1px solid rgba(245, 158, 11, 0.3)',
-            boxShadow: isLight 
-              ? '0 4px 16px rgba(245, 158, 11, 0.12)' 
+            boxShadow: isLight
+              ? '0 4px 16px rgba(245, 158, 11, 0.12)'
               : '0 4px 20px rgba(0, 0, 0, 0.25)',
             backdropFilter: 'blur(10px)',
             position: 'relative',
@@ -320,7 +320,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
               marginLeft: 'auto'
             }}>
               <a
-                href="https://buymeacoffee.com"
+                href="buymeacoffee.com/openMUN"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -539,7 +539,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
           }}>
             {/* Botón de Donaciones */}
             <a
-              href="https://buymeacoffee.com"
+              href="buymeacoffee.com/openMUN"
               target="_blank"
               rel="noopener noreferrer"
               style={{
