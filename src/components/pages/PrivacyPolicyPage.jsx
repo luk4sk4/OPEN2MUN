@@ -163,13 +163,13 @@ export default function PrivacyPolicyPage({ isLight = false, onBack }) {
                 <Cpu size={22} />
               </div>
               <h3 style={{ fontSize: '1.2rem', fontWeight: '700', margin: 0, color: textPrimary }}>
-                {t('privacy.p2pTitle', '2. Conexiones Peer-to-Peer (WebRTC & P2P)')}
+                {t('privacy.p2pTitle', '2. Conexiones en Tiempo Real (WebSockets Seguros)')}
               </h3>
             </div>
             <p style={{ fontSize: '0.92rem', lineHeight: '1.6', color: textMuted, margin: 0 }}>
               {t(
                 'privacy.p2pDesc',
-                'Las funciones de sincronización en vivo (como el modo Delegado, Secretaría o Backroom) utilizan WebRTC / PeerJS. La comunicación se realiza de punto a punto (peer-to-peer) entre el dispositivo de la Mesa de Presidencia y los dispositivos conectados.'
+                'Las funciones de sincronización en vivo (como el modo Delegado, Secretaría o Backroom) utilizan WebSockets seguros (WSS). La comunicación se realiza en tiempo real cifrada entre el dispositivo de la Mesa de Presidencia y los delegados conectados a través de la sala del comité.'
               )}
             </p>
           </div>

@@ -952,11 +952,11 @@ const Dashboard = () => {
                   cursor: 'pointer',
                   position: 'relative'
                 }}
-                title={t('liveSession.title', 'Sesión en Vivo P2P')}
+                title={t('liveSession.title', 'Sesión en Vivo')}
               >
                 <Radio size={14} className={connectionStatus === 'host_active' ? 'animate-pulse' : ''} />
                 <span>
-                  {connectionStatus === 'host_active' ? `${t('liveSession.live', 'En Vivo')} (${connectedPeers.length})` : 'P2P Live'}
+                  {connectionStatus === 'host_active' ? `${t('liveSession.live', 'En Vivo')} (${connectedPeers.length})` : t('liveSession.live', 'En Vivo')}
                 </span>
                 {speakingRequests.length > 0 && (
                   <span style={{

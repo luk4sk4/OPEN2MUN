@@ -182,7 +182,7 @@ const JoinSessionView = ({ isLight: propIsLight, onBackToChair }) => {
               {t('views.join.title', 'Unirse a Sala en Vivo')}
             </h2>
             <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.82rem', color: 'var(--muted-text)' }}>
-              {t('views.join.subtitle', 'Conéctate a la sesión activa mediante la red descentralizada P2P')}
+              {t('views.join.subtitle', 'Conéctate a la sesión activa en tiempo real')}
             </p>
           </div>
         </div>

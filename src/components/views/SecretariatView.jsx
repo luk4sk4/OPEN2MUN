@@ -1535,7 +1535,7 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
                   Dispositivos y Delegaciones Conectadas ({connectedPeers.length})
                 </h3>
                 <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.82rem', color: 'var(--muted-text)' }}>
-                  Monitor de red P2P en tiempo real con capacidad de expulsión.
+                  Monitor de conexiones en vivo en tiempo real con capacidad de expulsión.
                 </p>
               </div>
             </div>

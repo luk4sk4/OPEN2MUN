@@ -48,8 +48,8 @@ const FAQ_ITEMS = [
   {
     id: 'p2p-sync',
     categoria: 'Tecnología',
-    pregunta: '¿Cómo funciona la sincronización en vivo P2P (Mesa, Delegados y Secretaría)?',
-    respuesta: 'OpenMUN utiliza comunicación Peer-to-Peer (WebRTC) y canales locales (BroadcastChannel). La Mesa de Presidencia actúa como nodo principal y comparte un código o código QR. Las actualizaciones de cronómetro, oradores y mociones se transmiten directamente entre dispositivos sin almacenar datos en servidores de terceros.'
+    pregunta: '¿Cómo funciona la sincronización en vivo (Mesa, Delegados y Secretaría)?',
+    respuesta: 'OpenMUN utiliza comunicación WebSocket cifrada de alta velocidad y canales locales (BroadcastChannel). La Mesa de Presidencia actúa como sala principal y comparte un código o código QR. Las actualizaciones de cronómetro, oradores y mociones se transmiten en tiempo real entre dispositivos sin almacenar datos en servidores de terceros.'
   },
   {
     id: 'instalacion-cuenta',
@@ -113,8 +113,8 @@ const FEATURES = [
   },
   {
     icon: Radio,
-    title: 'Transmisión P2P en Directo',
-    desc: 'Sincronización en tiempo real entre la Mesa, delegados y pantallas de proyección utilizando tecnología WebRTC descentralizada.'
+    title: 'Transmisión en Directo',
+    desc: 'Sincronización en tiempo real entre la Mesa, delegados y pantallas de proyección utilizando WebSockets seguros (WSS) y canales locales de alta velocidad.'
   },
   {
     icon: Sliders,
@@ -419,7 +419,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
             color: textMuted,
             fontWeight: '400'
           }}>
-            {t('home.heroSubtitle', 'Diseñada para Mesas de Presidencia, Delegados, Secretaría y Equipos de Crisis. Sincronización en tiempo real P2P, cronómetros de alta precisión, mapas dinámicos y cero configuraciones de servidor.')}
+            {t('home.heroSubtitle', 'Diseñada para Mesas de Presidencia, Delegados, Secretaría y Equipos de Crisis. Sincronización en tiempo real en sesiones en vivo, cronómetros de alta precisión, mapas dinámicos y cero configuraciones de servidor.')}
           </p>
 
           {/* Accesos Rápidos Principales (Hub de Acción Directa) */}

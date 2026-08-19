@@ -156,7 +156,7 @@ export const P2PProvider = ({ children }) => {
         setRoomId(data.roomId);
         if (data.roomSettings) setRoomSettings(data.roomSettings);
         localStorage.setItem('openmun_last_room_id', data.roomId);
-        addNotification(`Sala P2P iniciada con éxito (${data.roomId})`, 'success');
+        addNotification(`Sala en vivo iniciada con éxito (${data.roomId})`, 'success');
       }
 
       if (event === 'connected') {
@@ -449,7 +449,7 @@ export const P2PProvider = ({ children }) => {
     setConnectionStatus('disconnected');
     setConnectedPeers([]);
     setRole('none');
-    addNotification('Sala P2P finalizada', 'info');
+    addNotification('Sala en vivo finalizada', 'info');
   }, [addNotification]);
 
   const joinRoom = useCallback(async ({ targetRoomId, targetRole, password, country, isLocalBroadcast = false }) => {
