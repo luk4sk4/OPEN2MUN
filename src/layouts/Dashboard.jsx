@@ -301,26 +301,23 @@ const Dashboard = () => {
     });
   }, [registerSessionHandlers, agregarOrador, agregarOradorCaucus, agregarMocion, registrarVotoPais, ejecutarAccion, aplicarEstadoExterno]);
 
-  // Sincronizar estado automáticamente a todos los peers conectados si el Chair está emitiendo
+  // Sincronizar estado automáticamente a todos los peers conectados si el Chair está emitiendo (optimizado sin spam de reloj)
   useEffect(() => {
     broadcastCurrentState({
       comision: nombreComite || 'Asamblea General - openMUN',
       paises,
       oradoresCola,
       oradoresCaucus,
-      registroIntervenciones,
       mociones,
-      historicoMociones,
       caucusActivo,
       agendaSesion,
       nombreComite,
       votacionSesion,
-      relojGSLState,
       enmiendasSesion,
       roomSettings,
       speakingRequests
     });
-  }, [broadcastCurrentState, paises, oradoresCola, oradoresCaucus, registroIntervenciones, mociones, historicoMociones, caucusActivo, agendaSesion, nombreComite, votacionSesion, relojGSLState, enmiendasSesion, roomSettings, speakingRequests]);
+  }, [broadcastCurrentState, paises, oradoresCola, oradoresCaucus, mociones, caucusActivo, agendaSesion, nombreComite, votacionSesion, enmiendasSesion, roomSettings, speakingRequests]);
 
   // Configuración global y accesibilidad desde el contexto
   const {

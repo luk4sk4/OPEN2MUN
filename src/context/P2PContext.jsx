@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { CheckCircle2, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import peerService, { MSG_TYPES, generateRoomCode, DEFAULT_ROOM_SETTINGS } from '../services/peerService';
+import { applyStateDelta } from '../utils/deltaSync';
 
 const P2PContext = createContext();
 
@@ -364,6 +365,20 @@ export const P2PProvider = ({ children }) => {
           if (message.payload?.speakingRequests) {
             setSpeakingRequests(message.payload.speakingRequests);
           }
+        } else if (message.type === MSG_TYPES.DELTA_STATE) {
+          setRemoteSessionState(prev => {
+            const updated = applyStateDelta(prev || {}, message.payload);
+            if (sessionActionHandlersRef.current.onSyncState) {
+              sessionActionHandlersRef.current.onSyncState(updated);
+            }
+            if (updated.roomSettings) {
+              setRoomSettings(updated.roomSettings);
+            }
+            if (updated.speakingRequests) {
+              setSpeakingRequests(updated.speakingRequests);
+            }
+            return updated;
+          });
         } else if (message.type === MSG_TYPES.SPEAKING_REQUESTS_UPDATED) {
           setSpeakingRequests(message.payload || []);
         } else if (message.type === MSG_TYPES.ROOM_SETTINGS_UPDATED) {

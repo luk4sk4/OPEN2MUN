@@ -28,7 +28,12 @@ import {
   HelpCircle,
   Hand,
   Mail,
-  Landmark
+  Landmark,
+  Server,
+  Coffee,
+  Heart,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useTranslation } from 'react-i18next';
@@ -61,6 +66,7 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
   const [mostrarPassBackroom, setMostrarPassBackroom] = useState(false);
   const [tabActiva, setTabActiva] = useState('SALA'); // 'SALA' | 'AJUSTES' | 'CONEXIONES' | 'SOLICITUDES'
   const [filtroConexiones, setFiltroConexiones] = useState('');
+  const [mostrarInfoDonacion, setMostrarInfoDonacion] = useState(false);
 
   if (!isOpen) return null;
 
@@ -154,7 +160,7 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
               <Radio size={22} className={isHostActive ? 'animate-pulse' : ''} />
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                 <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '800', letterSpacing: '-0.01em' }}>
                   {t('liveSession.title', 'Sesión en Vivo P2P')} (Mesa / Chair)
                 </h3>
@@ -170,6 +176,22 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                   border: `1px solid ${isHostActive ? '#22c55e44' : '#71717a44'}`
                 }}>
                   {isHostActive ? t('liveSession.onAir', 'En Directo') : t('liveSession.offline', 'Apagado')}
+                </span>
+                <span style={{
+                  fontSize: '0.68rem',
+                  fontWeight: '800',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  padding: '0.15rem 0.55rem',
+                  borderRadius: '100px',
+                  backgroundColor: 'rgba(234, 179, 8, 0.15)',
+                  color: '#eab308',
+                  border: '1px solid rgba(234, 179, 8, 0.35)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.3rem'
+                }}>
+                  <Sparkles size={11} /> {t('liveSession.wipTag', 'En desarrollo / Work in Progress')}
                 </span>
               </div>
               <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--muted-text)', marginTop: '2px' }}>
@@ -319,7 +341,7 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                 flexWrap: 'wrap'
               }}>
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                     <span style={{
                       width: '12px',
                       height: '12px',
@@ -329,6 +351,22 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                     }} />
                     <span style={{ fontWeight: '800', fontSize: '1.05rem' }}>
                       {isHostActive ? t('liveSession.p2pServerActive', 'Servidor P2P Activo y Emitiendo') : t('liveSession.p2pServerOff', 'Servidor P2P Desconectado')}
+                    </span>
+                    <span style={{
+                      fontSize: '0.68rem',
+                      fontWeight: '800',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      padding: '0.15rem 0.5rem',
+                      borderRadius: '100px',
+                      backgroundColor: 'rgba(234, 179, 8, 0.15)',
+                      color: '#eab308',
+                      border: '1px solid rgba(234, 179, 8, 0.35)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.3rem'
+                    }}>
+                      <Sparkles size={11} /> {t('liveSession.wipTag', 'En desarrollo / Work in Progress')}
                     </span>
                   </div>
                   <p style={{ margin: '0.35rem 0 0 0', fontSize: '0.82rem', color: 'var(--muted-text)', maxWidth: '440px' }}>
@@ -382,6 +420,156 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                     >
                       <Radio size={16} /> {isConnecting ? t('liveSession.starting', 'Iniciando...') : t('liveSession.startRoom', 'Iniciar Sala P2P')}
                     </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Bloque Informativo de Recursos de Servidor y Donaciones */}
+              <div style={{
+                backgroundColor: 'rgba(245, 158, 11, 0.06)',
+                border: '1px solid rgba(245, 158, 11, 0.25)',
+                borderRadius: '14px',
+                padding: '1.1rem 1.25rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.85rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    backgroundColor: 'rgba(245, 158, 11, 0.16)',
+                    border: '1px solid rgba(245, 158, 11, 0.35)',
+                    color: '#f59e0b',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <Server size={18} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{
+                      fontSize: '0.84rem',
+                      fontWeight: '600',
+                      color: 'var(--text-color)',
+                      lineHeight: '1.5'
+                    }}>
+                      {t('liveSession.serverResourceNotice', 'Mantener comités conectados en tiempo real consume recursos de nuestros servidores. Recuerda destruir la sala al terminar el Modelo para liberar espacio. Si puedes donar, aporta a la comunidad para mantener las funcionalidades gratuitas para todos.')}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sección Acordeón: ¿Cuánto debería donar? */}
+                <div style={{
+                  borderTop: '1px solid rgba(245, 158, 11, 0.18)',
+                  paddingTop: '0.75rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.75rem'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <button
+                      onClick={() => setMostrarInfoDonacion(!mostrarInfoDonacion)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#f59e0b',
+                        fontWeight: '800',
+                        fontSize: '0.85rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.45rem',
+                        padding: '0.2rem 0',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <HelpCircle size={16} />
+                      <span>{t('liveSession.howMuchDonate', '¿Cuánto debería donar?')}</span>
+                      {mostrarInfoDonacion ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </button>
+
+                    <a
+                      href="https://buymeacoffee.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.45rem',
+                        padding: '0.45rem 0.95rem',
+                        borderRadius: '8px',
+                        backgroundColor: '#ffdd00',
+                        color: '#000000',
+                        fontSize: '0.8rem',
+                        fontWeight: '800',
+                        textDecoration: 'none',
+                        boxShadow: '0 2px 8px rgba(255, 221, 0, 0.25)',
+                        transition: 'transform 0.15s ease'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                    >
+                      <Coffee size={15} />
+                      {t('liveSession.donateButton', 'Invítanos a un café / Donar')}
+                    </a>
+                  </div>
+
+                  {/* Detalle Desplegado de Donación */}
+                  {mostrarInfoDonacion && (
+                    <div style={{
+                      backgroundColor: 'rgba(0, 0, 0, 0.25)',
+                      border: '1px solid rgba(245, 158, 11, 0.2)',
+                      borderRadius: '10px',
+                      padding: '1rem 1.15rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.75rem',
+                      fontSize: '0.82rem',
+                      lineHeight: '1.5',
+                      color: 'var(--text-color)',
+                      animation: 'fadeIn 0.2s ease-out'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+                        <Heart size={16} color="#ef4444" style={{ flexShrink: 0, marginTop: '2px' }} />
+                        <span>{t('liveSession.donationP1', 'No estás obligado a donar nada. Creemos firmemente en el acceso gratuito a herramientas de calidad para la comunidad MUN.')}</span>
+                      </div>
+
+                      <div style={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                        borderRadius: '8px',
+                        padding: '0.75rem 0.85rem',
+                        borderLeft: '3px solid #3b82f6'
+                      }}>
+                        <strong style={{ color: '#60a5fa', display: 'block', marginBottom: '0.2rem' }}>
+                          Uso sin sala online:
+                        </strong>
+                        {t('liveSession.donationP2', 'Si utilizas OpenMUN sin sala online, nos genera muy poco coste de mantenimiento. En ese caso, si te gusta la herramienta, con una donación voluntaria de 5€ o 10€ por todo el evento estaríamos más que agradecidos.')}
+                      </div>
+
+                      <div style={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                        borderRadius: '8px',
+                        padding: '0.75rem 0.85rem',
+                        borderLeft: '3px solid #f59e0b'
+                      }}>
+                        <strong style={{ color: '#fbbf24', display: 'block', marginBottom: '0.2rem' }}>
+                          {t('liveSession.donationP3', 'Ahora bien, el modo de "Sala online"...')}
+                        </strong>
+                        <p style={{ margin: '0 0 0.5rem 0' }}>
+                          {t('liveSession.donationP4', 'Las funciones de sincronización en tiempo real entre chairs, delegados, backroom... sí nos cuestan dinero de infraestructura cada mes. Nos gustaría mantener esto abierto para todo el mundo, pero dependemos económicamente de los que puedan aportar su granito de arena para costearlo.')}
+                        </p>
+                        <p style={{ margin: 0, fontWeight: '700', color: 'var(--text-color)' }}>
+                          {t('liveSession.donationP5', 'Si vas a utilizar estas funciones de servidor, calcula que con donar unos 5€ por cada 50 delegados (o por comité) cubres los gastos y nos haces muy felices.')}
+                        </p>
+                      </div>
+
+                      <div style={{ color: 'var(--muted-text)', fontStyle: 'italic' }}>
+                        {t('liveSession.donationP6', 'Si puedes aportar más, ¡fantástico! Y si no puedes dar nada, ¡no te preocupes en absoluto! Disfruta de la herramienta, sácale el máximo partido y ayúdanos hablando de OpenMUN a todo el mundo.')}
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>

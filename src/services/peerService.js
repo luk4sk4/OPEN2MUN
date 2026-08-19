@@ -1,7 +1,66 @@
 import { io } from 'socket.io-client';
+import { compressData, decompressData } from '../utils/compression.js';
+import { createStateDelta } from '../utils/deltaSync.js';
 
 export const LOCAL_BROADCAST_CHANNEL_NAME = 'openmun_local_secret_channel';
 export const SOCKET_SERVER_URL = 'https://api.openmun.app';
+
+/**
+ * Sanitiza y optimiza el estado antes de enviarlo por la red:
+ * 1. Elimina 'bandera' y 'flag' de los países, oradores y solicitudes (se infieren en cliente por nombre).
+ * 2. Omite registros históricos pesados innecesarios para clientes ('registroIntervenciones', 'historicoMociones').
+ * 3. Mantiene solo las propiedades esenciales para minimizar el tamaño del JSON.
+ */
+export function sanitizeStateForBroadcast(state) {
+  if (!state || typeof state !== 'object') return state;
+
+  const sanitized = { ...state };
+
+  // 1. Sanitizar lista de países: eliminar 'bandera' y propiedades pesadas
+  if (Array.isArray(sanitized.paises)) {
+    sanitized.paises = sanitized.paises.map(p => {
+      if (!p) return p;
+      if (typeof p === 'string') return p;
+      const { bandera, flag, ...rest } = p;
+      return rest;
+    });
+  }
+
+  // 2. Sanitizar oradores en cola: omitir banderas
+  if (Array.isArray(sanitized.oradoresCola)) {
+    sanitized.oradoresCola = sanitized.oradoresCola.map(o => {
+      if (!o) return o;
+      if (typeof o === 'string') return { nombre: o };
+      const { bandera, flag, ...rest } = o;
+      return rest;
+    });
+  }
+
+  // 3. Sanitizar oradores caucus: omitir banderas
+  if (Array.isArray(sanitized.oradoresCaucus)) {
+    sanitized.oradoresCaucus = sanitized.oradoresCaucus.map(o => {
+      if (!o) return o;
+      if (typeof o === 'string') return { nombre: o };
+      const { bandera, flag, ...rest } = o;
+      return rest;
+    });
+  }
+
+  // 4. Sanitizar solicitudes de palabra
+  if (Array.isArray(sanitized.speakingRequests)) {
+    sanitized.speakingRequests = sanitized.speakingRequests.map(r => {
+      if (!r) return r;
+      const { bandera, flag, ...rest } = r;
+      return rest;
+    });
+  }
+
+  // 5. Omitir logs históricos gigantes innecesarios para clientes
+  delete sanitized.registroIntervenciones;
+  delete sanitized.historicoMociones;
+
+  return sanitized;
+}
 
 /**
  * Ajustes de Sala y Permisos por defecto
@@ -24,6 +83,7 @@ export const MSG_TYPES = {
   SELECT_COUNTRY: 'SELECT_COUNTRY',
   SELECT_COUNTRY_RESULT: 'SELECT_COUNTRY_RESULT',
   SYNC_STATE: 'SYNC_STATE',
+  DELTA_STATE: 'DELTA_STATE',
   SESSION_ACTION: 'SESSION_ACTION',
   UPDATE_ROOM_SETTINGS: 'UPDATE_ROOM_SETTINGS',
   ROOM_SETTINGS_UPDATED: 'ROOM_SETTINGS_UPDATED',
@@ -68,6 +128,8 @@ class NetworkService {
     this.latestSpeakingRequests = [];
     this.latestSessionState = null;
     this.latestNotes = [];
+    this.broadcastDebounceTimer = null;
+    this.pendingStateToBroadcast = null;
     try {
       if (typeof window !== 'undefined') {
         const savedNotes = localStorage.getItem('openmun_notes');
@@ -137,8 +199,9 @@ class NetworkService {
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
       try {
         this.broadcastChannel = new BroadcastChannel(LOCAL_BROADCAST_CHANNEL_NAME);
-        this.broadcastChannel.onmessage = (event) => {
-          this.handleIncomingMessage('local_broadcast_secretariat', event.data, true);
+        this.broadcastChannel.onmessage = async (event) => {
+          const decompressed = await decompressData(event.data);
+          this.handleIncomingMessage('local_broadcast_secretariat', decompressed, true);
         };
       } catch (err) {
         console.warn('BroadcastChannel no soportado o bloqueado:', err);
@@ -165,7 +228,9 @@ class NetworkService {
         });
 
         // Escuchar datos entrantes desde el servidor central Socket.io
-        this.socket.on('nuevos-datos', (data) => {
+        this.socket.on('nuevos-datos', async (raw) => {
+          if (!raw) return;
+          const data = await decompressData(raw);
           if (!data) return;
           // Ignorar ecos emitidos por el propio socket si el servidor reenvía a toda la sala
           if (data.senderSocketId && data.senderSocketId === this.socketId) return;
@@ -219,11 +284,12 @@ class NetworkService {
     if (isLocalBroadcast) {
       if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
         this.broadcastChannel = new BroadcastChannel(LOCAL_BROADCAST_CHANNEL_NAME);
-        this.broadcastChannel.onmessage = (event) => {
-          this.emit('message', event.data);
+        this.broadcastChannel.onmessage = async (event) => {
+          const decompressed = await decompressData(event.data);
+          this.emit('message', decompressed);
         };
         // Notificar al Chair que se ha unido una pantalla secreta local
-        this.broadcastChannel.postMessage({
+        this.broadcastLocal({
           type: MSG_TYPES.AUTH,
           payload: { role: 'secretariat', country: 'Secretaría Local', isLocal: true },
           id: `auth-${Date.now()}`
@@ -270,7 +336,9 @@ class NetworkService {
         });
 
         // Escuchar datos del servidor
-        this.socket.on('nuevos-datos', (data) => {
+        this.socket.on('nuevos-datos', async (raw) => {
+          if (!raw) return;
+          const data = await decompressData(raw);
           if (!data || !data.type) return;
 
           // Ignorar ecos propios
@@ -701,25 +769,86 @@ class NetworkService {
   // EMISIÓN Y SINCRONIZACIÓN DESDE EL CHAIR
   // ─────────────────────────────────────────────────────────────
   broadcastStateToClients(state) {
-    this.latestSessionState = state;
-    const msg = {
-      type: MSG_TYPES.SYNC_STATE,
-      payload: {
-        ...state,
-        roomSettings: this.roomSettings,
-        speakingRequests: this.latestSpeakingRequests || []
-      }
+    if (!state) return;
+
+    // Debounce / coalescing de ráfagas ultra-rápidas (40ms)
+    this.pendingStateToBroadcast = state;
+    if (this.broadcastDebounceTimer) return;
+
+    this.broadcastDebounceTimer = setTimeout(() => {
+      this.broadcastDebounceTimer = null;
+      const stateToProcess = this.pendingStateToBroadcast;
+      this.pendingStateToBroadcast = null;
+      if (!stateToProcess) return;
+
+      this.executeBroadcastState(stateToProcess);
+    }, 40);
+  }
+
+  executeBroadcastState(state) {
+    const cleanState = sanitizeStateForBroadcast(state);
+    const fullPayload = {
+      ...cleanState,
+      roomSettings: this.roomSettings,
+      speakingRequests: this.latestSpeakingRequests ? this.latestSpeakingRequests.map(r => {
+        if (!r) return r;
+        const { bandera, flag, ...rest } = r;
+        return rest;
+      }) : []
     };
 
-    this.emitSocketMessage(msg);
-    this.broadcastLocal(msg);
+    let msgToSend = null;
+
+    if (this.latestSessionState) {
+      const diff = createStateDelta(this.latestSessionState, fullPayload);
+      const diffKeys = Object.keys(diff);
+
+      if (diffKeys.length > 0) {
+        const deltaMsg = {
+          type: MSG_TYPES.DELTA_STATE,
+          payload: diff
+        };
+
+        const syncMsg = {
+          type: MSG_TYPES.SYNC_STATE,
+          payload: fullPayload
+        };
+
+        const deltaStrLen = JSON.stringify(deltaMsg).length;
+        const syncStrLen = JSON.stringify(syncMsg).length;
+
+        // Si la diferencia es sustancialmente menor (< 65% del tamaño completo) y no hay demasiados cambios individuales
+        if (deltaStrLen < syncStrLen * 0.65 && diffKeys.length < 150) {
+          msgToSend = deltaMsg;
+        } else {
+          msgToSend = syncMsg;
+        }
+      }
+    } else {
+      msgToSend = {
+        type: MSG_TYPES.SYNC_STATE,
+        payload: fullPayload
+      };
+    }
+
+    this.latestSessionState = fullPayload;
+
+    if (msgToSend) {
+      this.emitSocketMessage(msgToSend);
+      this.broadcastLocal(msgToSend);
+    }
   }
 
   broadcastSpeakingRequests(requests) {
-    this.latestSpeakingRequests = requests || [];
+    const sanitizedRequests = (requests || []).map(r => {
+      if (!r) return r;
+      const { bandera, flag, ...rest } = r;
+      return rest;
+    });
+    this.latestSpeakingRequests = sanitizedRequests;
     const msg = {
       type: MSG_TYPES.SPEAKING_REQUESTS_UPDATED,
-      payload: this.latestSpeakingRequests
+      payload: sanitizedRequests
     };
 
     this.emitSocketMessage(msg);
@@ -762,21 +891,23 @@ class NetworkService {
     this.emitSocketMessage(msg);
   }
 
-  broadcastLocal(data) {
+  async broadcastLocal(data) {
     if (this.broadcastChannel) {
       try {
-        this.broadcastChannel.postMessage(data);
+        const payload = await compressData(data);
+        this.broadcastChannel.postMessage(payload);
       } catch (e) { }
     }
   }
 
-  // Helper para emitir al servidor central Socket.io
-  emitSocketMessage(data) {
+  // Helper para emitir al servidor central Socket.io con compresión automática
+  async emitSocketMessage(data) {
     if (this.socket && this.socket.connected && this.roomId) {
       try {
+        const payload = await compressData(data);
         this.socket.emit('enviar-datos', {
           sala: this.roomId,
-          json: data
+          json: payload
         });
         return true;
       } catch (err) {
@@ -889,6 +1020,11 @@ class NetworkService {
   // LIMPIEZA
   // ─────────────────────────────────────────────────────────────
   destroy() {
+    if (this.broadcastDebounceTimer) {
+      clearTimeout(this.broadcastDebounceTimer);
+      this.broadcastDebounceTimer = null;
+    }
+    this.pendingStateToBroadcast = null;
     if (this.peerMetadata) {
       this.peerMetadata.clear();
     }
