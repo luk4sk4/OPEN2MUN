@@ -61,7 +61,8 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
     leaveRoom,
     selectCountry,
     resetCountrySelection,
-    connectedPeers
+    connectedPeers,
+    requestFullSync
   } = useP2P();
 
   // Estados para Selección de País / Delegación inicial
@@ -75,11 +76,22 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
   const [destinatario, setDestinatario] = useState('CHAIR');
   const [textoNota, setTextoNota] = useState('');
   const [tipoNota, setTipoNota] = useState('general'); // 'general' | 'urgente' | 'pregunta'
+
+  // Estados para Mociones de Debate
   const [pedirMocionOpen, setPedirMocionOpen] = useState(false);
   const [tipoMocion, setTipoMocion] = useState('Caucus Moderado');
+  const [posicionProponenteMocion, setPosicionProponenteMocion] = useState('Primero');
   const [temaMocion, setTemaMocion] = useState('');
   const [tiempoTotalMocion, setTiempoTotalMocion] = useState(600);
   const [tiempoOradorMocion, setTiempoOradorMocion] = useState(45);
+  const [solicitudMocionHecha, setSolicitudMocionHecha] = useState(false);
+
+  // Estados para Puntos Parlamentarios
+  const [pedirPuntoOpen, setPedirPuntoOpen] = useState(false);
+  const [tipoPunto, setTipoPunto] = useState('Punto de Privilegio Personal');
+  const [motivoPunto, setMotivoPunto] = useState('');
+  const [solicitudPuntoHecha, setSolicitudPuntoHecha] = useState(false);
+
   const [solicitudGSLHecha, setSolicitudGSLHecha] = useState(false);
   const [solicitudCaucusHecha, setSolicitudCaucusHecha] = useState(false);
   const [subTabNotas, setSubTabNotas] = useState('BUZON'); // 'BUZON' | 'REDACTAR'
@@ -105,6 +117,17 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
   const estaEnCaucus = oradoresCaucus.some(o => (typeof o === 'string' ? o : o.nombre)?.toLowerCase() === clientCountry?.toLowerCase());
   const paisesDisponibles = state.paises || [];
 
+  const miPaisObj = useMemo(() => {
+    if (!clientCountry) return null;
+    return (paisesDisponibles || []).find(p => (typeof p === 'string' ? p : p.nombre)?.toLowerCase() === clientCountry.toLowerCase());
+  }, [paisesDisponibles, clientCountry]);
+
+  // Voto registrado en la sesión
+  const miVotoRegistrado = useMemo(() => {
+    const targetKey = miPaisObj?.id || clientCountry;
+    return votacionSesion?.votos?.[targetKey] || (clientCountry ? votacionSesion?.votos?.[clientCountry] : null) || miVotoEmitido || null;
+  }, [votacionSesion, miPaisObj, clientCountry, miVotoEmitido]);
+
   // Países ocupados por otros peers conectados
   const paisesOcupadosSet = useMemo(() => {
     const set = new Set();
@@ -116,32 +139,10 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
     return set;
   }, [connectedPeers]);
 
-  // Lista normalizada de países
+  // Lista normalizada de países QUE EXISTEN EN ESA SESIÓN (sin fallback ficticio)
   const listaPaisesNormalizada = useMemo(() => {
     if (!Array.isArray(paisesDisponibles) || paisesDisponibles.length === 0) {
-      return [
-        { id: '1', nombre: 'Alemania', bandera: '🇩🇪' },
-        { id: '2', nombre: 'Argentina', bandera: '🇦🇷' },
-        { id: '3', nombre: 'Brasil', bandera: '🇧🇷' },
-        { id: '4', nombre: 'Canadá', bandera: '🇨🇦' },
-        { id: '5', nombre: 'China', bandera: '🇨🇳' },
-        { id: '6', nombre: 'Colombia', bandera: '🇨🇴' },
-        { id: '7', nombre: 'Corea del Sur', bandera: '🇰🇷' },
-        { id: '8', nombre: 'Egipto', bandera: '🇪🇬' },
-        { id: '9', nombre: 'España', bandera: '🇪🇸' },
-        { id: '10', nombre: 'Estados Unidos', bandera: '🇺🇸' },
-        { id: '11', nombre: 'Federación Rusa', bandera: '🇷🇺' },
-        { id: '12', nombre: 'Francia', bandera: '🇫🇷' },
-        { id: '13', nombre: 'India', bandera: '🇮🇳' },
-        { id: '14', nombre: 'Italia', bandera: '🇮🇹' },
-        { id: '15', nombre: 'Japón', bandera: '🇯🇵' },
-        { id: '16', nombre: 'México', bandera: '🇲🇽' },
-        { id: '17', nombre: 'Noruega', bandera: '🇳🇴' },
-        { id: '18', nombre: 'Reino Unido', bandera: '🇬🇧' },
-        { id: '19', nombre: 'Sudáfrica', bandera: '🇿🇦' },
-        { id: '20', nombre: 'Turquía', bandera: '🇹🇷' },
-        { id: '21', nombre: 'Ucrania', bandera: '🇺🇦' }
-      ];
+      return [];
     }
 
     return paisesDisponibles.map((p, idx) => {
@@ -203,15 +204,40 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
     e.preventDefault();
     if (!settings.allowMotions) return;
 
-    requestSpeaking('POINT_MOTION', {
+    let totalSeg = Number(tiempoTotalMocion);
+    let oradorSeg = Number(tiempoOradorMocion);
+    if (tipoMocion === 'Caucus No Moderado' || tipoMocion === 'Consulta General') {
+      oradorSeg = 0;
+    } else if (tipoMocion === 'Tour de Table') {
+      totalSeg = 0;
+    }
+
+    requestSpeaking('MOTION', {
       country: clientCountry,
       tipo: tipoMocion,
-      tema: temaMocion || tipoMocion,
-      tiempoTotal: tiempoTotalMocion,
-      tiempoOrador: tiempoOradorMocion
+      posicionProponente: posicionProponenteMocion,
+      tema: temaMocion.trim() || tipoMocion,
+      tiempoTotal: totalSeg,
+      tiempoOrador: oradorSeg
     });
     setPedirMocionOpen(false);
     setTemaMocion('');
+    setSolicitudMocionHecha(true);
+    setTimeout(() => setSolicitudMocionHecha(false), 5000);
+  };
+
+  const handleEnviarPunto = (e) => {
+    e.preventDefault();
+    requestSpeaking('POINT', {
+      country: clientCountry,
+      tipo: tipoPunto,
+      tema: motivoPunto.trim() || tipoPunto,
+      urgente: true
+    });
+    setPedirPuntoOpen(false);
+    setMotivoPunto('');
+    setSolicitudPuntoHecha(true);
+    setTimeout(() => setSolicitudPuntoHecha(false), 5000);
   };
 
   const handleEnviarNota = (e) => {
@@ -460,156 +486,215 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
             </div>
           )}
 
-          {/* Barra de Búsqueda */}
-          <div style={{ position: 'relative', width: '100%' }}>
-            <input
-              type="text"
-              placeholder="Buscar tu país o delegación..."
-              value={busquedaPais}
-              onChange={e => setBusquedaPais(e.target.value)}
-              style={{
-                width: '100%',
-                backgroundColor: 'var(--card-header-bg)',
-                border: '1px solid var(--subborder-color)',
-                borderRadius: '10px',
-                padding: '0.75rem 1rem 0.75rem 2.4rem',
-                color: 'var(--text-color)',
-                fontWeight: '600',
-                fontSize: '0.9rem'
-              }}
-            />
-            <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted-text)' }} />
-            {busquedaPais && (
+          {/* Si el Chair todavía no ha cargado los países de la sesión */}
+          {listaPaisesNormalizada.length === 0 ? (
+            <div style={{
+              backgroundColor: 'var(--panel-color)',
+              border: '1.5px dashed var(--subborder-color)',
+              borderRadius: '16px',
+              padding: '3rem 1.5rem',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              gap: '1.25rem',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.08)'
+            }}>
+              <div style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(234, 179, 8, 0.12)',
+                color: '#eab308',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Clock size={32} />
+              </div>
+              <div style={{ maxWidth: '520px' }}>
+                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '800' }}>
+                  Esperando lista de delegaciones de la sesión
+                </h3>
+                <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.88rem', color: 'var(--muted-text)', lineHeight: '1.5' }}>
+                  La Mesa Directiva (Chair) aún no ha cargado o transmitido el listado oficial de países de este comité. En cuanto la Presidencia configure la sesión, los países aparecerán aquí para su selección.
+                </p>
+              </div>
               <button
-                onClick={() => setBusquedaPais('')}
+                onClick={requestFullSync}
                 style={{
-                  position: 'absolute',
-                  right: '10px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'transparent',
+                  backgroundColor: 'var(--btn-bg)',
+                  color: 'var(--btn-text)',
                   border: 'none',
-                  color: 'var(--muted-text)',
-                  cursor: 'pointer'
+                  borderRadius: '10px',
+                  padding: '0.65rem 1.25rem',
+                  fontSize: '0.85rem',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  boxShadow: '0 4px 14px rgba(0,0,0,0.2)'
                 }}
               >
-                <X size={15} />
+                <RefreshCw size={15} /> Comprobar / Actualizar Sesión
               </button>
-            )}
-          </div>
-
-          {/* Grid de Países */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-            gap: '0.75rem'
-          }}>
-            {paisesFiltrados.map((p) => {
-              const estaOcupado = paisesOcupadosSet.has(p.nombre.toLowerCase().trim());
-              const isSelected = paisSeleccionadoTemp === p.nombre;
-
-              return (
-                <div
-                  key={p.id || p.nombre}
-                  onClick={() => {
-                    if (estaOcupado || isSubmittingCountry) return;
-                    setPaisSeleccionadoTemp(p.nombre);
-                    setPaisPersonalizadoInput('');
-                  }}
-                  onDoubleClick={() => {
-                    if (estaOcupado || isSubmittingCountry) return;
-                    handleConfirmCountrySelection(p.nombre);
-                  }}
+            </div>
+          ) : (
+            <>
+              {/* Barra de Búsqueda */}
+              <div style={{ position: 'relative', width: '100%' }}>
+                <input
+                  type="text"
+                  placeholder="Buscar tu país o delegación..."
+                  value={busquedaPais}
+                  onChange={e => setBusquedaPais(e.target.value)}
                   style={{
-                    backgroundColor: isSelected
-                      ? 'rgba(34, 197, 94, 0.12)'
-                      : (estaOcupado ? 'rgba(255,255,255,0.015)' : 'var(--panel-color)'),
-                    border: `1.5px solid ${
-                      isSelected
-                        ? '#22c55e'
-                        : (estaOcupado ? 'var(--subborder-color)' : 'var(--border-color)')
-                    }`,
-                    borderRadius: '12px',
-                    padding: '0.9rem 1rem',
-                    cursor: estaOcupado ? 'not-allowed' : 'pointer',
-                    opacity: estaOcupado ? 0.45 : 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '0.75rem',
-                    transition: 'all 0.15s ease',
-                    boxShadow: isSelected ? '0 0 16px rgba(34, 197, 94, 0.2)' : 'none'
+                    width: '100%',
+                    backgroundColor: 'var(--card-header-bg)',
+                    border: '1px solid var(--subborder-color)',
+                    borderRadius: '10px',
+                    padding: '0.75rem 1rem 0.75rem 2.4rem',
+                    color: 'var(--text-color)',
+                    fontWeight: '600',
+                    fontSize: '0.9rem'
                   }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
-                    <CountryFlag bandera={p.bandera} nombre={p.nombre} size="md" />
-                    <span style={{
-                      fontWeight: isSelected ? '800' : '700',
-                      fontSize: '0.88rem',
-                      color: isSelected ? '#22c55e' : 'var(--text-color)',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
-                    }}>
-                      {p.nombre}
-                    </span>
-                  </div>
+                />
+                <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted-text)' }} />
+                {busquedaPais && (
+                  <button
+                    onClick={() => setBusquedaPais('')}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--muted-text)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <X size={15} />
+                  </button>
+                )}
+              </div>
 
-                  {estaOcupado ? (
-                    <span style={{
-                      fontSize: '0.65rem',
-                      fontWeight: '800',
-                      color: '#ef4444',
-                      backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                      padding: '0.15rem 0.45rem',
-                      borderRadius: '4px',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      Ocupado
-                    </span>
-                  ) : isSelected ? (
-                    <CheckCircle2 size={18} color="#22c55e" style={{ flexShrink: 0 }} />
-                  ) : null}
+              {/* Grid de Países */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                gap: '0.75rem'
+              }}>
+                {paisesFiltrados.map((p) => {
+                  const estaOcupado = paisesOcupadosSet.has(p.nombre.toLowerCase().trim());
+                  const isSelected = paisSeleccionadoTemp === p.nombre;
+
+                  return (
+                    <div
+                      key={p.id || p.nombre}
+                      onClick={() => {
+                        if (estaOcupado || isSubmittingCountry) return;
+                        setPaisSeleccionadoTemp(p.nombre);
+                        setPaisPersonalizadoInput('');
+                      }}
+                      onDoubleClick={() => {
+                        if (estaOcupado || isSubmittingCountry) return;
+                        handleConfirmCountrySelection(p.nombre);
+                      }}
+                      style={{
+                        backgroundColor: isSelected
+                          ? 'rgba(34, 197, 94, 0.12)'
+                          : (estaOcupado ? 'rgba(255,255,255,0.015)' : 'var(--panel-color)'),
+                        border: `1.5px solid ${
+                          isSelected
+                            ? '#22c55e'
+                            : (estaOcupado ? 'var(--subborder-color)' : 'var(--border-color)')
+                        }`,
+                        borderRadius: '12px',
+                        padding: '0.9rem 1rem',
+                        cursor: estaOcupado ? 'not-allowed' : 'pointer',
+                        opacity: estaOcupado ? 0.45 : 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '0.75rem',
+                        transition: 'all 0.15s ease',
+                        boxShadow: isSelected ? '0 0 16px rgba(34, 197, 94, 0.2)' : 'none'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
+                        <CountryFlag bandera={p.bandera} nombre={p.nombre} size="md" />
+                        <span style={{
+                          fontWeight: isSelected ? '800' : '700',
+                          fontSize: '0.88rem',
+                          color: isSelected ? '#22c55e' : 'var(--text-color)',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}>
+                          {p.nombre}
+                        </span>
+                      </div>
+
+                      {estaOcupado ? (
+                        <span style={{
+                          fontSize: '0.65rem',
+                          fontWeight: '800',
+                          color: '#ef4444',
+                          backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                          padding: '0.15rem 0.45rem',
+                          borderRadius: '4px',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          Ocupado
+                        </span>
+                      ) : isSelected ? (
+                        <CheckCircle2 size={18} color="#22c55e" style={{ flexShrink: 0 }} />
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Opción de país personalizado */}
+              <div style={{
+                backgroundColor: 'var(--panel-color)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '14px',
+                padding: '1.25rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.75rem'
+              }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  ¿Tu delegación no aparece en la lista anterior?
                 </div>
-              );
-            })}
-          </div>
-
-          {/* Opción de país personalizado */}
-          <div style={{
-            backgroundColor: 'var(--panel-color)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '14px',
-            padding: '1.25rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.75rem'
-          }}>
-            <div style={{ fontSize: '0.82rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              ¿Tu delegación no aparece en la lista anterior?
-            </div>
-            <div style={{ display: 'flex', gap: '0.65rem' }}>
-              <input
-                type="text"
-                placeholder="Escribe el nombre de tu delegación (ej: Santa Sede, Observador ONU...)"
-                value={paisPersonalizadoInput}
-                onChange={e => {
-                  setPaisPersonalizadoInput(e.target.value);
-                  if (e.target.value) setPaisSeleccionadoTemp('');
-                }}
-                style={{
-                  flex: 1,
-                  backgroundColor: 'var(--card-header-bg)',
-                  border: '1px solid var(--subborder-color)',
-                  borderRadius: '10px',
-                  padding: '0.7rem 1rem',
-                  color: 'var(--text-color)',
-                  fontWeight: '600',
-                  fontSize: '0.88rem'
-                }}
-              />
-            </div>
-          </div>
+                <div style={{ display: 'flex', gap: '0.65rem' }}>
+                  <input
+                    type="text"
+                    placeholder="Escribe el nombre de tu delegación (ej: Santa Sede, Observador ONU...)"
+                    value={paisPersonalizadoInput}
+                    onChange={e => {
+                      setPaisPersonalizadoInput(e.target.value);
+                      if (e.target.value) setPaisSeleccionadoTemp('');
+                    }}
+                    style={{
+                      flex: 1,
+                      backgroundColor: 'var(--card-header-bg)',
+                      border: '1px solid var(--subborder-color)',
+                      borderRadius: '10px',
+                      padding: '0.7rem 1rem',
+                      color: 'var(--text-color)',
+                      fontWeight: '600',
+                      fontSize: '0.88rem'
+                    }}
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Botón de Confirmación Flotante */}
           <div style={{

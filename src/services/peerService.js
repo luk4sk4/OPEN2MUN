@@ -96,6 +96,7 @@ export const MSG_TYPES = {
   CRISIS_ALERT: 'CRISIS_ALERT',
   CAST_VOTE: 'CAST_VOTE',
   SUBMIT_AMENDMENT: 'SUBMIT_AMENDMENT',
+  REQUEST_FULL_SYNC: 'REQUEST_FULL_SYNC',
   KICK: 'KICK',
   KICK_PEER: 'KICK_PEER',
   PEER_LIST_UPDATED: 'PEER_LIST_UPDATED',
@@ -678,7 +679,7 @@ class NetworkService {
           });
           return;
         }
-      } else if (speechType === 'POINT_MOTION') {
+      } else if (speechType === 'MOTION' || speechType === 'POINT_MOTION') {
         if (!this.roomSettings.allowMotions) {
           this.emitSocketMessage({
             type: MSG_TYPES.SPEAKING_PROCESSED,
@@ -687,18 +688,32 @@ class NetworkService {
           });
           return;
         }
+      } else if (speechType === 'POINT') {
+        // Los puntos parlamentarios siempre son aceptados para que lleguen como avisos especiales a la Mesa
       }
 
-      // Si requiere aprobación, informar al delegado
+      // Si requiere aprobación o es un punto/moción, informar al delegado
       this.emitSocketMessage({
         type: MSG_TYPES.SPEAKING_PROCESSED,
         targetSocketId: senderSocketId,
-        payload: { success: true, mode: 'approval', message: 'Solicitud enviada a la Mesa para su aprobación.' }
+        payload: { 
+          success: true, 
+          mode: speechType === 'POINT' ? 'point' : 'approval', 
+          message: speechType === 'POINT' ? 'Punto parlamentario transmitido a la Mesa Directiva.' : 'Solicitud enviada a la Mesa para su aprobación.' 
+        }
       });
     }
 
     // Notificar al Host de la recepción del mensaje
     this.emit('message_received_by_host', { peerId: senderSocketId, senderMeta, message });
+
+    // 6.1 Petición de Sincronización Completa desde Cliente
+    if (message.type === MSG_TYPES.REQUEST_FULL_SYNC) {
+      if (this.latestSessionState) {
+        this.executeBroadcastState(this.latestSessionState);
+      }
+      return;
+    }
 
     // 7. Enrutamiento de Notas (Pajes / Mensajería)
     if (message.type === MSG_TYPES.SEND_NOTE) {
@@ -943,8 +958,9 @@ class NetworkService {
     return sent;
   }
 
-  sendNoteAsClient(to, text, type = 'general') {
+  sendNoteAsClient(to, text, type = 'general', customId = null) {
     return this.sendToServer(MSG_TYPES.SEND_NOTE, {
+      id: customId || `note-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       to,
       text,
       type,
@@ -954,8 +970,14 @@ class NetworkService {
 
   requestSpeakingAsClient(speechType, details = {}) {
     return this.sendToServer(MSG_TYPES.REQUEST_SPEAKING, {
-      speechType, // 'GSL' | 'CAUCUS' | 'POINT_MOTION'
+      speechType, // 'GSL' | 'CAUCUS' | 'MOTION' | 'POINT' | 'POINT_MOTION'
       details,
+      timestamp: Date.now()
+    });
+  }
+
+  requestFullSyncAsClient() {
+    return this.sendToServer(MSG_TYPES.REQUEST_FULL_SYNC, {
       timestamp: Date.now()
     });
   }

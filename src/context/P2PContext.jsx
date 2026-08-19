@@ -223,12 +223,12 @@ export const P2PProvider = ({ children }) => {
         const { speechType, country } = data;
         if (speechType === 'GSL') {
           if (sessionActionHandlersRef.current.onAddSpeakerGSL) {
-            sessionActionHandlersRef.current.onAddSpeakerGSL({ nombre: country, bandera: '🇺🇳' });
+            sessionActionHandlersRef.current.onAddSpeakerGSL({ nombre: country });
           }
           addNotification(`${country} se ha añadido a la Lista de Oradores (Directo)`, 'success');
         } else if (speechType === 'CAUCUS') {
           if (sessionActionHandlersRef.current.onAddSpeakerCaucus) {
-            sessionActionHandlersRef.current.onAddSpeakerCaucus({ nombre: country, bandera: '🇺🇳' });
+            sessionActionHandlersRef.current.onAddSpeakerCaucus({ nombre: country });
           }
           addNotification(`${country} se ha añadido al Caucus Moderado (Directo)`, 'success');
         }
@@ -244,14 +244,16 @@ export const P2PProvider = ({ children }) => {
         });
         if (action === 'accept' && requestData) {
           if (requestData.speechType === 'GSL' && sessionActionHandlersRef.current.onAddSpeakerGSL) {
-            sessionActionHandlersRef.current.onAddSpeakerGSL({ nombre: requestData.country, bandera: '🇺🇳' });
+            sessionActionHandlersRef.current.onAddSpeakerGSL({ nombre: requestData.country });
           } else if (requestData.speechType === 'CAUCUS' && sessionActionHandlersRef.current.onAddSpeakerCaucus) {
-            sessionActionHandlersRef.current.onAddSpeakerCaucus({ nombre: requestData.country, bandera: '🇺🇳' });
-          } else if (requestData.speechType === 'POINT_MOTION' && sessionActionHandlersRef.current.onAddMotion) {
+            sessionActionHandlersRef.current.onAddSpeakerCaucus({ nombre: requestData.country });
+          } else if ((requestData.speechType === 'MOTION' || requestData.speechType === 'POINT_MOTION') && sessionActionHandlersRef.current.onAddMotion) {
             sessionActionHandlersRef.current.onAddMotion({
-              tipo: requestData.details?.tipo || 'Punto de Orden',
+              tipo: requestData.details?.tipo || 'Caucus Moderado',
               proponente: requestData.country,
-              tema: requestData.details?.tema || 'Solicitud de Delegación',
+              posicionProponente: requestData.details?.posicionProponente || 'Primero',
+              varianteConsulta: requestData.details?.varianteConsulta || '',
+              tema: requestData.details?.tema || 'Tema de Debate',
               tiempoTotal: requestData.details?.tiempoTotal || 0,
               tiempoOrador: requestData.details?.tiempoOrador || 0
             });
@@ -277,9 +279,14 @@ export const P2PProvider = ({ children }) => {
         addNotification(`Nueva propuesta de enmienda de ${data.paisProponente}`, 'info');
       }
 
-      // Recepción de Notas
+      // Recepción de Notas con de-duplicación estricta
       if (event === 'note_for_chair') {
-        setNotes(prev => [data, ...prev]);
+        setNotes(prev => {
+          if (prev.some(n => n.id === data.id || (n.from === data.from && n.to === data.to && n.text === data.text && Math.abs((n.timestamp || 0) - (data.timestamp || 0)) < 3000))) {
+            return prev;
+          }
+          return [data, ...prev];
+        });
         setUnreadNotesCount(prev => prev + 1);
         addNotification(`Nota de ${data.from} para ${data.to}`, 'info');
       }
@@ -300,7 +307,8 @@ export const P2PProvider = ({ children }) => {
             peerService.broadcastSpeakingRequests(next);
             return next;
           });
-          addNotification(`${senderMeta.country} ha solicitado turno (${message.payload.speechType})`, 'info');
+          const typeLabel = req.speechType === 'POINT' ? 'Punto Parlamentario' : (req.speechType === 'MOTION' ? 'Moción' : req.speechType);
+          addNotification(`${senderMeta.country} ha solicitado turno (${typeLabel})`, 'info');
         }
       }
 
@@ -389,7 +397,9 @@ export const P2PProvider = ({ children }) => {
           addNotification(msgText || (success ? 'Solicitud procesada' : 'No se pudo procesar'), success ? 'success' : 'warning');
         } else if (message.type === MSG_TYPES.NOTE_RECEIVED) {
           setNotes(prev => {
-            if (prev.some(n => n.id === message.payload.id)) return prev;
+            if (prev.some(n => n.id === message.payload.id || (n.from === message.payload.from && n.to === message.payload.to && n.text === message.payload.text && Math.abs((n.timestamp || 0) - (message.payload.timestamp || 0)) < 3000))) {
+              return prev;
+            }
             return [message.payload, ...prev];
           });
           setUnreadNotesCount(prev => prev + 1);
@@ -547,11 +557,12 @@ export const P2PProvider = ({ children }) => {
   }, []);
 
   const sendNote = useCallback((to, text, type = 'general') => {
-    const ok = peerService.sendNoteAsClient(to, text, type);
+    const noteId = `note-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const ok = peerService.sendNoteAsClient(to, text, type, noteId);
     if (ok) {
-      // Agregar localmente a mis notas enviadas
+      // Agregar localmente a mis notas enviadas con ID persistente
       const selfNote = {
-        id: `note-${Date.now()}`,
+        id: noteId,
         from: clientCountry || role,
         fromRole: role,
         to,
@@ -560,7 +571,10 @@ export const P2PProvider = ({ children }) => {
         timestamp: Date.now(),
         isOutgoing: true
       };
-      setNotes(prev => [selfNote, ...prev]);
+      setNotes(prev => {
+        if (prev.some(n => n.id === noteId)) return prev;
+        return [selfNote, ...prev];
+      });
     }
     return ok;
   }, [clientCountry, role]);
@@ -573,14 +587,16 @@ export const P2PProvider = ({ children }) => {
     if (connectionStatus === 'host_active') {
       // Si somos el Chair/Host, ejecutamos inmediatamente con los handlers registrados
       if (req.speechType === 'GSL' && sessionActionHandlersRef.current.onAddSpeakerGSL) {
-        sessionActionHandlersRef.current.onAddSpeakerGSL({ nombre: req.country, bandera: '🇺🇳' });
+        sessionActionHandlersRef.current.onAddSpeakerGSL({ nombre: req.country });
       } else if (req.speechType === 'CAUCUS' && sessionActionHandlersRef.current.onAddSpeakerCaucus) {
-        sessionActionHandlersRef.current.onAddSpeakerCaucus({ nombre: req.country, bandera: '🇺🇳' });
-      } else if (req.speechType === 'POINT_MOTION' && sessionActionHandlersRef.current.onAddMotion) {
+        sessionActionHandlersRef.current.onAddSpeakerCaucus({ nombre: req.country });
+      } else if ((req.speechType === 'MOTION' || req.speechType === 'POINT_MOTION') && sessionActionHandlersRef.current.onAddMotion) {
         sessionActionHandlersRef.current.onAddMotion({
-          tipo: req.details?.tipo || 'Punto de Orden',
+          tipo: req.details?.tipo || 'Caucus Moderado',
           proponente: req.country,
-          tema: req.details?.tema || 'Solicitud de Delegación',
+          posicionProponente: req.details?.posicionProponente || 'Primero',
+          varianteConsulta: req.details?.varianteConsulta || '',
+          tema: req.details?.tema || 'Tema de Debate',
           tiempoTotal: req.details?.tiempoTotal || 0,
           tiempoOrador: req.details?.tiempoOrador || 0
         });
@@ -596,6 +612,29 @@ export const P2PProvider = ({ children }) => {
       peerService.processSpeakingRequestAsClient(req.id, 'accept', req);
       setSpeakingRequests(prev => prev.filter(r => r.id !== req.id));
       addNotification(`Aprobación enviada para ${req.country}`, 'info');
+    }
+  }, [connectionStatus, addNotification]);
+
+  const respondToPointWithNote = useCallback((pointReq, noteText) => {
+    if (!pointReq || !noteText) return;
+    sendNote(pointReq.country, noteText, 'urgente');
+    if (connectionStatus === 'host_active') {
+      setSpeakingRequests(prev => {
+        const next = prev.filter(r => r.id !== pointReq.id);
+        peerService.broadcastSpeakingRequests(next);
+        return next;
+      });
+    } else {
+      peerService.processSpeakingRequestAsClient(pointReq.id, 'reject');
+      setSpeakingRequests(prev => prev.filter(r => r.id !== pointReq.id));
+    }
+    addNotification(`Respuesta enviada a ${pointReq.country} por nota`, 'success');
+  }, [sendNote, connectionStatus, addNotification]);
+
+  const requestFullSync = useCallback(() => {
+    if (connectionStatus === 'connected') {
+      peerService.requestFullSyncAsClient();
+      addNotification('Sincronización solicitada a la Presidencia', 'info');
     }
   }, [connectionStatus, addNotification]);
 
@@ -700,6 +739,8 @@ export const P2PProvider = ({ children }) => {
       setSpeakingRequests,
       approveSpeakingRequest,
       rejectSpeakingRequest,
+      respondToPointWithNote,
+      requestFullSync,
       enmiendasPropuestas,
       setEnmiendasPropuestas,
       submitAmendment,

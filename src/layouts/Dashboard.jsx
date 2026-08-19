@@ -47,6 +47,7 @@ import { useSession } from '../context/SessionContext';
 import { useP2P } from '../context/P2PContext';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { validateSessionJSON } from '../utils/sessionValidator';
+import { getFlagEmoji } from '../utils/flags';
 
 // ─── Grid constants ────────────────────────────────────────────────────────────
 const COLS = 12;
@@ -292,14 +293,28 @@ const Dashboard = () => {
   // Registrar handlers de sesión para solicitudes P2P automáticas, acciones remotas y sincronización
   useEffect(() => {
     registerSessionHandlers({
-      onAddSpeakerGSL: (pais) => agregarOrador(pais),
-      onAddSpeakerCaucus: (pais) => agregarOradorCaucus(pais),
-      onAddMotion: (mocion) => agregarMocion(mocion),
+      onAddSpeakerGSL: (pais) => {
+        const countryName = typeof pais === 'string' ? pais : pais?.nombre;
+        const match = paises.find(p => p.nombre?.toLowerCase() === countryName?.toLowerCase());
+        agregarOrador(match || pais);
+      },
+      onAddSpeakerCaucus: (pais) => {
+        const countryName = typeof pais === 'string' ? pais : pais?.nombre;
+        const match = paises.find(p => p.nombre?.toLowerCase() === countryName?.toLowerCase());
+        agregarOradorCaucus(match || pais);
+      },
+      onAddMotion: (mocion) => {
+        const match = paises.find(p => p.nombre?.toLowerCase() === mocion.proponente?.toLowerCase());
+        agregarMocion({
+          ...mocion,
+          bandera: match?.bandera || mocion.bandera || getFlagEmoji(null, mocion.proponente)
+        });
+      },
       onCastVote: (country, vote) => registrarVotoPais(country, vote),
       onSessionAction: (accion, payload) => ejecutarAccion(accion, payload),
       onSyncState: (state) => aplicarEstadoExterno(state)
     });
-  }, [registerSessionHandlers, agregarOrador, agregarOradorCaucus, agregarMocion, registrarVotoPais, ejecutarAccion, aplicarEstadoExterno]);
+  }, [registerSessionHandlers, agregarOrador, agregarOradorCaucus, agregarMocion, registrarVotoPais, ejecutarAccion, aplicarEstadoExterno, paises]);
 
   // Sincronizar estado automáticamente a todos los peers conectados si el Chair está emitiendo (optimizado sin spam de reloj)
   useEffect(() => {

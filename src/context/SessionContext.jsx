@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { googleDriveService } from '../services/googleDriveService';
 import { validateSessionJSON } from '../utils/sessionValidator';
+import { getFlagEmoji } from '../utils/flags';
 
 const SessionContext = createContext();
 
@@ -251,11 +252,26 @@ export const SessionProvider = ({ children }) => {
       );
       const targetId = paisObj ? paisObj.id : countryIdentifier;
 
+      // Normalizar texto de voto a clave estándar ('favor' | 'contra' | 'abstencion' | 'pasar')
+      let normalizedVoto = voto;
+      if (voto !== null && voto !== undefined) {
+        const s = String(voto).trim().toLowerCase();
+        if (s === 'favor' || s === 'a favor' || s === 'in favor' || s === 'yes' || s === 'si' || s === 'sí') {
+          normalizedVoto = 'favor';
+        } else if (s === 'contra' || s === 'en contra' || s === 'against' || s === 'no') {
+          normalizedVoto = 'contra';
+        } else if (s === 'abstencion' || s === 'abstención' || s === 'abstain' || s === 'abstention') {
+          normalizedVoto = 'abstencion';
+        } else if (s === 'pasar' || s === 'pase' || s === 'pass') {
+          normalizedVoto = 'pasar';
+        }
+      }
+
       const copyVotos = { ...prev.votos };
-      if (voto === null || voto === undefined) {
+      if (normalizedVoto === null || normalizedVoto === undefined) {
         delete copyVotos[targetId];
       } else {
-        copyVotos[targetId] = voto;
+        copyVotos[targetId] = normalizedVoto;
       }
       return { ...prev, votos: copyVotos };
     });
@@ -351,13 +367,20 @@ export const SessionProvider = ({ children }) => {
 
   // Oradores GSL
   const agregarOrador = useCallback((paisObj, emitir = true) => {
-    if (!paisObj || !paisObj.nombre) return;
+    const countryName = typeof paisObj === 'string' ? paisObj : paisObj?.nombre;
+    if (!countryName) return;
+    
     setOradoresColaState(prev => {
-      if (prev.some(o => o.nombre.toLowerCase() === paisObj.nombre.toLowerCase())) return prev;
-      return [...prev, { id: Date.now().toString(), nombre: paisObj.nombre, bandera: paisObj.bandera || '🇺🇳' }];
+      if (prev.some(o => o.nombre.toLowerCase() === countryName.toLowerCase())) return prev;
+      const currentPaises = stateRef.current.paises || [];
+      const match = currentPaises.find(p => p.nombre?.toLowerCase() === countryName.toLowerCase());
+      const explicitFlag = typeof paisObj === 'object' && paisObj?.bandera && paisObj.bandera !== '🇺🇳' ? paisObj.bandera : null;
+      const banderaFinal = match?.bandera || explicitFlag || getFlagEmoji(null, countryName);
+
+      return [...prev, { id: Date.now().toString(), nombre: countryName, bandera: banderaFinal }];
     });
     if (emitir) {
-      emitirAccion('agregarOrador', { paisObj });
+      emitirAccion('agregarOrador', { paisObj: typeof paisObj === 'object' ? paisObj : { nombre: countryName } });
     }
   }, [emitirAccion]);
 
@@ -482,15 +505,22 @@ export const SessionProvider = ({ children }) => {
 
   // Oradores Caucus / Debate
   const agregarOradorCaucus = useCallback((paisObj, emitir = true) => {
-    if (!paisObj || !paisObj.nombre) return;
+    const countryName = typeof paisObj === 'string' ? paisObj : paisObj?.nombre;
+    if (!countryName) return;
+
     setOradoresCaucusState(prev => {
-      if (prev.some(o => o.nombre.toLowerCase() === paisObj.nombre.toLowerCase())) return prev;
+      if (prev.some(o => o.nombre.toLowerCase() === countryName.toLowerCase())) return prev;
+
+      const currentPaises = stateRef.current.paises || [];
+      const match = currentPaises.find(p => p.nombre?.toLowerCase() === countryName.toLowerCase());
+      const explicitFlag = typeof paisObj === 'object' && paisObj?.bandera && paisObj.bandera !== '🇺🇳' ? paisObj.bandera : null;
+      const banderaFinal = match?.bandera || explicitFlag || getFlagEmoji(null, countryName);
 
       const nuevoOrador = {
         id: Date.now().toString(),
-        nombre: paisObj.nombre,
-        bandera: paisObj.bandera || '🇺🇳',
-        esProponenteUltimo: false
+        nombre: countryName,
+        bandera: banderaFinal,
+        esProponenteUltimo: Boolean(paisObj?.esProponenteUltimo)
       };
 
       if (prev.length > 0 && prev[prev.length - 1].esProponenteUltimo) {
@@ -502,7 +532,7 @@ export const SessionProvider = ({ children }) => {
     });
 
     if (emitir) {
-      emitirAccion('agregarOradorCaucus', { paisObj });
+      emitirAccion('agregarOradorCaucus', { paisObj: typeof paisObj === 'object' ? paisObj : { nombre: countryName } });
     }
   }, [emitirAccion]);
 
