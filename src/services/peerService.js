@@ -678,7 +678,7 @@ class PeerService {
               country: meta.country,
               roomSettings: this.roomSettings,
               speakingRequests: this.latestSpeakingRequests || [],
-              sessionState: this.latestSessionState || null,
+              sessionState: this.getPublicSessionState(this.latestSessionState || {}),
               notes: roleNotes
             }
           });
@@ -751,7 +751,7 @@ class PeerService {
             success: true,
             country: selectedCountry,
             roomSettings: this.roomSettings,
-            sessionState: this.latestSessionState || null,
+            sessionState: this.getPublicSessionState(this.latestSessionState || {}),
             speakingRequests: this.latestSpeakingRequests || [],
             notes: roleNotes
           }
@@ -1032,17 +1032,28 @@ class PeerService {
   // ─────────────────────────────────────────────────────────────
   getPublicSessionState(state) {
     if (!state || typeof state !== 'object') return {};
+
+    // Sanitizar y aligerar la lista de países para que no pese por P2P (solo texto, sin base64)
+    const paisesLigeros = Array.isArray(state.paises)
+      ? state.paises.map(p => {
+          if (typeof p === 'string') return p;
+          const pLimpio = {
+            id: p.id,
+            nombre: p.nombre || p.name || ''
+          };
+          // Solo incluir bandera si es emoji o código ISO ultracorto (nunca imágenes base64 ni blobs pesados)
+          if (p.bandera && typeof p.bandera === 'string' && !p.bandera.startsWith('data:') && p.bandera.length <= 10) {
+            pLimpio.bandera = p.bandera;
+          }
+          return pLimpio;
+        })
+      : [];
+
     return {
-      paises: state.paises || [],
-      agendaSesion: state.agendaSesion || {},
-      caucusActivo: state.caucusActivo || {},
-      oradoresCola: state.oradoresCola || [],
-      oradoresCaucus: state.oradoresCaucus || [],
+      paises: paisesLigeros,
       votacionSesion: state.votacionSesion || {},
       documento: state.documento || null,
-      isPaused: state.isPaused,
-      tiempoRestante: state.tiempoRestante,
-      temaActual: state.temaActual || state.agendaSesion?.temaActual || ''
+      enmiendasSesion: state.enmiendasSesion || []
     };
   }
 
@@ -1050,13 +1061,22 @@ class PeerService {
     this.latestSessionState = state;
     const publicState = this.getPublicSessionState(state);
 
+    const payload = {
+      ...publicState,
+      roomSettings: this.roomSettings,
+      speakingRequests: this.latestSpeakingRequests || []
+    };
+
+    // Optimización de ancho de banda: solo emitir si el estado público relevante ha cambiado
+    const stateString = JSON.stringify(payload);
+    if (this.lastBroadcastedStateHash === stateString) {
+      return;
+    }
+    this.lastBroadcastedStateHash = stateString;
+
     const msg = {
       type: MSG_TYPES.SYNC_STATE,
-      payload: {
-        ...publicState,
-        roomSettings: this.roomSettings,
-        speakingRequests: this.latestSpeakingRequests || []
-      }
+      payload
     };
 
     this.connections.forEach((conn) => {

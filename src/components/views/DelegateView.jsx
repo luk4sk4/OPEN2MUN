@@ -101,18 +101,7 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
   // Estado sincronizado desde el Chair
   const state = remoteSessionState || {};
   const settings = roomSettings || {};
-  const oradoresCola = state.oradoresCola || [];
-  const oradoresCaucus = state.oradoresCaucus || [];
-  const caucusActivo = state.caucusActivo || {};
-  const agendaSesion = state.agendaSesion || {};
   const votacionSesion = state.votacionSesion || {};
-
-  const estaEnGSL = oradoresCola.some(o => o.nombre?.toLowerCase() === clientCountry?.toLowerCase());
-  const estaEnCaucus = oradoresCaucus.some(o => o.nombre?.toLowerCase() === clientCountry?.toLowerCase());
-
-  const oradorActualGSL = oradoresCola[0]?.nombre || 'Ninguno';
-  const oradorActualCaucus = oradoresCaucus[0]?.nombre || 'Ninguno';
-  const temaActual = agendaSesion.temaActual || caucusActivo.tema || 'Sesión General en curso';
   const paisesDisponibles = state.paises || [];
 
   // Países ocupados por otros peers conectados
@@ -926,85 +915,7 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
       <main style={{ padding: '1rem', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
         {activeTab === 'DEBATE' && (
           <>
-            {/* 1. Card de Estado de Debate en Vivo */}
-            <div style={{
-              backgroundColor: 'var(--panel-color)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '12px',
-              padding: '1rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.75rem',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{
-                  fontSize: '0.7rem',
-                  fontWeight: '800',
-                  color: caucusActivo.activo ? '#a855f7' : '#3b82f6',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.35rem'
-                }}>
-                  {caucusActivo.activo ? (
-                    <>
-                      <Clock size={12} /> Caucus Moderado Activo
-                    </>
-                  ) : (
-                    <>
-                      <FileText size={12} /> Lista General de Oradores (GSL)
-                    </>
-                  )}
-                </span>
-                <span style={{ fontSize: '0.72rem', color: 'var(--muted-text)' }}>
-                  Sincronizado
-                </span>
-              </div>
-
-              <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--muted-text)' }}>Tema en Discusión:</div>
-                <div style={{ fontSize: '1.05rem', fontWeight: '800', marginTop: '2px', color: 'var(--text-color)' }}>
-                  {temaActual}
-                </div>
-              </div>
-
-              {/* Orador actual en el podio */}
-              <div style={{
-                backgroundColor: 'var(--card-header-bg)',
-                border: '1px solid var(--subborder-color)',
-                borderRadius: '8px',
-                padding: '0.75rem 1rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between'
-              }}>
-                <div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)', textTransform: 'uppercase', fontWeight: '700' }}>
-                    Orador en la Palabra
-                  </div>
-                  <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#22c55e', marginTop: '2px' }}>
-                    {caucusActivo.activo ? oradorActualCaucus : oradorActualGSL}
-                  </div>
-                </div>
-
-                <div style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '50%',
-                  backgroundColor: 'rgba(34, 197, 94, 0.15)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#22c55e'
-                }}>
-                  <Mic size={18} />
-                </div>
-              </div>
-            </div>
-
-            {/* 2. Votación en Vivo si está activa y permitida */}
+            {/* 1. Votación en Vivo si está activa y permitida */}
             {settings.allowLiveVoting && votacionSesion?.asunto && (
               <div style={{
                 backgroundColor: 'rgba(59, 130, 246, 0.08)',
@@ -1098,7 +1009,7 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
               </div>
             )}
 
-            {/* 3. Panel de Acciones de Orador (GSL y Caucus) adaptativo */}
+            {/* 2. Panel de Acciones de Orador (GSL y Caucus) */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               {/* Botón / Estado GSL */}
               <div style={{
@@ -1120,57 +1031,38 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
                       ? 'Modo Directo: Ingreso inmediato'
                       : (settings.speakerRequestMode === 'approval'
                           ? 'Requiere validación de la Mesa'
-                          : 'Solicitudes cerradas por la Mesa')}
+                          : 'Solicitudes cerradas')}
                   </div>
                 </div>
 
-                {estaEnGSL ? (
-                  <div style={{
-                    backgroundColor: 'rgba(34, 197, 94, 0.12)',
-                    border: '1px solid rgba(34, 197, 94, 0.3)',
-                    color: '#22c55e',
+                <button
+                  disabled={settings.speakerRequestMode === 'disabled' || solicitudGSLHecha}
+                  onClick={handlePedirGSL}
+                  style={{
+                    backgroundColor: settings.speakerRequestMode === 'disabled'
+                      ? 'rgba(255,255,255,0.05)'
+                      : (solicitudGSLHecha ? '#22c55e' : 'var(--btn-bg)'),
+                    color: settings.speakerRequestMode === 'disabled' ? 'var(--muted-text)' : 'var(--btn-text)',
+                    border: 'none',
                     borderRadius: '8px',
-                    padding: '0.5rem',
-                    textAlign: 'center',
-                    fontSize: '0.78rem',
+                    padding: '0.6rem',
                     fontWeight: '800',
+                    fontSize: '0.82rem',
+                    cursor: settings.speakerRequestMode === 'disabled' ? 'not-allowed' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '0.35rem'
-                  }}>
-                    <CheckCircle size={14} /> ¡Ya estás en la lista GSL!
-                  </div>
-                ) : (
-                  <button
-                    disabled={settings.speakerRequestMode === 'disabled' || solicitudGSLHecha}
-                    onClick={handlePedirGSL}
-                    style={{
-                      backgroundColor: settings.speakerRequestMode === 'disabled'
-                        ? 'rgba(255,255,255,0.05)'
-                        : (solicitudGSLHecha ? '#22c55e' : 'var(--btn-bg)'),
-                      color: settings.speakerRequestMode === 'disabled' ? 'var(--muted-text)' : 'var(--btn-text)',
-                      border: 'none',
-                      borderRadius: '8px',
-                      padding: '0.6rem',
-                      fontWeight: '800',
-                      fontSize: '0.82rem',
-                      cursor: settings.speakerRequestMode === 'disabled' ? 'not-allowed' : 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.35rem',
-                      boxShadow: settings.speakerRequestMode === 'disabled' ? 'none' : '0 4px 12px rgba(0,0,0,0.2)',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    {settings.speakerRequestMode === 'disabled' ? (
-                      <><Lock size={14} /> Cerrado</>
-                    ) : (
-                      solicitudGSLHecha ? <><Check size={14} /> Solicitud Enviada</> : <><Mic size={14} /> Pedir Turno GSL</>
-                    )}
-                  </button>
-                )}
+                    gap: '0.35rem',
+                    boxShadow: settings.speakerRequestMode === 'disabled' ? 'none' : '0 4px 12px rgba(0,0,0,0.2)',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {settings.speakerRequestMode === 'disabled' ? (
+                    <><Lock size={14} /> Cerrado</>
+                  ) : (
+                    solicitudGSLHecha ? <><Check size={14} /> Solicitud Enviada</> : <><Mic size={14} /> Pedir Turno GSL</>
+                  )}
+                </button>
               </div>
 
               {/* Botón / Estado Caucus Moderado */}
@@ -1197,53 +1089,34 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
                   </div>
                 </div>
 
-                {estaEnCaucus ? (
-                  <div style={{
-                    backgroundColor: 'rgba(168, 85, 247, 0.12)',
-                    border: '1px solid rgba(168, 85, 247, 0.3)',
-                    color: '#c084fc',
+                <button
+                  disabled={settings.caucusRequestMode === 'disabled' || solicitudCaucusHecha}
+                  onClick={handlePedirCaucus}
+                  style={{
+                    backgroundColor: settings.caucusRequestMode === 'disabled'
+                      ? 'rgba(255,255,255,0.05)'
+                      : (solicitudCaucusHecha ? '#a855f7' : 'var(--btn-bg)'),
+                    color: settings.caucusRequestMode === 'disabled' ? 'var(--muted-text)' : 'var(--btn-text)',
+                    border: 'none',
                     borderRadius: '8px',
-                    padding: '0.5rem',
-                    textAlign: 'center',
-                    fontSize: '0.78rem',
+                    padding: '0.6rem',
                     fontWeight: '800',
+                    fontSize: '0.82rem',
+                    cursor: settings.caucusRequestMode === 'disabled' ? 'not-allowed' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '0.35rem'
-                  }}>
-                    <CheckCircle size={14} /> ¡En lista de Caucus!
-                  </div>
-                ) : (
-                  <button
-                    disabled={settings.caucusRequestMode === 'disabled' || solicitudCaucusHecha}
-                    onClick={handlePedirCaucus}
-                    style={{
-                      backgroundColor: settings.caucusRequestMode === 'disabled'
-                        ? 'rgba(255,255,255,0.05)'
-                        : (solicitudCaucusHecha ? '#a855f7' : 'var(--btn-bg)'),
-                      color: settings.caucusRequestMode === 'disabled' ? 'var(--muted-text)' : 'var(--btn-text)',
-                      border: 'none',
-                      borderRadius: '8px',
-                      padding: '0.6rem',
-                      fontWeight: '800',
-                      fontSize: '0.82rem',
-                      cursor: settings.caucusRequestMode === 'disabled' ? 'not-allowed' : 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.35rem',
-                      boxShadow: settings.caucusRequestMode === 'disabled' ? 'none' : '0 4px 12px rgba(0,0,0,0.2)',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    {settings.caucusRequestMode === 'disabled' ? (
-                      <><Lock size={14} /> Cerrado</>
-                    ) : (
-                      solicitudCaucusHecha ? <><Check size={14} /> Solicitud Enviada</> : <><Mic size={14} /> Pedir Turno Caucus</>
-                    )}
-                  </button>
-                )}
+                    gap: '0.35rem',
+                    boxShadow: settings.caucusRequestMode === 'disabled' ? 'none' : '0 4px 12px rgba(0,0,0,0.2)',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {settings.caucusRequestMode === 'disabled' ? (
+                    <><Lock size={14} /> Cerrado</>
+                  ) : (
+                    solicitudCaucusHecha ? <><Check size={14} /> Solicitud Enviada</> : <><Mic size={14} /> Pedir Turno Caucus</>
+                  )}
+                </button>
               </div>
             </div>
 
@@ -1289,53 +1162,6 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
               >
                 {settings.allowMotions ? <PenTool size={14} /> : <Lock size={14} />} Proponer
               </button>
-            </div>
-
-            {/* 5. Próximos Oradores en Cola */}
-            <div style={{
-              backgroundColor: 'var(--panel-color)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '12px',
-              padding: '1rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.75rem'
-            }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: '800' }}>
-                Próximos en Lista ({oradoresCola.length})
-              </div>
-
-              {oradoresCola.length === 0 ? (
-                <div style={{ fontSize: '0.78rem', color: 'var(--muted-text)', textAlign: 'center', padding: '1rem' }}>
-                  La lista de oradores está vacía.
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  {oradoresCola.slice(0, 5).map((o, idx) => (
-                    <div
-                      key={o.id || idx}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '0.45rem 0.65rem',
-                        borderRadius: '6px',
-                        backgroundColor: o.nombre?.toLowerCase() === clientCountry?.toLowerCase() ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255,255,255,0.02)',
-                        border: `1px solid ${o.nombre?.toLowerCase() === clientCountry?.toLowerCase() ? '#3b82f644' : 'transparent'}`
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', fontWeight: '700' }}>
-                        <span style={{ color: 'var(--muted-text)', fontSize: '0.75rem' }}>#{idx + 1}</span>
-                        <CountryFlag bandera={o.bandera} nombre={o.nombre} size="sm" />
-                        <span>{o.nombre}</span>
-                      </div>
-                      {idx === 0 && (
-                        <span style={{ fontSize: '0.65rem', fontWeight: '800', color: '#22c55e' }}>EN TURNO</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </>
         )}
