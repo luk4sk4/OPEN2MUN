@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, Suspense } from 'react';
 import {
   Settings,
   Eye,
@@ -1776,7 +1776,22 @@ const Dashboard = () => {
                     borderRadius: 'var(--border-radius)',
                     pointerEvents: isInteracting ? 'none' : 'auto'
                   }}>
-                    {WidgetComponent ? <WidgetComponent isLight={isLight} /> : (
+                    {WidgetComponent ? (
+                      <Suspense fallback={
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          height: '100%',
+                          opacity: 0.6,
+                          fontFamily: 'monospace'
+                        }}>
+                          Cargando {meta.title}...
+                        </div>
+                      }>
+                        <WidgetComponent isLight={isLight} />
+                      </Suspense>
+                    ) : (
                       <div style={{ padding: '1rem', opacity: 0.5, textAlign: 'center' }}>
                         Widget: {w.i}
                       </div>
