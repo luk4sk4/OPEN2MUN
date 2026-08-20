@@ -490,11 +490,14 @@ export const P2PProvider = ({ children }) => {
       });
       setRole(targetRole);
       setViewMode(targetRole);
-      if (country) {
-        setClientCountry(country);
-        localStorage.setItem('openmun_last_country', country);
-      } else if (targetRole === 'delegate') {
-        // Inicializar sin país seleccionado para que elija de la lista del Host
+      if (targetRole === 'delegate') {
+        if (country) {
+          setClientCountry(country);
+          localStorage.setItem('openmun_last_country', country);
+        } else {
+          setClientCountry('');
+        }
+      } else {
         setClientCountry('');
       }
       return true;
@@ -553,6 +556,7 @@ export const P2PProvider = ({ children }) => {
     peerService.destroy();
     setConnectionStatus('disconnected');
     setRole('none');
+    setClientCountry('');
     setViewMode('chair');
   }, []);
 
@@ -560,10 +564,18 @@ export const P2PProvider = ({ children }) => {
     const noteId = `note-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     const ok = peerService.sendNoteAsClient(to, text, type, noteId);
     if (ok) {
-      // Agregar localmente a mis notas enviadas con ID persistente
+      let senderName = role;
+      if (role === 'backroom') {
+        senderName = 'Backroom';
+      } else if (role === 'secretariat' || role === 'chair') {
+        senderName = 'Secretaría';
+      } else if (role === 'delegate') {
+        senderName = clientCountry || 'Delegación';
+      }
+
       const selfNote = {
         id: noteId,
-        from: clientCountry || role,
+        from: senderName,
         fromRole: role,
         to,
         text,

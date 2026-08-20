@@ -295,7 +295,7 @@ class NetworkService {
     this.destroy();
     this.isHost = false;
     this.role = role;
-    this.clientCountry = country || null;
+    this.clientCountry = role === 'delegate' ? (country || null) : null;
     this.roomId = cleanRoomId;
 
     // REGLA DE ORO: Modo Secreto Local mediante BroadcastChannel (sin internet)
@@ -762,11 +762,21 @@ class NetworkService {
     const note = message.payload;
     if (!note || !note.to) return;
 
+    let fromRole = senderMeta?.role || 'delegate';
+    let fromName = senderMeta?.country || fromRole;
+    if (fromRole === 'backroom') {
+      fromName = 'Backroom';
+    } else if (fromRole === 'secretariat' || fromRole === 'chair') {
+      fromName = 'Secretaría';
+    } else if (fromRole === 'delegate') {
+      fromName = senderMeta?.country || 'Delegación';
+    }
+
     const formattedNote = {
       ...note,
       id: note.id || `note-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      from: senderMeta.country || senderMeta.role,
-      fromRole: senderMeta.role,
+      from: fromName,
+      fromRole: fromRole,
       timestamp: note.timestamp || Date.now()
     };
 
@@ -955,11 +965,13 @@ class NetworkService {
   // MÉTODOS DEL CLIENTE
   // ─────────────────────────────────────────────────────────────
   sendToServer(type, payload) {
+    const senderRole = this.role || 'delegate';
+    const senderCountry = senderRole === 'delegate' ? (this.clientCountry || null) : null;
     const msg = {
       type,
       payload,
       senderSocketId: this.socketId,
-      senderMeta: { role: this.role, country: this.clientCountry },
+      senderMeta: { role: senderRole, country: senderCountry },
       id: `msg-${Date.now()}`
     };
 

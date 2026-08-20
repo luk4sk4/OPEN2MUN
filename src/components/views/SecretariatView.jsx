@@ -111,11 +111,12 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
   }, [registerSessionHandlers, aplicarEstadoExterno, ejecutarAccion]);
 
   const [activeTab, setActiveTab] = useState('NOTAS'); // 'NOTAS' | 'SOLICITUDES' | 'DEBATE' | 'VOTACION' | 'INFO' | 'CRISIS' | 'AJUSTES' | 'CONEXIONES'
+  const [subTabNotas, setSubTabNotas] = useState('SECRETARIA'); // 'SECRETARIA' | 'DELEGACIONES'
   const [subTabInfo, setSubTabInfo] = useState('MATRIZ'); // 'MATRIZ' | 'ANADIR' | 'HISTORICO' | 'AGENDA' | 'IMPORTAR' | 'MOCIONES' | 'RULETA'
   const [subTabVotacion, setSubTabVotacion] = useState('OFICIAL'); // 'OFICIAL' | 'MAPA'
   const [subTabDebate, setSubTabDebate] = useState('MONITOR'); // 'MONITOR' | 'ANADIR'
   const [filtroTexto, setFiltroTexto] = useState('');
-  const [filtroTipo, setFiltroTipo] = useState('TODOS'); // 'TODOS' | 'CHAIR' | 'BACKROOM' | 'DELEGADOS'
+  const [filtroSubTipo, setFiltroSubTipo] = useState('TODOS'); // 'TODOS' | 'DELEGADOS' | 'BACKROOM' | 'URGENTES'
   const [notaMesaTexto, setNotaMesaTexto] = useState('');
   const [notaMesaDestino, setNotaMesaDestino] = useState('TODOS');
   const [tipoNota, setTipoNota] = useState('general');
@@ -129,8 +130,25 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
   const oradorActual = caucusActivo.activo ? (oradoresCaucus[0]?.nombre || 'Sin orador') : (oradoresGSL[0]?.nombre || 'Sin orador');
   const paises = sessionPaises?.length > 0 ? sessionPaises : (state.paises || []);
 
-  // Filtrado de Notas
-  const notasFiltradas = notes.filter(n => {
+  // Clasificación de notas para Secretaría
+  const notasSecretaria = notes.filter(n => {
+    const toUpper = (n.to || '').toUpperCase();
+    const fromUpper = (n.from || '').toUpperCase();
+    const isToSec = toUpper === 'CHAIR' || toUpper === 'SECRETARIAT' || toUpper === 'SECRETARÍA' || toUpper === 'MESA' || toUpper === 'TODOS';
+    const isFromSec = n.fromRole === 'secretariat' || n.fromRole === 'chair' || fromUpper === 'SECRETARÍA' || fromUpper === 'CHAIR';
+    return isToSec || isFromSec;
+  });
+
+  const notasDelegaciones = notes.filter(n => {
+    const toUpper = (n.to || '').toUpperCase();
+    const fromUpper = (n.from || '').toUpperCase();
+    const isSec = toUpper === 'CHAIR' || toUpper === 'SECRETARIAT' || toUpper === 'SECRETARÍA' || toUpper === 'MESA' || toUpper === 'TODOS' || n.fromRole === 'secretariat' || n.fromRole === 'chair' || fromUpper === 'SECRETARÍA' || fromUpper === 'CHAIR';
+    const isBack = toUpper === 'BACKROOM' || n.fromRole === 'backroom' || fromUpper === 'BACKROOM' || n.type === 'crisis';
+    return !isSec && !isBack;
+  });
+
+  // Filtrado de Notas según sub-pestaña activa y búsqueda/filtro
+  const notasMostradas = (subTabNotas === 'SECRETARIA' ? notasSecretaria : notasDelegaciones).filter(n => {
     const coincideTexto = !filtroTexto || 
       n.from?.toLowerCase().includes(filtroTexto.toLowerCase()) ||
       n.to?.toLowerCase().includes(filtroTexto.toLowerCase()) ||
@@ -138,9 +156,11 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
 
     if (!coincideTexto) return false;
 
-    if (filtroTipo === 'CHAIR') return n.to === 'CHAIR';
-    if (filtroTipo === 'BACKROOM') return n.to === 'BACKROOM' || n.fromRole === 'backroom';
-    if (filtroTipo === 'DELEGADOS') return n.to !== 'CHAIR' && n.to !== 'BACKROOM';
+    if (filtroSubTipo === 'URGENTES') return n.type === 'urgente';
+    if (subTabNotas === 'SECRETARIA') {
+      if (filtroSubTipo === 'DELEGADOS') return n.fromRole === 'delegate' || (n.fromRole !== 'backroom' && n.fromRole !== 'chair' && n.fromRole !== 'secretariat');
+      if (filtroSubTipo === 'BACKROOM') return n.fromRole === 'backroom' || n.from?.toUpperCase() === 'BACKROOM' || n.to?.toUpperCase() === 'BACKROOM';
+    }
     return true;
   });
 
@@ -535,9 +555,91 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
         {/* PESTAÑA 1: BANDEJA DE NOTAS / PAJES                     */}
         {/* ═══════════════════════════════════════════════════════ */}
         {activeTab === 'NOTAS' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '1.5rem', alignItems: 'start' }}>
-            {/* Columna Izquierda: Feed de Notas y Filtros */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '1.5rem', alignItems: 'start' }}>
+            {/* Columna Izquierda: Pestañas de Mensajes, Feed de Notas y Filtros */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {/* Selector de Sub-Pestañas: Secretaría vs Delegaciones */}
+              <div style={{
+                backgroundColor: 'var(--panel-color)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '14px',
+                padding: '0.5rem',
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '0.5rem',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+              }}>
+                <button
+                  onClick={() => {
+                    setSubTabNotas('SECRETARIA');
+                    setFiltroSubTipo('TODOS');
+                  }}
+                  style={{
+                    backgroundColor: subTabNotas === 'SECRETARIA' ? 'var(--btn-bg)' : 'transparent',
+                    color: subTabNotas === 'SECRETARIA' ? 'var(--btn-text)' : 'var(--muted-text)',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '0.75rem 1rem',
+                    fontSize: '0.85rem',
+                    fontWeight: '800',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <Building2 size={16} />
+                  <span>Mensajes a Secretaría</span>
+                  <span style={{
+                    fontSize: '0.72rem',
+                    padding: '0.15rem 0.5rem',
+                    borderRadius: '20px',
+                    backgroundColor: subTabNotas === 'SECRETARIA' ? 'rgba(255, 255, 255, 0.2)' : 'var(--card-header-bg)',
+                    color: subTabNotas === 'SECRETARIA' ? '#ffffff' : 'var(--text-color)',
+                    fontWeight: '800'
+                  }}>
+                    {notasSecretaria.length}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setSubTabNotas('DELEGACIONES');
+                    setFiltroSubTipo('TODOS');
+                  }}
+                  style={{
+                    backgroundColor: subTabNotas === 'DELEGACIONES' ? 'var(--btn-bg)' : 'transparent',
+                    color: subTabNotas === 'DELEGACIONES' ? 'var(--btn-text)' : 'var(--muted-text)',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '0.75rem 1rem',
+                    fontSize: '0.85rem',
+                    fontWeight: '800',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <Users size={16} />
+                  <span>Mensajes entre Delegaciones</span>
+                  <span style={{
+                    fontSize: '0.72rem',
+                    padding: '0.15rem 0.5rem',
+                    borderRadius: '20px',
+                    backgroundColor: subTabNotas === 'DELEGACIONES' ? 'rgba(255, 255, 255, 0.2)' : 'var(--card-header-bg)',
+                    color: subTabNotas === 'DELEGACIONES' ? '#ffffff' : 'var(--text-color)',
+                    fontWeight: '800'
+                  }}>
+                    {notasDelegaciones.length}
+                  </span>
+                </button>
+              </div>
+
               {/* Barra de Filtros y Búsqueda */}
               <div style={{
                 backgroundColor: 'var(--panel-color)',
@@ -550,11 +652,11 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
                 gap: '1rem',
                 flexWrap: 'wrap'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: '220px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: '200px' }}>
                   <Search size={16} style={{ color: 'var(--muted-text)' }} />
                   <input
                     type="text"
-                    placeholder="Buscar por remitente, destinatario o mensaje..."
+                    placeholder={subTabNotas === 'SECRETARIA' ? "Buscar en mensajes a secretaría..." : "Buscar entre delegaciones..."}
                     value={filtroTexto}
                     onChange={e => setFiltroTexto(e.target.value)}
                     style={{
@@ -566,32 +668,41 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
                       width: '100%'
                     }}
                   />
+                  {filtroTexto && (
+                    <button
+                      onClick={() => setFiltroTexto('')}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--muted-text)', cursor: 'pointer' }}
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.35rem' }}>
-                  {['TODOS', 'CHAIR', 'BACKROOM', 'DELEGADOS'].map(tipo => (
+                  {(subTabNotas === 'SECRETARIA' ? ['TODOS', 'DELEGADOS', 'BACKROOM', 'URGENTES'] : ['TODOS', 'URGENTES']).map(tipo => (
                     <button
                       key={tipo}
-                      onClick={() => setFiltroTipo(tipo)}
+                      onClick={() => setFiltroSubTipo(tipo)}
                       style={{
-                        backgroundColor: filtroTipo === tipo ? 'var(--btn-bg)' : 'var(--card-header-bg)',
-                        color: filtroTipo === tipo ? 'var(--btn-text)' : 'var(--muted-text)',
+                        backgroundColor: filtroSubTipo === tipo ? 'var(--btn-bg)' : 'var(--card-header-bg)',
+                        color: filtroSubTipo === tipo ? 'var(--btn-text)' : 'var(--muted-text)',
                         border: '1px solid var(--border-color)',
                         borderRadius: '6px',
                         padding: '0.35rem 0.7rem',
                         fontSize: '0.74rem',
                         fontWeight: '700',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
                       }}
                     >
-                      {tipo}
+                      {tipo === 'DELEGADOS' ? 'Delegaciones' : tipo === 'BACKROOM' ? 'Backroom / Crisis' : tipo === 'URGENTES' ? '⚡ Urgentes' : 'Todos'}
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Lista de Notas */}
-              {notasFiltradas.length === 0 ? (
+              {notasMostradas.length === 0 ? (
                 <div style={{
                   padding: '4rem 1.5rem',
                   textAlign: 'center',
@@ -600,67 +711,132 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
                   border: '1px dashed var(--border-color)',
                   color: 'var(--muted-text)'
                 }}>
-                  <MessageSquare size={36} style={{ opacity: 0.35, marginBottom: '0.6rem' }} />
-                  <div style={{ fontWeight: '700', fontSize: '0.95rem' }}>No hay notas registradas</div>
-                  <div style={{ fontSize: '0.78rem', marginTop: '4px' }}>
-                    Las notas que envíen las delegaciones entre sí o a la Mesa aparecerán aquí en vivo.
-                  </div>
+                  {subTabNotas === 'SECRETARIA' ? (
+                    <>
+                      <Building2 size={38} style={{ opacity: 0.35, marginBottom: '0.6rem' }} />
+                      <div style={{ fontWeight: '700', fontSize: '0.95rem' }}>No hay mensajes para la Secretaría</div>
+                      <div style={{ fontSize: '0.78rem', marginTop: '4px' }}>
+                        Las dudas de procedimiento, notas a la Mesa y avisos oficiales aparecerán aquí en vivo.
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Users size={38} style={{ opacity: 0.35, marginBottom: '0.6rem' }} />
+                      <div style={{ fontWeight: '700', fontSize: '0.95rem' }}>No hay mensajes entre delegaciones</div>
+                      <div style={{ fontSize: '0.78rem', marginTop: '4px' }}>
+                        La mensajería y notas diplomáticas intercambiadas entre países se registrarán aquí en tiempo real.
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {notasFiltradas.map(nota => (
-                    <div
-                      key={nota.id}
-                      style={{
-                        backgroundColor: 'var(--panel-color)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '12px',
-                        padding: '1rem 1.25rem',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.5rem',
-                        boxShadow: '0 4px 14px rgba(0,0,0,0.15)'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span style={{ fontWeight: '800', fontSize: '0.92rem', color: '#60a5fa' }}>
-                            {nota.from}
-                          </span>
-                          <span style={{ color: 'var(--muted-text)', fontSize: '0.8rem' }}>➔</span>
-                          <span style={{ fontWeight: '800', fontSize: '0.92rem', color: '#22c55e' }}>
-                            {nota.to}
-                          </span>
-                          <span style={{
-                            fontSize: '0.68rem',
-                            fontWeight: '700',
-                            padding: '0.1rem 0.45rem',
-                            borderRadius: '4px',
-                            backgroundColor: nota.type === 'urgente' ? 'rgba(239, 68, 68, 0.15)' : 'var(--card-header-bg)',
-                            color: nota.type === 'urgente' ? '#ef4444' : 'var(--muted-text)',
-                            border: `1px solid ${nota.type === 'urgente' ? 'rgba(239, 68, 68, 0.3)' : 'var(--border-color)'}`
-                          }}>
-                            {nota.type?.toUpperCase() || 'GENERAL'}
-                          </span>
+                  {notasMostradas.map(nota => {
+                    const isFromSec = nota.fromRole === 'secretariat' || nota.fromRole === 'chair' || nota.from === 'Secretaría';
+                    const isFromBck = nota.fromRole === 'backroom' || nota.from === 'Backroom';
+                    const isToSec = nota.to === 'CHAIR' || nota.to === 'SECRETARIAT' || nota.to === 'MESA' || nota.to === 'TODOS';
+
+                    return (
+                      <div
+                        key={nota.id}
+                        style={{
+                          backgroundColor: 'var(--panel-color)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '12px',
+                          padding: '1rem 1.25rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.55rem',
+                          boxShadow: '0 4px 14px rgba(0,0,0,0.12)'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            {/* Remitente */}
+                            <span style={{
+                              fontWeight: '800',
+                              fontSize: '0.92rem',
+                              color: isFromBck ? '#f97316' : isFromSec ? '#a855f7' : '#60a5fa',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}>
+                              {isFromBck ? '🚨 Backroom' : isFromSec ? '🏛️ Secretaría' : nota.from}
+                            </span>
+
+                            <span style={{ color: 'var(--muted-text)', fontSize: '0.8rem' }}>➔</span>
+
+                            {/* Destinatario */}
+                            <span style={{
+                              fontWeight: '800',
+                              fontSize: '0.92rem',
+                              color: isToSec ? '#a855f7' : '#22c55e',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}>
+                              {nota.to === 'TODOS' ? '📢 Toda la Sala' : nota.to === 'CHAIR' ? '🏛️ Mesa / Secretaría' : nota.to === 'BACKROOM' ? '🚨 Backroom' : nota.to}
+                            </span>
+
+                            {/* Badge de tipo */}
+                            <span style={{
+                              fontSize: '0.68rem',
+                              fontWeight: '700',
+                              padding: '0.1rem 0.45rem',
+                              borderRadius: '4px',
+                              backgroundColor: nota.type === 'urgente' ? 'rgba(239, 68, 68, 0.15)' : nota.type === 'backroom' || nota.type === 'crisis' ? 'rgba(249, 115, 22, 0.15)' : 'var(--card-header-bg)',
+                              color: nota.type === 'urgente' ? '#ef4444' : nota.type === 'backroom' || nota.type === 'crisis' ? '#f97316' : 'var(--muted-text)',
+                              border: `1px solid ${nota.type === 'urgente' ? 'rgba(239, 68, 68, 0.3)' : nota.type === 'backroom' || nota.type === 'crisis' ? 'rgba(249, 115, 22, 0.3)' : 'var(--border-color)'}`
+                            }}>
+                              {nota.type?.toUpperCase() || 'GENERAL'}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ fontSize: '0.72rem', color: 'var(--muted-text)' }}>
+                              {new Date(nota.timestamp || Date.now()).toLocaleTimeString()}
+                            </span>
+                            {/* Botón rápido para responder */}
+                            {nota.from && !isFromSec && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setNotaMesaDestino(isFromBck ? 'BACKROOM' : nota.from);
+                                  const textEl = document.getElementById('secretariat-note-input');
+                                  if (textEl) textEl.focus();
+                                }}
+                                style={{
+                                  background: 'rgba(59, 130, 246, 0.12)',
+                                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                                  borderRadius: '5px',
+                                  color: '#60a5fa',
+                                  fontSize: '0.7rem',
+                                  fontWeight: '700',
+                                  padding: '0.15rem 0.45rem',
+                                  cursor: 'pointer'
+                                }}
+                                title={`Responder a ${nota.from}`}
+                              >
+                                Responder
+                              </button>
+                            )}
+                          </div>
                         </div>
 
-                        <span style={{ fontSize: '0.72rem', color: 'var(--muted-text)' }}>
-                          {new Date(nota.timestamp || Date.now()).toLocaleTimeString()}
-                        </span>
+                        <div style={{
+                          fontSize: '0.88rem',
+                          lineHeight: '1.45',
+                          backgroundColor: 'var(--card-header-bg)',
+                          padding: '0.65rem 0.85rem',
+                          borderRadius: '8px',
+                          border: '1px solid var(--border-color)',
+                          wordBreak: 'break-word'
+                        }}>
+                          {nota.text}
+                        </div>
                       </div>
-
-                      <div style={{
-                        fontSize: '0.88rem',
-                        lineHeight: '1.45',
-                        backgroundColor: 'var(--card-header-bg)',
-                        padding: '0.65rem 0.85rem',
-                        borderRadius: '8px',
-                        border: '1px solid var(--border-color)'
-                      }}>
-                        {nota.text}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -675,7 +851,8 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
               flexDirection: 'column',
               gap: '1rem',
               position: 'sticky',
-              top: '80px'
+              top: '80px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '800', fontSize: '0.95rem' }}>
                 <Send size={16} color="#60a5fa" /> Enviar Nota Oficial
@@ -755,6 +932,7 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
                     Mensaje
                   </label>
                   <textarea
+                    id="secretariat-note-input"
                     rows={4}
                     placeholder="Escribe el comunicado o mensaje..."
                     value={notaMesaTexto}
