@@ -999,28 +999,39 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '800', fontSize: '0.9rem', color: '#60a5fa' }}>
                     <Vote size={18} /> Votación Telemática en Vivo
                   </div>
-                  {miVotoEmitido && (
-                    <span style={{ fontSize: '0.72rem', fontWeight: '700', color: '#22c55e', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <Check size={13} /> Voto Registrado: {miVotoEmitido}
+                  {miVotoRegistrado && (
+                    <span style={{ fontSize: '0.74rem', fontWeight: '800', color: '#22c55e', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <Check size={13} /> Voto Emitido: {
+                        miVotoRegistrado === 'favor' ? 'A Favor' :
+                        miVotoRegistrado === 'contra' ? 'En Contra' :
+                        miVotoRegistrado === 'abstencion' ? 'Abstención' :
+                        miVotoRegistrado === 'pasar' ? 'Pase' : miVotoRegistrado
+                      }
                     </span>
                   )}
                 </div>
 
-                <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>
+                <div style={{ fontSize: '0.88rem', fontWeight: '700' }}>
                   {votacionSesion.asunto}
                 </div>
 
+                {votacionSesion?.tipoVotacion === 'procedural' && (
+                  <div style={{ fontSize: '0.72rem', color: '#fbbf24', fontWeight: '600' }}>
+                    ℹ️ Votación de procedimiento: No se permiten abstenciones.
+                  </div>
+                )}
+
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
                   <button
-                    onClick={() => handleEmitirVoto('A Favor')}
+                    onClick={() => handleEmitirVoto('favor')}
                     style={{
-                      backgroundColor: miVotoEmitido === 'A Favor' ? '#22c55e' : 'rgba(34, 197, 94, 0.15)',
-                      color: miVotoEmitido === 'A Favor' ? '#ffffff' : '#4ade80',
+                      backgroundColor: miVotoRegistrado === 'favor' ? '#22c55e' : 'rgba(34, 197, 94, 0.15)',
+                      color: miVotoRegistrado === 'favor' ? '#ffffff' : '#4ade80',
                       border: '1px solid rgba(34, 197, 94, 0.4)',
                       borderRadius: '8px',
-                      padding: '0.5rem',
+                      padding: '0.55rem 0.3rem',
                       fontWeight: '800',
-                      fontSize: '0.75rem',
+                      fontSize: '0.78rem',
                       cursor: 'pointer'
                     }}
                   >
@@ -1028,15 +1039,15 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
                   </button>
 
                   <button
-                    onClick={() => handleEmitirVoto('En Contra')}
+                    onClick={() => handleEmitirVoto('contra')}
                     style={{
-                      backgroundColor: miVotoEmitido === 'En Contra' ? '#ef4444' : 'rgba(239, 68, 68, 0.15)',
-                      color: miVotoEmitido === 'En Contra' ? '#ffffff' : '#f87171',
+                      backgroundColor: miVotoRegistrado === 'contra' ? '#ef4444' : 'rgba(239, 68, 68, 0.15)',
+                      color: miVotoRegistrado === 'contra' ? '#ffffff' : '#f87171',
                       border: '1px solid rgba(239, 68, 68, 0.4)',
                       borderRadius: '8px',
-                      padding: '0.5rem',
+                      padding: '0.55rem 0.3rem',
                       fontWeight: '800',
-                      fontSize: '0.75rem',
+                      fontSize: '0.78rem',
                       cursor: 'pointer'
                     }}
                   >
@@ -1044,31 +1055,38 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
                   </button>
 
                   <button
-                    onClick={() => handleEmitirVoto('Abstención')}
+                    disabled={votacionSesion?.tipoVotacion === 'procedural'}
+                    onClick={() => handleEmitirVoto('abstencion')}
                     style={{
-                      backgroundColor: miVotoEmitido === 'Abstención' ? '#eab308' : 'rgba(234, 179, 8, 0.15)',
-                      color: miVotoEmitido === 'Abstención' ? '#ffffff' : '#fde047',
-                      border: '1px solid rgba(234, 179, 8, 0.4)',
+                      backgroundColor: votacionSesion?.tipoVotacion === 'procedural'
+                        ? 'rgba(255,255,255,0.03)'
+                        : (miVotoRegistrado === 'abstencion' ? '#eab308' : 'rgba(234, 179, 8, 0.15)'),
+                      color: votacionSesion?.tipoVotacion === 'procedural'
+                        ? 'var(--muted-text)'
+                        : (miVotoRegistrado === 'abstencion' ? '#ffffff' : '#fde047'),
+                      border: `1px solid ${votacionSesion?.tipoVotacion === 'procedural' ? 'var(--subborder-color)' : 'rgba(234, 179, 8, 0.4)'}`,
                       borderRadius: '8px',
-                      padding: '0.5rem',
+                      padding: '0.55rem 0.3rem',
                       fontWeight: '800',
-                      fontSize: '0.75rem',
-                      cursor: 'pointer'
+                      fontSize: '0.78rem',
+                      cursor: votacionSesion?.tipoVotacion === 'procedural' ? 'not-allowed' : 'pointer',
+                      opacity: votacionSesion?.tipoVotacion === 'procedural' ? 0.4 : 1
                     }}
+                    title={votacionSesion?.tipoVotacion === 'procedural' ? 'No se permiten abstenciones en mociones o cuestiones de procedimiento' : ''}
                   >
                     Abstención
                   </button>
 
                   <button
-                    onClick={() => handleEmitirVoto('Pase')}
+                    onClick={() => handleEmitirVoto('pasar')}
                     style={{
-                      backgroundColor: miVotoEmitido === 'Pase' ? '#6b7280' : 'rgba(107, 114, 128, 0.15)',
-                      color: miVotoEmitido === 'Pase' ? '#ffffff' : '#d1d5db',
+                      backgroundColor: miVotoRegistrado === 'pasar' ? '#6b7280' : 'rgba(107, 114, 128, 0.15)',
+                      color: miVotoRegistrado === 'pasar' ? '#ffffff' : '#d1d5db',
                       border: '1px solid rgba(107, 114, 128, 0.4)',
                       borderRadius: '8px',
-                      padding: '0.5rem',
+                      padding: '0.55rem 0.3rem',
                       fontWeight: '800',
-                      fontSize: '0.75rem',
+                      fontSize: '0.78rem',
                       cursor: 'pointer'
                     }}
                   >
@@ -1227,48 +1245,92 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
               </div>
             </div>
 
-            {/* 3. Proponer Moción / Puntos de Orden */}
-            <div style={{
-              backgroundColor: 'var(--panel-color)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '12px',
-              padding: '1rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '1rem'
-            }}>
-              <div>
-                <div style={{ fontWeight: '800', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                  <FileText size={16} color="#eab308" /> Proponer Moción o Punto
+            {/* 3. Panel Separado: Mociones de Debate y Puntos Parlamentarios */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              {/* Card A: Mociones de Debate */}
+              <div style={{
+                backgroundColor: 'var(--panel-color)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '12px',
+                padding: '1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                gap: '0.75rem'
+              }}>
+                <div>
+                  <div style={{ fontWeight: '800', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#3b82f6' }}>
+                    <FileText size={16} /> Moción de Debate
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)', marginTop: '4px', lineHeight: '1.4' }}>
+                    {settings.allowMotions
+                      ? 'Propón Caucus Moderado, No Moderado, Consulta o Tour de Table.'
+                      : 'Mociones deshabilitadas por la Mesa.'}
+                  </div>
                 </div>
-                <div style={{ fontSize: '0.74rem', color: 'var(--muted-text)', marginTop: '2px' }}>
-                  {settings.allowMotions
-                    ? 'Formula una moción de Caucus, Punto de Orden o Privilegio hacia la Mesa.'
-                    : 'La presentación de mociones está deshabilitada por la Mesa.'}
-                </div>
+
+                <button
+                  disabled={!settings.allowMotions}
+                  onClick={() => setPedirMocionOpen(true)}
+                  style={{
+                    backgroundColor: settings.allowMotions ? 'var(--card-header-bg)' : 'rgba(255,255,255,0.04)',
+                    border: '1px solid var(--subborder-color)',
+                    color: settings.allowMotions ? 'var(--text-color)' : 'var(--muted-text)',
+                    borderRadius: '8px',
+                    padding: '0.55rem 0.75rem',
+                    fontWeight: '700',
+                    fontSize: '0.8rem',
+                    cursor: settings.allowMotions ? 'pointer' : 'not-allowed',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.35rem'
+                  }}
+                >
+                  {settings.allowMotions ? <PenTool size={14} /> : <Lock size={14} />} Proponer Moción
+                </button>
               </div>
 
-              <button
-                disabled={!settings.allowMotions}
-                onClick={() => setPedirMocionOpen(true)}
-                style={{
-                  backgroundColor: settings.allowMotions ? 'var(--card-header-bg)' : 'rgba(255,255,255,0.04)',
-                  border: '1px solid var(--subborder-color)',
-                  color: settings.allowMotions ? 'var(--text-color)' : 'var(--muted-text)',
-                  borderRadius: '8px',
-                  padding: '0.5rem 0.95rem',
-                  fontWeight: '700',
-                  fontSize: '0.8rem',
-                  cursor: settings.allowMotions ? 'pointer' : 'not-allowed',
-                  whiteSpace: 'nowrap',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.35rem'
-                }}
-              >
-                {settings.allowMotions ? <PenTool size={14} /> : <Lock size={14} />} Proponer
-              </button>
+              {/* Card B: Puntos Parlamentarios */}
+              <div style={{
+                backgroundColor: 'var(--panel-color)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '12px',
+                padding: '1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                gap: '0.75rem'
+              }}>
+                <div>
+                  <div style={{ fontWeight: '800', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#eab308' }}>
+                    <HelpCircle size={16} /> Punto Parlamentario
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)', marginTop: '4px', lineHeight: '1.4' }}>
+                    Privilegio personal, Orden, Duda de procedimiento o Información a la Mesa.
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setPedirPuntoOpen(true)}
+                  style={{
+                    backgroundColor: 'rgba(234, 179, 8, 0.12)',
+                    border: '1px solid rgba(234, 179, 8, 0.35)',
+                    color: '#eab308',
+                    borderRadius: '8px',
+                    padding: '0.55rem 0.75rem',
+                    fontWeight: '800',
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.35rem'
+                  }}
+                >
+                  <Sparkles size={14} /> Levantar Punto
+                </button>
+              </div>
             </div>
           </>
         )}
@@ -1493,6 +1555,47 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
         {/* ── PESTAÑA DE ENMIENDAS Y RESOLUCIONES ── */}
         {activeTab === 'ENMIENDAS' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {/* Barra superior de sincronización */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: 'var(--panel-color)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '10px',
+              padding: '0.75rem 1rem'
+            }}>
+              <div>
+                <div style={{ fontSize: '0.85rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <FileText size={16} color="#3b82f6" /> Proyecto de Resolución y Enmiendas
+                </div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)' }}>
+                  {(state.enmiendasSesion?.articulos || []).length} artículos registrados en el texto oficial
+                </div>
+              </div>
+
+              <button
+                onClick={requestFullSync}
+                style={{
+                  backgroundColor: 'var(--card-header-bg)',
+                  border: '1px solid var(--subborder-color)',
+                  color: 'var(--text-color)',
+                  borderRadius: '8px',
+                  padding: '0.45rem 0.85rem',
+                  fontSize: '0.78rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  transition: 'all 0.15s ease'
+                }}
+                title="Solicitar a la Mesa el estado más reciente de la resolución y enmiendas"
+              >
+                <RefreshCw size={14} /> Recargar / Sincronizar
+              </button>
+            </div>
+
             {/* Notificación de envío exitoso */}
             {enmiendaEnviadaFeedback && (
               <div style={{
@@ -1762,7 +1865,7 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
         )}
       </main>
 
-      {/* ── Modal para Proponer Moción ── */}
+      {/* ── Modal para Proponer Moción de Debate ── */}
       {pedirMocionOpen && (
         <div style={{
           position: 'fixed',
@@ -1790,9 +1893,9 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
             gap: '1rem'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800' }}>
-                Proponer Moción / Punto
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '800', fontSize: '1.1rem', color: '#3b82f6' }}>
+                <FileText size={18} /> Proponer Moción de Debate
+              </div>
               <button
                 onClick={() => setPedirMocionOpen(false)}
                 style={{ background: 'transparent', border: 'none', color: 'var(--muted-text)', cursor: 'pointer' }}
@@ -1803,7 +1906,7 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
 
             <form onSubmit={handleEnviarMocion} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)' }}>Tipo de Moción</label>
+                <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)' }}>Tipo de Moción de Debate</label>
                 <select
                   value={tipoMocion}
                   onChange={e => setTipoMocion(e.target.value)}
@@ -1820,73 +1923,110 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
                 >
                   <option value="Caucus Moderado">Caucus Moderado</option>
                   <option value="Caucus No Moderado">Caucus No Moderado</option>
-                  <option value="Punto de Orden">Punto de Orden</option>
-                  <option value="Punto de Privilegio Personal">Punto de Privilegio Personal</option>
-                  <option value="Punto de Duda Parlamentaria">Punto de Duda Parlamentaria</option>
-                  <option value="Cierre de Debate">Cierre de Debate</option>
+                  <option value="Consulta General">Consulta General</option>
+                  <option value="Tour de Table">Tour de Table</option>
                 </select>
               </div>
 
-              {tipoMocion.includes('Caucus') && (
-                <>
-                  <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)' }}>Tema Específico</label>
-                    <input
-                      type="text"
-                      placeholder="Ej: Financiamiento para energías renovables..."
-                      value={temaMocion}
-                      onChange={e => setTemaMocion(e.target.value)}
-                      style={{
-                        width: '100%',
-                        marginTop: '0.35rem',
-                        backgroundColor: 'var(--card-header-bg)',
-                        border: '1px solid var(--subborder-color)',
-                        borderRadius: '8px',
-                        padding: '0.6rem',
-                        color: 'var(--text-color)'
-                      }}
-                    />
-                  </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)' }}>Tema de Debate</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej: Cooperación internacional frente a la crisis..."
+                  value={temaMocion}
+                  onChange={e => setTemaMocion(e.target.value)}
+                  style={{
+                    width: '100%',
+                    marginTop: '0.35rem',
+                    backgroundColor: 'var(--card-header-bg)',
+                    border: '1px solid var(--subborder-color)',
+                    borderRadius: '8px',
+                    padding: '0.6rem',
+                    color: 'var(--text-color)'
+                  }}
+                />
+              </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                    <div>
-                      <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)' }}>Tiempo Total (segundos)</label>
-                      <input
-                        type="number"
-                        value={tiempoTotalMocion}
-                        onChange={e => setTiempoTotalMocion(Number(e.target.value))}
-                        style={{
-                          width: '100%',
-                          marginTop: '0.35rem',
-                          backgroundColor: 'var(--card-header-bg)',
-                          border: '1px solid var(--subborder-color)',
-                          borderRadius: '8px',
-                          padding: '0.55rem',
-                          color: 'var(--text-color)'
-                        }}
-                      />
-                    </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)' }}>Posición del Proponente en la Lista</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.35rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setPosicionProponenteMocion('Primero')}
+                    style={{
+                      padding: '0.5rem',
+                      borderRadius: '6px',
+                      border: `1px solid ${posicionProponenteMocion === 'Primero' ? '#3b82f6' : 'var(--subborder-color)'}`,
+                      backgroundColor: posicionProponenteMocion === 'Primero' ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                      color: posicionProponenteMocion === 'Primero' ? '#3b82f6' : 'var(--text-color)',
+                      fontWeight: '700',
+                      fontSize: '0.78rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Hablar de Primero
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPosicionProponenteMocion('Ultimo')}
+                    style={{
+                      padding: '0.5rem',
+                      borderRadius: '6px',
+                      border: `1px solid ${posicionProponenteMocion === 'Ultimo' ? '#3b82f6' : 'var(--subborder-color)'}`,
+                      backgroundColor: posicionProponenteMocion === 'Ultimo' ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                      color: posicionProponenteMocion === 'Ultimo' ? '#3b82f6' : 'var(--text-color)',
+                      fontWeight: '700',
+                      fontSize: '0.78rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Hablar de Último
+                  </button>
+                </div>
+              </div>
 
-                    <div>
-                      <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)' }}>Por Orador (segundos)</label>
-                      <input
-                        type="number"
-                        value={tiempoOradorMocion}
-                        onChange={e => setTiempoOradorMocion(Number(e.target.value))}
-                        style={{
-                          width: '100%',
-                          marginTop: '0.35rem',
-                          backgroundColor: 'var(--card-header-bg)',
-                          border: '1px solid var(--subborder-color)',
-                          borderRadius: '8px',
-                          padding: '0.55rem',
-                          color: 'var(--text-color)'
-                        }}
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)' }}>Tiempo Total (segundos)</label>
+                  <input
+                    type="number"
+                    disabled={tipoMocion === 'Tour de Table'}
+                    value={tiempoTotalMocion}
+                    onChange={e => setTiempoTotalMocion(Number(e.target.value))}
+                    style={{
+                      width: '100%',
+                      marginTop: '0.35rem',
+                      backgroundColor: 'var(--card-header-bg)',
+                      border: '1px solid var(--subborder-color)',
+                      borderRadius: '8px',
+                      padding: '0.55rem',
+                      color: 'var(--text-color)',
+                      opacity: tipoMocion === 'Tour de Table' ? 0.5 : 1
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)' }}>Por Orador (segundos)</label>
+                  <input
+                    type="number"
+                    disabled={tipoMocion === 'Caucus No Moderado' || tipoMocion === 'Consulta General'}
+                    value={tiempoOradorMocion}
+                    onChange={e => setTiempoOradorMocion(Number(e.target.value))}
+                    style={{
+                      width: '100%',
+                      marginTop: '0.35rem',
+                      backgroundColor: 'var(--card-header-bg)',
+                      border: '1px solid var(--subborder-color)',
+                      borderRadius: '8px',
+                      padding: '0.55rem',
+                      color: 'var(--text-color)',
+                      opacity: (tipoMocion === 'Caucus No Moderado' || tipoMocion === 'Consulta General') ? 0.5 : 1
+                    }}
+                  />
+                </div>
+              </div>
 
               <button
                 type="submit"
@@ -1902,7 +2042,113 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
                   marginTop: '0.5rem'
                 }}
               >
-                Enviar Moción a la Mesa
+                Transmitir Moción a la Mesa
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal para Levantar Punto Parlamentario ── */}
+      {pedirPuntoOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.75)',
+          backdropFilter: 'blur(6px)',
+          zIndex: 99999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem'
+        }}>
+          <div style={{
+            backgroundColor: 'var(--panel-color)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '14px',
+            padding: '1.5rem',
+            width: '460px',
+            maxWidth: '95vw',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '800', fontSize: '1.1rem', color: '#eab308' }}>
+                <HelpCircle size={18} /> Levantar Punto Parlamentario
+              </div>
+              <button
+                onClick={() => setPedirPuntoOpen(false)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--muted-text)', cursor: 'pointer' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleEnviarPunto} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)' }}>Tipo de Punto</label>
+                <select
+                  value={tipoPunto}
+                  onChange={e => setTipoPunto(e.target.value)}
+                  style={{
+                    width: '100%',
+                    marginTop: '0.35rem',
+                    backgroundColor: 'var(--card-header-bg)',
+                    border: '1px solid var(--subborder-color)',
+                    borderRadius: '8px',
+                    padding: '0.6rem',
+                    color: 'var(--text-color)',
+                    fontWeight: '700'
+                  }}
+                >
+                  <option value="Punto de Privilegio Personal">Punto de Privilegio Personal (Sonido, visibilidad, malestar)</option>
+                  <option value="Punto de Orden">Punto de Orden (Violación de reglamento)</option>
+                  <option value="Punto de Duda Parlamentaria">Punto de Duda Parlamentaria (Cuestión de procedimiento)</option>
+                  <option value="Punto de Información a la Mesa">Punto de Información a la Mesa Directiva</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted-text)' }}>Motivo / Explicación a la Mesa</label>
+                <textarea
+                  rows={3}
+                  required
+                  placeholder="Explica brevemente a la presidencia el motivo del punto..."
+                  value={motivoPunto}
+                  onChange={e => setMotivoPunto(e.target.value)}
+                  style={{
+                    width: '100%',
+                    marginTop: '0.35rem',
+                    backgroundColor: 'var(--card-header-bg)',
+                    border: '1px solid var(--subborder-color)',
+                    borderRadius: '8px',
+                    padding: '0.6rem',
+                    color: 'var(--text-color)',
+                    fontSize: '0.82rem'
+                  }}
+                />
+              </div>
+
+              <button
+                type="submit"
+                style={{
+                  backgroundColor: '#eab308',
+                  color: '#000000',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '0.65rem',
+                  fontWeight: '800',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  marginTop: '0.5rem',
+                  boxShadow: '0 4px 14px rgba(234, 179, 8, 0.3)'
+                }}
+              >
+                Transmitir Punto a la Presidencia
               </button>
             </form>
           </div>

@@ -95,9 +95,12 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
     speakingRequests,
     approveSpeakingRequest,
     rejectSpeakingRequest,
+    respondToPointWithNote,
     kickPeer,
     registerSessionHandlers
   } = useP2P();
+
+  const [respuestasPuntos, setRespuestasPuntos] = useState({});
 
   // Registrar sincronización bidireccional inmediata con el motor P2P / Host
   useEffect(() => {
@@ -798,142 +801,351 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
         )}
 
         {/* ═══════════════════════════════════════════════════════ */}
-        {/* PESTAÑA 2: SOLICITUDES DE ORADORES                      */}
+        {/* PESTAÑA 2: SOLICITUDES DE ORADORES Y PUNTOS             */}
         {/* ═══════════════════════════════════════════════════════ */}
-        {activeTab === 'SOLICITUDES' && (
-          <div style={{ maxWidth: '850px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div style={{
-              backgroundColor: 'var(--panel-color)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '14px',
-              padding: '1.25rem 1.5rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '800' }}>
-                  Cola de Solicitudes de Oradores y Mociones
-                </h3>
-                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.82rem', color: 'var(--muted-text)' }}>
-                  Como Secretaría, puedes aprobar o denegar en vivo los turnos y mociones solicitados por las delegaciones.
-                </p>
-              </div>
-              <span style={{
-                fontSize: '0.82rem',
-                fontWeight: '800',
-                padding: '0.3rem 0.75rem',
-                borderRadius: '8px',
-                backgroundColor: speakingRequests.length > 0 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)',
-                color: speakingRequests.length > 0 ? '#ef4444' : '#22c55e',
-                border: `1px solid ${speakingRequests.length > 0 ? 'rgba(239, 68, 68, 0.3)' : 'rgba(34, 197, 94, 0.3)'}`
-              }}>
-                {speakingRequests.length} Solicitudes Pendientes
-              </span>
-            </div>
+        {activeTab === 'SOLICITUDES' && (() => {
+          const puntosParlamentarios = speakingRequests.filter(r => r.speechType === 'POINT');
+          const otrasSolicitudes = speakingRequests.filter(r => r.speechType !== 'POINT');
 
-            {speakingRequests.length === 0 ? (
-              <div style={{
-                padding: '4rem 1.5rem',
-                textAlign: 'center',
-                backgroundColor: 'var(--panel-color)',
-                borderRadius: '14px',
-                border: '1px dashed var(--border-color)',
-                color: 'var(--muted-text)'
-              }}>
-                <Zap size={36} style={{ opacity: 0.35, marginBottom: '0.6rem' }} />
-                <div style={{ fontWeight: '700', fontSize: '0.95rem' }}>No hay solicitudes de orador pendientes</div>
-                <div style={{ fontSize: '0.78rem', marginTop: '4px' }}>
-                  Cuando un delegado solicite turno en modo con aprobación, aparecerá aquí instantáneamente.
-                </div>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {speakingRequests.map(req => (
-                  <div
-                    key={req.id}
-                    style={{
-                      backgroundColor: 'var(--panel-color)',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '12px',
-                      padding: '1.1rem 1.4rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: '1rem',
-                      boxShadow: '0 4px 14px rgba(0,0,0,0.15)'
-                    }}
-                  >
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                        <span style={{
-                          fontSize: '0.72rem',
-                          fontWeight: '800',
-                          padding: '0.2rem 0.6rem',
-                          borderRadius: '6px',
-                          backgroundColor: req.speechType === 'GSL' ? 'rgba(59, 130, 246, 0.18)' : (req.speechType === 'CAUCUS' ? 'rgba(168, 85, 247, 0.18)' : 'rgba(234, 179, 8, 0.18)'),
-                          color: req.speechType === 'GSL' ? '#60a5fa' : (req.speechType === 'CAUCUS' ? '#c084fc' : '#facc15'),
-                          border: `1px solid ${req.speechType === 'GSL' ? '#3b82f644' : (req.speechType === 'CAUCUS' ? '#a855f744' : '#eab30844')}`
-                        }}>
-                          {req.speechType === 'GSL' ? 'Lista GSL' : (req.speechType === 'CAUCUS' ? 'Caucus Moderado' : 'Moción')}
-                        </span>
-                        <span style={{ fontWeight: '800', fontSize: '1.05rem' }}>
-                          {req.country}
-                        </span>
+          return (
+            <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              
+              {/* ── SECCIÓN PRIORITARIA: AVISOS ESPECIALES / PUNTOS PARLAMENTARIOS ── */}
+              {puntosParlamentarios.length > 0 && (
+                <div style={{
+                  backgroundColor: 'rgba(234, 179, 8, 0.08)',
+                  border: '1.5px solid rgba(234, 179, 8, 0.45)',
+                  borderRadius: '16px',
+                  padding: '1.25rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1rem',
+                  boxShadow: '0 8px 24px rgba(234, 179, 8, 0.12)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                      <div style={{
+                        backgroundColor: '#eab308',
+                        color: '#000000',
+                        padding: '0.35rem',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <HelpCircle size={18} />
                       </div>
-
-                      {req.details?.tipo && (
-                        <div style={{ fontSize: '0.82rem', color: 'var(--muted-text)', marginTop: '4px' }}>
-                          Tipo: <strong style={{ color: 'var(--text-color)' }}>{req.details.tipo}</strong> {req.details.tema ? `• Tema: ${req.details.tema}` : ''}
-                        </div>
-                      )}
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                      <button
-                        onClick={() => approveSpeakingRequest(req)}
-                        style={{
-                          backgroundColor: '#22c55e',
-                          color: '#ffffff',
-                          border: 'none',
-                          borderRadius: '8px',
-                          padding: '0.55rem 1.2rem',
-                          fontSize: '0.85rem',
-                          fontWeight: '800',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.4rem',
-                          boxShadow: '0 2px 10px rgba(34, 197, 94, 0.35)',
-                          transition: 'all 0.15s ease'
-                        }}
-                      >
-                        <Check size={16} /> Aprobar
-                      </button>
-
-                      <button
-                        onClick={() => rejectSpeakingRequest(req.id)}
-                        style={{
-                          backgroundColor: 'rgba(239, 68, 68, 0.12)',
-                          border: '1px solid rgba(239, 68, 68, 0.35)',
-                          color: '#ef4444',
-                          borderRadius: '8px',
-                          padding: '0.55rem 1rem',
-                          fontSize: '0.85rem',
-                          fontWeight: '700',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease'
-                        }}
-                      >
-                        Rechazar
-                      </button>
+                      <div>
+                        <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800', color: '#facc15' }}>
+                          Avisos Especiales: Puntos Parlamentarios ({puntosParlamentarios.length})
+                        </h3>
+                        <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.78rem', color: 'var(--muted-text)' }}>
+                          Puntos de Privilegio, Orden, Duda o Información. Puedes responder inmediatamente al delegado por nota oficial con un clic.
+                        </p>
+                      </div>
                     </div>
                   </div>
-                ))}
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                    {puntosParlamentarios.map(point => {
+                      const inputVal = respuestasPuntos[point.id] || '';
+
+                      return (
+                        <div
+                          key={point.id}
+                          style={{
+                            backgroundColor: 'var(--panel-color)',
+                            border: '1px solid rgba(234, 179, 8, 0.35)',
+                            borderRadius: '12px',
+                            padding: '1.1rem 1.25rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.75rem',
+                            boxShadow: '0 4px 14px rgba(0,0,0,0.15)'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                              <CountryFlag nombre={point.country} size="sm" />
+                              <span style={{ fontWeight: '800', fontSize: '1.05rem', color: 'var(--text-color)' }}>
+                                {point.country}
+                              </span>
+                              <span style={{
+                                fontSize: '0.72rem',
+                                fontWeight: '800',
+                                padding: '0.15rem 0.55rem',
+                                borderRadius: '6px',
+                                backgroundColor: 'rgba(234, 179, 8, 0.18)',
+                                color: '#facc15',
+                                border: '1px solid rgba(234, 179, 8, 0.35)'
+                              }}>
+                                {point.details?.tipo || 'Punto Parlamentario'}
+                              </span>
+                            </div>
+
+                            <button
+                              onClick={() => rejectSpeakingRequest(point.id)}
+                              style={{
+                                backgroundColor: 'transparent',
+                                border: '1px solid var(--subborder-color)',
+                                color: 'var(--muted-text)',
+                                borderRadius: '6px',
+                                padding: '0.3rem 0.65rem',
+                                fontSize: '0.74rem',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.3rem'
+                              }}
+                              title="Descartar este punto parlamentario"
+                            >
+                              <X size={13} /> Descartar
+                            </button>
+                          </div>
+
+                          {/* Motivo o detalle del punto */}
+                          <div style={{
+                            backgroundColor: 'var(--card-header-bg)',
+                            padding: '0.65rem 0.85rem',
+                            borderRadius: '8px',
+                            border: '1px solid var(--subborder-color)',
+                            fontSize: '0.86rem',
+                            color: 'var(--text-color)',
+                            lineHeight: '1.45'
+                          }}>
+                            <strong>Motivo:</strong> {point.details?.tema || point.details?.motivo || 'Sin detalles especificados'}
+                          </div>
+
+                          {/* Respuestas Rápidas por Nota (Chips) */}
+                          <div>
+                            <div style={{ fontSize: '0.72rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
+                              Respuesta Rápida por Nota Oficial (1 Clic):
+                            </div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                              {[
+                                { label: 'Mesa toma nota', text: 'La Mesa Directiva toma nota de su observación.' },
+                                { label: 'Ha lugar', text: 'Ha lugar a su punto parlamentario.' },
+                                { label: 'No ha lugar', text: 'No ha lugar a su punto en este momento.' },
+                                { label: 'Se procede a solucionar', text: 'Se procede a solucionar la situación expuesta a la brevedad.' }
+                              ].map(chip => (
+                                <button
+                                  key={chip.label}
+                                  onClick={() => respondToPointWithNote(point, chip.text)}
+                                  style={{
+                                    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                                    border: '1px solid rgba(59, 130, 246, 0.35)',
+                                    color: '#60a5fa',
+                                    borderRadius: '6px',
+                                    padding: '0.35rem 0.65rem',
+                                    fontSize: '0.75rem',
+                                    fontWeight: '700',
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.3rem',
+                                    transition: 'all 0.15s ease'
+                                  }}
+                                >
+                                  💬 {chip.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Respuesta personalizada por nota */}
+                          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.2rem' }}>
+                            <input
+                              type="text"
+                              placeholder="O escribe una respuesta personalizada por nota..."
+                              value={inputVal}
+                              onChange={e => setRespuestasPuntos(prev => ({ ...prev, [point.id]: e.target.value }))}
+                              style={{
+                                flex: 1,
+                                backgroundColor: 'var(--card-header-bg)',
+                                border: '1px solid var(--subborder-color)',
+                                borderRadius: '8px',
+                                padding: '0.45rem 0.75rem',
+                                color: 'var(--text-color)',
+                                fontSize: '0.8rem'
+                              }}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter' && inputVal.trim()) {
+                                  respondToPointWithNote(point, inputVal.trim());
+                                  setRespuestasPuntos(prev => ({ ...prev, [point.id]: '' }));
+                                }
+                              }}
+                            />
+                            <button
+                              disabled={!inputVal.trim()}
+                              onClick={() => {
+                                if (!inputVal.trim()) return;
+                                respondToPointWithNote(point, inputVal.trim());
+                                setRespuestasPuntos(prev => ({ ...prev, [point.id]: '' }));
+                              }}
+                              style={{
+                                backgroundColor: 'var(--btn-bg)',
+                                color: 'var(--btn-text)',
+                                border: 'none',
+                                borderRadius: '8px',
+                                padding: '0.45rem 0.85rem',
+                                fontSize: '0.78rem',
+                                fontWeight: '800',
+                                cursor: inputVal.trim() ? 'pointer' : 'not-allowed',
+                                opacity: inputVal.trim() ? 1 : 0.5,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.35rem'
+                              }}
+                            >
+                              <Send size={13} /> Responder
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* ── SECCIÓN GENERAL: COLA DE ORADORES Y MOCIONES ── */}
+              <div style={{
+                backgroundColor: 'var(--panel-color)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '14px',
+                padding: '1.25rem 1.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '800' }}>
+                    Cola de Solicitudes de Oradores y Mociones
+                  </h3>
+                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.82rem', color: 'var(--muted-text)' }}>
+                    Como Secretaría, puedes aprobar o denegar en vivo los turnos y mociones solicitados por las delegaciones.
+                  </p>
+                </div>
+                <span style={{
+                  fontSize: '0.82rem',
+                  fontWeight: '800',
+                  padding: '0.3rem 0.75rem',
+                  borderRadius: '8px',
+                  backgroundColor: otrasSolicitudes.length > 0 ? 'rgba(59, 130, 246, 0.15)' : 'rgba(34, 197, 94, 0.15)',
+                  color: otrasSolicitudes.length > 0 ? '#60a5fa' : '#22c55e',
+                  border: `1px solid ${otrasSolicitudes.length > 0 ? 'rgba(59, 130, 246, 0.3)' : 'rgba(34, 197, 94, 0.3)'}`
+                }}>
+                  {otrasSolicitudes.length} Turnos Pendientes
+                </span>
               </div>
-            )}
-          </div>
-        )}
+
+              {otrasSolicitudes.length === 0 ? (
+                <div style={{
+                  padding: '3rem 1.5rem',
+                  textAlign: 'center',
+                  backgroundColor: 'var(--panel-color)',
+                  borderRadius: '14px',
+                  border: '1px dashed var(--border-color)',
+                  color: 'var(--muted-text)'
+                }}>
+                  <Zap size={36} style={{ opacity: 0.35, marginBottom: '0.6rem' }} />
+                  <div style={{ fontWeight: '700', fontSize: '0.95rem' }}>No hay solicitudes de turno pendientes</div>
+                  <div style={{ fontSize: '0.78rem', marginTop: '4px' }}>
+                    Cuando un delegado solicite turno GSL, Caucus o Moción en modo con aprobación, aparecerá aquí instantáneamente.
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {otrasSolicitudes.map(req => (
+                    <div
+                      key={req.id}
+                      style={{
+                        backgroundColor: 'var(--panel-color)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '12px',
+                        padding: '1.1rem 1.4rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '1rem',
+                        boxShadow: '0 4px 14px rgba(0,0,0,0.15)'
+                      }}
+                    >
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                          <CountryFlag nombre={req.country} size="sm" />
+                          <span style={{
+                            fontSize: '0.72rem',
+                            fontWeight: '800',
+                            padding: '0.2rem 0.6rem',
+                            borderRadius: '6px',
+                            backgroundColor: req.speechType === 'GSL' ? 'rgba(59, 130, 246, 0.18)' : (req.speechType === 'CAUCUS' ? 'rgba(168, 85, 247, 0.18)' : 'rgba(234, 179, 8, 0.18)'),
+                            color: req.speechType === 'GSL' ? '#60a5fa' : (req.speechType === 'CAUCUS' ? '#c084fc' : '#facc15'),
+                            border: `1px solid ${req.speechType === 'GSL' ? '#3b82f644' : (req.speechType === 'CAUCUS' ? '#a855f744' : '#eab30844')}`
+                          }}>
+                            {req.speechType === 'GSL' ? 'Lista GSL' : (req.speechType === 'CAUCUS' ? 'Caucus Moderado' : (req.details?.tipo || 'Moción'))}
+                          </span>
+                          <span style={{ fontWeight: '800', fontSize: '1.05rem' }}>
+                            {req.country}
+                          </span>
+                        </div>
+
+                        {req.details?.tema && (
+                          <div style={{ fontSize: '0.82rem', color: 'var(--muted-text)', marginTop: '4px' }}>
+                            Tema: <strong style={{ color: 'var(--text-color)' }}>{req.details.tema}</strong>
+                            {req.details.tiempoTotal ? ` • ${Math.round(req.details.tiempoTotal / 60)} min` : ''}
+                            {req.details.tiempoOrador ? ` • ${req.details.tiempoOrador}s / orador` : ''}
+                            {req.details.posicionProponente ? ` • Posición: ${req.details.posicionProponente}` : ''}
+                          </div>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                        <button
+                          onClick={() => approveSpeakingRequest(req)}
+                          style={{
+                            backgroundColor: '#22c55e',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '0.55rem 1.2rem',
+                            fontSize: '0.85rem',
+                            fontWeight: '800',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                            boxShadow: '0 2px 10px rgba(34, 197, 94, 0.35)',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <Check size={16} /> Aprobar
+                        </button>
+
+                        <button
+                          onClick={() => rejectSpeakingRequest(req.id)}
+                          style={{
+                            backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                            border: '1px solid rgba(239, 68, 68, 0.35)',
+                            color: '#ef4444',
+                            borderRadius: '8px',
+                            padding: '0.55rem 1rem',
+                            fontSize: '0.85rem',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          Rechazar
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* ═══════════════════════════════════════════════════════ */}
         {/* PESTAÑA: VOTACIONES (OFICIAL & MAPA MUNDIAL)            */}

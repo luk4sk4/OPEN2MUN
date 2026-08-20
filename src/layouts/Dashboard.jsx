@@ -287,6 +287,7 @@ const Dashboard = () => {
     broadcastCurrentState,
     registerSessionHandlers,
     roomSettings,
+    roomId,
     setViewMode
   } = useP2P();
 
@@ -968,7 +969,11 @@ const Dashboard = () => {
               >
                 <Radio size={14} className={connectionStatus === 'host_active' ? 'animate-pulse' : ''} />
                 <span>
-                  {connectionStatus === 'host_active' ? `${t('liveSession.live', 'En Vivo')} (${connectedPeers.length})` : t('liveSession.live', 'En Vivo')}
+                  {connectionStatus === 'host_active'
+                    ? (roomSettings?.privacyMode === 'hidden'
+                        ? `${t('liveSession.live', 'En Vivo')} (${connectedPeers.length})`
+                        : `${roomId || t('liveSession.live', 'En Vivo')} (${connectedPeers.length})`)
+                    : t('liveSession.live', 'En Vivo')}
                 </span>
                 {speakingRequests.length > 0 && (
                   <span style={{

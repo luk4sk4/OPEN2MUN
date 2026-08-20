@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   Radio, 
@@ -33,10 +33,13 @@ import {
   Coffee,
   Heart,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useTranslation } from 'react-i18next';
+import CountryFlag from '../common/CountryFlag';
 import { useP2P } from '../../context/P2PContext';
 import { useSession } from '../../context/SessionContext';
 
@@ -67,6 +70,18 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
   const [tabActiva, setTabActiva] = useState('SALA'); // 'SALA' | 'AJUSTES' | 'CONEXIONES' | 'SOLICITUDES'
   const [filtroConexiones, setFiltroConexiones] = useState('');
   const [mostrarInfoDonacion, setMostrarInfoDonacion] = useState(false);
+  const [mostrarQRFullscreen, setMostrarQRFullscreen] = useState(false);
+  const [revelarCodigoOculto, setRevelarCodigoOculto] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && mostrarQRFullscreen) {
+        setMostrarQRFullscreen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mostrarQRFullscreen]);
 
   if (!isOpen) return null;
 
@@ -577,35 +592,91 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
               {/* Panel de Código de Sala y QR */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: isHostActive ? '1fr 200px' : '1fr',
+                gridTemplateColumns: isHostActive && roomSettings?.privacyMode !== 'hidden' ? '1fr 200px' : '1fr',
                 gap: '1.25rem',
                 alignItems: 'center'
               }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   {/* Input Código de Sala */}
                   <div>
-                    <label style={{ fontSize: '0.76rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      {t('liveSession.roomCode', 'Código de Sala')} (Peer ID)
-                    </label>
-                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.4rem' }}>
-                      <input
-                        type="text"
-                        disabled={isHostActive}
-                        value={roomId}
-                        onChange={e => setRoomId(e.target.value.toUpperCase())}
-                        style={{
-                          flex: 1,
-                          backgroundColor: 'var(--card-header-bg)',
-                          border: '1px solid var(--subborder-color)',
-                          borderRadius: '10px',
-                          padding: '0.7rem 1rem',
-                          color: 'var(--text-color)',
-                          fontWeight: '800',
-                          fontFamily: 'monospace',
-                          fontSize: '1.15rem',
-                          letterSpacing: '0.06em'
-                        }}
-                      />
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                      <label style={{ fontSize: '0.76rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        {t('liveSession.roomCode', 'Código de Sala')} (Peer ID)
+                      </label>
+                      {roomSettings?.privacyMode === 'hidden' && (
+                        <button
+                          type="button"
+                          onClick={() => setRevelarCodigoOculto(prev => !prev)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: 0,
+                            cursor: 'pointer',
+                            fontSize: '0.72rem',
+                            color: '#f59e0b',
+                            fontWeight: '700',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.3rem'
+                          }}
+                        >
+                          {revelarCodigoOculto ? <EyeOff size={13} /> : <Eye size={13} />}
+                          <span>{revelarCodigoOculto ? t('liveSession.clickToHide', 'Ocultar código') : t('liveSession.clickToReveal', 'Censurado (Clic para ver)')}</span>
+                        </button>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+                        <input
+                          type={roomSettings?.privacyMode === 'hidden' && !revelarCodigoOculto ? 'password' : 'text'}
+                          disabled={isHostActive}
+                          value={roomId}
+                          onChange={e => setRoomId(e.target.value.toUpperCase())}
+                          onClick={() => {
+                            if (roomSettings?.privacyMode === 'hidden') {
+                              setRevelarCodigoOculto(prev => !prev);
+                            }
+                          }}
+                          style={{
+                            width: '100%',
+                            backgroundColor: 'var(--card-header-bg)',
+                            border: `1px solid ${roomSettings?.privacyMode === 'hidden' && !revelarCodigoOculto ? 'rgba(245, 158, 11, 0.4)' : 'var(--subborder-color)'}`,
+                            borderRadius: '10px',
+                            padding: roomSettings?.privacyMode === 'hidden' ? '0.7rem 2.5rem 0.7rem 1rem' : '0.7rem 1rem',
+                            color: 'var(--text-color)',
+                            fontWeight: '800',
+                            fontFamily: 'monospace',
+                            fontSize: '1.15rem',
+                            letterSpacing: '0.06em',
+                            cursor: roomSettings?.privacyMode === 'hidden' ? 'pointer' : 'text'
+                          }}
+                          title={roomSettings?.privacyMode === 'hidden' ? (revelarCodigoOculto ? t('liveSession.clickToHide', 'Clic para ocultar') : t('liveSession.clickToReveal', 'Clic para revelar')) : undefined}
+                        />
+                        {roomSettings?.privacyMode === 'hidden' && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRevelarCodigoOculto(prev => !prev);
+                            }}
+                            style={{
+                              position: 'absolute',
+                              right: '10px',
+                              background: 'transparent',
+                              border: 'none',
+                              color: 'var(--muted-text)',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              padding: '4px'
+                            }}
+                            title={revelarCodigoOculto ? t('liveSession.clickToHide', 'Ocultar código') : t('liveSession.clickToReveal', 'Mostrar código')}
+                          >
+                            {revelarCodigoOculto ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </button>
+                        )}
+                      </div>
                       {isHostActive && (
                         <button
                           onClick={handleCopyLink}
@@ -674,27 +745,54 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                   </div>
                 </div>
 
-                {/* Código QR si el Host está activo */}
-                {isHostActive && (
-                  <div style={{
-                    backgroundColor: '#ffffff',
-                    padding: '12px',
-                    borderRadius: '14px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.4)',
-                    alignSelf: 'center'
-                  }}>
+                {/* Código QR si el Host está activo y NO está en modo oculto */}
+                {isHostActive && roomSettings?.privacyMode !== 'hidden' && (
+                  <div
+                    onClick={() => setMostrarQRFullscreen(true)}
+                    title="Haz clic para ver el código QR en pantalla completa"
+                    style={{
+                      backgroundColor: '#ffffff',
+                      padding: '12px 14px 10px 14px',
+                      borderRadius: '14px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 10px 30px rgba(0,0,0,0.4)',
+                      alignSelf: 'center',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      userSelect: 'none'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-3px) scale(1.03)';
+                      e.currentTarget.style.boxShadow = '0 14px 35px rgba(59, 130, 246, 0.4)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                      e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.4)';
+                    }}
+                  >
                     <QRCodeSVG
                       value={shareableJoinUrl}
                       size={160}
                       level="M"
                       includeMargin={false}
                     />
-                    <span style={{ fontSize: '0.68rem', fontWeight: '700', color: '#18181b', marginTop: '6px' }}>
-                      Escanear para Unirse
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '0.7rem',
+                      fontWeight: '800',
+                      color: '#18181b',
+                      marginTop: '6px'
+                    }}>
+                      <Maximize2 size={12} color="#2563eb" />
+                      <span>Escanear para Unirse</span>
+                    </div>
+                    <span style={{ fontSize: '0.6rem', fontWeight: '600', color: '#64748b', marginTop: '1px' }}>
+                      (Clic para ampliar)
                     </span>
                   </div>
                 )}
@@ -707,6 +805,80 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
           {/* ═══════════════════════════════════════════════════════ */}
           {tabActiva === 'AJUSTES' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.4rem' }}>
+              {/* Sección 0: Modo de Privacidad y Visualización de la Sala */}
+              <div style={{
+                backgroundColor: 'var(--card-header-bg)',
+                border: '1px solid var(--subborder-color)',
+                borderRadius: '14px',
+                padding: '1.25rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem'
+              }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontWeight: '800', fontSize: '0.95rem' }}>
+                    <Shield size={18} color="#3b82f6" /> {t('liveSession.privacyMode', 'Modo de Privacidad y Visualización')}
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--muted-text)', marginTop: '2px' }}>
+                    {t('liveSession.privacyModeDesc', 'Configura cómo se muestra el código y el QR de la sala en la interfaz.')}
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
+                  {/* Opción 1: Modo Normal */}
+                  <div
+                    onClick={() => updateRoomSettings({ privacyMode: 'normal' })}
+                    style={{
+                      border: `1.5px solid ${roomSettings.privacyMode !== 'hidden' ? '#22c55e' : 'var(--subborder-color)'}`,
+                      backgroundColor: roomSettings.privacyMode !== 'hidden' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(255,255,255,0.02)',
+                      borderRadius: '10px',
+                      padding: '0.85rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.35rem',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: '800', color: roomSettings.privacyMode !== 'hidden' ? '#22c55e' : 'var(--text-color)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <Eye size={15} /> {t('liveSession.modeNormal', 'Modo Normal')}
+                      </span>
+                      {roomSettings.privacyMode !== 'hidden' && <CheckCircle2 size={16} color="#22c55e" />}
+                    </div>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--muted-text)', lineHeight: '1.3' }}>
+                      {t('liveSession.modeNormalDesc', 'Muestra el código en la barra superior, código de sala visible y código QR disponible para escanear.')}
+                    </span>
+                  </div>
+
+                  {/* Opción 2: Modo Oculto */}
+                  <div
+                    onClick={() => updateRoomSettings({ privacyMode: 'hidden' })}
+                    style={{
+                      border: `1.5px solid ${roomSettings.privacyMode === 'hidden' ? '#eab308' : 'var(--subborder-color)'}`,
+                      backgroundColor: roomSettings.privacyMode === 'hidden' ? 'rgba(234, 179, 8, 0.12)' : 'rgba(255,255,255,0.02)',
+                      borderRadius: '10px',
+                      padding: '0.85rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.35rem',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: '800', color: roomSettings.privacyMode === 'hidden' ? '#eab308' : 'var(--text-color)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <EyeOff size={15} /> {t('liveSession.modeHidden', 'Modo Oculto')}
+                      </span>
+                      {roomSettings.privacyMode === 'hidden' && <CheckCircle2 size={16} color="#eab308" />}
+                    </div>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--muted-text)', lineHeight: '1.3' }}>
+                      {t('liveSession.modeHiddenDesc', 'Muestra "En Vivo" en la barra superior, código censurado (clic para ver) y oculta el código QR.')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {/* Sección 1: Modo de Solicitud de Oradores (GSL y Caucus) */}
               <div style={{
                 backgroundColor: 'var(--card-header-bg)',
@@ -1316,16 +1488,17 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                       }}
                     >
                       <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                          <CountryFlag nombre={req.country} size="sm" />
                           <span style={{
                             fontSize: '0.7rem',
                             fontWeight: '800',
                             padding: '0.15rem 0.5rem',
                             borderRadius: '4px',
-                            backgroundColor: req.speechType === 'GSL' ? 'rgba(59, 130, 246, 0.2)' : (req.speechType === 'CAUCUS' ? 'rgba(168, 85, 247, 0.2)' : 'rgba(234, 179, 8, 0.2)'),
-                            color: req.speechType === 'GSL' ? '#60a5fa' : (req.speechType === 'CAUCUS' ? '#c084fc' : '#facc15')
+                            backgroundColor: req.speechType === 'GSL' ? 'rgba(59, 130, 246, 0.2)' : (req.speechType === 'CAUCUS' ? 'rgba(168, 85, 247, 0.2)' : (req.speechType === 'POINT' ? 'rgba(234, 179, 8, 0.2)' : 'rgba(234, 179, 8, 0.2)')),
+                            color: req.speechType === 'GSL' ? '#60a5fa' : (req.speechType === 'CAUCUS' ? '#c084fc' : (req.speechType === 'POINT' ? '#facc15' : '#facc15'))
                           }}>
-                            {req.speechType === 'GSL' ? 'Lista GSL' : (req.speechType === 'CAUCUS' ? 'Caucus' : 'Moción')}
+                            {req.speechType === 'GSL' ? 'Lista GSL' : (req.speechType === 'CAUCUS' ? 'Caucus' : (req.speechType === 'POINT' ? 'Punto Parlamentario' : 'Moción'))}
                           </span>
                           <span style={{ fontWeight: '800', fontSize: '0.95rem' }}>
                             {req.country}
@@ -1334,7 +1507,7 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
 
                         {req.details?.tipo && (
                           <div style={{ fontSize: '0.78rem', color: 'var(--muted-text)', marginTop: '4px' }}>
-                            Tipo: <strong>{req.details.tipo}</strong> {req.details.tema ? `• Tema: ${req.details.tema}` : ''}
+                            Tipo: <strong>{req.details.tipo}</strong> {req.details.tema ? `• Motivo/Tema: ${req.details.tema}` : ''}
                           </div>
                         )}
                       </div>
@@ -1384,6 +1557,225 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
           )}
         </div>
       </div>
+
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* VISTA PANTALLA COMPLETA DEL CÓDIGO QR                              */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {mostrarQRFullscreen && roomSettings?.privacyMode !== 'hidden' && (
+        <div
+          onClick={() => setMostrarQRFullscreen(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(5, 8, 18, 0.95)',
+            backdropFilter: 'blur(16px)',
+            zIndex: 100010,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+            animation: 'fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+          }}
+        >
+          {/* Botón Flotante para Cerrar */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setMostrarQRFullscreen(false);
+            }}
+            aria-label="Cerrar pantalla completa"
+            title="Cerrar (Esc)"
+            style={{
+              position: 'absolute',
+              top: '24px',
+              right: '28px',
+              backgroundColor: 'rgba(255, 255, 255, 0.08)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+              color: '#ffffff',
+              width: '46px',
+              height: '46px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              backdropFilter: 'blur(10px)',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.4)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.25)';
+              e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+              e.currentTarget.style.transform = 'scale(1.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.18)';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+          >
+            <X size={24} />
+          </button>
+
+          {/* Tarjeta Central */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '1.25rem',
+              maxWidth: '560px',
+              width: '100%',
+              textAlign: 'center',
+              color: '#ffffff'
+            }}
+          >
+            {/* Cabecera / Badge */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.45rem' }}>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.4rem 1.1rem',
+                borderRadius: '999px',
+                backgroundColor: 'rgba(59, 130, 246, 0.18)',
+                border: '1px solid rgba(59, 130, 246, 0.35)',
+                color: '#60a5fa',
+                fontSize: '0.85rem',
+                fontWeight: '700',
+                letterSpacing: '0.04em'
+              }}>
+                <Radio size={16} color="#38bdf8" />
+                SESIÓN EN DIRECTO OPENMUN
+              </div>
+              
+              <h2 style={{
+                fontSize: '2rem',
+                fontWeight: '800',
+                margin: '0.35rem 0 0 0',
+                color: '#ffffff',
+                letterSpacing: '-0.02em'
+              }}>
+                Escanear para Unirse
+              </h2>
+              
+              <p style={{
+                fontSize: '0.95rem',
+                color: '#94a3b8',
+                margin: 0,
+                maxWidth: '440px',
+                lineHeight: 1.45
+              }}>
+                Apunta con la cámara de tu teléfono móvil o tablet al código QR para conectar inmediatamente con la sala.
+              </p>
+            </div>
+
+            {/* Contenedor blanco con el QR grande de alta definición */}
+            <div style={{
+              backgroundColor: '#ffffff',
+              padding: '24px',
+              borderRadius: '24px',
+              boxShadow: '0 25px 70px rgba(0, 0, 0, 0.7), 0 0 50px rgba(59, 130, 246, 0.25)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '4px solid rgba(255, 255, 255, 0.95)',
+              transition: 'transform 0.2s ease'
+            }}>
+              <QRCodeSVG
+                value={shareableJoinUrl}
+                size={320}
+                level="H"
+                includeMargin={false}
+              />
+            </div>
+
+            {/* Código de Sala y Acciones Rápidas */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '0.85rem',
+              width: '100%'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.75rem',
+                backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.16)',
+                padding: '0.65rem 1.4rem',
+                borderRadius: '14px',
+                backdropFilter: 'blur(8px)'
+              }}>
+                <span style={{ fontSize: '0.88rem', color: '#94a3b8', fontWeight: '600' }}>
+                  Código de Sala:
+                </span>
+                <span style={{
+                  fontSize: '1.25rem',
+                  fontWeight: '800',
+                  letterSpacing: '0.12em',
+                  fontFamily: 'monospace',
+                  color: '#38bdf8'
+                }}>
+                  {roomId}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.85rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <button
+                  onClick={handleCopyLink}
+                  style={{
+                    backgroundColor: copiado ? '#10b981' : '#2563eb',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '0.65rem 1.25rem',
+                    fontWeight: '700',
+                    fontSize: '0.88rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.45rem',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 4px 16px rgba(37, 99, 235, 0.4)'
+                  }}
+                >
+                  {copiado ? <Check size={16} /> : <Copy size={16} />}
+                  {copiado ? '¡Enlace Copiado!' : 'Copiar Enlace Directo'}
+                </button>
+
+                <button
+                  onClick={() => setMostrarQRFullscreen(false)}
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    color: '#ffffff',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '0.65rem 1.25rem',
+                    fontWeight: '600',
+                    fontSize: '0.88rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.45rem',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <X size={16} /> Salir de Pantalla Completa
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -66,6 +66,7 @@ export function sanitizeStateForBroadcast(state) {
  * Ajustes de Sala y Permisos por defecto
  */
 export const DEFAULT_ROOM_SETTINGS = {
+  privacyMode: 'normal',          // 'normal' | 'hidden'
   speakerRequestMode: 'approval', // 'direct' | 'approval' | 'disabled'
   caucusRequestMode: 'approval',  // 'direct' | 'approval' | 'disabled'
   allowDelegateNotes: true,

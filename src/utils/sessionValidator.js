@@ -80,6 +80,9 @@ export function validateSessionJSON(rawInput) {
     'caucusActivo',
     'votacionSesion',
     'agendaSesion',
+    'enmiendasSesion',
+    'proyectoResolucion',
+    'resolucion',
     'alertasCrisis',
     'eventosCrisis',
     'crisisEventos',
@@ -184,6 +187,16 @@ export function validateSessionJSON(rawInput) {
       valid: false,
       errorType: 'CORRUPT_VOTACION',
       message: 'El estado de votación debe ser un objeto válido.'
+    };
+  }
+
+  // Proyecto de Resolución y Enmiendas
+  const rawEnmiendas = sanitized.enmiendasSesion || sanitized.proyectoResolucion || sanitized.resolucion || snapshot.openmun_enmiendas;
+  if (rawEnmiendas !== undefined && (typeof rawEnmiendas !== 'object' || rawEnmiendas === null || Array.isArray(rawEnmiendas))) {
+    return {
+      valid: false,
+      errorType: 'CORRUPT_ENMIENDAS',
+      message: 'La estructura de enmiendas y proyecto de resolución debe ser un objeto válido.'
     };
   }
 

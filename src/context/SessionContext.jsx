@@ -151,7 +151,7 @@ export const SessionProvider = ({ children }) => {
     localStorage.setItem('openmun_enmiendas', JSON.stringify(enmiendasSesion));
 
     const sesionDataCompleta = {
-      version: '1.0',
+      version: '2.0',
       ultimaActualizacion: new Date().toISOString(),
       comision: nombreComite || 'Asamblea General - openMUN',
       paises,
@@ -163,6 +163,12 @@ export const SessionProvider = ({ children }) => {
       caucusActivo,
       votacionSesion,
       agendaSesion,
+      proyectoResolucion: {
+        titulo: enmiendasSesion?.tituloProyecto || 'Proyecto de Resolución A/RES/79/1',
+        texto: enmiendasSesion?.textoResolucion || '',
+        articulos: enmiendasSesion?.articulos || [],
+        enmiendas: enmiendasSesion?.enmiendas || []
+      },
       enmiendasSesion
     };
 
@@ -1112,33 +1118,8 @@ export const SessionProvider = ({ children }) => {
     };
   }, [ejecutarAccion, aplicarEstadoExterno, tabInstanceId]);
 
-  // 1. GENERAR SNAPSHOT sesion_activa.json
+  // 1. GENERAR SNAPSHOT sesion_activa.json OPTIMIZADO
   const generarSnapshotSesion = useCallback(() => {
-    const localStorageSnapshot = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key) {
-        const rawVal = localStorage.getItem(key);
-        try {
-          localStorageSnapshot[key] = JSON.parse(rawVal);
-        } catch {
-          localStorageSnapshot[key] = rawVal;
-        }
-      }
-    }
-
-    localStorageSnapshot['openmun_paises'] = paises;
-    localStorageSnapshot['openmun_oradores'] = oradoresCola;
-    localStorageSnapshot['openmun_oradores_caucus'] = oradoresCaucus;
-    localStorageSnapshot['openmun_intervenciones'] = registroIntervenciones;
-    localStorageSnapshot['openmun_mociones'] = mociones;
-    localStorageSnapshot['openmun_historico_mociones'] = historicoMociones;
-    localStorageSnapshot['openmun_caucus'] = caucusActivo;
-    localStorageSnapshot['openmun_votacion'] = votacionSesion;
-    localStorageSnapshot['openmun_agenda'] = agendaSesion;
-    localStorageSnapshot['openmun_comite'] = nombreComite;
-    localStorageSnapshot['openmun_enmiendas'] = enmiendasSesion;
-
     // Recuperar alertas y eventos de crisis
     let crisisEventosExport = [];
     let crisisRelojExport = null;
@@ -1158,9 +1139,26 @@ export const SessionProvider = ({ children }) => {
       if (savedNotes) notesExport = JSON.parse(savedNotes);
     } catch (e) {}
 
-    localStorageSnapshot['openmun_crisis_eventos'] = crisisEventosExport;
-    if (crisisRelojExport) localStorageSnapshot['openmun_crisis_reloj'] = crisisRelojExport;
-    if (notesExport && notesExport.length > 0) localStorageSnapshot['openmun_notes'] = notesExport;
+    // Recuperar configuración de UI
+    let configExport = undefined;
+    try {
+      const savedConfig = localStorage.getItem('openmun_config');
+      if (savedConfig) configExport = JSON.parse(savedConfig);
+    } catch (e) {}
+
+    // Recuperar ajustes de sala
+    let roomSettingsExport = undefined;
+    try {
+      const savedRoomSettings = localStorage.getItem('openmun_room_settings');
+      if (savedRoomSettings) roomSettingsExport = JSON.parse(savedRoomSettings);
+    } catch (e) {}
+
+    const resolucionData = {
+      titulo: enmiendasSesion?.tituloProyecto || enmiendasSesion?.titulo || 'Proyecto de Resolución A/RES/79/1',
+      texto: enmiendasSesion?.textoResolucion || enmiendasSesion?.texto || '',
+      articulos: Array.isArray(enmiendasSesion?.articulos) ? enmiendasSesion.articulos : [],
+      enmiendas: Array.isArray(enmiendasSesion?.enmiendas) ? enmiendasSesion.enmiendas : []
+    };
 
     return {
       version: '2.0',
@@ -1176,14 +1174,13 @@ export const SessionProvider = ({ children }) => {
       caucusActivo,
       votacionSesion,
       agendaSesion,
-      nombreComite,
-      enmiendasSesion,
-      alertasCrisis: crisisEventosExport,
+      proyectoResolucion: resolucionData,
+      enmiendasSesion: resolucionData,
       eventosCrisis: crisisEventosExport,
       relojCrisis: crisisRelojExport,
       notes: notesExport,
-      config: localStorageSnapshot['openmun_config'] || undefined,
-      localStorageSnapshot
+      roomSettings: roomSettingsExport,
+      config: configExport
     };
   }, [paises, oradoresCola, oradoresCaucus, registroIntervenciones, mociones, historicoMociones, caucusActivo, votacionSesion, agendaSesion, nombreComite, enmiendasSesion]);
 
@@ -1516,14 +1513,21 @@ export const SessionProvider = ({ children }) => {
         localStorage.setItem('openmun_comite', comiteData);
       }
 
-      const enmiendasData = sesionData.enmiendasSesion || snapshot.openmun_enmiendas;
-      if (enmiendasData && typeof enmiendasData === 'object') {
-        setEnmiendasSesionState(enmiendasData);
-        localStorage.setItem('openmun_enmiendas', JSON.stringify(enmiendasData));
+      // Proyecto de Resolución y Enmiendas
+      const rawResData = sesionData.proyectoResolucion || sesionData.enmiendasSesion || sesionData.resolucion || snapshot.openmun_enmiendas;
+      if (rawResData && typeof rawResData === 'object') {
+        const normalizedResolucion = {
+          tituloProyecto: rawResData.tituloProyecto || rawResData.titulo || 'Proyecto de Resolución A/RES/79/1',
+          textoResolucion: rawResData.textoResolucion || rawResData.texto || '',
+          articulos: Array.isArray(rawResData.articulos) ? rawResData.articulos : [],
+          enmiendas: Array.isArray(rawResData.enmiendas) ? rawResData.enmiendas : []
+        };
+        setEnmiendasSesionState(normalizedResolucion);
+        localStorage.setItem('openmun_enmiendas', JSON.stringify(normalizedResolucion));
       }
 
       // Alertas y Eventos de Crisis
-      const crisisData = sesionData.alertasCrisis || sesionData.eventosCrisis || sesionData.crisisEventos || sesionData.crisis || snapshot.openmun_crisis_eventos;
+      const crisisData = sesionData.eventosCrisis || sesionData.alertasCrisis || sesionData.crisisEventos || sesionData.crisis || snapshot.openmun_crisis_eventos;
       if (Array.isArray(crisisData)) {
         localStorage.setItem('openmun_crisis_eventos', JSON.stringify(crisisData));
       }
@@ -1538,6 +1542,12 @@ export const SessionProvider = ({ children }) => {
       const notesData = sesionData.notes || sesionData.openmun_notes || snapshot.openmun_notes;
       if (Array.isArray(notesData)) {
         localStorage.setItem('openmun_notes', JSON.stringify(notesData));
+      }
+
+      // Ajustes de Sala P2P / WebSocket
+      const roomSettingsData = sesionData.roomSettings || sesionData.openmun_room_settings || snapshot.openmun_room_settings;
+      if (roomSettingsData && typeof roomSettingsData === 'object') {
+        localStorage.setItem('openmun_room_settings', JSON.stringify(roomSettingsData));
       }
 
       const configData = sesionData.config || sesionData.openmun_config || snapshot.openmun_config;

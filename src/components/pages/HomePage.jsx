@@ -125,8 +125,8 @@ const FEATURES = [
 
 const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
   const { t } = useTranslation();
-  // Estado para visibilidad del banner de donaciones
-  const [showDonationBanner, setShowDonationBanner] = useState(true);
+  // Estado para visibilidad del banner de donaciones (oculto temporalmente)
+  const [showDonationBanner, setShowDonationBanner] = useState(false);
 
   // Estado para notas de presidencia
   const [notasUsuario, setNotasUsuario] = useState(() => {
