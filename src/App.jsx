@@ -8,6 +8,7 @@ import { useRouter } from './utils/router';
 
 const DelegateView = lazy(() => import('./components/views/DelegateView'));
 const SecretariatView = lazy(() => import('./components/views/SecretariatView'));
+const StaffView = lazy(() => import('./components/views/StaffView'));
 const BackroomView = lazy(() => import('./components/views/BackroomView'));
 const JoinSessionView = lazy(() => import('./components/views/JoinSessionView'));
 const PrivacyPolicyPage = lazy(() => import('./components/pages/PrivacyPolicyPage'));
@@ -60,6 +61,9 @@ function AppContent() {
       case 'backroom':
         document.title = 'OpenMUN - Backroom';
         break;
+      case 'staff':
+        document.title = 'OpenMUN - Staff';
+        break;
       case 'secretariat':
         document.title = 'OpenMUN - Secretaría';
         break;
@@ -86,6 +90,12 @@ function AppContent() {
         // Conexión automática por BroadcastChannel para pantalla secreta local
         joinRoom({
           targetRole: 'secretariat',
+          isLocalBroadcast: true
+        });
+      } else if (isLocal && mode === 'staff') {
+        // Conexión automática por BroadcastChannel para consola de staff local
+        joinRoom({
+          targetRole: 'staff',
           isLocalBroadcast: true
         });
       }
@@ -116,6 +126,8 @@ function AppContent() {
     currentView = <DelegateView isLight={isLight} onExit={() => setViewMode('chair')} />;
   } else if (viewMode === 'secretariat') {
     currentView = <SecretariatView isLight={isLight} onExit={() => setViewMode('chair')} />;
+  } else if (viewMode === 'staff') {
+    currentView = <StaffView isLight={isLight} onExit={() => setViewMode('chair')} />;
   } else if (viewMode === 'backroom') {
     currentView = <BackroomView isLight={isLight} onExit={() => setViewMode('chair')} />;
   } else if (viewMode === 'join') {

@@ -111,6 +111,8 @@ export const MSG_TYPES = {
   SEND_NOTE: 'SEND_NOTE',
   NOTE_RECEIVED: 'NOTE_RECEIVED',
   CRISIS_ALERT: 'CRISIS_ALERT',
+  BROADCAST_ANNOUNCEMENT: 'BROADCAST_ANNOUNCEMENT',
+  DELETE_ANNOUNCEMENT: 'DELETE_ANNOUNCEMENT',
   CAST_VOTE: 'CAST_VOTE',
   SUBMIT_AMENDMENT: 'SUBMIT_AMENDMENT',
   REQUEST_FULL_SYNC: 'REQUEST_FULL_SYNC',
@@ -142,16 +144,20 @@ class NetworkService {
     this.roomId = null;
     this.secretPassword = 'secreto123';
     this.backroomPassword = 'crisis123';
+    this.staffPassword = 'staff123';
     this.roomSettings = { ...DEFAULT_ROOM_SETTINGS };
     this.latestSpeakingRequests = [];
     this.latestSessionState = null;
     this.latestNotes = [];
+    this.latestAnnouncements = [];
     this.broadcastDebounceTimer = null;
     this.pendingStateToBroadcast = null;
     try {
       if (typeof window !== 'undefined') {
         const savedNotes = localStorage.getItem('openmun_notes');
         if (savedNotes) this.latestNotes = JSON.parse(savedNotes);
+        const savedAnn = localStorage.getItem('openmun_announcements');
+        if (savedAnn) this.latestAnnouncements = JSON.parse(savedAnn);
       }
     } catch (e) {}
   }
@@ -161,6 +167,16 @@ class NetworkService {
     if (!Array.isArray(this.latestNotes)) return [];
     if (role === 'secretariat' || role === 'chair') {
       return this.latestNotes;
+    }
+    if (role === 'staff') {
+      return this.latestNotes.filter(n =>
+        n.to?.toUpperCase() === 'STAFF' ||
+        n.fromRole === 'staff' ||
+        n.from?.toUpperCase() === 'STAFF' ||
+        n.to?.toUpperCase() === 'TODOS' ||
+        n.type === 'logistica' ||
+        n.type === 'paje'
+      );
     }
     if (role === 'backroom') {
       return this.latestNotes.filter(n =>
@@ -209,6 +225,7 @@ class NetworkService {
     this.roomId = cleanRoomId;
     this.secretPassword = options.secretPassword || 'secreto123';
     this.backroomPassword = options.backroomPassword || 'crisis123';
+    this.staffPassword = options.staffPassword || 'staff123';
     if (options.roomSettings) {
       this.roomSettings = { ...DEFAULT_ROOM_SETTINGS, ...options.roomSettings };
     }
@@ -488,6 +505,12 @@ class NetworkService {
         } else {
           errorMsg = 'Contraseña de Backroom incorrecta';
         }
+      } else if (role === 'staff') {
+        if (password === this.staffPassword) {
+          authorized = true;
+        } else {
+          errorMsg = 'Contraseña de Staff incorrecta';
+        }
       } else {
         errorMsg = 'Rol desconocido';
       }
@@ -497,7 +520,7 @@ class NetworkService {
           const meta = { role, country: country?.trim() || null, connectedAt: Date.now(), socketId: senderSocketId };
           this.peerMetadata.set(senderSocketId, meta);
 
-          const roleNotes = meta.country ? this.getNotesForRole(role, meta.country) : (role === 'backroom' ? this.getNotesForRole('backroom') : []);
+          const roleNotes = meta.country ? this.getNotesForRole(role, meta.country) : (role === 'backroom' ? this.getNotesForRole('backroom') : (role === 'staff' ? this.getNotesForRole('staff') : []));
 
           // Enviar respuesta de autenticación dirigida al socket solicitante
           this.emitSocketMessage({
@@ -510,7 +533,8 @@ class NetworkService {
               roomSettings: this.roomSettings,
               speakingRequests: this.latestSpeakingRequests || [],
               sessionState: this.latestSessionState || null,
-              notes: roleNotes
+              notes: roleNotes,
+              announcements: this.latestAnnouncements || []
             }
           });
 
@@ -533,7 +557,8 @@ class NetworkService {
             roomSettings: this.roomSettings,
             speakingRequests: this.latestSpeakingRequests || [],
             sessionState: this.latestSessionState || null,
-            notes: this.latestNotes || []
+            notes: this.latestNotes || [],
+            announcements: this.latestAnnouncements || []
           }
         });
       }
@@ -755,6 +780,67 @@ class NetworkService {
       }
       return;
     }
+
+    // 9. Emisión de Avisos Importantes (Secretaría / Staff / Presidencia)
+    if (message.type === MSG_TYPES.BROADCAST_ANNOUNCEMENT) {
+      if (senderMeta.role === 'staff' || senderMeta.role === 'secretariat' || senderMeta.role === 'chair' || isLocal) {
+        const raw = message.payload || {};
+        const ann = {
+          id: raw.id || `ann-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          title: raw.title || 'Aviso Oficial',
+          text: raw.text || '',
+          priority: raw.priority || 'general', // 'general' | 'urgente' | 'logistica' | 'receso' | 'documento'
+          senderRole: senderMeta?.role || raw.senderRole || 'staff',
+          senderName: raw.senderName || (senderMeta?.role === 'secretariat' ? 'Secretaría' : (senderMeta?.role === 'chair' ? 'Mesa de Presidencia' : 'Staff')),
+          timestamp: raw.timestamp || Date.now(),
+          target: raw.target || 'ALL'
+        };
+
+        if (!this.latestAnnouncements) this.latestAnnouncements = [];
+        this.latestAnnouncements = [ann, ...this.latestAnnouncements.filter(a => a.id !== ann.id)];
+        try {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('openmun_announcements', JSON.stringify(this.latestAnnouncements));
+          }
+        } catch (e) {}
+
+        this.emitSocketMessage({
+          type: MSG_TYPES.BROADCAST_ANNOUNCEMENT,
+          payload: ann
+        });
+        this.broadcastLocal({
+          type: MSG_TYPES.BROADCAST_ANNOUNCEMENT,
+          payload: ann
+        });
+        this.emit('announcement_received', ann);
+      }
+      return;
+    }
+
+    // 10. Borrado de Avisos Importantes
+    if (message.type === MSG_TYPES.DELETE_ANNOUNCEMENT) {
+      if (senderMeta.role === 'staff' || senderMeta.role === 'secretariat' || senderMeta.role === 'chair' || isLocal) {
+        const annId = message.payload?.id;
+        if (annId) {
+          this.latestAnnouncements = (this.latestAnnouncements || []).filter(a => a.id !== annId);
+          try {
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('openmun_announcements', JSON.stringify(this.latestAnnouncements));
+            }
+          } catch (e) {}
+          this.emitSocketMessage({
+            type: MSG_TYPES.DELETE_ANNOUNCEMENT,
+            payload: { id: annId }
+          });
+          this.broadcastLocal({
+            type: MSG_TYPES.DELETE_ANNOUNCEMENT,
+            payload: { id: annId }
+          });
+          this.emit('announcement_deleted', { id: annId });
+        }
+      }
+      return;
+    }
   }
 
   // Enrutador de Notas según Matriz de Privacidad
@@ -768,6 +854,8 @@ class NetworkService {
       fromName = 'Backroom';
     } else if (fromRole === 'secretariat' || fromRole === 'chair') {
       fromName = 'Secretaría';
+    } else if (fromRole === 'staff') {
+      fromName = 'Staff';
     } else if (fromRole === 'delegate') {
       fromName = senderMeta?.country || 'Delegación';
     }
@@ -832,7 +920,8 @@ class NetworkService {
     const fullPayload = {
       ...cleanState,
       roomSettings: this.roomSettings,
-      speakingRequests: this.latestSpeakingRequests || []
+      speakingRequests: this.latestSpeakingRequests || [],
+      announcements: this.latestAnnouncements || []
     };
 
     let msgToSend = null;
@@ -920,6 +1009,53 @@ class NetworkService {
 
     this.emitSocketMessage(msg);
     this.broadcastLocal(msg);
+  }
+
+  broadcastAnnouncement(announcementData) {
+    const ann = {
+      id: announcementData.id || `ann-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      title: announcementData.title || 'Aviso Oficial',
+      text: announcementData.text || '',
+      priority: announcementData.priority || 'general',
+      senderRole: announcementData.senderRole || 'chair',
+      senderName: announcementData.senderName || 'Mesa de Presidencia',
+      timestamp: announcementData.timestamp || Date.now(),
+      target: announcementData.target || 'ALL'
+    };
+    if (!this.latestAnnouncements) this.latestAnnouncements = [];
+    this.latestAnnouncements = [ann, ...this.latestAnnouncements.filter(a => a.id !== ann.id)];
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('openmun_announcements', JSON.stringify(this.latestAnnouncements));
+      }
+    } catch (e) {}
+    this.emitSocketMessage({
+      type: MSG_TYPES.BROADCAST_ANNOUNCEMENT,
+      payload: ann
+    });
+    this.broadcastLocal({
+      type: MSG_TYPES.BROADCAST_ANNOUNCEMENT,
+      payload: ann
+    });
+    this.emit('announcement_received', ann);
+  }
+
+  deleteAnnouncement(announcementId) {
+    this.latestAnnouncements = (this.latestAnnouncements || []).filter(a => a.id !== announcementId);
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('openmun_announcements', JSON.stringify(this.latestAnnouncements));
+      }
+    } catch (e) {}
+    this.emitSocketMessage({
+      type: MSG_TYPES.DELETE_ANNOUNCEMENT,
+      payload: { id: announcementId }
+    });
+    this.broadcastLocal({
+      type: MSG_TYPES.DELETE_ANNOUNCEMENT,
+      payload: { id: announcementId }
+    });
+    this.emit('announcement_deleted', { id: announcementId });
   }
 
   broadcastPeerList() {
@@ -1051,6 +1187,14 @@ class NetworkService {
       payload,
       timestamp: Date.now()
     });
+  }
+
+  broadcastAnnouncementAsClient(announcementData) {
+    return this.sendToServer(MSG_TYPES.BROADCAST_ANNOUNCEMENT, announcementData);
+  }
+
+  deleteAnnouncementAsClient(announcementId) {
+    return this.sendToServer(MSG_TYPES.DELETE_ANNOUNCEMENT, { id: announcementId });
   }
 
   kickPeerAsClient(peerId) {

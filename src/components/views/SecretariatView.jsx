@@ -40,7 +40,9 @@ import {
   Sparkles,
   Sun,
   Moon,
-  SkipForward
+  SkipForward,
+  Megaphone,
+  AlertTriangle
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import CountryFlag from '../common/CountryFlag';
@@ -97,7 +99,10 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
     rejectSpeakingRequest,
     respondToPointWithNote,
     kickPeer,
-    registerSessionHandlers
+    registerSessionHandlers,
+    announcements = [],
+    broadcastAnnouncement,
+    deleteAnnouncement
   } = useP2P();
 
   const [respuestasPuntos, setRespuestasPuntos] = useState({});
@@ -110,7 +115,7 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
     });
   }, [registerSessionHandlers, aplicarEstadoExterno, ejecutarAccion]);
 
-  const [activeTab, setActiveTab] = useState('NOTAS'); // 'NOTAS' | 'SOLICITUDES' | 'DEBATE' | 'VOTACION' | 'INFO' | 'CRISIS' | 'AJUSTES' | 'CONEXIONES'
+  const [activeTab, setActiveTab] = useState('NOTAS'); // 'NOTAS' | 'AVISOS' | 'SOLICITUDES' | 'DEBATE' | 'VOTACION' | 'INFO' | 'CRISIS' | 'AJUSTES' | 'CONEXIONES'
   const [subTabNotas, setSubTabNotas] = useState('SECRETARIA'); // 'SECRETARIA' | 'DELEGACIONES'
   const [subTabInfo, setSubTabInfo] = useState('MATRIZ'); // 'MATRIZ' | 'ANADIR' | 'HISTORICO' | 'AGENDA' | 'IMPORTAR' | 'MOCIONES' | 'RULETA'
   const [subTabVotacion, setSubTabVotacion] = useState('OFICIAL'); // 'OFICIAL' | 'MAPA'
@@ -120,6 +125,12 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
   const [notaMesaTexto, setNotaMesaTexto] = useState('');
   const [notaMesaDestino, setNotaMesaDestino] = useState('TODOS');
   const [tipoNota, setTipoNota] = useState('general');
+
+  // Estados para Emisión de Avisos desde Secretaría
+  const [tituloAvisoSec, setTituloAvisoSec] = useState('');
+  const [textoAvisoSec, setTextoAvisoSec] = useState('');
+  const [prioridadAvisoSec, setPrioridadAvisoSec] = useState('general');
+  const [feedbackAvisoSec, setFeedbackAvisoSec] = useState(null);
 
   const state = remoteSessionState || {};
   const nombreComite = sessionNombreComite || state.comision || state.nombreComite || 'Comité en Vivo';
@@ -381,6 +392,26 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
         </button>
 
         <button
+          onClick={() => setActiveTab('AVISOS')}
+          style={{
+            padding: '0.5rem 0.95rem',
+            borderRadius: '8px',
+            border: 'none',
+            backgroundColor: activeTab === 'AVISOS' ? 'var(--btn-bg)' : 'transparent',
+            color: activeTab === 'AVISOS' ? 'var(--btn-text)' : 'var(--muted-text)',
+            fontWeight: '700',
+            fontSize: '0.82rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.45rem',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <Megaphone size={15} /> Avisos Oficiales ({announcements.length})
+        </button>
+
+        <button
           onClick={() => setActiveTab('SOLICITUDES')}
           style={{
             padding: '0.5rem 0.95rem',
@@ -548,6 +579,289 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
             boxShadow: '0 8px 30px rgba(0,0,0,0.35)'
           }}>
             <GestorCrisis />
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════ */}
+        {/* PESTAÑA: AVISOS OFICIALES (SECRETARÍA)                 */}
+        {/* ═══════════════════════════════════════════════════════ */}
+        {activeTab === 'AVISOS' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 420px) 1fr', gap: '1.5rem', maxWidth: '1200px', margin: '0 auto' }}>
+            {/* Formulario de Emisión de Aviso */}
+            <div style={{
+              backgroundColor: 'var(--panel-color)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '16px',
+              padding: '1.4rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                <Megaphone size={20} color="#f59e0b" />
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '800' }}>
+                  {t('views.staff.emitAnnouncement', 'Emitir Aviso a Delegaciones')}
+                </h3>
+              </div>
+              <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--muted-text)', lineHeight: '1.4' }}>
+                Los comunicados emitidos desde Secretaría se proyectan inmediatamente en la cabecera y buzón de avisos de todos los delegados.
+              </p>
+
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (!tituloAvisoSec.trim() && !textoAvisoSec.trim()) return;
+                broadcastAnnouncement({
+                  title: tituloAvisoSec.trim() || 'Aviso de Secretaría',
+                  text: textoAvisoSec.trim(),
+                  priority: prioridadAvisoSec,
+                  senderRole: 'secretariat',
+                  senderName: 'Secretaría'
+                });
+                setTituloAvisoSec('');
+                setTextoAvisoSec('');
+                setFeedbackAvisoSec('Aviso emitido con éxito a toda la sala');
+                setTimeout(() => setFeedbackAvisoSec(null), 3500);
+              }} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.74rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                    {t('views.staff.announcementTitle', 'Título del Aviso')}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Inicio de Votación / Entrega de Cláusulas"
+                    value={tituloAvisoSec}
+                    onChange={e => setTituloAvisoSec(e.target.value)}
+                    style={{
+                      width: '100%',
+                      marginTop: '0.35rem',
+                      backgroundColor: 'var(--card-header-bg)',
+                      border: '1px solid var(--subborder-color)',
+                      borderRadius: '8px',
+                      padding: '0.65rem 0.85rem',
+                      color: 'var(--text-color)',
+                      fontSize: '0.88rem',
+                      fontWeight: '700'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.74rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                    {t('views.staff.announcementPriority', 'Categoría / Prioridad')}
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.45rem', marginTop: '0.35rem' }}>
+                    {[
+                      { id: 'general', label: t('views.staff.priorityGeneral', 'General'), color: '#fbbf24' },
+                      { id: 'urgente', label: t('views.staff.priorityUrgent', 'Urgente / Importante'), color: '#ef4444' },
+                      { id: 'logistica', label: t('views.staff.priorityLogistics', 'Logística de Sala'), color: '#60a5fa' },
+                      { id: 'receso', label: t('views.staff.priorityRecess', 'Receso / Coffee Break'), color: '#34d399' },
+                      { id: 'documento', label: t('views.staff.priorityDoc', 'Entrega Documentos'), color: '#c084fc' }
+                    ].map(cat => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setPrioridadAvisoSec(cat.id)}
+                        style={{
+                          backgroundColor: prioridadAvisoSec === cat.id ? 'rgba(245, 158, 11, 0.15)' : 'var(--card-header-bg)',
+                          border: `1.5px solid ${prioridadAvisoSec === cat.id ? '#f59e0b' : 'var(--subborder-color)'}`,
+                          borderRadius: '8px',
+                          padding: '0.5rem 0.4rem',
+                          fontSize: '0.76rem',
+                          fontWeight: '700',
+                          color: prioridadAvisoSec === cat.id ? 'var(--text-color)' : 'var(--muted-text)',
+                          cursor: 'pointer',
+                          textAlign: 'center',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.74rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                    {t('views.staff.announcementMsg', 'Mensaje o Instrucción')}
+                  </label>
+                  <textarea
+                    rows={4}
+                    placeholder="Instrucción oficial de la Secretaría para los delegados..."
+                    value={textoAvisoSec}
+                    onChange={e => setTextoAvisoSec(e.target.value)}
+                    style={{
+                      width: '100%',
+                      marginTop: '0.35rem',
+                      backgroundColor: 'var(--card-header-bg)',
+                      border: '1px solid var(--subborder-color)',
+                      borderRadius: '8px',
+                      padding: '0.65rem 0.85rem',
+                      color: 'var(--text-color)',
+                      fontSize: '0.84rem',
+                      resize: 'vertical'
+                    }}
+                  />
+                </div>
+
+                {feedbackAvisoSec && (
+                  <div style={{
+                    backgroundColor: 'rgba(34, 197, 94, 0.12)',
+                    border: '1px solid rgba(34, 197, 94, 0.3)',
+                    color: '#22c55e',
+                    borderRadius: '8px',
+                    padding: '0.55rem 0.75rem',
+                    fontSize: '0.78rem',
+                    fontWeight: '700',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem'
+                  }}>
+                    <Check size={14} /> {feedbackAvisoSec}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={!tituloAvisoSec.trim() && !textoAvisoSec.trim()}
+                  style={{
+                    backgroundColor: '#f59e0b',
+                    color: '#000000',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '0.75rem',
+                    fontWeight: '800',
+                    fontSize: '0.9rem',
+                    cursor: (tituloAvisoSec.trim() || textoAvisoSec.trim()) ? 'pointer' : 'not-allowed',
+                    opacity: (tituloAvisoSec.trim() || textoAvisoSec.trim()) ? 1 : 0.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    boxShadow: '0 4px 16px rgba(245, 158, 11, 0.3)',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <Send size={16} /> {t('views.staff.sendAnnouncementBtn', 'Emitir Aviso Oficial')}
+                </button>
+              </form>
+            </div>
+
+            {/* Listado de Avisos Activos */}
+            <div style={{
+              backgroundColor: 'var(--panel-color)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '16px',
+              padding: '1.4rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                  <Megaphone size={20} color="#f59e0b" />
+                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '800' }}>
+                    {t('views.staff.activeAnnouncements', 'Avisos Activos en Sala')} ({announcements.length})
+                  </h3>
+                </div>
+              </div>
+
+              {announcements.length === 0 ? (
+                <div style={{
+                  padding: '3rem 1.5rem',
+                  textAlign: 'center',
+                  color: 'var(--muted-text)',
+                  border: '1px dashed var(--subborder-color)',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.75rem'
+                }}>
+                  <Megaphone size={36} style={{ opacity: 0.3 }} />
+                  <div style={{ fontSize: '0.9rem', fontWeight: '600' }}>
+                    {t('views.staff.noAnnouncements', 'No hay avisos emitidos en este momento.')}
+                  </div>
+                  <div style={{ fontSize: '0.78rem' }}>
+                    Usa el formulario lateral para emitir un aviso prioritario a todas las delegaciones.
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                  {announcements.map((ann) => {
+                    const isUrgent = ann.priority === 'urgente';
+                    return (
+                      <div
+                        key={ann.id}
+                        style={{
+                          backgroundColor: 'var(--card-header-bg)',
+                          border: `1px solid ${isUrgent ? 'rgba(239, 68, 68, 0.4)' : 'var(--subborder-color)'}`,
+                          borderLeft: `4px solid ${isUrgent ? '#ef4444' : '#f59e0b'}`,
+                          borderRadius: '12px',
+                          padding: '1.1rem 1.25rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.55rem',
+                          position: 'relative'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <span style={{
+                              fontSize: '0.68rem',
+                              fontWeight: '800',
+                              backgroundColor: isUrgent ? 'rgba(239, 68, 68, 0.18)' : 'rgba(245, 158, 11, 0.18)',
+                              color: isUrgent ? '#ef4444' : '#f59e0b',
+                              padding: '0.15rem 0.5rem',
+                              borderRadius: '6px',
+                              letterSpacing: '0.04em'
+                            }}>
+                              {(ann.priority || 'general').toUpperCase()}
+                            </span>
+                            <span style={{ fontSize: '0.74rem', color: 'var(--muted-text)', fontWeight: '600' }}>
+                              De: <strong style={{ color: 'var(--text-color)' }}>{ann.senderName || 'Secretaría / Staff'}</strong>
+                            </span>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--muted-text)' }}>
+                              • {new Date(ann.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+
+                          <button
+                            onClick={() => deleteAnnouncement(ann.id)}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: 'var(--muted-text)',
+                              cursor: 'pointer',
+                              padding: '4px',
+                              borderRadius: '6px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                              fontSize: '0.72rem'
+                            }}
+                            title={t('views.staff.deleteAnnouncement', 'Retirar Aviso')}
+                          >
+                            <Trash2 size={15} color="#ef4444" />
+                          </button>
+                        </div>
+
+                        <div style={{ fontSize: '0.98rem', fontWeight: '800', color: 'var(--text-color)' }}>
+                          {ann.title}
+                        </div>
+
+                        {ann.text && (
+                          <div style={{ fontSize: '0.84rem', color: 'var(--muted-text)', lineHeight: '1.45', whiteSpace: 'pre-wrap' }}>
+                            {ann.text}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

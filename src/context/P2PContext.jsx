@@ -11,7 +11,7 @@ export const P2PProvider = ({ children }) => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const mode = params.get('mode');
-      if (mode && ['delegate', 'secretariat', 'backroom', 'join'].includes(mode)) {
+      if (mode && ['delegate', 'secretariat', 'backroom', 'staff', 'join'].includes(mode)) {
         return mode;
       }
       if (params.get('room')) {
@@ -21,7 +21,7 @@ export const P2PProvider = ({ children }) => {
     return 'chair'; // Modo Chair por defecto
   });
 
-  const [role, setRole] = useState('none'); // 'chair' | 'delegate' | 'secretariat' | 'backroom' | 'none'
+  const [role, setRole] = useState('none'); // 'chair' | 'delegate' | 'secretariat' | 'backroom' | 'staff' | 'none'
   const [connectionStatus, setConnectionStatus] = useState('disconnected'); // 'disconnected' | 'connecting' | 'connected' | 'host_active' | 'error'
   const [error, setError] = useState(null);
   const [roomId, setRoomId] = useState(() => {
@@ -44,6 +44,10 @@ export const P2PProvider = ({ children }) => {
     return localStorage.getItem('openmun_backroom_pass') || 'crisis123';
   });
 
+  const [staffPassword, setStaffPassword] = useState(() => {
+    return localStorage.getItem('openmun_staff_pass') || 'staff123';
+  });
+
   // Ajustes de Sala y Permisos de Delegados
   const [roomSettings, setRoomSettings] = useState(() => {
     try {
@@ -58,6 +62,14 @@ export const P2PProvider = ({ children }) => {
   const [notes, setNotes] = useState(() => {
     try {
       const saved = localStorage.getItem('openmun_notes');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [announcements, setAnnouncements] = useState(() => {
+    try {
+      const saved = localStorage.getItem('openmun_announcements');
       return saved ? JSON.parse(saved) : [];
     } catch (e) {
       return [];
@@ -87,6 +99,13 @@ export const P2PProvider = ({ children }) => {
       peerService.latestNotes = notes;
     }
   }, [notes]);
+
+  useEffect(() => {
+    localStorage.setItem('openmun_announcements', JSON.stringify(announcements));
+    if (peerService) {
+      peerService.latestAnnouncements = announcements;
+    }
+  }, [announcements]);
 
   // Sincronizar ajustes P2P y notas si se importan datos a localStorage
   useEffect(() => {
@@ -291,6 +310,16 @@ export const P2PProvider = ({ children }) => {
         addNotification(`Nota de ${data.from} para ${data.to}`, 'info');
       }
 
+      // Recepción de Avisos Importantes en tiempo real
+      if (event === 'announcement_received') {
+        setAnnouncements(prev => [data, ...prev.filter(a => a.id !== data.id)]);
+        addNotification(`Aviso Oficial: ${data.title}`, 'info');
+      }
+
+      if (event === 'announcement_deleted') {
+        setAnnouncements(prev => prev.filter(a => a.id !== data.id));
+      }
+
       // Mensajes recibidos en Host desde clientes
       if (event === 'message_received_by_host') {
         const { senderMeta, message } = data;
@@ -325,6 +354,9 @@ export const P2PProvider = ({ children }) => {
             }
             if (message.payload.speakingRequests) {
               setSpeakingRequests(message.payload.speakingRequests);
+            }
+            if (Array.isArray(message.payload.announcements)) {
+              setAnnouncements(message.payload.announcements);
             }
             if (Array.isArray(message.payload.notes) && message.payload.notes.length > 0) {
               setNotes(prev => {
@@ -373,6 +405,9 @@ export const P2PProvider = ({ children }) => {
           if (message.payload?.speakingRequests) {
             setSpeakingRequests(message.payload.speakingRequests);
           }
+          if (Array.isArray(message.payload?.announcements)) {
+            setAnnouncements(message.payload.announcements);
+          }
         } else if (message.type === MSG_TYPES.DELTA_STATE) {
           setRemoteSessionState(prev => {
             const updated = applyStateDelta(prev || {}, message.payload);
@@ -384,6 +419,9 @@ export const P2PProvider = ({ children }) => {
             }
             if (updated.speakingRequests) {
               setSpeakingRequests(updated.speakingRequests);
+            }
+            if (Array.isArray(updated.announcements)) {
+              setAnnouncements(updated.announcements);
             }
             return updated;
           });
@@ -404,6 +442,11 @@ export const P2PProvider = ({ children }) => {
           });
           setUnreadNotesCount(prev => prev + 1);
           addNotification(`Nueva nota de ${message.payload.from}`, 'info');
+        } else if (message.type === MSG_TYPES.BROADCAST_ANNOUNCEMENT) {
+          setAnnouncements(prev => [message.payload, ...prev.filter(a => a.id !== message.payload.id)]);
+          addNotification(`Aviso Oficial: ${message.payload.title}`, 'info');
+        } else if (message.type === MSG_TYPES.DELETE_ANNOUNCEMENT) {
+          setAnnouncements(prev => prev.filter(a => a.id !== message.payload?.id));
         } else if (message.type === MSG_TYPES.CRISIS_ALERT) {
           addNotification(`AVISO DE CRISIS: ${message.payload.title || 'Comunicado oficial'}`, 'error');
         } else if (message.type === MSG_TYPES.KICK) {
@@ -425,7 +468,8 @@ export const P2PProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('openmun_secret_pass', secretPassword);
     localStorage.setItem('openmun_backroom_pass', backroomPassword);
-  }, [secretPassword, backroomPassword]);
+    localStorage.setItem('openmun_staff_pass', staffPassword);
+  }, [secretPassword, backroomPassword, staffPassword]);
 
   useEffect(() => {
     localStorage.setItem('openmun_room_settings', JSON.stringify(roomSettings));
@@ -447,10 +491,11 @@ export const P2PProvider = ({ children }) => {
     addNotification('Ajustes de sala guardados', 'success');
   }, [roomSettings, connectionStatus, role, addNotification]);
 
-  const startHosting = useCallback(async (customRoomId, secPass, bckPass, customSettings = null) => {
+  const startHosting = useCallback(async (customRoomId, secPass, bckPass, customSettings = null, stfPass = null) => {
     const finalRoomId = customRoomId || roomId || generateRoomCode();
     const finalSecPass = secPass || secretPassword;
     const finalBckPass = bckPass || backroomPassword;
+    const finalStaffPass = stfPass || staffPassword;
     const finalSettings = customSettings || roomSettings;
 
     setConnectionStatus('connecting');
@@ -459,6 +504,7 @@ export const P2PProvider = ({ children }) => {
       await peerService.initHost(finalRoomId, {
         secretPassword: finalSecPass,
         backroomPassword: finalBckPass,
+        staffPassword: finalStaffPass,
         roomSettings: finalSettings
       });
       return true;
@@ -467,7 +513,7 @@ export const P2PProvider = ({ children }) => {
       setConnectionStatus('error');
       return false;
     }
-  }, [roomId, secretPassword, backroomPassword, roomSettings]);
+  }, [roomId, secretPassword, backroomPassword, staffPassword, roomSettings]);
 
   const stopHosting = useCallback(() => {
     peerService.destroy();
@@ -569,6 +615,8 @@ export const P2PProvider = ({ children }) => {
         senderName = 'Backroom';
       } else if (role === 'secretariat' || role === 'chair') {
         senderName = 'Secretaría';
+      } else if (role === 'staff') {
+        senderName = 'Staff';
       } else if (role === 'delegate') {
         senderName = clientCountry || 'Delegación';
       }
@@ -590,6 +638,36 @@ export const P2PProvider = ({ children }) => {
     }
     return ok;
   }, [clientCountry, role]);
+
+  const broadcastAnnouncement = useCallback((annData) => {
+    const ann = {
+      id: annData.id || `ann-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      title: annData.title || 'Aviso Oficial',
+      text: annData.text || '',
+      priority: annData.priority || 'general',
+      senderRole: role || 'chair',
+      senderName: annData.senderName || (role === 'secretariat' ? 'Secretaría' : (role === 'staff' ? 'Staff' : 'Mesa de Presidencia')),
+      timestamp: Date.now(),
+      target: annData.target || 'ALL'
+    };
+    if (connectionStatus === 'host_active') {
+      peerService.broadcastAnnouncement(ann);
+    } else {
+      peerService.broadcastAnnouncementAsClient(ann);
+    }
+    setAnnouncements(prev => [ann, ...prev.filter(a => a.id !== ann.id)]);
+    addNotification('Aviso emitido con éxito', 'success');
+  }, [connectionStatus, role, addNotification]);
+
+  const deleteAnnouncement = useCallback((id) => {
+    if (connectionStatus === 'host_active') {
+      peerService.deleteAnnouncement(id);
+    } else {
+      peerService.deleteAnnouncementAsClient(id);
+    }
+    setAnnouncements(prev => prev.filter(a => a.id !== id));
+    addNotification('Aviso retirado', 'info');
+  }, [connectionStatus, addNotification]);
 
   const requestSpeaking = useCallback((speechType, details = {}) => {
     return peerService.requestSpeakingAsClient(speechType, details);
@@ -739,6 +817,12 @@ export const P2PProvider = ({ children }) => {
       setSecretPassword,
       backroomPassword,
       setBackroomPassword,
+      staffPassword,
+      setStaffPassword,
+      announcements,
+      setAnnouncements,
+      broadcastAnnouncement,
+      deleteAnnouncement,
       roomSettings,
       setRoomSettings,
       updateRoomSettings,

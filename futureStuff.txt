@@ -1,34 +1,37 @@
+====== PRIORIDAD MAXIMA ==========
 
-COMO FUNCIONAN LOS RECURSOS EN CRISIS???
+1) AÑADIR ICONO AL BUSCAR EN GOOGLE
 
+2) AÑADIR INGLES PARA SALIR EN INGLES TAMBIEN 
 
-modo claro va mal en alguna cosa
-rehaul P2P - no conecta
-en el P2P que aparezcan los paises que estan dentro de la matriz de ese momento
-tema idiomas
-¿temas y estilos?
-with rights
-	link to drive
-
-
-enmiendas
-- los menus de seleccion se ven feos
-- que los delegados puedan proponerlas desde la app (teniendo que aceptarlo los presis)
-- a ñadir las enmiendas propuestas y aprobadas al info
-
-
-widget periodico noticias
+3) TRADUCIR INGLES Y ESPAÑOL
 
 
 
-control de versions Mas reciente menos reciente ¿que pasa? comprobar
+
+======= PRIORIDAD MEDIA ========
+
+1) EL MODO CLARO NO SE VE BIEN
 
 
 
-___________
 
-NO FUNCIONA EL VOTO 
+===== PRIORIDAD BAJA =======
 
-PROPOSICIONES DE CAUSUS MODERADO Y ASI FUNCIONAN PERO RARO
+1) EN ENMIENDAS LOS MENUS DE SELECCION SE VEN FEOS
 
-Proponer Enmienda a la Mesa Directiva: NO CARGA EL DOCUMENTO, PONER BOTON DE "RECARGAR DOCUMENTO"
+2) WIDGET PERIÓDICO
+
+
+
+
+====== COSAS A INVESTIGAR =======
+
+1) COMO FUNCIONAN LOS RECURSOS EN CRISIS???
+
+
+
+
+====== POSIBILIDADES ======
+
+1) TEMAS Y ESTILOS

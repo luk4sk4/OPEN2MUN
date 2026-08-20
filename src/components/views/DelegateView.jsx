@@ -32,6 +32,9 @@ import {
   UserX,
   ChevronRight,
   ChevronDown,
+  ChevronUp,
+  Megaphone,
+  Bell,
   Copy,
   Download,
   BookOpen,
@@ -169,7 +172,8 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
     selectCountry,
     resetCountrySelection,
     connectedPeers,
-    requestFullSync
+    requestFullSync,
+    announcements = []
   } = useP2P();
 
   // Estados para Selección de País / Delegación inicial
@@ -179,10 +183,28 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
   const [isSubmittingCountry, setIsSubmittingCountry] = useState(false);
   const [countrySelectError, setCountrySelectError] = useState(null);
 
-  const [activeTab, setActiveTab] = useState('DEBATE'); // 'DEBATE' | 'NOTAS' | 'ENMIENDAS'
+  const [activeTab, setActiveTab] = useState('DEBATE'); // 'DEBATE' | 'NOTAS' | 'ENMIENDAS' | 'AVISOS'
+  const [avisosExpanded, setAvisosExpanded] = useState(true);
+  const [filtroCategoriaAviso, setFiltroCategoriaAviso] = useState('todos');
   const [destinatario, setDestinatario] = useState('CHAIR');
   const [textoNota, setTextoNota] = useState('');
   const [tipoNota, setTipoNota] = useState('general'); // 'general' | 'urgente' | 'pregunta'
+
+  const getPriorityBadge = (priority) => {
+    switch (priority) {
+      case 'urgente':
+        return { bg: 'rgba(239, 68, 68, 0.18)', border: 'rgba(239, 68, 68, 0.4)', text: '#ef4444', label: 'URGENTE' };
+      case 'logistica':
+        return { bg: 'rgba(59, 130, 246, 0.18)', border: 'rgba(59, 130, 246, 0.4)', text: '#60a5fa', label: 'LOGÍSTICA' };
+      case 'receso':
+        return { bg: 'rgba(16, 185, 129, 0.18)', border: 'rgba(16, 185, 129, 0.4)', text: '#34d399', label: 'RECESO' };
+      case 'documento':
+        return { bg: 'rgba(168, 85, 247, 0.18)', border: 'rgba(168, 85, 247, 0.4)', text: '#c084fc', label: 'DOCUMENTACIÓN' };
+      case 'general':
+      default:
+        return { bg: 'rgba(245, 158, 11, 0.18)', border: 'rgba(245, 158, 11, 0.4)', text: '#fbbf24', label: 'GENERAL' };
+    }
+  };
 
   // Estados para Mociones de Debate
   const [pedirMocionOpen, setPedirMocionOpen] = useState(false);
@@ -1156,10 +1178,144 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
         >
           <FileText size={14} /> Enmiendas
         </button>
+
+        <button
+          onClick={() => setActiveTab('AVISOS')}
+          style={{
+            flex: 1,
+            padding: '0.5rem',
+            borderRadius: '6px',
+            border: 'none',
+            backgroundColor: activeTab === 'AVISOS' ? 'var(--btn-bg)' : 'transparent',
+            color: activeTab === 'AVISOS' ? 'var(--btn-text)' : 'var(--muted-text)',
+            fontWeight: '700',
+            fontSize: '0.82rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.4rem',
+            position: 'relative',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <Megaphone size={14} /> {t('views.staff.announcementsTab', 'Avisos')} ({announcements.length})
+        </button>
       </div>
 
       {/* ── Cuerpo Principal del Delegado ── */}
       <main style={{ padding: '1rem', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+        {/* ── HOLDER PERMANENTE DE AVISOS IMPORTANTES (SECRETARÍA & STAFF) ── */}
+        {announcements.length > 0 && activeTab !== 'AVISOS' && (
+          <div style={{
+            backgroundColor: 'var(--panel-color)',
+            border: '1.5px solid rgba(245, 158, 11, 0.45)',
+            borderRadius: '14px',
+            overflow: 'hidden',
+            boxShadow: '0 4px 20px rgba(245, 158, 11, 0.15)',
+            animation: 'fadeIn 0.2s ease-out'
+          }}>
+            {/* Cabecera del Holder */}
+            <div
+              onClick={() => setAvisosExpanded(!avisosExpanded)}
+              style={{
+                backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                padding: '0.75rem 1rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                userSelect: 'none'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                <Megaphone size={17} color="#f59e0b" />
+                <span style={{ fontSize: '0.86rem', fontWeight: '800', color: 'var(--text-color)' }}>
+                  {t('views.announcements.holderTitle', 'Avisos Importantes de Secretaría & Staff')}
+                </span>
+                <span style={{
+                  backgroundColor: '#f59e0b',
+                  color: '#000000',
+                  fontSize: '0.68rem',
+                  fontWeight: '900',
+                  padding: '0.1rem 0.45rem',
+                  borderRadius: '10px'
+                }}>
+                  {announcements.length} {announcements.length === 1 ? 'aviso' : 'avisos'}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--muted-text)', fontSize: '0.74rem', fontWeight: '700' }}>
+                <span>{avisosExpanded ? t('views.announcements.hide', 'Minimizar') : t('views.announcements.expand', 'Ver Detalle')}</span>
+                {avisosExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+              </div>
+            </div>
+
+            {/* Contenido Desplegado */}
+            {avisosExpanded && (
+              <div style={{
+                padding: '0.85rem 1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.65rem',
+                maxHeight: '300px',
+                overflowY: 'auto'
+              }}>
+                {announcements.map((ann) => {
+                  const badge = getPriorityBadge(ann.priority);
+                  return (
+                    <div
+                      key={ann.id}
+                      style={{
+                        backgroundColor: 'var(--card-header-bg)',
+                        border: `1px solid ${badge.border}`,
+                        borderLeft: `4px solid ${badge.text}`,
+                        borderRadius: '10px',
+                        padding: '0.8rem 0.95rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.35rem'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                          <span style={{
+                            fontSize: '0.65rem',
+                            fontWeight: '800',
+                            backgroundColor: badge.bg,
+                            color: badge.text,
+                            padding: '0.1rem 0.45rem',
+                            borderRadius: '4px',
+                            letterSpacing: '0.03em'
+                          }}>
+                            {badge.label}
+                          </span>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--muted-text)', fontWeight: '600' }}>
+                            De: <strong style={{ color: 'var(--text-color)' }}>{ann.senderName || 'Staff'}</strong>
+                          </span>
+                        </div>
+                        <span style={{ fontSize: '0.68rem', color: 'var(--muted-text)' }}>
+                          {new Date(ann.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+
+                      <div style={{ fontSize: '0.9rem', fontWeight: '800', color: 'var(--text-color)' }}>
+                        {ann.title}
+                      </div>
+
+                      {ann.text && (
+                        <div style={{ fontSize: '0.8rem', color: 'var(--muted-text)', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>
+                          {ann.text}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === 'DEBATE' && (
           <>
             {/* 1. Votación en Vivo si está activa y permitida */}
@@ -3078,6 +3234,106 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
                     ))
                   )}
                 </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════
+            PESTAÑA DEDICADA: AVISOS IMPORTANTES (SECRETARÍA & STAFF)
+           ══════════════════════════════════════════════════════════════ */}
+        {activeTab === 'AVISOS' && (
+          <div style={{
+            backgroundColor: 'var(--panel-color)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '14px',
+            padding: '1.25rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Megaphone size={20} color="#f59e0b" />
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '800' }}>
+                  {t('views.announcements.holderTitle', 'Avisos Importantes de Secretaría & Staff')} ({announcements.length})
+                </h3>
+              </div>
+            </div>
+
+            {announcements.length === 0 ? (
+              <div style={{
+                padding: '3rem 1.5rem',
+                textAlign: 'center',
+                color: 'var(--muted-text)',
+                border: '1px dashed var(--subborder-color)',
+                borderRadius: '12px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '0.75rem'
+              }}>
+                <Megaphone size={36} style={{ opacity: 0.3 }} />
+                <div style={{ fontSize: '0.9rem', fontWeight: '600' }}>
+                  {t('views.announcements.noActive', 'Sin avisos importantes pendientes')}
+                </div>
+                <div style={{ fontSize: '0.78rem' }}>
+                  Cualquier comunicado oficial emitido por la Secretaría o el Staff aparecerá aquí en tiempo real.
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {announcements.map(ann => {
+                  const badge = getPriorityBadge(ann.priority);
+                  return (
+                    <div
+                      key={ann.id}
+                      style={{
+                        backgroundColor: 'var(--card-header-bg)',
+                        border: `1px solid ${badge.border}`,
+                        borderLeft: `4px solid ${badge.text}`,
+                        borderRadius: '12px',
+                        padding: '1.1rem 1.25rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.55rem'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span style={{
+                            fontSize: '0.68rem',
+                            fontWeight: '800',
+                            backgroundColor: badge.bg,
+                            color: badge.text,
+                            padding: '0.15rem 0.5rem',
+                            borderRadius: '6px',
+                            letterSpacing: '0.04em'
+                          }}>
+                            {badge.label}
+                          </span>
+                          <span style={{ fontSize: '0.74rem', color: 'var(--muted-text)', fontWeight: '600' }}>
+                            De: <strong style={{ color: 'var(--text-color)' }}>{ann.senderName || 'Staff'}</strong>
+                          </span>
+                        </div>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--muted-text)' }}>
+                          {new Date(ann.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+
+                      <div style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--text-color)' }}>
+                        {ann.title}
+                      </div>
+
+                      {ann.text && (
+                        <div style={{ fontSize: '0.86rem', color: 'var(--muted-text)', lineHeight: '1.45', whiteSpace: 'pre-wrap' }}>
+                          {ann.text}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
