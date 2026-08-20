@@ -919,7 +919,7 @@ const Dashboard = () => {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <button
-                onClick={() => setIsSidebarOpen(true)}
+                onClick={() => setIsSidebarOpen(prev => !prev)}
                 style={{
                   background: 'transparent',
                   border: '1px solid var(--border-color)',
