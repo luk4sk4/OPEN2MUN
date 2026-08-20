@@ -21,7 +21,6 @@ import {
   ArrowUpDown,
   Check
 } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '../../context/SessionContext';
 import CountryFlag from '../common/CountryFlag';
@@ -168,6 +167,7 @@ function parsearJSON(texto) {
 
 async function parsearExcel(archivo) {
   try {
+    const XLSX = await import('xlsx');
     const buffer = await archivo.arrayBuffer();
     const wb = XLSX.read(buffer, { type: 'array' });
     const ws = wb.Sheets[wb.SheetNames[0]];

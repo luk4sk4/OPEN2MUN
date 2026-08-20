@@ -484,7 +484,7 @@ const ControladorEnmiendas = () => {
       if (formato === 'docx') {
         await descargarResolucionDocx(payload);
       } else if (formato === 'pdf') {
-        descargarResolucionPdf(payload);
+        await descargarResolucionPdf(payload);
       } else {
         descargarResolucionTxt(payload);
       }

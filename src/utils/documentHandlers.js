@@ -1,25 +1,6 @@
-import mammoth from 'mammoth';
-import * as pdfjsLib from 'pdfjs-dist';
-import { jsPDF } from 'jspdf';
-import {
-  Document,
-  Packer,
-  Paragraph,
-  TextRun,
-  HeadingLevel,
-  AlignmentType,
-  UnderlineType
-} from 'docx';
+// Funciones de utilidad para importación y exportación de resoluciones y documentos
+// Las librerías pesadas (docx, jspdf, mammoth, pdfjs-dist) se importan dinámicamente on-demand para optimizar el tiempo de carga inicial.
 
-// Configuración del worker de PDF.js para navegadores
-if (typeof window !== 'undefined' && pdfjsLib.GlobalWorkerOptions) {
-  try {
-    // Usar worker empaquetado o fallback a cdnjs
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '4.10.38'}/pdf.worker.min.mjs`;
-  } catch (e) {
-    console.warn('PDF Worker initialization fallback:', e);
-  }
-}
 
 /**
  * Extrae texto de archivos .txt, .md, .docx y .pdf
@@ -40,6 +21,8 @@ export async function extraerTextoDeArchivo(file) {
 
   // 2. Archivos Word (.docx)
   if (extension === 'docx') {
+    const mammothModule = await import('mammoth');
+    const mammoth = mammothModule.default || mammothModule;
     const arrayBuffer = await file.arrayBuffer();
     const result = await mammoth.extractRawText({ arrayBuffer });
     return { texto: result.value || '', nombre: nombreLimpio };
@@ -47,6 +30,14 @@ export async function extraerTextoDeArchivo(file) {
 
   // 3. Archivos PDF (.pdf)
   if (extension === 'pdf') {
+    const pdfjsLib = await import('pdfjs-dist');
+    if (typeof window !== 'undefined' && pdfjsLib.GlobalWorkerOptions && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+      try {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '4.10.38'}/pdf.worker.min.mjs`;
+      } catch (e) {
+        console.warn('PDF Worker initialization fallback:', e);
+      }
+    }
     const arrayBuffer = await file.arrayBuffer();
     const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
     const pdfDoc = await loadingTask.promise;
@@ -103,6 +94,16 @@ export function descargarResolucionTxt({ titulo = 'resolucion', articulos = [], 
  * Genera y descarga un archivo Word (.docx) formal con formato MUN
  */
 export async function descargarResolucionDocx({ titulo = 'Proyecto de Resolución', articulos = [], textoRaw = '' }) {
+  const {
+    Document,
+    Packer,
+    Paragraph,
+    TextRun,
+    HeadingLevel,
+    AlignmentType,
+    UnderlineType
+  } = await import('docx');
+
   const children = [];
 
   // Título principal
@@ -200,7 +201,8 @@ export async function descargarResolucionDocx({ titulo = 'Proyecto de Resolució
 /**
  * Genera y descarga un archivo PDF formal con formato MUN
  */
-export function descargarResolucionPdf({ titulo = 'Proyecto de Resolución', articulos = [], textoRaw = '' }) {
+export async function descargarResolucionPdf({ titulo = 'Proyecto de Resolución', articulos = [], textoRaw = '' }) {
+  const { jsPDF } = await import('jspdf');
   const doc = new jsPDF({
     unit: 'pt',
     format: 'letter'

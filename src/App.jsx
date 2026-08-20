@@ -1,16 +1,17 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense, lazy } from 'react';
 import Dashboard from './layouts/Dashboard';
 import { SessionProvider } from './context/SessionContext';
 import { P2PProvider, useP2P } from './context/P2PContext';
 import { AccessibilityProvider, useAccessibility } from './context/AccessibilityContext';
-import DelegateView from './components/views/DelegateView';
-import SecretariatView from './components/views/SecretariatView';
-import BackroomView from './components/views/BackroomView';
-import JoinSessionView from './components/views/JoinSessionView';
-import PrivacyPolicyPage from './components/pages/PrivacyPolicyPage';
-import TermsConditionsPage from './components/pages/TermsConditionsPage';
 import LegalBanner from './components/common/LegalBanner';
 import { useRouter } from './utils/router';
+
+const DelegateView = lazy(() => import('./components/views/DelegateView'));
+const SecretariatView = lazy(() => import('./components/views/SecretariatView'));
+const BackroomView = lazy(() => import('./components/views/BackroomView'));
+const JoinSessionView = lazy(() => import('./components/views/JoinSessionView'));
+const PrivacyPolicyPage = lazy(() => import('./components/pages/PrivacyPolicyPage'));
+const TermsConditionsPage = lazy(() => import('./components/pages/TermsConditionsPage'));
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -94,19 +95,19 @@ function AppContent() {
   // Si la ruta solicitada es Privacidad o Términos, renderizamos su página específica
   if (route === 'privacy') {
     return (
-      <>
+      <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Cargando...</div>}>
         <PrivacyPolicyPage isLight={isLight} onBack={() => navigateTo('/')} />
         <LegalBanner isLight={isLight} />
-      </>
+      </Suspense>
     );
   }
 
   if (route === 'terms') {
     return (
-      <>
+      <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Cargando...</div>}>
         <TermsConditionsPage isLight={isLight} onBack={() => navigateTo('/')} />
         <LegalBanner isLight={isLight} />
-      </>
+      </Suspense>
     );
   }
 
@@ -124,10 +125,10 @@ function AppContent() {
   }
 
   return (
-    <>
+    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Cargando...</div>}>
       {currentView}
       <LegalBanner isLight={isLight} />
-    </>
+    </Suspense>
   );
 }
 

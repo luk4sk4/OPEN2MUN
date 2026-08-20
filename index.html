@@ -29,10 +29,20 @@
     <meta name="twitter:description" content="Plataforma libre, gratuita y serverless para Modelos de Naciones Unidas (MUN). Gestión de oradores, cronómetros y votaciones P2P en tiempo real." />
     <meta name="twitter:image" content="https://openmun.app/favicon.svg" />
 
-    <!-- Fuentes Preconectadas -->
+    <!-- Conexiones Optimizadas (DNS + TCP / TLS) -->
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+    <link rel="dns-prefetch" href="https://static.cloudflareinsights.com">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@300;400;500;600;700;800;900&family=Lexend:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://static.cloudflareinsights.com" crossorigin>
+
+    <!-- Carga de Fuentes Optimizada No Bloqueante -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@300;400;500;600;700;800;900&family=Lexend:wght@300;400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@300;400;500;600;700;800;900&family=Lexend:wght@300;400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@300;400;500;600;700;800;900&family=Lexend:wght@300;400;500;600;700;800&display=swap">
+    </noscript>
 
     <!-- Datos Estructurados JSON-LD (Schema.org) -->
     <script type="application/ld+json">
@@ -104,5 +114,8 @@
     </noscript>
 
     <script type="module" src="/src/main.jsx"></script>
+    <!-- Cloudflare Web Analytics -->
+    <script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "65173986860b4765a28482847ce7c5df"}'></script>
+    <!-- End Cloudflare Web Analytics -->
   </body>
 </html>
