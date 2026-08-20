@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { CheckCircle2, AlertCircle, Info, AlertTriangle, Lock, X } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import peerService, { MSG_TYPES, generateRoomCode, DEFAULT_ROOM_SETTINGS } from '../services/peerService';
+import { applyStateDelta } from '../utils/deltaSync';
 
 const P2PContext = createContext();
 
@@ -23,8 +24,6 @@ export const P2PProvider = ({ children }) => {
   const [role, setRole] = useState('none'); // 'chair' | 'delegate' | 'secretariat' | 'backroom' | 'none'
   const [connectionStatus, setConnectionStatus] = useState('disconnected'); // 'disconnected' | 'connecting' | 'connected' | 'host_active' | 'error'
   const [error, setError] = useState(null);
-  const [isTurnRelay, setIsTurnRelay] = useState(false);
-  const [isTurnWarningDismissed, setIsTurnWarningDismissed] = useState(false);
   const [roomId, setRoomId] = useState(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -158,7 +157,7 @@ export const P2PProvider = ({ children }) => {
         setRoomId(data.roomId);
         if (data.roomSettings) setRoomSettings(data.roomSettings);
         localStorage.setItem('openmun_last_room_id', data.roomId);
-        addNotification(`Sala P2P iniciada con éxito (${data.roomId})`, 'success');
+        addNotification(`Sala en vivo iniciada con éxito (${data.roomId})`, 'success');
       }
 
       if (event === 'connected') {
@@ -190,25 +189,13 @@ export const P2PProvider = ({ children }) => {
 
       if (event === 'disconnected') {
         setConnectionStatus('disconnected');
-        setIsTurnRelay(false);
-        setIsTurnWarningDismissed(false);
         addNotification(data.reason || 'Desconectado de la sala', 'warning');
-      }
-
-      if (event === 'connection_type') {
-        setIsTurnRelay(!!data?.isRelay);
       }
 
       if (event === 'error') {
         setError(data.error);
         setConnectionStatus('error');
         addNotification(`${data.error}`, 'error');
-      }
-
-      if (event === 'connecting_status') {
-        if (data?.text) {
-          addNotification(data.text, 'info');
-        }
       }
 
       if (event === 'peer_list_updated') {
@@ -236,12 +223,12 @@ export const P2PProvider = ({ children }) => {
         const { speechType, country } = data;
         if (speechType === 'GSL') {
           if (sessionActionHandlersRef.current.onAddSpeakerGSL) {
-            sessionActionHandlersRef.current.onAddSpeakerGSL({ nombre: country, bandera: '🇺🇳' });
+            sessionActionHandlersRef.current.onAddSpeakerGSL({ nombre: country });
           }
           addNotification(`${country} se ha añadido a la Lista de Oradores (Directo)`, 'success');
         } else if (speechType === 'CAUCUS') {
           if (sessionActionHandlersRef.current.onAddSpeakerCaucus) {
-            sessionActionHandlersRef.current.onAddSpeakerCaucus({ nombre: country, bandera: '🇺🇳' });
+            sessionActionHandlersRef.current.onAddSpeakerCaucus({ nombre: country });
           }
           addNotification(`${country} se ha añadido al Caucus Moderado (Directo)`, 'success');
         }
@@ -257,14 +244,16 @@ export const P2PProvider = ({ children }) => {
         });
         if (action === 'accept' && requestData) {
           if (requestData.speechType === 'GSL' && sessionActionHandlersRef.current.onAddSpeakerGSL) {
-            sessionActionHandlersRef.current.onAddSpeakerGSL({ nombre: requestData.country, bandera: '🇺🇳' });
+            sessionActionHandlersRef.current.onAddSpeakerGSL({ nombre: requestData.country });
           } else if (requestData.speechType === 'CAUCUS' && sessionActionHandlersRef.current.onAddSpeakerCaucus) {
-            sessionActionHandlersRef.current.onAddSpeakerCaucus({ nombre: requestData.country, bandera: '🇺🇳' });
-          } else if (requestData.speechType === 'POINT_MOTION' && sessionActionHandlersRef.current.onAddMotion) {
+            sessionActionHandlersRef.current.onAddSpeakerCaucus({ nombre: requestData.country });
+          } else if ((requestData.speechType === 'MOTION' || requestData.speechType === 'POINT_MOTION') && sessionActionHandlersRef.current.onAddMotion) {
             sessionActionHandlersRef.current.onAddMotion({
-              tipo: requestData.details?.tipo || 'Punto de Orden',
+              tipo: requestData.details?.tipo || 'Caucus Moderado',
               proponente: requestData.country,
-              tema: requestData.details?.tema || 'Solicitud de Delegación',
+              posicionProponente: requestData.details?.posicionProponente || 'Primero',
+              varianteConsulta: requestData.details?.varianteConsulta || '',
+              tema: requestData.details?.tema || 'Tema de Debate',
               tiempoTotal: requestData.details?.tiempoTotal || 0,
               tiempoOrador: requestData.details?.tiempoOrador || 0
             });
@@ -290,9 +279,14 @@ export const P2PProvider = ({ children }) => {
         addNotification(`Nueva propuesta de enmienda de ${data.paisProponente}`, 'info');
       }
 
-      // Recepción de Notas
+      // Recepción de Notas con de-duplicación estricta
       if (event === 'note_for_chair') {
-        setNotes(prev => [data, ...prev]);
+        setNotes(prev => {
+          if (prev.some(n => n.id === data.id || (n.from === data.from && n.to === data.to && n.text === data.text && Math.abs((n.timestamp || 0) - (data.timestamp || 0)) < 3000))) {
+            return prev;
+          }
+          return [data, ...prev];
+        });
         setUnreadNotesCount(prev => prev + 1);
         addNotification(`Nota de ${data.from} para ${data.to}`, 'info');
       }
@@ -313,7 +307,8 @@ export const P2PProvider = ({ children }) => {
             peerService.broadcastSpeakingRequests(next);
             return next;
           });
-          addNotification(`${senderMeta.country} ha solicitado turno (${message.payload.speechType})`, 'info');
+          const typeLabel = req.speechType === 'POINT' ? 'Punto Parlamentario' : (req.speechType === 'MOTION' ? 'Moción' : req.speechType);
+          addNotification(`${senderMeta.country} ha solicitado turno (${typeLabel})`, 'info');
         }
       }
 
@@ -355,18 +350,6 @@ export const P2PProvider = ({ children }) => {
               setClientCountry(countryName);
               localStorage.setItem('openmun_last_country', countryName);
             }
-            if (message.payload.roomSettings) {
-              setRoomSettings(message.payload.roomSettings);
-            }
-            if (message.payload.speakingRequests) {
-              setSpeakingRequests(message.payload.speakingRequests);
-            }
-            if (message.payload.sessionState) {
-              setRemoteSessionState(message.payload.sessionState);
-              if (sessionActionHandlersRef.current.onSyncState) {
-                sessionActionHandlersRef.current.onSyncState(message.payload.sessionState);
-              }
-            }
             if (Array.isArray(message.payload.notes) && message.payload.notes.length > 0) {
               setNotes(prev => {
                 const map = new Map();
@@ -390,6 +373,20 @@ export const P2PProvider = ({ children }) => {
           if (message.payload?.speakingRequests) {
             setSpeakingRequests(message.payload.speakingRequests);
           }
+        } else if (message.type === MSG_TYPES.DELTA_STATE) {
+          setRemoteSessionState(prev => {
+            const updated = applyStateDelta(prev || {}, message.payload);
+            if (sessionActionHandlersRef.current.onSyncState) {
+              sessionActionHandlersRef.current.onSyncState(updated);
+            }
+            if (updated.roomSettings) {
+              setRoomSettings(updated.roomSettings);
+            }
+            if (updated.speakingRequests) {
+              setSpeakingRequests(updated.speakingRequests);
+            }
+            return updated;
+          });
         } else if (message.type === MSG_TYPES.SPEAKING_REQUESTS_UPDATED) {
           setSpeakingRequests(message.payload || []);
         } else if (message.type === MSG_TYPES.ROOM_SETTINGS_UPDATED) {
@@ -400,7 +397,9 @@ export const P2PProvider = ({ children }) => {
           addNotification(msgText || (success ? 'Solicitud procesada' : 'No se pudo procesar'), success ? 'success' : 'warning');
         } else if (message.type === MSG_TYPES.NOTE_RECEIVED) {
           setNotes(prev => {
-            if (prev.some(n => n.id === message.payload.id)) return prev;
+            if (prev.some(n => n.id === message.payload.id || (n.from === message.payload.from && n.to === message.payload.to && n.text === message.payload.text && Math.abs((n.timestamp || 0) - (message.payload.timestamp || 0)) < 3000))) {
+              return prev;
+            }
             return [message.payload, ...prev];
           });
           setUnreadNotesCount(prev => prev + 1);
@@ -475,9 +474,7 @@ export const P2PProvider = ({ children }) => {
     setConnectionStatus('disconnected');
     setConnectedPeers([]);
     setRole('none');
-    setIsTurnRelay(false);
-    setIsTurnWarningDismissed(false);
-    addNotification('Sala P2P finalizada', 'info');
+    addNotification('Sala en vivo finalizada', 'info');
   }, [addNotification]);
 
   const joinRoom = useCallback(async ({ targetRoomId, targetRole, password, country, isLocalBroadcast = false }) => {
@@ -556,17 +553,16 @@ export const P2PProvider = ({ children }) => {
     peerService.destroy();
     setConnectionStatus('disconnected');
     setRole('none');
-    setIsTurnRelay(false);
-    setIsTurnWarningDismissed(false);
     setViewMode('chair');
   }, []);
 
   const sendNote = useCallback((to, text, type = 'general') => {
-    const ok = peerService.sendNoteAsClient(to, text, type);
+    const noteId = `note-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const ok = peerService.sendNoteAsClient(to, text, type, noteId);
     if (ok) {
-      // Agregar localmente a mis notas enviadas
+      // Agregar localmente a mis notas enviadas con ID persistente
       const selfNote = {
-        id: `note-${Date.now()}`,
+        id: noteId,
         from: clientCountry || role,
         fromRole: role,
         to,
@@ -575,7 +571,10 @@ export const P2PProvider = ({ children }) => {
         timestamp: Date.now(),
         isOutgoing: true
       };
-      setNotes(prev => [selfNote, ...prev]);
+      setNotes(prev => {
+        if (prev.some(n => n.id === noteId)) return prev;
+        return [selfNote, ...prev];
+      });
     }
     return ok;
   }, [clientCountry, role]);
@@ -588,14 +587,16 @@ export const P2PProvider = ({ children }) => {
     if (connectionStatus === 'host_active') {
       // Si somos el Chair/Host, ejecutamos inmediatamente con los handlers registrados
       if (req.speechType === 'GSL' && sessionActionHandlersRef.current.onAddSpeakerGSL) {
-        sessionActionHandlersRef.current.onAddSpeakerGSL({ nombre: req.country, bandera: '🇺🇳' });
+        sessionActionHandlersRef.current.onAddSpeakerGSL({ nombre: req.country });
       } else if (req.speechType === 'CAUCUS' && sessionActionHandlersRef.current.onAddSpeakerCaucus) {
-        sessionActionHandlersRef.current.onAddSpeakerCaucus({ nombre: req.country, bandera: '🇺🇳' });
-      } else if (req.speechType === 'POINT_MOTION' && sessionActionHandlersRef.current.onAddMotion) {
+        sessionActionHandlersRef.current.onAddSpeakerCaucus({ nombre: req.country });
+      } else if ((req.speechType === 'MOTION' || req.speechType === 'POINT_MOTION') && sessionActionHandlersRef.current.onAddMotion) {
         sessionActionHandlersRef.current.onAddMotion({
-          tipo: req.details?.tipo || 'Punto de Orden',
+          tipo: req.details?.tipo || 'Caucus Moderado',
           proponente: req.country,
-          tema: req.details?.tema || 'Solicitud de Delegación',
+          posicionProponente: req.details?.posicionProponente || 'Primero',
+          varianteConsulta: req.details?.varianteConsulta || '',
+          tema: req.details?.tema || 'Tema de Debate',
           tiempoTotal: req.details?.tiempoTotal || 0,
           tiempoOrador: req.details?.tiempoOrador || 0
         });
@@ -611,6 +612,29 @@ export const P2PProvider = ({ children }) => {
       peerService.processSpeakingRequestAsClient(req.id, 'accept', req);
       setSpeakingRequests(prev => prev.filter(r => r.id !== req.id));
       addNotification(`Aprobación enviada para ${req.country}`, 'info');
+    }
+  }, [connectionStatus, addNotification]);
+
+  const respondToPointWithNote = useCallback((pointReq, noteText) => {
+    if (!pointReq || !noteText) return;
+    sendNote(pointReq.country, noteText, 'urgente');
+    if (connectionStatus === 'host_active') {
+      setSpeakingRequests(prev => {
+        const next = prev.filter(r => r.id !== pointReq.id);
+        peerService.broadcastSpeakingRequests(next);
+        return next;
+      });
+    } else {
+      peerService.processSpeakingRequestAsClient(pointReq.id, 'reject');
+      setSpeakingRequests(prev => prev.filter(r => r.id !== pointReq.id));
+    }
+    addNotification(`Respuesta enviada a ${pointReq.country} por nota`, 'success');
+  }, [sendNote, connectionStatus, addNotification]);
+
+  const requestFullSync = useCallback(() => {
+    if (connectionStatus === 'connected') {
+      peerService.requestFullSyncAsClient();
+      addNotification('Sincronización solicitada a la Presidencia', 'info');
     }
   }, [connectionStatus, addNotification]);
 
@@ -685,13 +709,6 @@ export const P2PProvider = ({ children }) => {
     setEnmiendasPropuestas(prev => prev.filter(p => p.id !== propId));
   }, []);
 
-  const requestStateSync = useCallback(() => {
-    if (connectionStatus === 'connected') {
-      peerService.requestStateSyncAsClient();
-      addNotification('Recargando documento y estado de la sesión...', 'info');
-    }
-  }, [connectionStatus, addNotification]);
-
   const openLiveModal = useCallback(() => setIsLiveModalOpen(true), []);
   const closeLiveModal = useCallback(() => setIsLiveModalOpen(false), []);
 
@@ -722,15 +739,14 @@ export const P2PProvider = ({ children }) => {
       setSpeakingRequests,
       approveSpeakingRequest,
       rejectSpeakingRequest,
+      respondToPointWithNote,
+      requestFullSync,
       enmiendasPropuestas,
       setEnmiendasPropuestas,
       submitAmendment,
       eliminarEnmiendaPropuesta,
       castVote,
       remoteSessionState,
-      isTurnRelay,
-      isTurnWarningDismissed,
-      dismissTurnWarning: () => setIsTurnWarningDismissed(true),
       isLiveModalOpen,
       openLiveModal,
       closeLiveModal,
@@ -743,97 +759,12 @@ export const P2PProvider = ({ children }) => {
       sendNote,
       requestSpeaking,
       kickPeer,
-      requestStateSync,
       broadcastCurrentState,
       sendSessionAction,
       registerSessionHandlers,
       notifications
     }}>
       {children}
-
-      {/* Banner de Aviso de Conexión TURN Server (Relay) con botón de cierre [X] */}
-      {(connectionStatus === 'connected' || connectionStatus === 'host_active') && isTurnRelay && !isTurnWarningDismissed && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '16px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 100001,
-            backgroundColor: 'rgba(24, 24, 27, 0.96)',
-            backdropFilter: 'blur(12px)',
-            border: '1px solid #f59e0b',
-            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.5), 0 0 15px rgba(245, 158, 11, 0.2)',
-            borderRadius: '10px',
-            padding: '0.75rem 1rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.85rem',
-            maxWidth: '680px',
-            width: 'calc(100% - 32px)',
-            animation: 'slideInDown 0.3s ease',
-            color: '#f4f4f5'
-          }}
-        >
-          <div style={{
-            backgroundColor: 'rgba(245, 158, 11, 0.15)',
-            border: '1px solid rgba(245, 158, 11, 0.4)',
-            borderRadius: '8px',
-            padding: '0.45rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
-          }}>
-            <Lock size={20} color="#f59e0b" />
-          </div>
-
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.15rem' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#fbbf24' }}>
-                Conexión vía TURN Relay (Red Restringida)
-              </span>
-              <span style={{
-                fontSize: '0.7rem',
-                backgroundColor: 'rgba(34, 197, 94, 0.2)',
-                color: '#4ade80',
-                border: '1px solid rgba(34, 197, 94, 0.35)',
-                padding: '1px 6px',
-                borderRadius: '4px',
-                fontWeight: '600'
-              }}>
-                Ahorro de Datos Activo
-              </span>
-            </div>
-            <p style={{ margin: 0, fontSize: '0.78rem', color: '#d4d4d8', lineHeight: '1.35' }}>
-              Conexión no establecida por P2P directo, usando <strong>TURN server</strong> para poder comunicarse. Todo el tráfico está <strong>encriptado de extremo a extremo (E2EE/DTLS)</strong>.
-            </p>
-          </div>
-
-          <button
-            onClick={() => setIsTurnWarningDismissed(true)}
-            aria-label="Cerrar aviso de conexión TURN"
-            title="Cerrar aviso"
-            style={{
-              backgroundColor: 'transparent',
-              border: 'none',
-              color: '#a1a1aa',
-              cursor: 'pointer',
-              padding: '0.3rem',
-              borderRadius: '6px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.15s ease',
-              flexShrink: 0
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = '#ffffff'; e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = '#a1a1aa'; e.currentTarget.style.backgroundColor = 'transparent'; }}
-          >
-            <X size={18} />
-          </button>
-        </div>
-      )}
 
       {/* Renderizado de Notificaciones Toasts Globales */}
       {notifications.length > 0 && (

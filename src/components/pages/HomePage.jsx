@@ -48,8 +48,8 @@ const FAQ_ITEMS = [
   {
     id: 'p2p-sync',
     categoria: 'Tecnología',
-    pregunta: '¿Cómo funciona la sincronización en vivo P2P (Mesa, Delegados y Secretaría)?',
-    respuesta: 'OpenMUN utiliza comunicación Peer-to-Peer (WebRTC) y canales locales (BroadcastChannel). La Mesa de Presidencia actúa como nodo principal y comparte un código o código QR. Las actualizaciones de cronómetro, oradores y mociones se transmiten directamente entre dispositivos sin almacenar datos en servidores de terceros.'
+    pregunta: '¿Cómo funciona la sincronización en vivo (Mesa, Delegados y Secretaría)?',
+    respuesta: 'OpenMUN utiliza comunicación WebSocket cifrada de alta velocidad y canales locales (BroadcastChannel). La Mesa de Presidencia actúa como sala principal y comparte un código o código QR. Las actualizaciones de cronómetro, oradores y mociones se transmiten en tiempo real entre dispositivos sin almacenar datos en servidores de terceros.'
   },
   {
     id: 'instalacion-cuenta',
@@ -113,8 +113,8 @@ const FEATURES = [
   },
   {
     icon: Radio,
-    title: 'Transmisión P2P en Directo',
-    desc: 'Sincronización en tiempo real entre la Mesa, delegados y pantallas de proyección utilizando tecnología WebRTC descentralizada.'
+    title: 'Transmisión en Directo',
+    desc: 'Sincronización en tiempo real entre la Mesa, delegados y pantallas de proyección utilizando WebSockets seguros (WSS) y canales locales de alta velocidad.'
   },
   {
     icon: Sliders,
@@ -125,7 +125,7 @@ const FEATURES = [
 
 const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
   const { t } = useTranslation();
-  // Estado para visibilidad del banner de donaciones (desactivado temporalmente)
+  // Estado para visibilidad del banner de donaciones (oculto temporalmente)
   const [showDonationBanner, setShowDonationBanner] = useState(false);
 
   // Estado para notas de presidencia
@@ -259,14 +259,14 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
             gap: '1.25rem',
             padding: '1rem 1.25rem',
             borderRadius: '14px',
-            background: isLight
-              ? 'linear-gradient(135deg, rgba(254, 243, 199, 0.95) 0%, rgba(253, 230, 138, 0.75) 100%)'
+            background: isLight 
+              ? 'linear-gradient(135deg, rgba(254, 243, 199, 0.95) 0%, rgba(253, 230, 138, 0.75) 100%)' 
               : 'linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(180, 83, 9, 0.1) 100%)',
-            border: isLight
-              ? '1px solid rgba(245, 158, 11, 0.4)'
+            border: isLight 
+              ? '1px solid rgba(245, 158, 11, 0.4)' 
               : '1px solid rgba(245, 158, 11, 0.3)',
-            boxShadow: isLight
-              ? '0 4px 16px rgba(245, 158, 11, 0.12)'
+            boxShadow: isLight 
+              ? '0 4px 16px rgba(245, 158, 11, 0.12)' 
               : '0 4px 20px rgba(0, 0, 0, 0.25)',
             backdropFilter: 'blur(10px)',
             position: 'relative',
@@ -320,7 +320,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
               marginLeft: 'auto'
             }}>
               <a
-                href="buymeacoffee.com/openMUN"
+                href="https://buymeacoffee.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -408,7 +408,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
             letterSpacing: '-0.02em',
             color: textPrimary
           }}>
-            {t('home.heroTitle', 'La plataforma gratuita y open source para Modelos de Naciones Unidas')}
+            {t('home.heroTitle', 'La plataforma abierta y definitiva para Modelos de Naciones Unidas')}
           </h1>
 
           {/* Subtítulo sobrio y directo */}
@@ -419,7 +419,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
             color: textMuted,
             fontWeight: '400'
           }}>
-            {t('home.heroSubtitle', 'Diseñada para Mesas de Presidencia, Delegados, Secretaría y Equipos de Crisis. Sincronización en tiempo real P2P, cronómetros de alta precisión, mapas dinámicos y cero configuraciones de servidor.')}
+            {t('home.heroSubtitle', 'Diseñada para Mesas de Presidencia, Delegados, Secretaría y Equipos de Crisis. Sincronización en tiempo real en sesiones en vivo, cronómetros de alta precisión, mapas dinámicos y cero configuraciones de servidor.')}
           </p>
 
           {/* Accesos Rápidos Principales (Hub de Acción Directa) */}
@@ -539,7 +539,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
           }}>
             {/* Botón de Donaciones */}
             <a
-              href="buymeacoffee.com/openMUN"
+              href="https://buymeacoffee.com"
               target="_blank"
               rel="noopener noreferrer"
               style={{

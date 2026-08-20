@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Convierte un emoji de bandera Unicode (ej: '🇪🇸') a su código ISO de 2 letras ('es').
+ * Convierte un emoji de bandera Unicode (ej: '🇪🇸', '🇨🇦') a su código ISO de 2 letras ('es', 'ca').
  */
 export function emojiToIso(emoji) {
   if (!emoji || typeof emoji !== 'string') return null;
@@ -27,139 +27,282 @@ export function emojiToIso(emoji) {
 }
 
 /**
- * Diccionario normalizado de nombres comunes a códigos ISO 3166-1 alpha-2
+ * Diccionario exhaustivo de nombres comunes, formales y en varios idiomas a códigos ISO 3166-1 alpha-2.
+ * Incluye los 193 Estados Miembros de la ONU, Observadores, Organizaciones Internacionales y Territorios.
  */
 export const DICCIONARIO_PAISES_ISO = {
-  // P5 y Organizaciones
-  'estados unidos': 'us', 'eeuu': 'us', 'usa': 'us', 'united states': 'us', 'ee.uu.': 'us',
-  'reino unido': 'gb', 'uk': 'gb', 'united kingdom': 'gb', 'gran bretaña': 'gb', 'gran bretana': 'gb', 'inglaterra': 'gb',
-  'francia': 'fr', 'france': 'fr',
-  'rusia': 'ru', 'federacion rusa': 'ru', 'federación rusa': 'ru', 'russia': 'ru',
-  'china': 'cn', 'republica popular china': 'cn', 'república popular china': 'cn',
+  // P5, Organizaciones y Observadores
+  'estados unidos': 'us', 'eeuu': 'us', 'usa': 'us', 'united states': 'us', 'ee.uu.': 'us', 'estados unidos de america': 'us', 'united states of america': 'us', 'us': 'us',
+  'reino unido': 'gb', 'uk': 'gb', 'united kingdom': 'gb', 'gran bretana': 'gb', 'gran bretaña': 'gb', 'inglaterra': 'gb', 'england': 'gb', 'great britain': 'gb', 'gb': 'gb',
+  'francia': 'fr', 'france': 'fr', 'republica francesa': 'fr', 'french republic': 'fr', 'fr': 'fr',
+  'rusia': 'ru', 'federacion rusa': 'ru', 'federación rusa': 'ru', 'russia': 'ru', 'russian federation': 'ru', 'ru': 'ru',
+  'china': 'cn', 'republica popular china': 'cn', 'república popular china': 'cn', "people's republic of china": 'cn', 'cn': 'cn',
   'onu': 'un', 'naciones unidas': 'un', 'united nations': 'un', 'un': 'un',
   'union europea': 'eu', 'unión europea': 'eu', 'european union': 'eu', 'ue': 'eu', 'eu': 'eu',
+  'vaticano': 'va', 'santa sede': 'va', 'holy see': 'va', 'vatican': 'va', 'vatican city': 'va', 'ciudad del vaticano': 'va',
+  'palestina': 'ps', 'palestine': 'ps', 'estado de palestina': 'ps', 'state of palestine': 'ps',
 
-  // Iberoamérica
-  'espana': 'es', 'españa': 'es', 'spain': 'es',
-  'mexico': 'mx', 'méxico': 'mx',
-  'argentina': 'ar',
-  'colombia': 'co',
-  'chile': 'cl',
-  'peru': 'pe', 'perú': 'pe',
+  // América
+  'antigua y barbuda': 'ag', 'antigua and barbuda': 'ag',
+  'argentina': 'ar', 'republica argentina': 'ar',
+  'bahamas': 'bs', 'the bahamas': 'bs',
+  'barbados': 'bb',
+  'belice': 'bz', 'belize': 'bz',
+  'bolivia': 'bo', 'estado plurinacional de bolivia': 'bo',
   'brasil': 'br', 'brazil': 'br',
-  'ecuador': 'ec',
-  'venezuela': 've',
-  'uruguay': 'uy',
-  'paraguay': 'py',
-  'bolivia': 'bo',
-  'cuba': 'cu',
-  'republica dominicana': 'do', 'república dominicana': 'do',
+  'canada': 'ca', 'canadá': 'ca',
+  'chile': 'cl',
+  'colombia': 'co',
   'costa rica': 'cr',
-  'panama': 'pa', 'panamá': 'pa',
-  'guatemala': 'gt',
-  'honduras': 'hn',
+  'cuba': 'cu',
+  'dominica': 'dm',
+  'ecuador': 'ec',
   'el salvador': 'sv',
+  'granada': 'gd', 'grenada': 'gd',
+  'guatemala': 'gt',
+  'guyana': 'gy',
+  'haiti': 'ht', 'haití': 'ht',
+  'honduras': 'hn',
+  'jamaica': 'jm',
+  'mexico': 'mx', 'méxico': 'mx', 'estados unidos mexicanos': 'mx',
   'nicaragua': 'ni',
+  'panama': 'pa', 'panamá': 'pa',
+  'paraguay': 'py',
+  'peru': 'pe', 'perú': 'pe',
   'puerto rico': 'pr',
+  'republica dominicana': 'do', 'república dominicana': 'do', 'dominican republic': 'do',
+  'san cristobal y nieves': 'kn', 'saint kitts and nevis': 'kn', 'st kitts': 'kn',
+  'santa lucia': 'lc', 'saint lucia': 'lc',
+  'san vicente y las granadinas': 'vc', 'saint vincent and the grenadines': 'vc',
+  'surinam': 'sr', 'suriname': 'sr',
+  'trinidad y tobago': 'tt', 'trinidad and tobago': 'tt',
+  'uruguay': 'uy',
+  'venezuela': 've', 'republica bolivariana de venezuela': 've',
 
   // Europa
-  'alemania': 'de', 'germany': 'de',
-  'italia': 'it', 'italy': 'it',
-  'portugal': 'pt',
-  'paises bajos': 'nl', 'países bajos': 'nl', 'holanda': 'nl', 'netherlands': 'nl',
-  'belgica': 'be', 'bélgica': 'be', 'belgium': 'be',
-  'suiza': 'ch', 'switzerland': 'ch',
+  'albania': 'al',
+  'alemania': 'de', 'germany': 'de', 'deutschland': 'de',
+  'andorra': 'ad',
+  'armenia': 'am',
   'austria': 'at',
-  'suecia': 'se', 'sweden': 'se',
-  'noruega': 'no', 'norway': 'no',
-  'dinamarca': 'dk', 'denmark': 'dk',
-  'finlandia': 'fi', 'finland': 'fi',
-  'grecia': 'gr', 'greece': 'gr',
-  'polonia': 'pl', 'poland': 'pl',
-  'irlanda': 'ie', 'ireland': 'ie',
-  'ucrania': 'ua', 'ukraine': 'ua',
-  'rumania': 'ro', 'romania': 'ro',
-  'turquia': 'tr', 'turquía': 'tr', 'turkey': 'tr', 'turkiye': 'tr',
-  'republica checa': 'cz', 'república checa': 'cz', 'chequia': 'cz', 'czechia': 'cz',
-  'hungria': 'hu', 'hungría': 'hu', 'hungary': 'hu',
+  'azerbaiyan': 'az', 'azerbaiyán': 'az', 'azerbaijan': 'az',
+  'belgica': 'be', 'bélgica': 'be', 'belgium': 'be',
+  'bielorrusia': 'by', 'belarus': 'by',
+  'bosnia y herzegovina': 'ba', 'bosnia and herzegovina': 'ba', 'bosnia': 'ba',
+  'bulgaria': 'bg',
+  'chipre': 'cy', 'cyprus': 'cy',
   'croacia': 'hr', 'croatia': 'hr',
+  'dinamarca': 'dk', 'denmark': 'dk',
+  'eslovaquia': 'sk', 'slovakia': 'sk',
+  'eslovenia': 'si', 'slovenia': 'si',
+  'espana': 'es', 'españa': 'es', 'spain': 'es', 'reino de espana': 'es', 'reino de españa': 'es',
+  'estonia': 'ee',
+  'finlandia': 'fi', 'finland': 'fi',
+  'georgia': 'ge',
+  'grecia': 'gr', 'greece': 'gr',
+  'hungria': 'hu', 'hungría': 'hu', 'hungary': 'hu',
+  'irlanda': 'ie', 'ireland': 'ie',
+  'islandia': 'is', 'iceland': 'is',
+  'italia': 'it', 'italy': 'it',
+  'kazajistan': 'kz', 'kazajistán': 'kz', 'kazakhstan': 'kz',
+  'kosovo': 'xk',
+  'letonia': 'lv', 'latvia': 'lv',
+  'liechtenstein': 'li',
+  'lituania': 'lt', 'lithuania': 'lt',
+  'luxemburgo': 'lu', 'luxembourg': 'lu',
+  'macedonia del norte': 'mk', 'macedonia': 'mk', 'north macedonia': 'mk',
+  'malta': 'mt',
+  'moldavia': 'md', 'moldova': 'md',
+  'monaco': 'mc', 'mónaco': 'mc',
+  'montenegro': 'me',
+  'noruega': 'no', 'norway': 'no',
+  'paises bajos': 'nl', 'países bajos': 'nl', 'holanda': 'nl', 'netherlands': 'nl', 'holland': 'nl',
+  'polonia': 'pl', 'poland': 'pl',
+  'portugal': 'pt',
+  'republica checa': 'cz', 'república checa': 'cz', 'chequia': 'cz', 'czechia': 'cz', 'czech republic': 'cz',
+  'rumania': 'ro', 'rumanía': 'ro', 'romania': 'ro',
+  'san marino': 'sm',
   'serbia': 'rs',
-  'vaticano': 'va', 'santa sede': 'va',
+  'suecia': 'se', 'sweden': 'se',
+  'suiza': 'ch', 'switzerland': 'ch',
+  'turquia': 'tr', 'turquía': 'tr', 'turkey': 'tr', 'turkiye': 'tr', 'türkiye': 'tr',
+  'ucrania': 'ua', 'ukraine': 'ua',
 
   // Asia y Medio Oriente
-  'japon': 'jp', 'japón': 'jp', 'japan': 'jp',
-  'corea del sur': 'kr', 'south korea': 'kr', 'corea': 'kr',
-  'corea del norte': 'kp', 'north korea': 'kp',
-  'india': 'in',
-  'israel': 'il',
-  'palestina': 'ps', 'palestine': 'ps',
-  'iran': 'ir', 'irán': 'ir',
-  'irak': 'iq', 'iraq': 'iq',
-  'arabia saudita': 'sa', 'arabia saudi': 'sa', 'saudi arabia': 'sa',
-  'emiratos arabes unidos': 'ae', 'emiratos árabes unidos': 'ae', 'eau': 'ae', 'uae': 'ae',
-  'qatar': 'qa', 'catar': 'qa',
-  'kuwait': 'kw',
-  'siria': 'sy', 'syria': 'sy',
-  'libano': 'lb', 'líbano': 'lb', 'lebanon': 'lb',
-  'jordania': 'jo', 'jordan': 'jo',
-  'indonesia': 'id',
-  'pakistan': 'pk', 'pakistán': 'pk',
+  'afganistan': 'af', 'afganistán': 'af', 'afghanistan': 'af',
+  'arabia saudita': 'sa', 'arabia saudi': 'sa', 'arabia saudí': 'sa', 'saudi arabia': 'sa',
+  'barein': 'bh', 'baréin': 'bh', 'bahrain': 'bh',
+  'banglades': 'bd', 'bangladés': 'bd', 'bangladesh': 'bd',
+  'brunei': 'bn', 'brunéi': 'bn',
+  'butan': 'bt', 'bután': 'bt', 'bhutan': 'bt',
+  'camboya': 'kh', 'cambodia': 'kh',
+  'catar': 'qa', 'qatar': 'qa',
+  'corea del norte': 'kp', 'north korea': 'kp', 'rpd corea': 'kp', 'dprk': 'kp',
+  'corea del sur': 'kr', 'south korea': 'kr', 'corea': 'kr', 'republica de corea': 'kr', 'república de corea': 'kr', 'republic of korea': 'kr',
+  'emiratos arabes unidos': 'ae', 'emiratos árabes unidos': 'ae', 'eau': 'ae', 'uae': 'ae', 'united arab emirates': 'ae',
   'filipinas': 'ph', 'philippines': 'ph',
-  'vietnam': 'vn', 'viet nam': 'vn',
-  'tailandia': 'th', 'thailand': 'th',
+  'hong kong': 'hk',
+  'india': 'in',
+  'indonesia': 'id',
+  'irak': 'iq', 'iraq': 'iq',
+  'iran': 'ir', 'irán': 'ir', 'republica islamica de iran': 'ir',
+  'israel': 'il',
+  'japon': 'jp', 'japón': 'jp', 'japan': 'jp',
+  'jordania': 'jo', 'jordan': 'jo',
+  'kirguistan': 'kg', 'kirguistán': 'kg', 'kyrgyzstan': 'kg',
+  'kuwait': 'kw',
+  'laos': 'la',
+  'libano': 'lb', 'líbano': 'lb', 'lebanon': 'lb',
   'malasia': 'my', 'malaysia': 'my',
+  'maldivas': 'mv', 'maldives': 'mv',
+  'mongolia': 'mn',
+  'myanmar': 'mm', 'birmania': 'mm', 'burma': 'mm',
+  'nepal': 'np',
+  'oman': 'om', 'omán': 'om',
+  'pakistan': 'pk', 'pakistán': 'pk',
   'singapur': 'sg', 'singapore': 'sg',
-  'australia': 'au',
-  'nueva zelanda': 'nz', 'new zealand': 'nz',
+  'siria': 'sy', 'syria': 'sy',
+  'sri lanka': 'lk',
+  'tailandia': 'th', 'thailand': 'th',
+  'taiwan': 'tw', 'taiwán': 'tw',
+  'tayikistan': 'tj', 'tayikistán': 'tj', 'tajikistan': 'tj',
+  'timor oriental': 'tl', 'timor-leste': 'tl', 'east timor': 'tl',
+  'turkmenistan': 'tm', 'turkmenistán': 'tm', 'turkmenistan': 'tm',
+  'uzbekistan': 'uz', 'uzbekistán': 'uz',
+  'vietnam': 'vn', 'viet nam': 'vn',
+  'yemen': 'ye',
 
   // África
-  'sudafrica': 'za', 'sudáfrica': 'za', 'south africa': 'za',
-  'egipto': 'eg', 'egypt': 'eg',
-  'marruecos': 'ma', 'morocco': 'ma',
-  'nigeria': 'ng',
-  'kenia': 'ke', 'kenya': 'ke',
-  'etiopia': 'et', 'etiopía': 'et', 'ethiopia': 'et',
-  'ghana': 'gh',
-  'argelia': 'dz', 'algeria': 'dz',
-  'senegal': 'sn',
-  'tunez': 'tn', 'túnez': 'tn', 'tunisia': 'tn',
   'angola': 'ao',
-  'congo': 'cg', 'r d congo': 'cd', 'rd congo': 'cd'
+  'argelia': 'dz', 'algeria': 'dz',
+  'benin': 'bj', 'benín': 'bj',
+  'botsuana': 'bw', 'botswana': 'bw',
+  'burkina faso': 'bf',
+  'burundi': 'bi',
+  'cabo verde': 'cv', 'cape verde': 'cv',
+  'camerun': 'cm', 'camerún': 'cm', 'cameroon': 'cm',
+  'chad': 'td',
+  'comoras': 'km', 'comoros': 'km',
+  'congo': 'cg', 'republica del congo': 'cg', 'republic of the congo': 'cg',
+  'rd congo': 'cd', 'r d congo': 'cd', 'republica democratica del congo': 'cd', 'república democrática del congo': 'cd', 'drc': 'cd', 'democratic republic of the congo': 'cd',
+  'costa de marfil': 'ci', "cote d'ivoire": 'ci', 'ivory coast': 'ci',
+  'egipto': 'eg', 'egypt': 'eg',
+  'eritrea': 'er',
+  'esuatini': 'sz', 'eswatini': 'sz', 'suazilandia': 'sz', 'swaziland': 'sz',
+  'etiopia': 'et', 'etiopía': 'et', 'ethiopia': 'et',
+  'gabon': 'ga', 'gabón': 'ga',
+  'gambia': 'gm', 'the gambia': 'gm',
+  'ghana': 'gh',
+  'guinea': 'gn',
+  'guinea ecuatorial': 'gq', 'equatorial guinea': 'gq',
+  'guinea bisau': 'gw', 'guinea-bissau': 'gw',
+  'kenia': 'ke', 'kenya': 'ke',
+  'lesoto': 'ls', 'lesotho': 'ls',
+  'liberia': 'lr',
+  'libia': 'ly', 'libya': 'ly',
+  'madagascar': 'mg',
+  'malaui': 'mw', 'malawi': 'mw',
+  'mali': 'ml', 'malí': 'ml',
+  'marruecos': 'ma', 'morocco': 'ma',
+  'mauricio': 'mu', 'mauritius': 'mu',
+  'mauritania': 'mr',
+  'mozambique': 'mz',
+  'namibia': 'na',
+  'niger': 'ne', 'níger': 'ne',
+  'nigeria': 'ng',
+  'ruanda': 'rw', 'rwanda': 'rw',
+  'santo tome y principe': 'st', 'santo tomé y príncipe': 'st', 'sao tome and principe': 'st',
+  'senegal': 'sn',
+  'seychelles': 'sc',
+  'sierra leona': 'sl', 'sierra leone': 'sl',
+  'somalia': 'so',
+  'sudafrica': 'za', 'sudáfrica': 'za', 'south africa': 'za',
+  'sudan': 'sd', 'sudán': 'sd', 'sudan': 'sd',
+  'sudan del sur': 'ss', 'sudán del sur': 'ss', 'south sudan': 'ss',
+  'tanzania': 'tz',
+  'togo': 'tg',
+  'tunez': 'tn', 'túnez': 'tn', 'tunisia': 'tn',
+  'uganda': 'ug',
+  'yibuti': 'dj', 'djibouti': 'dj',
+  'zambia': 'zm',
+  'zimbabue': 'zw', 'zimbabwe': 'zw',
+
+  // Oceanía
+  'australia': 'au',
+  'fiyi': 'fj', 'fiji': 'fj',
+  'islas marshall': 'mh', 'marshall islands': 'mh',
+  'islas salomon': 'sb', 'islas salomón': 'sb', 'solomon islands': 'sb',
+  'kiribati': 'ki',
+  'micronesia': 'fm', 'estados federados de micronesia': 'fm',
+  'nauru': 'nr',
+  'nueva zelanda': 'nz', 'new zealand': 'nz',
+  'palaos': 'pw', 'palau': 'pw',
+  'papua nueva guinea': 'pg', 'papúa nueva guinea': 'pg', 'papua new guinea': 'pg',
+  'samoa': 'ws',
+  'tonga': 'to',
+  'tuvalu': 'tv',
+  'vanuatu': 'vu'
 };
 
 /**
  * Normaliza cualquier entrada de bandera (emoji, ISO, nombre o URL).
+ * Si recibe un emoji de bandera válido (ej: 🇨🇦), extrae directamente su código ISO (ca)
+ * y garantiza que nunca se devuelva '🌐' ni 'un' cuando haya información suficiente.
  */
 export function normalizarBandera(input, nombrePais = '') {
-  if (!input && !nombrePais) return 'un';
-  
   const raw = (input || '').trim();
+  const nombreTrim = (nombrePais || '').trim();
+
+  if (!raw && !nombreTrim) return 'un';
   
   // 1. Si ya es una URL web o DataURL Base64
   if (raw.startsWith('data:image/') || raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('blob:')) {
     return raw;
   }
 
-  // 2. Si es un emoji de bandera
+  // 2. Si es un emoji de bandera válido (incluyendo regionales Unicode)
   const isoFromEmoji = emojiToIso(raw);
-  if (isoFromEmoji) return isoFromEmoji;
+  if (isoFromEmoji) {
+    return isoFromEmoji;
+  }
 
-  // 3. Si es un código de 2 letras
-  if (/^[a-zA-Z]{2}$/.test(raw)) {
+  // 3. Si es un código ISO de 2 letras directo (ej: 'es', 'ca', 'US')
+  if (/^[a-zA-Z]{2}$/.test(raw) && raw.toLowerCase() !== 'un') {
     return raw.toLowerCase();
   }
 
-  // 4. Búsqueda en diccionario por el valor recibido o por el nombre del país
-  const cleanInput = raw.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-  if (DICCIONARIO_PAISES_ISO[cleanInput]) {
-    return DICCIONARIO_PAISES_ISO[cleanInput];
+  // 4. Búsqueda por input limpio si no es emoji genérico ('🌐', etc.)
+  if (raw && raw !== '🌐' && raw !== '🇺🇳') {
+    const cleanInput = raw.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    if (DICCIONARIO_PAISES_ISO[cleanInput]) {
+      return DICCIONARIO_PAISES_ISO[cleanInput];
+    }
   }
 
-  if (nombrePais) {
-    const cleanNombre = nombrePais.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  // 5. Búsqueda por el nombre del país (español, inglés, oficial o variantes)
+  if (nombreTrim) {
+    const cleanNombre = nombreTrim.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
     if (DICCIONARIO_PAISES_ISO[cleanNombre]) {
       return DICCIONARIO_PAISES_ISO[cleanNombre];
     }
+
+    // Comprobación de prefijos comunes como "delegacion de ...", "republica de ...", "reino de ..."
+    const nombreSinPrefijo = cleanNombre
+      .replace(/^(delegacion|republica|república|reino|estado|estados|gobierno)\s+(de\s+|del\s+|de\s+la\s+|de\s+los\s+|de\s+las\s+)?/i, '')
+      .trim();
+    if (nombreSinPrefijo && DICCIONARIO_PAISES_ISO[nombreSinPrefijo]) {
+      return DICCIONARIO_PAISES_ISO[nombreSinPrefijo];
+    }
+  }
+
+  // Si era un código de 2 letras 'un', retornarlo
+  if (raw.toLowerCase() === 'un') {
+    return 'un';
+  }
+
+  // Si tiene código de 2 letras devuelto
+  if (/^[a-zA-Z]{2}$/.test(raw)) {
+    return raw.toLowerCase();
   }
 
   return raw || 'un';
@@ -276,10 +419,13 @@ export function isoToEmoji(iso) {
 export function getFlagEmoji(bandera, nombrePais = '') {
   if (!bandera && !nombrePais) return '🇺🇳';
   const str = (bandera || '').trim();
+  
+  // Si ya es un emoji de bandera válido
   const codePoints = Array.from(str).map(c => c.codePointAt(0));
   if (codePoints.length >= 2 && codePoints[0] >= 0x1F1E6 && codePoints[0] <= 0x1F1FF) {
     return str;
   }
+  
   const iso = normalizarBandera(bandera, nombrePais);
   if (iso) {
     const emoji = isoToEmoji(iso);
@@ -287,4 +433,5 @@ export function getFlagEmoji(bandera, nombrePais = '') {
   }
   return '🌐';
 }
+
 

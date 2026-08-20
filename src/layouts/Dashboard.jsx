@@ -47,6 +47,7 @@ import { useSession } from '../context/SessionContext';
 import { useP2P } from '../context/P2PContext';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { validateSessionJSON } from '../utils/sessionValidator';
+import { getFlagEmoji } from '../utils/flags';
 
 // ─── Grid constants ────────────────────────────────────────────────────────────
 const COLS = 12;
@@ -286,41 +287,53 @@ const Dashboard = () => {
     broadcastCurrentState,
     registerSessionHandlers,
     roomSettings,
+    roomId,
     setViewMode
   } = useP2P();
 
   // Registrar handlers de sesión para solicitudes P2P automáticas, acciones remotas y sincronización
   useEffect(() => {
     registerSessionHandlers({
-      onAddSpeakerGSL: (pais) => agregarOrador(pais),
-      onAddSpeakerCaucus: (pais) => agregarOradorCaucus(pais),
-      onAddMotion: (mocion) => agregarMocion(mocion),
+      onAddSpeakerGSL: (pais) => {
+        const countryName = typeof pais === 'string' ? pais : pais?.nombre;
+        const match = paises.find(p => p.nombre?.toLowerCase() === countryName?.toLowerCase());
+        agregarOrador(match || pais);
+      },
+      onAddSpeakerCaucus: (pais) => {
+        const countryName = typeof pais === 'string' ? pais : pais?.nombre;
+        const match = paises.find(p => p.nombre?.toLowerCase() === countryName?.toLowerCase());
+        agregarOradorCaucus(match || pais);
+      },
+      onAddMotion: (mocion) => {
+        const match = paises.find(p => p.nombre?.toLowerCase() === mocion.proponente?.toLowerCase());
+        agregarMocion({
+          ...mocion,
+          bandera: match?.bandera || mocion.bandera || getFlagEmoji(null, mocion.proponente)
+        });
+      },
       onCastVote: (country, vote) => registrarVotoPais(country, vote),
       onSessionAction: (accion, payload) => ejecutarAccion(accion, payload),
       onSyncState: (state) => aplicarEstadoExterno(state)
     });
-  }, [registerSessionHandlers, agregarOrador, agregarOradorCaucus, agregarMocion, registrarVotoPais, ejecutarAccion, aplicarEstadoExterno]);
+  }, [registerSessionHandlers, agregarOrador, agregarOradorCaucus, agregarMocion, registrarVotoPais, ejecutarAccion, aplicarEstadoExterno, paises]);
 
-  // Sincronizar estado automáticamente a todos los peers conectados si el Chair está emitiendo
+  // Sincronizar estado automáticamente a todos los peers conectados si el Chair está emitiendo (optimizado sin spam de reloj)
   useEffect(() => {
     broadcastCurrentState({
       comision: nombreComite || 'Asamblea General - openMUN',
       paises,
       oradoresCola,
       oradoresCaucus,
-      registroIntervenciones,
       mociones,
-      historicoMociones,
       caucusActivo,
       agendaSesion,
       nombreComite,
       votacionSesion,
-      relojGSLState,
       enmiendasSesion,
       roomSettings,
       speakingRequests
     });
-  }, [broadcastCurrentState, paises, oradoresCola, oradoresCaucus, registroIntervenciones, mociones, historicoMociones, caucusActivo, agendaSesion, nombreComite, votacionSesion, relojGSLState, enmiendasSesion, roomSettings, speakingRequests]);
+  }, [broadcastCurrentState, paises, oradoresCola, oradoresCaucus, mociones, caucusActivo, agendaSesion, nombreComite, votacionSesion, enmiendasSesion, roomSettings, speakingRequests]);
 
   // Configuración global y accesibilidad desde el contexto
   const {
@@ -952,11 +965,15 @@ const Dashboard = () => {
                   cursor: 'pointer',
                   position: 'relative'
                 }}
-                title={t('liveSession.title', 'Sesión en Vivo P2P')}
+                title={t('liveSession.title', 'Sesión en Vivo')}
               >
                 <Radio size={14} className={connectionStatus === 'host_active' ? 'animate-pulse' : ''} />
                 <span>
-                  {connectionStatus === 'host_active' ? `${t('liveSession.live', 'En Vivo')} (${connectedPeers.length})` : 'P2P Live'}
+                  {connectionStatus === 'host_active'
+                    ? (roomSettings?.privacyMode === 'hidden'
+                        ? `${t('liveSession.live', 'En Vivo')} (${connectedPeers.length})`
+                        : `${roomId || t('liveSession.live', 'En Vivo')} (${connectedPeers.length})`)
+                    : t('liveSession.live', 'En Vivo')}
                 </span>
                 {speakingRequests.length > 0 && (
                   <span style={{

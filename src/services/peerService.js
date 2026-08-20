@@ -1,14 +1,88 @@
-import { Peer } from 'peerjs';
-
-
-const jitter = Math.floor(Math.random() * 1000);
+import { io } from 'socket.io-client';
+import { compressData, decompressData } from '../utils/compression.js';
+import { createStateDelta } from '../utils/deltaSync.js';
 
 export const LOCAL_BROADCAST_CHANNEL_NAME = 'openmun_local_secret_channel';
+export const SOCKET_SERVER_URL = 'https://api.openmun.app';
 
 /**
- * Ajustes de sala por defecto
+ * Sanitiza y optimiza el estado antes de enviarlo por la red:
+ * 1. Mantiene propiedades esenciales incluyendo 'bandera' (códigos ISO ligeros o Base64).
+ * 2. Omite registros históricos pesados innecesarios para clientes ('registroIntervenciones', 'historicoMociones').
+ */
+export function sanitizeStateForBroadcast(state) {
+  if (!state || typeof state !== 'object') return state;
+
+  const sanitized = { ...state };
+
+  // 1. Sanitizar lista de países manteniendo bandera
+  if (Array.isArray(sanitized.paises)) {
+    sanitized.paises = sanitized.paises.map(p => {
+      if (!p) return p;
+      if (typeof p === 'string') return { nombre: p };
+      return {
+        id: p.id,
+        nombre: p.nombre,
+        bandera: p.bandera || p.flag,
+        estatus: p.estatus,
+        veto: p.veto || p.tieneVeto
+      };
+    });
+  }
+
+  // 2. Sanitizar oradores en cola
+  if (Array.isArray(sanitized.oradoresCola)) {
+    sanitized.oradoresCola = sanitized.oradoresCola.map(o => {
+      if (!o) return o;
+      if (typeof o === 'string') return { id: o, nombre: o };
+      return {
+        id: o.id,
+        nombre: o.nombre,
+        bandera: o.bandera || o.flag
+      };
+    });
+  }
+
+  // 3. Sanitizar oradores caucus
+  if (Array.isArray(sanitized.oradoresCaucus)) {
+    sanitized.oradoresCaucus = sanitized.oradoresCaucus.map(o => {
+      if (!o) return o;
+      if (typeof o === 'string') return { id: o, nombre: o };
+      return {
+        id: o.id,
+        nombre: o.nombre,
+        bandera: o.bandera || o.flag
+      };
+    });
+  }
+
+  // 4. Sanitizar solicitudes de palabra
+  if (Array.isArray(sanitized.speakingRequests)) {
+    sanitized.speakingRequests = sanitized.speakingRequests.map(r => {
+      if (!r) return r;
+      return {
+        id: r.id,
+        country: r.country,
+        bandera: r.bandera || r.flag,
+        timestamp: r.timestamp,
+        type: r.type,
+        peerId: r.peerId
+      };
+    });
+  }
+
+  // 5. Omitir logs históricos gigantes innecesarios para clientes
+  delete sanitized.registroIntervenciones;
+  delete sanitized.historicoMociones;
+
+  return sanitized;
+}
+
+/**
+ * Ajustes de Sala y Permisos por defecto
  */
 export const DEFAULT_ROOM_SETTINGS = {
+  privacyMode: 'normal',          // 'normal' | 'hidden'
   speakerRequestMode: 'approval', // 'direct' | 'approval' | 'disabled'
   caucusRequestMode: 'approval',  // 'direct' | 'approval' | 'disabled'
   allowDelegateNotes: true,
@@ -26,6 +100,7 @@ export const MSG_TYPES = {
   SELECT_COUNTRY: 'SELECT_COUNTRY',
   SELECT_COUNTRY_RESULT: 'SELECT_COUNTRY_RESULT',
   SYNC_STATE: 'SYNC_STATE',
+  DELTA_STATE: 'DELTA_STATE',
   SESSION_ACTION: 'SESSION_ACTION',
   UPDATE_ROOM_SETTINGS: 'UPDATE_ROOM_SETTINGS',
   ROOM_SETTINGS_UPDATED: 'ROOM_SETTINGS_UPDATED',
@@ -38,9 +113,10 @@ export const MSG_TYPES = {
   CRISIS_ALERT: 'CRISIS_ALERT',
   CAST_VOTE: 'CAST_VOTE',
   SUBMIT_AMENDMENT: 'SUBMIT_AMENDMENT',
-  REQUEST_SYNC: 'REQUEST_SYNC',
+  REQUEST_FULL_SYNC: 'REQUEST_FULL_SYNC',
   KICK: 'KICK',
   KICK_PEER: 'KICK_PEER',
+  PEER_LIST_UPDATED: 'PEER_LIST_UPDATED',
   PING: 'PING',
   PONG: 'PONG'
 };
@@ -53,86 +129,15 @@ export function generateRoomCode() {
   return `MUN-${randomNum}`;
 }
 
-/**
- * Servidores ICE: STUN y TURN (Metered.ca Relay + Google STUN + Cloudflare STUN)
- * Garantiza conectividad 100% incluso en Wi-Fi escolar, redes con NAT simétrica y 4G/5G.
- */
-export const DEFAULT_ICE_SERVERS = [
-  {
-    urls: 'stun:stun.relay.metered.ca:80'
-  },
-  {
-    urls: 'turn:global.relay.metered.ca:80',
-    username: '0438b14d85f2705b8e015817',
-    credential: 'lKwHeQnxL+Hecz8h'
-  },
-  {
-    urls: 'turn:global.relay.metered.ca:80?transport=tcp',
-    username: '0438b14d85f2705b8e015817',
-    credential: 'lKwHeQnxL+Hecz8h'
-  },
-  {
-    urls: 'turn:global.relay.metered.ca:443',
-    username: '0438b14d85f2705b8e015817',
-    credential: 'lKwHeQnxL+Hecz8h'
-  },
-  {
-    urls: 'turns:global.relay.metered.ca:443?transport=tcp',
-    username: '0438b14d85f2705b8e015817',
-    credential: 'lKwHeQnxL+Hecz8h'
-  },
-  { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' },
-  { urls: 'stun:stun2.l.google.com:19302' },
-  { urls: 'stun:stun.cloudflare.com:3478' }
-];
-
-/**
- * Servidor de Señalización propio en Render
- */
-export const DEFAULT_SIGNALING_CONFIG = {
-  host: 'openmun-signaling.onrender.com',
-  port: 443,
-  path: '/openmun',
-  secure: true
-};
-
-/**
- * Obtener opciones de configuración de PeerJS combinando defaults con localStorage
- */
-export function getPeerConfig(overrideOptions = {}) {
-  let signaling = { ...DEFAULT_SIGNALING_CONFIG };
-  try {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('openmun_signaling_config');
-      if (saved) {
-        signaling = { ...signaling, ...JSON.parse(saved) };
-      }
-    }
-  } catch (e) { }
-
-  return {
-    debug: 1,
-    host: signaling.host || 'openmun-signaling.onrender.com',
-    port: signaling.port ? Number(signaling.port) : 443,
-    path: signaling.path || '/',
-    secure: signaling.secure !== false,
-    config: {
-      iceServers: DEFAULT_ICE_SERVERS,
-      iceCandidatePoolSize: 10,
-      sdpSemantics: 'unified-plan'
-    },
-    ...overrideOptions
-  };
-}
-
-class PeerService {
+class NetworkService {
   constructor() {
-    this.peer = null;
-    this.connections = new Map(); // peerId -> conn
-    this.peerMetadata = new Map(); // peerId -> { role, country, connectedAt }
+    this.socket = null;
+    this.socketId = null;
+    this.peerMetadata = new Map(); // socketId -> { role, country, connectedAt }
     this.broadcastChannel = null;
     this.isHost = false;
+    this.role = 'none';
+    this.clientCountry = null;
     this.listeners = new Set();
     this.roomId = null;
     this.secretPassword = 'secreto123';
@@ -141,38 +146,14 @@ class PeerService {
     this.latestSpeakingRequests = [];
     this.latestSessionState = null;
     this.latestNotes = [];
+    this.broadcastDebounceTimer = null;
+    this.pendingStateToBroadcast = null;
     try {
       if (typeof window !== 'undefined') {
         const savedNotes = localStorage.getItem('openmun_notes');
         if (savedNotes) this.latestNotes = JSON.parse(savedNotes);
       }
-    } catch (e) { }
-    this.hostConn = null;
-    this.heartbeatTimer = null;
-    this.isTurnRelay = false;
-    this.lastBroadcastedStateHash = null;
-  }
-
-  /**
-   * Determina si la conexión WebRTC actual está pasando por un servidor TURN (relay)
-   */
-  async checkConnectionRelay(pc) {
-    if (!pc || typeof pc.getStats !== 'function') return false;
-    try {
-      const stats = await pc.getStats();
-      for (const report of stats.values()) {
-        if (report.type === 'candidate-pair' && (report.selected || report.state === 'succeeded' || report.nominated)) {
-          const localCandidate = stats.get(report.localCandidateId);
-          const remoteCandidate = stats.get(report.remoteCandidateId);
-          if (localCandidate?.candidateType === 'relay' || remoteCandidate?.candidateType === 'relay') {
-            return true;
-          }
-        }
-      }
-    } catch (e) {
-      // Ignorar errores transitorios de stats
-    }
-    return false;
+    } catch (e) {}
   }
 
   // Filtrar histórico de notas según el rol y país del receptor
@@ -212,45 +193,19 @@ class PeerService {
       try {
         cb(event, data);
       } catch (err) {
-        console.error('Error en listener de PeerService:', err);
+        console.error('Error en listener de NetworkService:', err);
       }
     });
-  }
-
-  // Keep-alive optimizado para el WebSocket del servidor de señalización (25s para minimizar MB)
-  startSignalingHeartbeat() {
-    this.stopSignalingHeartbeat();
-    this.heartbeatTimer = setInterval(() => {
-      if (this.peer && !this.peer.destroyed) {
-        if (this.peer.disconnected) {
-          try {
-            console.log('Reconectando Peer al servidor de señalización...');
-            this.peer.reconnect();
-          } catch (e) { }
-        } else if (this.peer.socket && typeof this.peer.socket.send === 'function') {
-          try {
-            this.peer.socket.send({ type: 'HEARTBEAT' });
-          } catch (e) { }
-        }
-      }
-    }, 25000);
-  }
-
-  stopSignalingHeartbeat() {
-    if (this.heartbeatTimer) {
-      clearInterval(this.heartbeatTimer);
-      this.heartbeatTimer = null;
-    }
   }
 
   // ─────────────────────────────────────────────────────────────
   // INICIALIZACIÓN DEL HOST (CHAIR)
   // ─────────────────────────────────────────────────────────────
   async initHost(roomId, options = {}) {
-    // Normalizar ID de sala
     const cleanRoomId = (roomId || generateRoomCode()).trim().toUpperCase();
     this.destroy();
     this.isHost = true;
+    this.role = 'chair';
     this.roomId = cleanRoomId;
     this.secretPassword = options.secretPassword || 'secreto123';
     this.backroomPassword = options.backroomPassword || 'crisis123';
@@ -258,12 +213,13 @@ class PeerService {
       this.roomSettings = { ...DEFAULT_ROOM_SETTINGS, ...options.roomSettings };
     }
 
-    // Inicializar BroadcastChannel para la sesión secreta local (mismo navegador)
+    // REGLA DE ORO: Inicializar BroadcastChannel para la sesión secreta local (mismo navegador / segundo monitor)
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
       try {
         this.broadcastChannel = new BroadcastChannel(LOCAL_BROADCAST_CHANNEL_NAME);
-        this.broadcastChannel.onmessage = (event) => {
-          this.handleIncomingMessage('local_broadcast_secretariat', event.data, true);
+        this.broadcastChannel.onmessage = async (event) => {
+          const decompressed = await decompressData(event.data);
+          this.handleIncomingMessage('local_broadcast_secretariat', decompressed, true);
         };
       } catch (err) {
         console.warn('BroadcastChannel no soportado o bloqueado:', err);
@@ -271,120 +227,63 @@ class PeerService {
     }
 
     return new Promise((resolve, reject) => {
-      let isResolved = false;
-      let hasTriedFallback = false;
-
-      const createHostPeer = (useCloudFallback = false) => {
-        try {
-          if (useCloudFallback) {
-            console.warn('Iniciando Host en PeerJS Cloud como fallback...');
-            this.peer = new Peer(this.roomId, {
-              debug: 1,
-              config: {
-                iceServers: DEFAULT_ICE_SERVERS,
-                iceCandidatePoolSize: 10
-              }
-            });
-          } else {
-            const config = getPeerConfig(options.peerConfig || {});
-            this.peer = new Peer(this.roomId, config);
-          }
-        } catch (err) {
-          if (!isResolved) {
-            isResolved = true;
-            reject(new Error(`Error inicializando Host: ${err.message}`));
-          }
-          return;
-        }
-
-        this.peer.on('open', (id) => {
-          if (!isResolved) {
-            isResolved = true;
-            this.startSignalingHeartbeat();
-            this.emit('host_ready', { roomId: id, roomSettings: this.roomSettings });
-            resolve(id);
-          }
+      try {
+        this.socket = io(SOCKET_SERVER_URL, {
+          transports: ['websocket', 'polling'],
+          reconnection: true,
+          reconnectionAttempts: 30,
+          reconnectionDelay: 1000,
+          reconnectionDelayMax: 5000,
+          timeout: 20000
         });
 
-        this.peer.on('connection', (conn) => {
-          this.handleIncomingConnection(conn);
+        this.socket.on('connect', () => {
+          this.socketId = this.socket.id;
+          // Unirse a la sala del comité en el servidor central
+          this.socket.emit('unirse-comite', this.roomId);
+          this.emit('host_ready', { roomId: this.roomId, roomSettings: this.roomSettings });
+          resolve(this.roomId);
         });
 
-        this.peer.on('error', (err) => {
-          console.error('Error en PeerJS Host:', err);
-          const errMsg = err?.message || 'Error en conexión P2P';
-          const errType = err?.type;
+        // Escuchar datos entrantes desde el servidor central Socket.io
+        this.socket.on('nuevos-datos', async (raw) => {
+          if (!raw) return;
+          const data = await decompressData(raw);
+          if (!data) return;
+          // Ignorar ecos emitidos por el propio socket si el servidor reenvía a toda la sala
+          if (data.senderSocketId && data.senderSocketId === this.socketId) return;
 
-          // Si el servidor de señalización de Render falla (ej: dormido o error de socket), intentar fallback a nube pública una vez
-          if (!isResolved && !hasTriedFallback && (errType === 'server-error' || errType === 'socket-error' || errType === 'socket-closed')) {
-            hasTriedFallback = true;
-            console.warn('Servidor de señalización primario no disponible. Reintentando Host en PeerJS Cloud...');
-            try { this.peer.destroy(); } catch (e) { }
-            createHostPeer(true);
-            return;
-          }
+          // Si el mensaje es una acción dirigida al Host, procesarla
+          this.handleIncomingMessage(data.senderSocketId || data.senderId || 'remote', data, false);
+        });
 
-          this.emit('error', { error: errMsg });
-          if (!isResolved) {
-            isResolved = true;
-            if (errType === 'unavailable-id') {
-              reject(new Error(`El código de sala "${this.roomId}" ya está en uso. Por favor genera otro o reinicia la sala.`));
-            } else {
-              reject(new Error(`Error al iniciar la sala: ${errMsg}`));
+        this.socket.on('connect_error', (err) => {
+          console.warn('Error de conexión Socket.io en Host:', err.message);
+          this.emit('error', { error: `Error de conexión con el servidor: ${err.message}` });
+        });
+
+        this.socket.on('reconnect', (attemptNumber) => {
+          console.log(`Reconectado exitosamente al servidor (intento ${attemptNumber})`);
+          if (this.roomId) {
+            this.socket.emit('unirse-comite', this.roomId);
+            // Re-enviar el estado actual para resincronizar a los participantes
+            if (this.latestSessionState) {
+              this.broadcastStateToClients(this.latestSessionState);
             }
           }
         });
 
-        this.peer.on('disconnected', () => {
-          console.warn('Host desconectado del servidor de señalización. Reconectando...');
-          if (this.peer && !this.peer.destroyed) {
-            try { this.peer.reconnect(); } catch (e) { }
+        this.socket.on('disconnect', (reason) => {
+          console.warn('Host desconectado del servidor Socket.io:', reason);
+          if (reason === 'io server disconnect') {
+            this.socket.connect();
           }
         });
-      };
 
-      createHostPeer(false);
-    });
-  }
-
-  // Manejar conexión entrante al Host
-  handleIncomingConnection(conn) {
-    conn.on('open', () => {
-      // Conexión DataChannel abierta con el peer
-      setTimeout(async () => {
-        if (conn.peerConnection) {
-          const isRelay = await this.checkConnectionRelay(conn.peerConnection);
-          const meta = this.peerMetadata.get(conn.peer);
-          if (meta) meta.isRelay = isRelay;
-          const anyRelay = isRelay || Array.from(this.peerMetadata.values()).some(m => m.isRelay);
-          this.isTurnRelay = anyRelay;
-          this.emit('connection_type', {
-            isRelay: anyRelay,
-            type: anyRelay ? 'relay' : 'direct',
-            mode: anyRelay ? 'TURN Server (Relay)' : 'P2P Directo'
-          });
-        }
-      }, 1000);
-    });
-
-    conn.on('data', (data) => {
-      if (data?.type === MSG_TYPES.PING) {
-        try { conn.send({ type: MSG_TYPES.PONG, timestamp: Date.now() }); } catch (e) { }
-        return;
+      } catch (err) {
+        console.error('Error al inicializar Socket.io Host:', err);
+        reject(err);
       }
-      this.handleIncomingMessage(conn.peer, data, false, conn);
-    });
-
-    conn.on('close', () => {
-      const meta = this.peerMetadata.get(conn.peer);
-      this.connections.delete(conn.peer);
-      this.peerMetadata.delete(conn.peer);
-      this.emit('peer_disconnected', { peerId: conn.peer, meta });
-      this.broadcastPeerList();
-    });
-
-    conn.on('error', (err) => {
-      console.warn(`Error en conexión con peer ${conn.peer}:`, err);
     });
   }
 
@@ -395,17 +294,20 @@ class PeerService {
     const cleanRoomId = (roomId || '').trim().toUpperCase();
     this.destroy();
     this.isHost = false;
+    this.role = role;
+    this.clientCountry = country || null;
     this.roomId = cleanRoomId;
 
-    // Modo Secreto Local mediante BroadcastChannel
+    // REGLA DE ORO: Modo Secreto Local mediante BroadcastChannel (sin internet)
     if (isLocalBroadcast) {
       if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
         this.broadcastChannel = new BroadcastChannel(LOCAL_BROADCAST_CHANNEL_NAME);
-        this.broadcastChannel.onmessage = (event) => {
-          this.emit('message', event.data);
+        this.broadcastChannel.onmessage = async (event) => {
+          const decompressed = await decompressData(event.data);
+          this.emit('message', decompressed);
         };
         // Notificar al Chair que se ha unido una pantalla secreta local
-        this.broadcastChannel.postMessage({
+        this.broadcastLocal({
           type: MSG_TYPES.AUTH,
           payload: { role: 'secretariat', country: 'Secretaría Local', isLocal: true },
           id: `auth-${Date.now()}`
@@ -416,103 +318,67 @@ class PeerService {
       throw new Error('BroadcastChannel no soportado en este navegador');
     }
 
-    // Cliente P2P remoto con reintentos progresivos y soporte TURN
+    // Cliente Socket.io remoto
     return new Promise((resolve, reject) => {
-      let isSettled = false;
-      let attempt = 0;
-      const MAX_ATTEMPTS = 3;
-      let currentConn = null;
-      let hasTriedFallback = false;
-      let retryTimer = null;
+      let isResolved = false;
 
-      const safeReject = (err) => {
-        if (!isSettled) {
-          isSettled = true;
-          if (connectTimeout) clearTimeout(connectTimeout);
-          if (retryTimer) clearTimeout(retryTimer);
-          this.destroy();
-          const message = typeof err === 'string' ? err : (err?.message || 'Error de conexión P2P');
-          reject(new Error(message));
-        }
-      };
-
-      const safeResolve = (data) => {
-        if (!isSettled) {
-          isSettled = true;
-          if (connectTimeout) clearTimeout(connectTimeout);
-          if (retryTimer) clearTimeout(retryTimer);
-          resolve(data);
-        }
-      };
-
-      // Timeout global adaptativo (30 segundos para permitir activación de Render y relay TURN)
       const connectTimeout = setTimeout(() => {
-        safeReject(`Tiempo de espera agotado al conectar con la sala "${cleanRoomId}". Verifica que el código sea correcto y que el Chair tenga la sala iniciada.`);
-      }, 30000);
-
-      const establishDataConnection = () => {
-        if (isSettled || !this.peer || this.peer.destroyed) return;
-
-        attempt++;
-        if (attempt > 1) {
-          this.emit('connecting_status', { attempt, max: MAX_ATTEMPTS, text: `Reintentando conexión con la sala (${attempt}/${MAX_ATTEMPTS})...` });
+        if (!isResolved) {
+          isResolved = true;
+          reject(new Error(`Tiempo de espera agotado al conectar con el comité "${cleanRoomId}". Verifica tu conexión o el código de sala.`));
         }
+      }, 15000);
 
-        try {
-          if (currentConn) {
-            try { currentConn.close(); } catch (e) { }
-            currentConn = null;
-          }
+      try {
+        this.socket = io(SOCKET_SERVER_URL, {
+          transports: ['websocket', 'polling'],
+          reconnection: true,
+          reconnectionAttempts: 30,
+          reconnectionDelay: 1000,
+          reconnectionDelayMax: 5000,
+          timeout: 20000
+        });
 
-          // Conexión DataChannel con reliable: true para garantizar orden y entrega
-          currentConn = this.peer.connect(cleanRoomId, {
-            reliable: true
+        this.socket.on('connect', () => {
+          this.socketId = this.socket.id;
+          // Unirse a la sala del comité
+          this.socket.emit('unirse-comite', cleanRoomId);
+
+          // Enviar solicitud de autenticación / registro de rol
+          this.emitSocketMessage({
+            type: MSG_TYPES.AUTH,
+            payload: { role, password, country },
+            senderSocketId: this.socket.id,
+            id: `auth-${Date.now()}`
           });
+        });
 
-          currentConn.on('open', () => {
-            this.hostConn = currentConn;
-            currentConn.send({
-              type: MSG_TYPES.AUTH,
-              payload: { role, password, country }
-            });
+        // Escuchar datos del servidor
+        this.socket.on('nuevos-datos', async (raw) => {
+          if (!raw) return;
+          const data = await decompressData(raw);
+          if (!data || !data.type) return;
 
-            // Detectar si la conexión es vía TURN Relay y emitir estado
-            const checkRelay = async () => {
-              if (currentConn?.peerConnection) {
-                const isRelay = await this.checkConnectionRelay(currentConn.peerConnection);
-                this.isTurnRelay = isRelay;
-                this.emit('connection_type', {
-                  isRelay,
-                  type: isRelay ? 'relay' : 'direct',
-                  mode: isRelay ? 'TURN Server (Relay)' : 'P2P Directo'
-                });
-              }
-            };
-            setTimeout(checkRelay, 1200);
-            try {
-              if (currentConn.peerConnection) {
-                currentConn.peerConnection.addEventListener('iceconnectionstatechange', () => {
-                  if (currentConn?.peerConnection?.iceConnectionState === 'connected' || currentConn?.peerConnection?.iceConnectionState === 'completed') {
-                    checkRelay();
-                  }
-                });
-              }
-            } catch (e) { }
-          });
+          // Ignorar ecos propios
+          if (data.senderSocketId && data.senderSocketId === this.socketId) return;
 
-          currentConn.on('data', (data) => {
-            if (data?.type === MSG_TYPES.PING) {
-              try { currentConn.send({ type: MSG_TYPES.PONG, timestamp: Date.now() }); } catch (e) { }
-              return;
-            }
+          // Mensajes dirigidos a un socket específico
+          if (data.targetSocketId && data.targetSocketId !== this.socketId) return;
 
-            if (data?.type === MSG_TYPES.AUTH_RESULT) {
+          // Manejo de respuesta de Autenticación
+          if (data.type === MSG_TYPES.AUTH_RESULT) {
+            if (!isResolved) {
               if (data.payload?.success) {
+                isResolved = true;
+                clearTimeout(connectTimeout);
                 if (data.payload.roomSettings) {
                   this.roomSettings = data.payload.roomSettings;
                 }
                 if (data.payload.speakingRequests) {
                   this.latestSpeakingRequests = data.payload.speakingRequests;
+                }
+                if (data.payload.notes) {
+                  this.latestNotes = data.payload.notes;
                 }
                 this.emit('connected', {
                   role: data.payload.role,
@@ -521,107 +387,71 @@ class PeerService {
                   roomSettings: data.payload.roomSettings,
                   speakingRequests: data.payload.speakingRequests || []
                 });
-                safeResolve(data.payload);
+                resolve(data.payload);
               } else {
-                currentConn.close();
-                safeReject(data.payload?.message || 'Acceso denegado');
+                isResolved = true;
+                clearTimeout(connectTimeout);
+                this.destroy();
+                reject(new Error(data.payload?.message || 'Acceso denegado a la sala'));
               }
-              return;
             }
-            this.emit('message', data);
-          });
-
-          currentConn.on('close', () => {
-            this.emit('disconnected', { reason: 'Conexión con el Chair cerrada' });
-          });
-
-          currentConn.on('error', (err) => {
-            console.warn(`Error en conexión con el host (intento ${attempt}):`, err);
-            const errText = err?.message || String(err);
-
-            if (attempt < MAX_ATTEMPTS && !isSettled) {
-              retryTimer = setTimeout(establishDataConnection, 1800);
-            } else if (errText.includes('Negotiation') || errText.includes('negotiation')) {
-              safeReject(`Error de negociación WebRTC con la sala "${cleanRoomId}". Verifica que la sala esté iniciada por el Chair.`);
-            } else {
-              safeReject(errText);
-            }
-          });
-        } catch (err) {
-          if (attempt < MAX_ATTEMPTS && !isSettled) {
-            retryTimer = setTimeout(establishDataConnection, 1800);
-          } else {
-            safeReject(err);
-          }
-        }
-      };
-
-      const createClientPeer = (useCloudFallback = false) => {
-        try {
-          if (useCloudFallback) {
-            console.warn('Iniciando Cliente en PeerJS Cloud como fallback...');
-            this.peer = new Peer({
-              debug: 1,
-              config: {
-                iceServers: DEFAULT_ICE_SERVERS,
-                iceCandidatePoolSize: 10
-              }
-            });
-          } else {
-            const config = getPeerConfig();
-            this.peer = new Peer(config);
-          }
-        } catch (err) {
-          safeReject(`Error inicializando WebRTC: ${err.message}`);
-          return;
-        }
-
-        this.peer.on('open', () => {
-          this.startSignalingHeartbeat();
-          establishDataConnection();
-        });
-
-        this.peer.on('error', (err) => {
-          console.error('Error en PeerJS Cliente:', err);
-          const errType = err.type;
-          const errMsg = err.message || '';
-
-          // Fallback a nube si el servidor de señalización primario tiene fallo de socket
-          if (!isSettled && !hasTriedFallback && (errType === 'server-error' || errType === 'socket-error' || errType === 'socket-closed')) {
-            hasTriedFallback = true;
-            console.warn('Servidor de señalización primario no disponible. Reintentando Cliente en PeerJS Cloud...');
-            try { this.peer.destroy(); } catch (e) { }
-            createClientPeer(true);
             return;
           }
 
-          if (errType === 'peer-unavailable') {
-            if (attempt < MAX_ATTEMPTS && !isSettled) {
-              console.log(`Sala aún no disponible en señalización. Reintentando en 2s (intento ${attempt + 1}/${MAX_ATTEMPTS})...`);
-              retryTimer = setTimeout(establishDataConnection, 2000 + jitter);
-              return;
-            }
-            safeReject(`La sala "${cleanRoomId}" no se encuentra activa en el servidor. Asegúrate de que el Chair haya iniciado la sala primero.`);
-          } else if ((errType === 'negotiation-failed' || errMsg.includes('Negotiation') || errMsg.includes('negotiation')) && attempt < MAX_ATTEMPTS) {
-            console.log(`Reintentando negociación WebRTC (intento ${attempt + 1}/${MAX_ATTEMPTS})...`);
-            retryTimer = setTimeout(establishDataConnection, 1500);
-          } else if (errType === 'negotiation-failed' || errMsg.includes('Negotiation') || errMsg.includes('negotiation')) {
-            safeReject(`Error de negociación WebRTC al conectar con la sala "${cleanRoomId}".`);
-          } else {
-            safeReject(`No se pudo conectar a la sala: ${errMsg || 'Error de red'}`);
+          // Si es expulsión
+          if (data.type === MSG_TYPES.KICK) {
+            this.emit('message', data);
+            return;
+          }
+
+          // Distribución general de mensajes
+          this.emit('message', data);
+        });
+
+        this.socket.on('connect_error', (err) => {
+          if (!isResolved) {
+            console.warn('Error de conexión en cliente Socket.io:', err.message);
           }
         });
-      };
 
-      createClientPeer(false);
+        this.socket.on('reconnect', (attemptNumber) => {
+          console.log(`Cliente reconectado a sala ${cleanRoomId} (intento ${attemptNumber})`);
+          if (cleanRoomId) {
+            this.socket.emit('unirse-comite', cleanRoomId);
+            // Re-autenticar silenciosamente
+            this.emitSocketMessage({
+              type: MSG_TYPES.AUTH,
+              payload: { role: this.role, password, country: this.clientCountry },
+              senderSocketId: this.socket.id,
+              id: `auth-reconnect-${Date.now()}`
+            });
+          }
+        });
+
+        this.socket.on('disconnect', (reason) => {
+          console.warn('Cliente desconectado de la sala:', reason);
+          if (reason === 'io server disconnect') {
+            this.socket.connect();
+          }
+        });
+
+      } catch (err) {
+        if (!isResolved) {
+          isResolved = true;
+          clearTimeout(connectTimeout);
+          reject(err);
+        }
+      }
     });
   }
 
   // ─────────────────────────────────────────────────────────────
-  // ENRUTAMIENTO Y PROCESAMIENTO DE MENSAJES EN EL HOST
+  // ENRUTAMIENTO Y PROCESAMIENTO DE MENSAJES EN EL HOST (CHAIR)
   // ─────────────────────────────────────────────────────────────
-  handleIncomingMessage(peerId, message, isLocal = false, conn = null) {
+  handleIncomingMessage(senderId, message, isLocal = false) {
     if (!message || !message.type) return;
+
+    const senderSocketId = message.senderSocketId || senderId;
 
     // 1. Mensaje de Autenticación
     if (message.type === MSG_TYPES.AUTH) {
@@ -633,7 +463,7 @@ class PeerService {
         authorized = true;
       } else if (role === 'delegate') {
         if (country && country.trim()) {
-          // Validar si el país ya está conectado
+          // Validar si el país ya está ocupado
           const yaConectado = Array.from(this.peerMetadata.values()).some(
             m => m.role === 'delegate' && m.country && m.country.toLowerCase() === country.trim().toLowerCase()
           );
@@ -643,7 +473,7 @@ class PeerService {
             authorized = true;
           }
         } else {
-          // El delegado se conecta para elegir país de la lista oficial que le envía el Host
+          // El delegado entra a la sala para elegir país desde la lista oficial
           authorized = true;
         }
       } else if (role === 'secretariat') {
@@ -662,35 +492,36 @@ class PeerService {
         errorMsg = 'Rol desconocido';
       }
 
-      if (conn) {
+      if (!isLocal) {
         if (authorized) {
-          this.connections.set(peerId, conn);
-          const meta = { role, country: country?.trim() || null, connectedAt: Date.now() };
-          this.peerMetadata.set(peerId, meta);
+          const meta = { role, country: country?.trim() || null, connectedAt: Date.now(), socketId: senderSocketId };
+          this.peerMetadata.set(senderSocketId, meta);
 
-          const roleNotes = meta.country ? this.getNotesForRole(role, meta.country) : [];
+          const roleNotes = meta.country ? this.getNotesForRole(role, meta.country) : (role === 'backroom' ? this.getNotesForRole('backroom') : []);
 
-          conn.send({
+          // Enviar respuesta de autenticación dirigida al socket solicitante
+          this.emitSocketMessage({
             type: MSG_TYPES.AUTH_RESULT,
+            targetSocketId: senderSocketId,
             payload: {
               success: true,
               role,
               country: meta.country,
               roomSettings: this.roomSettings,
               speakingRequests: this.latestSpeakingRequests || [],
-              sessionState: this.getPublicSessionState(this.latestSessionState || {}),
+              sessionState: this.latestSessionState || null,
               notes: roleNotes
             }
           });
 
-          this.emit('peer_authenticated', { peerId, meta });
+          this.emit('peer_authenticated', { peerId: senderSocketId, meta });
           this.broadcastPeerList();
         } else {
-          conn.send({
+          this.emitSocketMessage({
             type: MSG_TYPES.AUTH_RESULT,
+            targetSocketId: senderSocketId,
             payload: { success: false, message: errorMsg }
           });
-          setTimeout(() => conn.close(), 300);
         }
       } else if (isLocal && authorized) {
         this.broadcastLocal({
@@ -709,70 +540,63 @@ class PeerService {
       return;
     }
 
-    // 1.1 Selección / Toma de País por parte del Delegado (desde el array de países enviado por el Host)
+    // 1.1 Selección / Toma de País por parte del Delegado
     if (message.type === MSG_TYPES.SELECT_COUNTRY) {
       const selectedCountry = (message.payload?.country || '').trim();
       if (!selectedCountry) {
-        if (conn) {
-          conn.send({
-            type: MSG_TYPES.SELECT_COUNTRY_RESULT,
-            payload: { success: false, message: 'Por favor selecciona un país válido' }
-          });
-        }
+        this.emitSocketMessage({
+          type: MSG_TYPES.SELECT_COUNTRY_RESULT,
+          targetSocketId: senderSocketId,
+          payload: { success: false, message: 'Por favor selecciona un país válido' }
+        });
         return;
       }
 
-      // Validar si otro peer ya tiene asignado este país
+      // Validar si otro participante ya tiene asignado este país
       const yaOcupado = Array.from(this.peerMetadata.entries()).some(
-        ([id, m]) => id !== peerId && m.role === 'delegate' && m.country && m.country.toLowerCase() === selectedCountry.toLowerCase()
+        ([id, m]) => id !== senderSocketId && m.role === 'delegate' && m.country && m.country.toLowerCase() === selectedCountry.toLowerCase()
       );
 
       if (yaOcupado) {
-        if (conn) {
-          conn.send({
-            type: MSG_TYPES.SELECT_COUNTRY_RESULT,
-            payload: { success: false, message: `La delegación de ${selectedCountry} ya ha sido seleccionada por otro participante.` }
-          });
-        }
+        this.emitSocketMessage({
+          type: MSG_TYPES.SELECT_COUNTRY_RESULT,
+          targetSocketId: senderSocketId,
+          payload: { success: false, message: `La delegación de ${selectedCountry} ya ha sido seleccionada por otro participante.` }
+        });
         return;
       }
 
-      // Asignar el país al peer
-      const currentMeta = this.peerMetadata.get(peerId) || { role: 'delegate', connectedAt: Date.now() };
+      // Asignar el país al participante
+      const currentMeta = this.peerMetadata.get(senderSocketId) || { role: 'delegate', connectedAt: Date.now(), socketId: senderSocketId };
       const updatedMeta = { ...currentMeta, country: selectedCountry };
-      this.peerMetadata.set(peerId, updatedMeta);
+      this.peerMetadata.set(senderSocketId, updatedMeta);
 
       const roleNotes = this.getNotesForRole('delegate', selectedCountry);
 
-      if (conn) {
-        conn.send({
-          type: MSG_TYPES.SELECT_COUNTRY_RESULT,
-          payload: {
-            success: true,
-            country: selectedCountry,
-            roomSettings: this.roomSettings,
-            sessionState: this.getPublicSessionState(this.latestSessionState || {}),
-            speakingRequests: this.latestSpeakingRequests || [],
-            notes: roleNotes
-          }
-        });
-      }
+      this.emitSocketMessage({
+        type: MSG_TYPES.SELECT_COUNTRY_RESULT,
+        targetSocketId: senderSocketId,
+        payload: {
+          success: true,
+          country: selectedCountry,
+          notes: roleNotes
+        }
+      });
 
-      this.emit('peer_authenticated', { peerId, meta: updatedMeta });
+      this.emit('peer_authenticated', { peerId: senderSocketId, meta: updatedMeta });
       this.broadcastPeerList();
       return;
     }
 
-    // Comprobar que el peer está autenticado si es remoto
-    const senderMeta = isLocal ? { role: 'secretariat', country: 'Secretaría Local' } : this.peerMetadata.get(peerId);
+    // Obtener metadatos del remitente
+    const senderMeta = isLocal ? { role: 'secretariat', country: 'Secretaría Local' } : (this.peerMetadata.get(senderSocketId) || message.senderMeta);
     if (!isLocal && !senderMeta) {
-      console.warn(`Mensaje ignorado de peer no autenticado: ${peerId}`);
       return;
     }
 
-    // 2. Modificación de Ajustes de Sala (desde Secretaría u otro operador autorizado)
+    // 2. Modificación de Ajustes de Sala
     if (message.type === MSG_TYPES.UPDATE_ROOM_SETTINGS) {
-      if (senderMeta.role === 'secretariat' || isLocal) {
+      if (senderMeta.role === 'secretariat' || senderMeta.role === 'chair' || isLocal) {
         this.roomSettings = { ...this.roomSettings, ...message.payload };
         this.emit('room_settings_updated', this.roomSettings);
         this.broadcastRoomSettings();
@@ -782,15 +606,15 @@ class PeerService {
 
     // 3. Procesamiento de Solicitudes de Oradores desde Secretaría
     if (message.type === MSG_TYPES.PROCESS_SPEAKING_REQUEST) {
-      if (senderMeta.role === 'secretariat' || isLocal) {
+      if (senderMeta.role === 'secretariat' || senderMeta.role === 'chair' || isLocal) {
         this.emit('process_speaking_request', message.payload);
       }
       return;
     }
 
-    // 4. Expulsión de peer desde Secretaría
+    // 4. Expulsión de participante
     if (message.type === MSG_TYPES.KICK_PEER) {
-      if (senderMeta.role === 'secretariat' || isLocal) {
+      if (senderMeta.role === 'secretariat' || senderMeta.role === 'chair' || isLocal) {
         this.kickPeer(message.payload?.peerId);
       }
       return;
@@ -823,12 +647,11 @@ class PeerService {
 
       this.emit('amendment_proposed_by_delegate', amendmentData);
 
-      if (conn) {
-        conn.send({
-          type: MSG_TYPES.SPEAKING_PROCESSED,
-          payload: { success: true, mode: 'amendment', message: '¡Enmienda enviada a la Mesa para su revisión!' }
-        });
-      }
+      this.emitSocketMessage({
+        type: MSG_TYPES.SPEAKING_PROCESSED,
+        targetSocketId: senderSocketId,
+        payload: { success: true, mode: 'amendment', message: '¡Enmienda enviada a la Mesa para su revisión!' }
+      });
       return;
     }
 
@@ -837,117 +660,98 @@ class PeerService {
       const speechType = message.payload?.speechType; // 'GSL' | 'CAUCUS' | 'POINT_MOTION'
       const country = senderMeta.country;
 
-      // Verificar modo de solicitud según tipo
       if (speechType === 'GSL') {
         const mode = this.roomSettings.speakerRequestMode;
         if (mode === 'disabled') {
-          if (conn) {
-            conn.send({
-              type: MSG_TYPES.SPEAKING_PROCESSED,
-              payload: { success: false, mode: 'disabled', message: 'Las solicitudes a la Lista de Oradores están cerradas por la Mesa.' }
-            });
-          }
+          this.emitSocketMessage({
+            type: MSG_TYPES.SPEAKING_PROCESSED,
+            targetSocketId: senderSocketId,
+            payload: { success: false, mode: 'disabled', message: 'Las solicitudes a la Lista de Oradores están cerradas por la Mesa.' }
+          });
           return;
         } else if (mode === 'direct') {
-          // Inserción directa en la lista de oradores
           this.emit('direct_speaker_request', { speechType: 'GSL', country });
-          if (conn) {
-            conn.send({
-              type: MSG_TYPES.SPEAKING_PROCESSED,
-              payload: { success: true, mode: 'direct', message: '¡Te has añadido a la Lista de Oradores!' }
-            });
-          }
+          this.emitSocketMessage({
+            type: MSG_TYPES.SPEAKING_PROCESSED,
+            targetSocketId: senderSocketId,
+            payload: { success: true, mode: 'direct', message: '¡Te has añadido a la Lista de Oradores!' }
+          });
           return;
         }
       } else if (speechType === 'CAUCUS') {
         const mode = this.roomSettings.caucusRequestMode;
         if (mode === 'disabled') {
-          if (conn) {
-            conn.send({
-              type: MSG_TYPES.SPEAKING_PROCESSED,
-              payload: { success: false, mode: 'disabled', message: 'Las solicitudes para Caucus Moderado están cerradas por la Mesa.' }
-            });
-          }
+          this.emitSocketMessage({
+            type: MSG_TYPES.SPEAKING_PROCESSED,
+            targetSocketId: senderSocketId,
+            payload: { success: false, mode: 'disabled', message: 'Las solicitudes para Caucus Moderado están cerradas por la Mesa.' }
+          });
           return;
         } else if (mode === 'direct') {
           this.emit('direct_speaker_request', { speechType: 'CAUCUS', country });
-          if (conn) {
-            conn.send({
-              type: MSG_TYPES.SPEAKING_PROCESSED,
-              payload: { success: true, mode: 'direct', message: '¡Te has añadido a la lista del Caucus!' }
-            });
-          }
+          this.emitSocketMessage({
+            type: MSG_TYPES.SPEAKING_PROCESSED,
+            targetSocketId: senderSocketId,
+            payload: { success: true, mode: 'direct', message: '¡Te has añadido a la lista del Caucus!' }
+          });
           return;
         }
-      } else if (speechType === 'POINT_MOTION') {
+      } else if (speechType === 'MOTION' || speechType === 'POINT_MOTION') {
         if (!this.roomSettings.allowMotions) {
-          if (conn) {
-            conn.send({
-              type: MSG_TYPES.SPEAKING_PROCESSED,
-              payload: { success: false, mode: 'disabled', message: 'La presentación de mociones está deshabilitada por la Mesa.' }
-            });
-          }
+          this.emitSocketMessage({
+            type: MSG_TYPES.SPEAKING_PROCESSED,
+            targetSocketId: senderSocketId,
+            payload: { success: false, mode: 'disabled', message: 'La presentación de mociones está deshabilitada por la Mesa.' }
+          });
           return;
         }
+      } else if (speechType === 'POINT') {
+        // Los puntos parlamentarios siempre son aceptados para que lleguen como avisos especiales a la Mesa
       }
 
-      // Si requiere aprobación (o moción), se añade a la cola de pendientes del Host y Secretaría
-      if (conn) {
-        conn.send({
-          type: MSG_TYPES.SPEAKING_PROCESSED,
-          payload: { success: true, mode: 'approval', message: 'Solicitud enviada a la Mesa para su aprobación.' }
-        });
-      }
+      // Si requiere aprobación o es un punto/moción, informar al delegado
+      this.emitSocketMessage({
+        type: MSG_TYPES.SPEAKING_PROCESSED,
+        targetSocketId: senderSocketId,
+        payload: { 
+          success: true, 
+          mode: speechType === 'POINT' ? 'point' : 'approval', 
+          message: speechType === 'POINT' ? 'Punto parlamentario transmitido a la Mesa Directiva.' : 'Solicitud enviada a la Mesa para su aprobación.' 
+        }
+      });
     }
 
     // Notificar al Host de la recepción del mensaje
-    this.emit('message_received_by_host', { peerId, senderMeta, message });
+    this.emit('message_received_by_host', { peerId: senderSocketId, senderMeta, message });
+
+    // 6.1 Petición de Sincronización Completa desde Cliente
+    if (message.type === MSG_TYPES.REQUEST_FULL_SYNC) {
+      if (this.latestSessionState) {
+        this.executeBroadcastState(this.latestSessionState);
+      }
+      return;
+    }
 
     // 7. Enrutamiento de Notas (Pajes / Mensajería)
     if (message.type === MSG_TYPES.SEND_NOTE) {
-      // Validar si las notas están permitidas
       if (senderMeta.role === 'delegate') {
         const target = message.payload?.to;
-        if (target === 'CHAIR' && !this.roomSettings.allowChairNotes) {
-          return;
-        }
-        if (target !== 'CHAIR' && target !== 'BACKROOM' && !this.roomSettings.allowDelegateNotes) {
-          return;
-        }
+        if (target === 'CHAIR' && !this.roomSettings.allowChairNotes) return;
+        if (target !== 'CHAIR' && target !== 'BACKROOM' && !this.roomSettings.allowDelegateNotes) return;
       }
       this.routeNoteMessage(senderMeta, message);
     }
 
-    // 8. Acción de Sesión (desde Secretaría u Operador Autorizado)
+    // 8. Acción de Sesión
     if (message.type === MSG_TYPES.SESSION_ACTION) {
       if (senderMeta.role === 'secretariat' || senderMeta.role === 'chair' || isLocal) {
         this.emit('session_action', {
-          peerId,
+          peerId: senderSocketId,
           senderMeta,
           action: message.payload?.action,
           payload: message.payload?.payload,
           timestamp: message.payload?.timestamp || Date.now()
         });
-      }
-      return;
-    }
-
-    // 9. Solicitud de Sincronización de Estado (ej: Recargar Documento / Estado desde Delegado o Secretaría)
-    if (message.type === MSG_TYPES.REQUEST_SYNC) {
-      const syncMsg = {
-        type: MSG_TYPES.SYNC_STATE,
-        payload: {
-          ...(this.latestSessionState || {}),
-          roomSettings: this.roomSettings,
-          speakingRequests: this.latestSpeakingRequests || []
-        }
-      };
-      if (conn) {
-        try {
-          conn.send(syncMsg);
-        } catch (e) { }
-      } else if (isLocal) {
-        this.broadcastLocal(syncMsg);
       }
       return;
     }
@@ -974,134 +778,114 @@ class PeerService {
         if (typeof window !== 'undefined') {
           localStorage.setItem('openmun_notes', JSON.stringify(this.latestNotes));
         }
-      } catch (e) { }
+      } catch (e) {}
     }
 
-    const target = note.to; // País destinatario, 'CHAIR', 'BACKROOM', 'TODOS'
-
-    // A. Enviar a destinatarios remotos correspondientes (Optimización de Privacidad y Ancho de Banda)
-    this.connections.forEach((conn, peerId) => {
-      const meta = this.peerMetadata.get(peerId);
-      if (!meta) return;
-
-      let shouldReceive = false;
-
-      if (meta.role === 'delegate') {
-        // Un delegado SOLO recibe notas dirigidas a su país, enviadas por él o para TODOS
-        const myCountry = (meta.country || '').toLowerCase().trim();
-        const targetClean = (target || '').toLowerCase().trim();
-        const fromClean = (formattedNote.from || '').toLowerCase().trim();
-
-        if (myCountry && (targetClean === myCountry || targetClean === 'todos' || fromClean === myCountry)) {
-          shouldReceive = true;
-        }
-      } else if (meta.role === 'backroom') {
-        // El backroom recibe notas destinadas a BACKROOM, enviadas por BACKROOM o a TODOS
-        if (target.toUpperCase() === 'BACKROOM' || formattedNote.fromRole === 'backroom' || target.toUpperCase() === 'TODOS') {
-          shouldReceive = true;
-        }
-      } else if (meta.role === 'secretariat') {
-        // La secretaría tiene la consola completa de notas
-        shouldReceive = true;
-      }
-
-      if (shouldReceive) {
-        try {
-          conn.send({
-            type: MSG_TYPES.NOTE_RECEIVED,
-            payload: formattedNote
-          });
-        } catch (e) {
-          console.warn(`Error enviando nota a ${peerId}:`, e);
-        }
-      }
+    // Transmitir la nota a la sala Socket.io
+    this.emitSocketMessage({
+      type: MSG_TYPES.NOTE_RECEIVED,
+      payload: formattedNote
     });
 
-    // B. Enviar a Secretaría Local (BroadcastChannel)
+    // Enviar a Secretaría Local (BroadcastChannel)
     this.broadcastLocal({
       type: MSG_TYPES.NOTE_RECEIVED,
       payload: formattedNote
     });
 
-    // C. Notificar al propio Chair
+    // Notificar al propio Chair
     this.emit('note_for_chair', formattedNote);
   }
 
   // ─────────────────────────────────────────────────────────────
   // EMISIÓN Y SINCRONIZACIÓN DESDE EL CHAIR
   // ─────────────────────────────────────────────────────────────
-  getPublicSessionState(state) {
-    if (!state || typeof state !== 'object') return {};
+  broadcastStateToClients(state) {
+    if (!state) return;
 
-    // Sanitizar y aligerar la lista de países para que no pese por P2P (solo texto, sin base64)
-    const paisesLigeros = Array.isArray(state.paises)
-      ? state.paises.map(p => {
-          if (typeof p === 'string') return p;
-          const pLimpio = {
-            id: p.id,
-            nombre: p.nombre || p.name || ''
-          };
-          // Solo incluir bandera si es emoji o código ISO ultracorto (nunca imágenes base64 ni blobs pesados)
-          if (p.bandera && typeof p.bandera === 'string' && !p.bandera.startsWith('data:') && p.bandera.length <= 10) {
-            pLimpio.bandera = p.bandera;
-          }
-          return pLimpio;
-        })
-      : [];
+    // Debounce / coalescing de ráfagas ultra-rápidas (40ms)
+    this.pendingStateToBroadcast = state;
+    if (this.broadcastDebounceTimer) return;
 
-    return {
-      paises: paisesLigeros,
-      votacionSesion: state.votacionSesion || {},
-      documento: state.documento || null,
-      enmiendasSesion: state.enmiendasSesion || []
-    };
+    this.broadcastDebounceTimer = setTimeout(() => {
+      this.broadcastDebounceTimer = null;
+      const stateToProcess = this.pendingStateToBroadcast;
+      this.pendingStateToBroadcast = null;
+      if (!stateToProcess) return;
+
+      this.executeBroadcastState(stateToProcess);
+    }, 40);
   }
 
-  broadcastStateToClients(state) {
-    this.latestSessionState = state;
-    const publicState = this.getPublicSessionState(state);
-
-    const payload = {
-      ...publicState,
+  executeBroadcastState(state) {
+    const cleanState = sanitizeStateForBroadcast(state);
+    const fullPayload = {
+      ...cleanState,
       roomSettings: this.roomSettings,
       speakingRequests: this.latestSpeakingRequests || []
     };
 
-    // Optimización de ancho de banda: solo emitir si el estado público relevante ha cambiado
-    const stateString = JSON.stringify(payload);
-    if (this.lastBroadcastedStateHash === stateString) {
-      return;
+    let msgToSend = null;
+
+    if (this.latestSessionState) {
+      const diff = createStateDelta(this.latestSessionState, fullPayload);
+      const diffKeys = Object.keys(diff);
+
+      if (diffKeys.length > 0) {
+        const deltaMsg = {
+          type: MSG_TYPES.DELTA_STATE,
+          payload: diff
+        };
+
+        const syncMsg = {
+          type: MSG_TYPES.SYNC_STATE,
+          payload: fullPayload
+        };
+
+        const deltaStrLen = JSON.stringify(deltaMsg).length;
+        const syncStrLen = JSON.stringify(syncMsg).length;
+
+        // Si la diferencia es sustancialmente menor (< 65% del tamaño completo) y no hay demasiados cambios individuales
+        if (deltaStrLen < syncStrLen * 0.65 && diffKeys.length < 150) {
+          msgToSend = deltaMsg;
+        } else {
+          msgToSend = syncMsg;
+        }
+      }
+    } else {
+      msgToSend = {
+        type: MSG_TYPES.SYNC_STATE,
+        payload: fullPayload
+      };
     }
-    this.lastBroadcastedStateHash = stateString;
 
-    const msg = {
-      type: MSG_TYPES.SYNC_STATE,
-      payload
-    };
+    this.latestSessionState = fullPayload;
 
-    this.connections.forEach((conn) => {
-      try {
-        conn.send(msg);
-      } catch (e) { }
-    });
-
-    this.broadcastLocal(msg);
+    if (msgToSend) {
+      this.emitSocketMessage(msgToSend);
+      this.broadcastLocal(msgToSend);
+    }
   }
 
   broadcastSpeakingRequests(requests) {
-    this.latestSpeakingRequests = requests || [];
+    const sanitizedRequests = (requests || []).map(r => {
+      if (!r) return r;
+      return {
+        id: r.id,
+        country: r.country,
+        bandera: r.bandera || r.flag,
+        timestamp: r.timestamp,
+        type: r.type,
+        peerId: r.peerId
+      };
+    });
+    this.latestSpeakingRequests = sanitizedRequests;
     const msg = {
       type: MSG_TYPES.SPEAKING_REQUESTS_UPDATED,
-      payload: this.latestSpeakingRequests
+      payload: sanitizedRequests
     };
 
-    this.connections.forEach((conn, peerId) => {
-      const meta = this.peerMetadata.get(peerId);
-      if (meta && (meta.role === 'secretariat' || meta.role === 'chair')) {
-        try { conn.send(msg); } catch (e) { }
-      }
-    });
-
+    this.emitSocketMessage(msg);
     this.broadcastLocal(msg);
   }
 
@@ -1114,12 +898,7 @@ class PeerService {
       payload: this.roomSettings
     };
 
-    this.connections.forEach((conn) => {
-      try {
-        conn.send(msg);
-      } catch (e) { }
-    });
-
+    this.emitSocketMessage(msg);
     this.broadcastLocal(msg);
   }
 
@@ -1129,12 +908,7 @@ class PeerService {
       payload: alertData
     };
 
-    this.connections.forEach((conn) => {
-      try {
-        conn.send(msg);
-      } catch (e) { }
-    });
-
+    this.emitSocketMessage(msg);
     this.broadcastLocal(msg);
   }
 
@@ -1143,15 +917,38 @@ class PeerService {
       peerId: id,
       ...meta
     }));
+    const msg = {
+      type: MSG_TYPES.PEER_LIST_UPDATED,
+      payload: list
+    };
     this.emit('peer_list_updated', list);
+    this.emitSocketMessage(msg);
   }
 
-  broadcastLocal(data) {
+  async broadcastLocal(data) {
     if (this.broadcastChannel) {
       try {
-        this.broadcastChannel.postMessage(data);
+        const payload = await compressData(data);
+        this.broadcastChannel.postMessage(payload);
       } catch (e) { }
     }
+  }
+
+  // Helper para emitir al servidor central Socket.io con compresión automática
+  async emitSocketMessage(data) {
+    if (this.socket && this.socket.connected && this.roomId) {
+      try {
+        const payload = await compressData(data);
+        this.socket.emit('enviar-datos', {
+          sala: this.roomId,
+          json: payload
+        });
+        return true;
+      } catch (err) {
+        console.warn('Error emitiendo por Socket.io:', err);
+      }
+    }
+    return false;
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -1161,21 +958,28 @@ class PeerService {
     const msg = {
       type,
       payload,
+      senderSocketId: this.socketId,
+      senderMeta: { role: this.role, country: this.clientCountry },
       id: `msg-${Date.now()}`
     };
 
-    if (this.hostConn && this.hostConn.open) {
-      this.hostConn.send(msg);
-      return true;
-    } else if (this.broadcastChannel) {
-      this.broadcastChannel.postMessage(msg);
-      return true;
+    let sent = false;
+
+    if (this.socket && this.socket.connected) {
+      sent = this.emitSocketMessage(msg);
     }
-    return false;
+
+    if (this.broadcastChannel) {
+      this.broadcastChannel.postMessage(msg);
+      sent = true;
+    }
+
+    return sent;
   }
 
-  sendNoteAsClient(to, text, type = 'general') {
+  sendNoteAsClient(to, text, type = 'general', customId = null) {
     return this.sendToServer(MSG_TYPES.SEND_NOTE, {
+      id: customId || `note-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       to,
       text,
       type,
@@ -1185,8 +989,14 @@ class PeerService {
 
   requestSpeakingAsClient(speechType, details = {}) {
     return this.sendToServer(MSG_TYPES.REQUEST_SPEAKING, {
-      speechType, // 'GSL' | 'CAUCUS' | 'POINT_MOTION'
+      speechType, // 'GSL' | 'CAUCUS' | 'MOTION' | 'POINT' | 'POINT_MOTION'
       details,
+      timestamp: Date.now()
+    });
+  }
+
+  requestFullSyncAsClient() {
+    return this.sendToServer(MSG_TYPES.REQUEST_FULL_SYNC, {
       timestamp: Date.now()
     });
   }
@@ -1204,6 +1014,7 @@ class PeerService {
   }
 
   selectCountryAsClient(country) {
+    this.clientCountry = country;
     return this.sendToServer(MSG_TYPES.SELECT_COUNTRY, {
       country,
       timestamp: Date.now()
@@ -1222,10 +1033,6 @@ class PeerService {
     return this.sendToServer(MSG_TYPES.SUBMIT_AMENDMENT, amendmentData);
   }
 
-  requestStateSyncAsClient() {
-    return this.sendToServer(MSG_TYPES.REQUEST_SYNC, { timestamp: Date.now() });
-  }
-
   sendSessionActionAsClient(action, payload) {
     return this.sendToServer(MSG_TYPES.SESSION_ACTION, {
       action,
@@ -1239,49 +1046,47 @@ class PeerService {
   }
 
   kickPeer(peerId) {
-    const conn = this.connections.get(peerId);
-    if (conn) {
-      try {
-        conn.send({ type: MSG_TYPES.KICK, payload: { reason: 'Desconectado por la Mesa (Chair)' } });
-        conn.close();
-      } catch (e) { }
-      this.connections.delete(peerId);
-      this.peerMetadata.delete(peerId);
-      this.broadcastPeerList();
+    if (this.socket && this.socket.connected) {
+      this.emitSocketMessage({
+        type: MSG_TYPES.KICK,
+        targetSocketId: peerId,
+        payload: { reason: 'Desconectado por la Mesa (Chair)' }
+      });
     }
+    this.peerMetadata.delete(peerId);
+    this.broadcastPeerList();
   }
 
   // ─────────────────────────────────────────────────────────────
   // LIMPIEZA
   // ─────────────────────────────────────────────────────────────
   destroy() {
-    this.stopSignalingHeartbeat();
-    if (this.connections) {
-      this.connections.forEach(conn => {
-        try { conn.close(); } catch (e) { }
-      });
-      this.connections.clear();
+    if (this.broadcastDebounceTimer) {
+      clearTimeout(this.broadcastDebounceTimer);
+      this.broadcastDebounceTimer = null;
     }
+    this.pendingStateToBroadcast = null;
     if (this.peerMetadata) {
       this.peerMetadata.clear();
-    }
-    if (this.hostConn) {
-      try { this.hostConn.close(); } catch (e) { }
-      this.hostConn = null;
     }
     if (this.broadcastChannel) {
       try { this.broadcastChannel.close(); } catch (e) { }
       this.broadcastChannel = null;
     }
-    if (this.peer) {
-      try { this.peer.destroy(); } catch (e) { }
-      this.peer = null;
+    if (this.socket) {
+      try {
+        this.socket.removeAllListeners();
+        this.socket.disconnect();
+      } catch (e) { }
+      this.socket = null;
     }
+    this.socketId = null;
     this.isHost = false;
+    this.role = 'none';
+    this.clientCountry = null;
     this.roomId = null;
-    this.isTurnRelay = false;
   }
 }
 
-export const peerService = new PeerService();
+export const peerService = new NetworkService();
 export default peerService;
