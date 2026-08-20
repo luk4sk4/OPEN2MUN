@@ -30,7 +30,20 @@ import {
   RefreshCw,
   UserCheck,
   UserX,
-  ChevronRight
+  ChevronRight,
+  ChevronDown,
+  Copy,
+  Download,
+  BookOpen,
+  Filter,
+  Edit3,
+  Plus,
+  FilePlus,
+  FileMinus,
+  FileSignature,
+  ArrowRight,
+  CheckCheck,
+  Trash2
 } from 'lucide-react';
 import CountryFlag from '../common/CountryFlag';
 import { useTranslation } from 'react-i18next';
@@ -40,6 +53,100 @@ import { useAccessibility } from '../../context/AccessibilityContext';
 import AccessibilityModal from '../modals/AccessibilityModal';
 import OpenMunLogo from '../common/OpenMunLogo';
 import LanguageSelector from '../common/LanguageSelector';
+
+// Parser inteligente de resolución para la vista de delegado
+const parsearResolucionTexto = (textoCompleto = '') => {
+  if (!textoCompleto.trim()) return [];
+
+  const lineas = textoCompleto.split('\n');
+  const articulos = [];
+  let buffer = [];
+  let numArticulo = 1;
+  let enPreambulo = true;
+  let textoPreambulo = [];
+
+  for (let i = 0; i < lineas.length; i++) {
+    const linea = lineas[i];
+    const matchArticulo = linea.match(/^(?:(?:\*\*|\*|#+)?\s*(?:Artículo|Art\.|Cláusula|Operative Clause)\s*(\d+)[\.:\*\s]*)(.*)/i) ||
+                          linea.match(/^(\d+)[\.\)]\s+(.*)/);
+
+    if (matchArticulo) {
+      if (enPreambulo && textoPreambulo.length > 0) {
+        articulos.push({
+          id: 'preambulo',
+          numero: 0,
+          prefijo: 'Preámbulo / Antecedentes',
+          texto: textoPreambulo.join('\n').trim(),
+          esPreambulo: true
+        });
+        textoPreambulo = [];
+        enPreambulo = false;
+      } else if (buffer.length > 0) {
+        articulos.push({
+          id: `art_${numArticulo - 1}`,
+          numero: numArticulo - 1,
+          prefijo: `Artículo ${numArticulo - 1}.`,
+          texto: buffer.join('\n').trim()
+        });
+        buffer = [];
+      }
+
+      const numParsed = parseInt(matchArticulo[1], 10) || numArticulo;
+      numArticulo = numParsed + 1;
+      const contenidoRestante = matchArticulo[2] || '';
+      if (contenidoRestante.trim()) {
+        buffer.push(contenidoRestante.trim());
+      }
+    } else if (enPreambulo) {
+      if (linea.includes('CLÁUSULAS OPERATIVAS') || linea.includes('OPERATIVE CLAUSES')) {
+        enPreambulo = false;
+        if (textoPreambulo.length > 0) {
+          articulos.push({
+            id: 'preambulo',
+            numero: 0,
+            prefijo: 'Preámbulo / Antecedentes',
+            texto: textoPreambulo.join('\n').trim(),
+            esPreambulo: true
+          });
+          textoPreambulo = [];
+        }
+      } else {
+        textoPreambulo.push(linea);
+      }
+    } else {
+      buffer.push(linea);
+    }
+  }
+
+  if (enPreambulo && textoPreambulo.length > 0) {
+    articulos.push({
+      id: 'preambulo',
+      numero: 0,
+      prefijo: 'Preámbulo / Antecedentes',
+      texto: textoPreambulo.join('\n').trim(),
+      esPreambulo: true
+    });
+  } else if (buffer.length > 0) {
+    articulos.push({
+      id: `art_${numArticulo - 1}`,
+      numero: numArticulo - 1,
+      prefijo: `Artículo ${numArticulo - 1}.`,
+      texto: buffer.join('\n').trim()
+    });
+  }
+
+  if (articulos.length === 0 && textoCompleto.trim().length > 0) {
+    const parrafos = textoCompleto.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+    return parrafos.map((p, idx) => ({
+      id: `art_${idx + 1}`,
+      numero: idx + 1,
+      prefijo: `Artículo ${idx + 1}.`,
+      texto: p.trim()
+    }));
+  }
+
+  return articulos;
+};
 
 const DelegateView = ({ isLight: propIsLight, onExit }) => {
   const { t } = useTranslation();
@@ -97,7 +204,13 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
   const [subTabNotas, setSubTabNotas] = useState('BUZON'); // 'BUZON' | 'REDACTAR'
   const [miVotoEmitido, setMiVotoEmitido] = useState(null);
 
-  // Estados de Enmiendas de Delegados
+  // Estados de Enmiendas de Delegados y Visor de Resolución
+  const [subTabEnmiendas, setSubTabEnmiendas] = useState('DOCUMENTO'); // 'DOCUMENTO' | 'ARTICULOS' | 'PROPONER' | 'HISTORIAL'
+  const [busquedaDocEnmiendas, setBusquedaDocEnmiendas] = useState('');
+  const [filtroEstadoEnmiendas, setFiltroEstadoEnmiendas] = useState('todos'); // 'todos' | 'pendiente' | 'aceptada' | 'rechazada'
+  const [copiadoFeedback, setCopiadoFeedback] = useState(null);
+  const [articuloExpandidoMap, setArticuloExpandidoMap] = useState({});
+
   const [tipoEnmiendaDel, setTipoEnmiendaDel] = useState('modificacion');
   const [artIdDel, setArtIdDel] = useState('');
   const [textoOriginalDel, setTextoOriginalDel] = useState('');
@@ -112,6 +225,38 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
   const oradoresCola = state.oradoresCola || [];
   const oradoresCaucus = state.oradoresCaucus || [];
   const votacionSesion = state.votacionSesion || {};
+
+  // Resolución y Cláusulas estructuradas
+  const resolucionData = state.enmiendasSesion || {};
+  const rawArticulos = resolucionData.articulos || [];
+  const rawTexto = resolucionData.textoResolucion || resolucionData.texto || '';
+  const tituloResolucion = resolucionData.tituloProyecto || resolucionData.titulo || 'Proyecto de Resolución';
+  const enmiendasGlobales = resolucionData.enmiendas || [];
+
+  const articulosDoc = useMemo(() => {
+    if (Array.isArray(rawArticulos) && rawArticulos.length > 0) return rawArticulos;
+    if (rawTexto && rawTexto.trim()) {
+      return parsearResolucionTexto(rawTexto);
+    }
+    return [];
+  }, [rawArticulos, rawTexto]);
+
+  const preambuloDoc = useMemo(() => {
+    return articulosDoc.find(a => a.esPreambulo);
+  }, [articulosDoc]);
+
+  const articulosOperativosDoc = useMemo(() => {
+    return articulosDoc.filter(a => !a.esPreambulo);
+  }, [articulosDoc]);
+
+  const articulosFiltradosDoc = useMemo(() => {
+    if (!busquedaDocEnmiendas.trim()) return articulosOperativosDoc;
+    const query = busquedaDocEnmiendas.toLowerCase().trim();
+    return articulosOperativosDoc.filter(a => 
+      (a.prefijo && a.prefijo.toLowerCase().includes(query)) ||
+      (a.texto && a.texto.toLowerCase().includes(query))
+    );
+  }, [articulosOperativosDoc, busquedaDocEnmiendas]);
 
   const estaEnGSL = oradoresCola.some(o => (typeof o === 'string' ? o : o.nombre)?.toLowerCase() === clientCountry?.toLowerCase());
   const estaEnCaucus = oradoresCaucus.some(o => (typeof o === 'string' ? o : o.nombre)?.toLowerCase() === clientCountry?.toLowerCase());
@@ -254,12 +399,45 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
     setMiVotoEmitido(opcion);
   };
 
+  const handlePrepararEnmiendaDeArticulo = (art, tipo = 'modificacion') => {
+    setTipoEnmiendaDel(tipo);
+    if (art) {
+      setArtIdDel(art.id);
+      if (tipo === 'modificacion' || tipo === 'supresion') {
+        setTextoOriginalDel(art.texto || '');
+        setTextoPropuestoDel(tipo === 'modificacion' ? (art.texto || '') : '');
+      } else {
+        setTextoOriginalDel('');
+        setTextoPropuestoDel('');
+      }
+    } else {
+      setArtIdDel('');
+      setTextoOriginalDel('');
+      setTextoPropuestoDel('');
+    }
+    setSubTabEnmiendas('PROPONER');
+  };
+
+  const handleCopiarTexto = (texto, label = 'Texto') => {
+    if (!texto) return;
+    try {
+      navigator.clipboard.writeText(texto);
+      setCopiadoFeedback(label);
+      setTimeout(() => setCopiadoFeedback(null), 2500);
+    } catch (err) {
+      console.warn('Error al copiar al portapapeles:', err);
+    }
+  };
+
+  const handleEliminarPropuestaEnviada = (propId) => {
+    setMisEnmiendasEnviadas(prev => prev.filter(p => p.id !== propId));
+  };
+
   const handleEnviarEnmiendaDelegado = (e) => {
     e.preventDefault();
     if (!textoPropuestoDel.trim() && tipoEnmiendaDel !== 'supresion') return;
 
-    const articulosList = state.enmiendasSesion?.articulos || [];
-    const artObj = articulosList.find(a => a.id === artIdDel);
+    const artObj = articulosDoc.find(a => a.id === artIdDel);
     const artNum = artObj ? (artObj.prefijo || `Artículo ${artObj.numero}`) : 'Nuevo Artículo';
 
     const nuevaPropuesta = {
@@ -1555,48 +1733,230 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
         {/* ── PESTAÑA DE ENMIENDAS Y RESOLUCIONES ── */}
         {activeTab === 'ENMIENDAS' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {/* Barra superior de sincronización */}
+            {/* Barra superior de contextualización y sincronización */}
             <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
               backgroundColor: 'var(--panel-color)',
               border: '1px solid var(--border-color)',
-              borderRadius: '10px',
-              padding: '0.75rem 1rem'
+              borderRadius: '12px',
+              padding: '0.85rem 1.1rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.06)'
             }}>
-              <div>
-                <div style={{ fontSize: '0.85rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <FileText size={16} color="#3b82f6" /> Proyecto de Resolución y Enmiendas
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                    <FileSignature size={18} color="#3b82f6" />
+                    <span>{tituloResolucion}</span>
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <span>{articulosDoc.length} cláusulas / artículos</span>
+                    <span>•</span>
+                    <span>{enmiendasGlobales.length} enmiendas en sesión</span>
+                    <span>•</span>
+                    <span style={{ color: '#22c55e', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                      <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#22c55e' }} />
+                      Sincronizado en Vivo
+                    </span>
+                  </div>
                 </div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)' }}>
-                  {(state.enmiendasSesion?.articulos || []).length} artículos registrados en el texto oficial
+
+                {/* Acciones de Cabecera */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <button
+                    onClick={() => handleCopiarTexto(
+                      rawTexto || articulosDoc.map(a => `${a.prefijo ? a.prefijo + ' ' : ''}${a.texto}`).join('\n\n'),
+                      'Resolución Completa'
+                    )}
+                    disabled={articulosDoc.length === 0}
+                    style={{
+                      backgroundColor: 'var(--card-header-bg)',
+                      border: '1px solid var(--subborder-color)',
+                      color: 'var(--text-color)',
+                      borderRadius: '7px',
+                      padding: '0.4rem 0.65rem',
+                      fontSize: '0.74rem',
+                      fontWeight: '700',
+                      cursor: articulosDoc.length === 0 ? 'not-allowed' : 'pointer',
+                      opacity: articulosDoc.length === 0 ? 0.5 : 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.3rem',
+                      transition: 'all 0.15s ease'
+                    }}
+                    title="Copiar texto completo de la resolución"
+                  >
+                    <Copy size={13} />
+                    <span>Copiar Texto</span>
+                  </button>
+
+                  <button
+                    onClick={requestFullSync}
+                    style={{
+                      backgroundColor: 'var(--card-header-bg)',
+                      border: '1px solid var(--subborder-color)',
+                      color: 'var(--text-color)',
+                      borderRadius: '7px',
+                      padding: '0.4rem 0.65rem',
+                      fontSize: '0.74rem',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.3rem',
+                      transition: 'all 0.15s ease'
+                    }}
+                    title="Recargar el estado más reciente de la resolución y enmiendas desde la Mesa"
+                  >
+                    <RefreshCw size={13} />
+                    <span>Sincronizar</span>
+                  </button>
                 </div>
               </div>
 
-              <button
-                onClick={requestFullSync}
-                style={{
-                  backgroundColor: 'var(--card-header-bg)',
-                  border: '1px solid var(--subborder-color)',
-                  color: 'var(--text-color)',
-                  borderRadius: '8px',
-                  padding: '0.45rem 0.85rem',
-                  fontSize: '0.78rem',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  transition: 'all 0.15s ease'
-                }}
-                title="Solicitar a la Mesa el estado más reciente de la resolución y enmiendas"
-              >
-                <RefreshCw size={14} /> Recargar / Sincronizar
-              </button>
+              {/* Sub-navegación interna de Enmiendas */}
+              <div style={{
+                display: 'flex',
+                gap: '0.35rem',
+                backgroundColor: 'var(--card-header-bg)',
+                padding: '0.25rem',
+                borderRadius: '8px',
+                border: '1px solid var(--subborder-color)',
+                overflowX: 'auto'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setSubTabEnmiendas('DOCUMENTO')}
+                  style={{
+                    flex: 1,
+                    minWidth: '130px',
+                    padding: '0.45rem 0.6rem',
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: subTabEnmiendas === 'DOCUMENTO' ? 'var(--btn-bg)' : 'transparent',
+                    color: subTabEnmiendas === 'DOCUMENTO' ? 'var(--btn-text)' : 'var(--muted-text)',
+                    fontWeight: '700',
+                    fontSize: '0.76rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.35rem',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <BookOpen size={13} />
+                  <span>Ver Documento</span>
+                  {articulosDoc.length > 0 && (
+                    <span style={{
+                      fontSize: '0.65rem',
+                      padding: '0.05rem 0.35rem',
+                      borderRadius: '10px',
+                      backgroundColor: subTabEnmiendas === 'DOCUMENTO' ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.08)',
+                      fontWeight: '800'
+                    }}>
+                      {articulosDoc.length}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSubTabEnmiendas('ARTICULOS')}
+                  style={{
+                    flex: 1,
+                    minWidth: '120px',
+                    padding: '0.45rem 0.6rem',
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: subTabEnmiendas === 'ARTICULOS' ? 'var(--btn-bg)' : 'transparent',
+                    color: subTabEnmiendas === 'ARTICULOS' ? 'var(--btn-text)' : 'var(--muted-text)',
+                    fontWeight: '700',
+                    fontSize: '0.76rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.35rem',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <Layers size={13} />
+                  <span>Por Cláusulas</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSubTabEnmiendas('PROPONER')}
+                  style={{
+                    flex: 1,
+                    minWidth: '130px',
+                    padding: '0.45rem 0.6rem',
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: subTabEnmiendas === 'PROPONER' ? 'var(--btn-bg)' : 'transparent',
+                    color: subTabEnmiendas === 'PROPONER' ? 'var(--btn-text)' : 'var(--muted-text)',
+                    fontWeight: '700',
+                    fontSize: '0.76rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.35rem',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <Edit3 size={13} />
+                  <span>Redactar Enmienda</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSubTabEnmiendas('HISTORIAL')}
+                  style={{
+                    flex: 1,
+                    minWidth: '130px',
+                    padding: '0.45rem 0.6rem',
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: subTabEnmiendas === 'HISTORIAL' ? 'var(--btn-bg)' : 'transparent',
+                    color: subTabEnmiendas === 'HISTORIAL' ? 'var(--btn-text)' : 'var(--muted-text)',
+                    fontWeight: '700',
+                    fontSize: '0.76rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.35rem',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <Clock size={13} />
+                  <span>Historial ({misEnmiendasEnviadas.length})</span>
+                </button>
+              </div>
             </div>
 
-            {/* Notificación de envío exitoso */}
+            {/* Notificaciones de Feedback (Copiado / Enmienda enviada) */}
+            {copiadoFeedback && (
+              <div style={{
+                backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                border: '1px solid rgba(59, 130, 246, 0.4)',
+                color: '#60a5fa',
+                borderRadius: '8px',
+                padding: '0.65rem 1rem',
+                fontSize: '0.8rem',
+                fontWeight: '700',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                animation: 'scaleUp 0.2s ease'
+              }}>
+                <CheckCheck size={16} /> ¡{copiadoFeedback} copiado al portapapeles!
+              </div>
+            )}
+
             {enmiendaEnviadaFeedback && (
               <div style={{
                 backgroundColor: 'rgba(34, 197, 94, 0.15)',
@@ -1615,250 +1975,1109 @@ const DelegateView = ({ isLight: propIsLight, onExit }) => {
               </div>
             )}
 
-            {/* Formulario de Propuesta de Enmienda Telemática */}
-            <form onSubmit={handleEnviarEnmiendaDelegado} style={{
-              backgroundColor: 'var(--panel-color)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '12px',
-              padding: '1.25rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.85rem',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <FileText size={18} color="#3b82f6" />
-                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '800' }}>
-                  Proponer Enmienda a la Mesa Directiva
-                </h3>
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--muted-text)' }}>
-                Envía tu propuesta de modificación, adición o supresión de cláusula directamente a la mesa para ser evaluada y sometida a debate.
-              </div>
-
-              {/* Selector de Naturaleza */}
-              <div>
-                <label style={{ fontSize: '0.74rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
-                  Tipo de Enmienda
-                </label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.4rem', marginTop: '0.35rem' }}>
-                  <button
-                    type="button"
-                    onClick={() => setTipoEnmiendaDel('adicion')}
-                    style={{
-                      padding: '0.45rem',
-                      borderRadius: '6px',
-                      border: `1px solid ${tipoEnmiendaDel === 'adicion' ? '#22c55e' : 'var(--subborder-color)'}`,
-                      backgroundColor: tipoEnmiendaDel === 'adicion' ? 'rgba(34, 197, 94, 0.2)' : 'transparent',
-                      color: tipoEnmiendaDel === 'adicion' ? '#22c55e' : 'var(--text-color)',
-                      fontWeight: '700',
-                      fontSize: '0.75rem',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    + Adición
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setTipoEnmiendaDel('supresion')}
-                    style={{
-                      padding: '0.45rem',
-                      borderRadius: '6px',
-                      border: `1px solid ${tipoEnmiendaDel === 'supresion' ? '#ef4444' : 'var(--subborder-color)'}`,
-                      backgroundColor: tipoEnmiendaDel === 'supresion' ? 'rgba(239, 68, 68, 0.2)' : 'transparent',
-                      color: tipoEnmiendaDel === 'supresion' ? '#ef4444' : 'var(--text-color)',
-                      fontWeight: '700',
-                      fontSize: '0.75rem',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    - Supresión
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setTipoEnmiendaDel('modificacion')}
-                    style={{
-                      padding: '0.45rem',
-                      borderRadius: '6px',
-                      border: `1px solid ${tipoEnmiendaDel === 'modificacion' ? '#3b82f6' : 'var(--subborder-color)'}`,
-                      backgroundColor: tipoEnmiendaDel === 'modificacion' ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
-                      color: tipoEnmiendaDel === 'modificacion' ? '#3b82f6' : 'var(--text-color)',
-                      fontWeight: '700',
-                      fontSize: '0.75rem',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    ➔ Modificación
-                  </button>
-                </div>
-              </div>
-
-              {/* Selector de Artículo */}
-              <div>
-                <label style={{ fontSize: '0.74rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
-                  Artículo / Cláusula
-                </label>
-                <select
-                  value={artIdDel}
-                  onChange={e => setArtIdDel(e.target.value)}
-                  style={{
-                    width: '100%',
-                    marginTop: '0.35rem',
-                    backgroundColor: 'var(--card-header-bg)',
-                    border: '1px solid var(--subborder-color)',
-                    borderRadius: '8px',
-                    padding: '0.6rem',
-                    color: 'var(--text-color)',
-                    fontSize: '0.8rem',
-                    fontWeight: '600'
-                  }}
-                >
-                  <option value="">-- Añadir como Nuevo Artículo al Final / General --</option>
-                  {(state.enmiendasSesion?.articulos || []).map(art => (
-                    <option key={art.id} value={art.id}>
-                      {art.prefijo || `Artículo ${art.numero}`} - {art.texto?.substring(0, 45)}...
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Texto original */}
-              {(tipoEnmiendaDel === 'supresion' || tipoEnmiendaDel === 'modificacion') && (
-                <div>
-                  <label style={{ fontSize: '0.74rem', fontWeight: '700', color: '#ef4444', textTransform: 'uppercase' }}>
-                    {tipoEnmiendaDel === 'supresion' ? 'Texto a Suprimir' : 'Texto Original a Modificar'}
-                  </label>
-                  <textarea
-                    rows={2}
-                    placeholder="Fragmento del texto a suprimir o reemplazar..."
-                    value={textoOriginalDel}
-                    onChange={e => setTextoOriginalDel(e.target.value)}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* SUB-TAB 1: VISTA DOCUMENTO COMPLETO (LECTOR DE RESOLUCIÓN)      */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {subTabEnmiendas === 'DOCUMENTO' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                {/* Buscador dentro del documento */}
+                <div style={{ position: 'relative', width: '100%' }}>
+                  <input
+                    type="text"
+                    placeholder="Buscar palabras clave, artículos o términos en la resolución..."
+                    value={busquedaDocEnmiendas}
+                    onChange={e => setBusquedaDocEnmiendas(e.target.value)}
                     style={{
                       width: '100%',
-                      marginTop: '0.35rem',
-                      backgroundColor: 'rgba(239, 68, 68, 0.05)',
-                      border: '1px solid rgba(239, 68, 68, 0.3)',
-                      borderRadius: '8px',
-                      padding: '0.55rem',
-                      color: 'var(--text-color)',
-                      fontSize: '0.8rem'
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* Texto propuesto */}
-              {(tipoEnmiendaDel === 'adicion' || tipoEnmiendaDel === 'modificacion') && (
-                <div>
-                  <label style={{ fontSize: '0.74rem', fontWeight: '700', color: '#22c55e', textTransform: 'uppercase' }}>
-                    Texto Propuesto
-                  </label>
-                  <textarea
-                    rows={3}
-                    placeholder="Escribe la redacción propuesta..."
-                    required
-                    value={textoPropuestoDel}
-                    onChange={e => setTextoPropuestoDel(e.target.value)}
-                    style={{
-                      width: '100%',
-                      marginTop: '0.35rem',
-                      backgroundColor: 'rgba(34, 197, 94, 0.05)',
-                      border: '1px solid rgba(34, 197, 94, 0.3)',
-                      borderRadius: '8px',
-                      padding: '0.55rem',
-                      color: 'var(--text-color)',
-                      fontSize: '0.8rem'
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* Justificación */}
-              <div>
-                <label style={{ fontSize: '0.74rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
-                  Motivación / Justificación (Opcional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej: Fomenta la inclusión tecnológica en países en desarrollo"
-                  value={justificacionDel}
-                  onChange={e => setJustificacionDel(e.target.value)}
-                  style={{
-                    width: '100%',
-                    marginTop: '0.35rem',
-                    backgroundColor: 'var(--card-header-bg)',
-                    border: '1px solid var(--subborder-color)',
-                    borderRadius: '8px',
-                    padding: '0.55rem',
-                    color: 'var(--text-color)',
-                    fontSize: '0.8rem'
-                  }}
-                />
-              </div>
-
-              <button
-                type="submit"
-                style={{
-                  backgroundColor: 'var(--btn-bg)',
-                  color: 'var(--btn-text)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '0.65rem',
-                  fontWeight: '800',
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.4rem',
-                  marginTop: '0.25rem'
-                }}
-              >
-                <Send size={15} /> Enviar Propuesta a la Mesa Directiva
-              </button>
-            </form>
-
-            {/* Historial de Propuestas Enviadas por este Delegado */}
-            {misEnmiendasEnviadas.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
-                  Tus Propuestas Enviadas ({misEnmiendasEnviadas.length})
-                </div>
-                {misEnmiendasEnviadas.map(prop => (
-                  <div
-                    key={prop.id}
-                    style={{
                       backgroundColor: 'var(--card-header-bg)',
                       border: '1px solid var(--subborder-color)',
                       borderRadius: '8px',
-                      padding: '0.75rem',
+                      padding: '0.6rem 0.85rem 0.6rem 2.2rem',
+                      color: 'var(--text-color)',
+                      fontSize: '0.82rem',
+                      fontWeight: '500'
+                    }}
+                  />
+                  <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted-text)' }} />
+                  {busquedaDocEnmiendas && (
+                    <button
+                      onClick={() => setBusquedaDocEnmiendas('')}
+                      style={{
+                        position: 'absolute',
+                        right: '10px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--muted-text)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Hoja Formal de Resolución Diplomatica */}
+                {articulosDoc.length === 0 ? (
+                  <div style={{
+                    padding: '3.5rem 1.5rem',
+                    textAlign: 'center',
+                    backgroundColor: 'var(--panel-color)',
+                    borderRadius: '12px',
+                    border: '1px dashed var(--subborder-color)',
+                    color: 'var(--muted-text)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '0.75rem'
+                  }}>
+                    <FileText size={36} style={{ opacity: 0.3 }} />
+                    <div style={{ fontWeight: '800', fontSize: '1rem', color: 'var(--text-color)' }}>
+                      Sin Documento de Resolución
+                    </div>
+                    <div style={{ fontSize: '0.8rem', maxWidth: '420px', lineHeight: 1.5 }}>
+                      La Presidencia de la Mesa Directiva aún no ha transmitido el texto o borrador de resolución para este comité.
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                      <button
+                        onClick={requestFullSync}
+                        style={{
+                          backgroundColor: 'var(--btn-bg)',
+                          color: 'var(--btn-text)',
+                          border: 'none',
+                          borderRadius: '6px',
+                          padding: '0.45rem 0.9rem',
+                          fontSize: '0.78rem',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.35rem'
+                        }}
+                      >
+                        <RefreshCw size={13} /> Sincronizar
+                      </button>
+                      <button
+                        onClick={() => handlePrepararEnmiendaDeArticulo(null, 'adicion')}
+                        style={{
+                          backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                          border: '1px solid rgba(34, 197, 94, 0.4)',
+                          color: '#22c55e',
+                          borderRadius: '6px',
+                          padding: '0.45rem 0.9rem',
+                          fontSize: '0.78rem',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.35rem'
+                        }}
+                      >
+                        <Plus size={13} /> Proponer Cláusula Inicial
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{
+                    backgroundColor: 'var(--panel-color)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '12px',
+                    padding: '1.5rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1.25rem',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                  }}>
+                    {/* Membrete Oficial */}
+                    <div style={{
+                      borderBottom: '2px solid var(--subborder-color)',
+                      paddingBottom: '1rem',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '0.3rem'
+                      gap: '0.35rem'
+                    }}>
+                      <div style={{
+                        fontSize: '0.7rem',
+                        fontWeight: '800',
+                        color: 'var(--muted-text)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.08em'
+                      }}>
+                        NACIONES UNIDAS • DOCUMENTO DE TRABAJO OFICIAL
+                      </div>
+                      <div style={{ fontSize: '1.2rem', fontWeight: '900', color: '#60a5fa', lineHeight: 1.3 }}>
+                        {tituloResolucion}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--muted-text)' }}>
+                        Comité: <strong style={{ color: 'var(--text-color)' }}>{state.comision || state.nombreComite || 'Asamblea General'}</strong>
+                      </div>
+                    </div>
+
+                    {/* Sección Preambular */}
+                    {preambuloDoc && (
+                      <div style={{
+                        backgroundColor: 'rgba(168, 85, 247, 0.04)',
+                        borderLeft: '3px solid #a855f7',
+                        borderRadius: '0 8px 8px 0',
+                        padding: '1rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.5rem'
+                      }}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between'
+                        }}>
+                          <span style={{
+                            fontSize: '0.72rem',
+                            fontWeight: '800',
+                            color: '#a855f7',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em'
+                          }}>
+                            Cláusulas Preambulatorias
+                          </span>
+                          <button
+                            onClick={() => handlePrepararEnmiendaDeArticulo(preambuloDoc, 'modificacion')}
+                            style={{
+                              backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                              border: '1px solid rgba(168, 85, 247, 0.3)',
+                              color: '#c084fc',
+                              borderRadius: '5px',
+                              padding: '0.2rem 0.5rem',
+                              fontSize: '0.68rem',
+                              fontWeight: '700',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.25rem'
+                            }}
+                          >
+                            <Edit3 size={11} /> Enmendar Preámbulo
+                          </button>
+                        </div>
+                        <div style={{
+                          fontSize: '0.84rem',
+                          lineHeight: 1.65,
+                          fontStyle: 'italic',
+                          color: 'var(--text-color)',
+                          whiteSpace: 'pre-wrap'
+                        }}>
+                          {preambuloDoc.texto}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Sección Cláusulas Operativas */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                      <div style={{
+                        fontSize: '0.74rem',
+                        fontWeight: '800',
+                        color: '#3b82f6',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                      }}>
+                        <span>Cláusulas Operativas ({articulosFiltradosDoc.length})</span>
+                        <button
+                          onClick={() => handlePrepararEnmiendaDeArticulo(null, 'adicion')}
+                          style={{
+                            backgroundColor: 'rgba(34, 197, 94, 0.12)',
+                            border: '1px solid rgba(34, 197, 94, 0.3)',
+                            color: '#22c55e',
+                            borderRadius: '5px',
+                            padding: '0.25rem 0.55rem',
+                            fontSize: '0.7rem',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem'
+                          }}
+                        >
+                          <Plus size={12} /> + Añadir Cláusula
+                        </button>
+                      </div>
+
+                      {articulosFiltradosDoc.map(art => {
+                        const enmiendasEsteArt = enmiendasGlobales.filter(e => e.articuloId === art.id);
+                        const tieneEnmiendasAprobadas = enmiendasEsteArt.some(e => e.estado === 'aceptada' || e.estado === 'aprobada');
+                        const tieneEnmiendasPendientes = enmiendasEsteArt.some(e => !e.estado || e.estado === 'pendiente');
+
+                        return (
+                          <div
+                            key={art.id}
+                            style={{
+                              backgroundColor: 'var(--card-header-bg)',
+                              border: `1px solid ${art.modificado || tieneEnmiendasAprobadas ? 'rgba(34, 197, 94, 0.4)' : 'var(--subborder-color)'}`,
+                              borderRadius: '8px',
+                              padding: '0.9rem',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '0.5rem',
+                              position: 'relative',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            {/* Cabecera de la Cláusula */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <span style={{
+                                  fontSize: '0.75rem',
+                                  fontWeight: '800',
+                                  backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                                  color: '#3b82f6',
+                                  padding: '0.15rem 0.5rem',
+                                  borderRadius: '4px'
+                                }}>
+                                  {art.prefijo || `Artículo ${art.numero}`}
+                                </span>
+
+                                {(art.modificado || tieneEnmiendasAprobadas) && (
+                                  <span style={{
+                                    fontSize: '0.65rem',
+                                    fontWeight: '800',
+                                    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                                    color: '#22c55e',
+                                    padding: '0.1rem 0.4rem',
+                                    borderRadius: '4px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '3px'
+                                  }}>
+                                    <CheckCircle2 size={10} /> Enmendado
+                                  </span>
+                                )}
+
+                                {tieneEnmiendasPendientes && (
+                                  <span style={{
+                                    fontSize: '0.65rem',
+                                    fontWeight: '800',
+                                    backgroundColor: 'rgba(234, 179, 8, 0.15)',
+                                    color: '#eab308',
+                                    padding: '0.1rem 0.4rem',
+                                    borderRadius: '4px'
+                                  }}>
+                                    Enmienda en debate
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Barra de Acciones Directas de la Cláusula */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                <button
+                                  onClick={() => handleCopiarTexto(`${art.prefijo ? art.prefijo + ' ' : ''}${art.texto}`, art.prefijo || 'Cláusula')}
+                                  style={{
+                                    background: 'transparent',
+                                    border: '1px solid var(--subborder-color)',
+                                    color: 'var(--muted-text)',
+                                    borderRadius: '4px',
+                                    padding: '0.2rem 0.45rem',
+                                    fontSize: '0.68rem',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.2rem'
+                                  }}
+                                  title="Copiar texto de esta cláusula"
+                                >
+                                  <Copy size={11} /> Copiar
+                                </button>
+
+                                <button
+                                  onClick={() => handlePrepararEnmiendaDeArticulo(art, 'modificacion')}
+                                  style={{
+                                    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                                    border: '1px solid rgba(59, 130, 246, 0.3)',
+                                    color: '#60a5fa',
+                                    borderRadius: '4px',
+                                    padding: '0.2rem 0.5rem',
+                                    fontSize: '0.7rem',
+                                    fontWeight: '700',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.25rem'
+                                  }}
+                                  title="Proponer modificación sobre esta cláusula"
+                                >
+                                  <Edit3 size={11} /> Enmendar
+                                </button>
+
+                                <button
+                                  onClick={() => handlePrepararEnmiendaDeArticulo(art, 'supresion')}
+                                  style={{
+                                    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                                    color: '#f87171',
+                                    borderRadius: '4px',
+                                    padding: '0.2rem 0.45rem',
+                                    fontSize: '0.7rem',
+                                    fontWeight: '700',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.2rem'
+                                  }}
+                                  title="Proponer supresión de esta cláusula"
+                                >
+                                  <FileMinus size={11} /> Suprimir
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Contenido de la Cláusula */}
+                            <div style={{
+                              fontSize: '0.85rem',
+                              lineHeight: 1.6,
+                              color: 'var(--text-color)',
+                              whiteSpace: 'pre-wrap',
+                              userSelect: 'text'
+                            }}>
+                              {art.texto}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* SUB-TAB 2: VISTA POR CLÁUSULAS (DESGLOSE EN TARJETAS)           */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {subTabEnmiendas === 'ARTICULOS' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '0.5rem',
+                  flexWrap: 'wrap',
+                  backgroundColor: 'var(--card-header-bg)',
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: '8px',
+                  border: '1px solid var(--subborder-color)'
+                }}>
+                  <div style={{ fontSize: '0.78rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Filter size={13} color="var(--muted-text)" />
+                    <span>Filtro de Cláusulas:</span>
+                  </div>
+
+                  <select
+                    value={filtroEstadoEnmiendas}
+                    onChange={e => setFiltroEstadoEnmiendas(e.target.value)}
+                    style={{
+                      backgroundColor: 'var(--panel-color)',
+                      border: '1px solid var(--subborder-color)',
+                      color: 'var(--text-color)',
+                      borderRadius: '6px',
+                      padding: '0.25rem 0.5rem',
+                      fontSize: '0.74rem',
+                      fontWeight: '600'
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '0.74rem', fontWeight: '800', color: '#60a5fa' }}>
-                        {prop.tipo?.toUpperCase()} · {prop.articuloNumero}
-                      </span>
-                      <span style={{ fontSize: '0.65rem', color: 'var(--muted-text)' }}>
-                        Enviada
-                      </span>
+                    <option value="todos">Todas las Cláusulas ({articulosOperativosDoc.length})</option>
+                    <option value="modificadas">Solo Enmendadas</option>
+                    <option value="con_enmiendas">Con Enmiendas en Sesión</option>
+                  </select>
+
+                  <button
+                    onClick={() => handlePrepararEnmiendaDeArticulo(null, 'adicion')}
+                    style={{
+                      backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                      border: '1px solid rgba(34, 197, 94, 0.3)',
+                      color: '#22c55e',
+                      borderRadius: '6px',
+                      padding: '0.3rem 0.65rem',
+                      fontSize: '0.74rem',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem'
+                    }}
+                  >
+                    <Plus size={13} /> Proponer Nueva Cláusula
+                  </button>
+                </div>
+
+                {articulosOperativosDoc.map(art => {
+                  const enmiendasArt = enmiendasGlobales.filter(e => e.articuloId === art.id);
+                  if (filtroEstadoEnmiendas === 'modificadas' && !art.modificado) return null;
+                  if (filtroEstadoEnmiendas === 'con_enmiendas' && enmiendasArt.length === 0) return null;
+
+                  return (
+                    <div
+                      key={art.id}
+                      style={{
+                        backgroundColor: 'var(--panel-color)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '10px',
+                        padding: '1rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.65rem',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <span style={{
+                            fontSize: '0.8rem',
+                            fontWeight: '800',
+                            color: '#60a5fa'
+                          }}>
+                            {art.prefijo || `Artículo ${art.numero}`}
+                          </span>
+                          {art.modificado && (
+                            <span style={{
+                              fontSize: '0.65rem',
+                              fontWeight: '800',
+                              backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                              color: '#22c55e',
+                              padding: '0.1rem 0.4rem',
+                              borderRadius: '4px'
+                            }}>
+                              Modificado
+                            </span>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '0.3rem' }}>
+                          <button
+                            onClick={() => handlePrepararEnmiendaDeArticulo(art, 'modificacion')}
+                            style={{
+                              backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                              border: '1px solid rgba(59, 130, 246, 0.3)',
+                              color: '#60a5fa',
+                              borderRadius: '5px',
+                              padding: '0.25rem 0.55rem',
+                              fontSize: '0.72rem',
+                              fontWeight: '700',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.25rem'
+                            }}
+                          >
+                            <Edit3 size={11} /> Modificar
+                          </button>
+                          <button
+                            onClick={() => handlePrepararEnmiendaDeArticulo(art, 'supresion')}
+                            style={{
+                              backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                              border: '1px solid rgba(239, 68, 68, 0.3)',
+                              color: '#f87171',
+                              borderRadius: '5px',
+                              padding: '0.25rem 0.55rem',
+                              fontSize: '0.72rem',
+                              fontWeight: '700',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.25rem'
+                            }}
+                          >
+                            <FileMinus size={11} /> Suprimir
+                          </button>
+                        </div>
+                      </div>
+
+                      <div style={{
+                        fontSize: '0.85rem',
+                        lineHeight: 1.5,
+                        backgroundColor: 'var(--card-header-bg)',
+                        padding: '0.75rem',
+                        borderRadius: '6px',
+                        border: '1px solid var(--subborder-color)'
+                      }}>
+                        {art.texto}
+                      </div>
+
+                      {/* Enmiendas de la sesión asociadas a este artículo */}
+                      {enmiendasArt.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginTop: '0.2rem' }}>
+                          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                            Enmiendas registradas ({enmiendasArt.length})
+                          </div>
+                          {enmiendasArt.map(e => (
+                            <div
+                              key={e.id}
+                              style={{
+                                backgroundColor: 'var(--card-header-bg)',
+                                border: `1px solid ${e.estado === 'aceptada' ? 'rgba(34, 197, 94, 0.4)' : e.estado === 'rechazada' ? 'rgba(239, 68, 68, 0.3)' : 'var(--subborder-color)'}`,
+                                borderRadius: '6px',
+                                padding: '0.5rem 0.65rem',
+                                fontSize: '0.75rem',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '0.2rem'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <span style={{ fontWeight: '800', color: '#60a5fa' }}>
+                                  {e.tipo?.toUpperCase()} por {e.paisProponente}
+                                </span>
+                                <span style={{
+                                  fontSize: '0.65rem',
+                                  fontWeight: '800',
+                                  padding: '0.1rem 0.35rem',
+                                  borderRadius: '4px',
+                                  backgroundColor: e.estado === 'aceptada' ? 'rgba(34, 197, 94, 0.2)' : e.estado === 'rechazada' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(234, 179, 8, 0.2)',
+                                  color: e.estado === 'aceptada' ? '#22c55e' : e.estado === 'rechazada' ? '#ef4444' : '#eab308'
+                                }}>
+                                  {e.estado?.toUpperCase() || 'EN DEBATE'}
+                                </span>
+                              </div>
+                              {e.textoPropuesto && (
+                                <div style={{ color: '#22c55e', fontSize: '0.75rem' }}>
+                                  + {e.textoPropuesto}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    {prop.textoPropuesto && (
-                      <div style={{ fontSize: '0.75rem', color: '#22c55e', fontWeight: '600' }}>
-                        + {prop.textoPropuesto}
-                      </div>
-                    )}
-                    {prop.justificacion && (
-                      <div style={{ fontSize: '0.68rem', color: 'var(--muted-text)', fontStyle: 'italic' }}>
-                        {prop.justificacion}
-                      </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* SUB-TAB 3: REDACTAR Y PROPONER ENMIENDA (COMPOSER CON DIFF)     */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {subTabEnmiendas === 'PROPONER' && (
+              <form onSubmit={handleEnviarEnmiendaDelegado} style={{
+                backgroundColor: 'var(--panel-color)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '12px',
+                padding: '1.25rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.12)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                    <Edit3 size={18} color="#3b82f6" />
+                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '800' }}>
+                      Redactar Propuesta de Enmienda
+                    </h3>
+                  </div>
+                  <span style={{
+                    fontSize: '0.7rem',
+                    fontWeight: '800',
+                    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                    color: '#60a5fa',
+                    padding: '0.2rem 0.5rem',
+                    borderRadius: '5px'
+                  }}>
+                    Proponente: {clientCountry || 'Delegación'}
+                  </span>
+                </div>
+
+                <div style={{ fontSize: '0.76rem', color: 'var(--muted-text)', lineHeight: 1.4 }}>
+                  Formula tu propuesta de enmienda formal. Al enviarla, llegará de forma telemática e instantánea al panel de la Mesa Directiva para su evaluación parlamentaria.
+                </div>
+
+                {/* 1. Selector de Naturaleza de la Enmienda */}
+                <div>
+                  <label style={{ fontSize: '0.74rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                    Tipo de Enmienda
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginTop: '0.35rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => setTipoEnmiendaDel('modificacion')}
+                      style={{
+                        padding: '0.55rem 0.4rem',
+                        borderRadius: '8px',
+                        border: `1.5px solid ${tipoEnmiendaDel === 'modificacion' ? '#3b82f6' : 'var(--subborder-color)'}`,
+                        backgroundColor: tipoEnmiendaDel === 'modificacion' ? 'rgba(59, 130, 246, 0.2)' : 'var(--card-header-bg)',
+                        color: tipoEnmiendaDel === 'modificacion' ? '#60a5fa' : 'var(--text-color)',
+                        fontWeight: '800',
+                        fontSize: '0.76rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '2px',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <span>➔ Modificación</span>
+                      <span style={{ fontSize: '0.62rem', opacity: 0.8, fontWeight: '500' }}>Reemplazar texto</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setTipoEnmiendaDel('adicion')}
+                      style={{
+                        padding: '0.55rem 0.4rem',
+                        borderRadius: '8px',
+                        border: `1.5px solid ${tipoEnmiendaDel === 'adicion' ? '#22c55e' : 'var(--subborder-color)'}`,
+                        backgroundColor: tipoEnmiendaDel === 'adicion' ? 'rgba(34, 197, 94, 0.2)' : 'var(--card-header-bg)',
+                        color: tipoEnmiendaDel === 'adicion' ? '#22c55e' : 'var(--text-color)',
+                        fontWeight: '800',
+                        fontSize: '0.76rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '2px',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <span>+ Adición</span>
+                      <span style={{ fontSize: '0.62rem', opacity: 0.8, fontWeight: '500' }}>Añadir nuevo texto</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setTipoEnmiendaDel('supresion')}
+                      style={{
+                        padding: '0.55rem 0.4rem',
+                        borderRadius: '8px',
+                        border: `1.5px solid ${tipoEnmiendaDel === 'supresion' ? '#ef4444' : 'var(--subborder-color)'}`,
+                        backgroundColor: tipoEnmiendaDel === 'supresion' ? 'rgba(239, 68, 68, 0.2)' : 'var(--card-header-bg)',
+                        color: tipoEnmiendaDel === 'supresion' ? '#ef4444' : 'var(--text-color)',
+                        fontWeight: '800',
+                        fontSize: '0.76rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '2px',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <span>- Supresión</span>
+                      <span style={{ fontSize: '0.62rem', opacity: 0.8, fontWeight: '500' }}>Tachar / eliminar</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. Selector de Artículo / Cláusula */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <label style={{ fontSize: '0.74rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                      Cláusula a Enmendar
+                    </label>
+                    {artIdDel && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const art = articulosDoc.find(a => a.id === artIdDel);
+                          if (art) {
+                            setTextoOriginalDel(art.texto);
+                            if (tipoEnmiendaDel === 'modificacion') setTextoPropuestoDel(art.texto);
+                          }
+                        }}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#60a5fa',
+                          fontSize: '0.7rem',
+                          fontWeight: '700',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Restablecer texto original
+                      </button>
                     )}
                   </div>
-                ))}
+
+                  <select
+                    value={artIdDel}
+                    onChange={e => {
+                      const newId = e.target.value;
+                      setArtIdDel(newId);
+                      const art = articulosDoc.find(a => a.id === newId);
+                      if (art) {
+                        setTextoOriginalDel(art.texto);
+                        if (tipoEnmiendaDel === 'modificacion') {
+                          setTextoPropuestoDel(art.texto);
+                        }
+                      } else {
+                        setTextoOriginalDel('');
+                        setTextoPropuestoDel('');
+                      }
+                    }}
+                    style={{
+                      width: '100%',
+                      marginTop: '0.35rem',
+                      backgroundColor: 'var(--card-header-bg)',
+                      border: '1px solid var(--subborder-color)',
+                      borderRadius: '8px',
+                      padding: '0.65rem',
+                      color: 'var(--text-color)',
+                      fontSize: '0.82rem',
+                      fontWeight: '600'
+                    }}
+                  >
+                    <option value="">-- Añadir como Nueva Cláusula al Final / General --</option>
+                    {articulosDoc.map(art => (
+                      <option key={art.id} value={art.id}>
+                        {art.prefijo || `Artículo ${art.numero}`} - {art.texto?.substring(0, 50)}...
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 3. Texto Original (para modificación o supresión) */}
+                {(tipoEnmiendaDel === 'supresion' || tipoEnmiendaDel === 'modificacion') && (
+                  <div>
+                    <label style={{ fontSize: '0.74rem', fontWeight: '800', color: '#ef4444', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <FileMinus size={13} />
+                      <span>{tipoEnmiendaDel === 'supresion' ? 'Texto a Suprimir' : 'Texto Original a Modificar'}</span>
+                    </label>
+                    <textarea
+                      rows={2}
+                      placeholder="Fragmento o texto original que se propone sustituir o eliminar..."
+                      value={textoOriginalDel}
+                      onChange={e => setTextoOriginalDel(e.target.value)}
+                      style={{
+                        width: '100%',
+                        marginTop: '0.35rem',
+                        backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                        border: '1px solid rgba(239, 68, 68, 0.35)',
+                        borderRadius: '8px',
+                        padding: '0.65rem',
+                        color: 'var(--text-color)',
+                        fontSize: '0.82rem',
+                        lineHeight: 1.4
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* 4. Texto Propuesto (para modificación o adición) */}
+                {(tipoEnmiendaDel === 'adicion' || tipoEnmiendaDel === 'modificacion') && (
+                  <div>
+                    <label style={{ fontSize: '0.74rem', fontWeight: '800', color: '#22c55e', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <FilePlus size={13} />
+                      <span>Texto Propuesto / Nueva Redacción</span>
+                    </label>
+                    <textarea
+                      rows={3}
+                      placeholder="Escribe la redacción propuesta..."
+                      required
+                      value={textoPropuestoDel}
+                      onChange={e => setTextoPropuestoDel(e.target.value)}
+                      style={{
+                        width: '100%',
+                        marginTop: '0.35rem',
+                        backgroundColor: 'rgba(34, 197, 94, 0.05)',
+                        border: '1px solid rgba(34, 197, 94, 0.35)',
+                        borderRadius: '8px',
+                        padding: '0.65rem',
+                        color: 'var(--text-color)',
+                        fontSize: '0.82rem',
+                        lineHeight: 1.4
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* 5. Previsualización Visual de Cambios (Diff Live Preview) */}
+                {(textoOriginalDel.trim() || textoPropuestoDel.trim()) && (
+                  <div style={{
+                    backgroundColor: 'var(--card-header-bg)',
+                    border: '1px solid var(--subborder-color)',
+                    borderRadius: '8px',
+                    padding: '0.85rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.4rem'
+                  }}>
+                    <div style={{
+                      fontSize: '0.7rem',
+                      fontWeight: '800',
+                      color: 'var(--muted-text)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.3rem'
+                    }}>
+                      <Sparkles size={12} color="#eab308" />
+                      <span>Previsualización del Cambio en el Documento</span>
+                    </div>
+
+                    <div style={{ fontSize: '0.82rem', lineHeight: 1.5 }}>
+                      {tipoEnmiendaDel === 'modificacion' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                          {textoOriginalDel && (
+                            <div style={{ textDecoration: 'line-through', color: '#ef4444', opacity: 0.85 }}>
+                              {textoOriginalDel}
+                            </div>
+                          )}
+                          {textoPropuestoDel && (
+                            <div style={{ color: '#22c55e', fontWeight: '700' }}>
+                              {textoPropuestoDel}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {tipoEnmiendaDel === 'supresion' && (
+                        <div style={{ textDecoration: 'line-through', color: '#ef4444' }}>
+                          {textoOriginalDel || '(Texto a suprimir)'}
+                        </div>
+                      )}
+
+                      {tipoEnmiendaDel === 'adicion' && (
+                        <div style={{ color: '#22c55e', fontWeight: '700' }}>
+                          + {textoPropuestoDel || '(Nueva cláusula propuesta)'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* 6. Motivación / Justificación */}
+                <div>
+                  <label style={{ fontSize: '0.74rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                    Motivación Diplomática / Justificación (Opcional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Fomenta la transferencia tecnológica y salvaguardas multilaterales"
+                    value={justificacionDel}
+                    onChange={e => setJustificacionDel(e.target.value)}
+                    style={{
+                      width: '100%',
+                      marginTop: '0.35rem',
+                      backgroundColor: 'var(--card-header-bg)',
+                      border: '1px solid var(--subborder-color)',
+                      borderRadius: '8px',
+                      padding: '0.6rem 0.75rem',
+                      color: 'var(--text-color)',
+                      fontSize: '0.82rem'
+                    }}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={!textoPropuestoDel.trim() && tipoEnmiendaDel !== 'supresion'}
+                  style={{
+                    backgroundColor: 'var(--btn-bg)',
+                    color: 'var(--btn-text)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '0.75rem',
+                    fontWeight: '800',
+                    fontSize: '0.85rem',
+                    cursor: (!textoPropuestoDel.trim() && tipoEnmiendaDel !== 'supresion') ? 'not-allowed' : 'pointer',
+                    opacity: (!textoPropuestoDel.trim() && tipoEnmiendaDel !== 'supresion') ? 0.5 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.45rem',
+                    marginTop: '0.25rem',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                  }}
+                >
+                  <Send size={15} /> Enviar Propuesta a la Mesa Directiva
+                </button>
+              </form>
+            )}
+
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* SUB-TAB 4: HISTORIAL DE PROPUESTAS Y ENMIENDAS DE LA SESIÓN     */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {subTabEnmiendas === 'HISTORIAL' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                {/* 1. Propuestas de este Delegado */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>Tus Propuestas Enviadas ({misEnmiendasEnviadas.length})</span>
+                    {misEnmiendasEnviadas.length > 0 && (
+                      <button
+                        onClick={() => setMisEnmiendasEnviadas([])}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--muted-text)',
+                          fontSize: '0.68rem',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Limpiar historial propio
+                      </button>
+                    )}
+                  </div>
+
+                  {misEnmiendasEnviadas.length === 0 ? (
+                    <div style={{
+                      padding: '1.75rem 1rem',
+                      textAlign: 'center',
+                      backgroundColor: 'var(--panel-color)',
+                      borderRadius: '8px',
+                      border: '1px dashed var(--subborder-color)',
+                      color: 'var(--muted-text)',
+                      fontSize: '0.78rem'
+                    }}>
+                      No has propuesto ninguna enmienda durante esta sesión todavía.
+                    </div>
+                  ) : (
+                    misEnmiendasEnviadas.map(prop => (
+                      <div
+                        key={prop.id}
+                        style={{
+                          backgroundColor: 'var(--panel-color)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '8px',
+                          padding: '0.85rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.4rem'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{
+                            fontSize: '0.75rem',
+                            fontWeight: '800',
+                            color: prop.tipo === 'supresion' ? '#ef4444' : prop.tipo === 'adicion' ? '#22c55e' : '#60a5fa'
+                          }}>
+                            {prop.tipo?.toUpperCase()} · {prop.articuloNumero}
+                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <span style={{
+                              fontSize: '0.65rem',
+                              fontWeight: '700',
+                              backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                              color: '#60a5fa',
+                              padding: '0.1rem 0.4rem',
+                              borderRadius: '4px'
+                            }}>
+                              Enviada a la Mesa
+                            </span>
+                            <button
+                              onClick={() => handleEliminarPropuestaEnviada(prop.id)}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--muted-text)',
+                                cursor: 'pointer',
+                                padding: '2px'
+                              }}
+                              title="Quitar de mi lista"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        </div>
+
+                        {prop.textoOriginal && (
+                          <div style={{ fontSize: '0.75rem', textDecoration: 'line-through', color: '#ef4444' }}>
+                            {prop.textoOriginal}
+                          </div>
+                        )}
+
+                        {prop.textoPropuesto && (
+                          <div style={{ fontSize: '0.78rem', color: '#22c55e', fontWeight: '700' }}>
+                            + {prop.textoPropuesto}
+                          </div>
+                        )}
+
+                        {prop.justificacion && (
+                          <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)', fontStyle: 'italic' }}>
+                            Motivo: {prop.justificacion}
+                          </div>
+                        )}
+
+                        <div style={{ fontSize: '0.65rem', color: 'var(--muted-text)' }}>
+                          {new Date(prop.timestamp || Date.now()).toLocaleTimeString()}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* 2. Enmiendas Oficiales de la Sesión */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                    Enmiendas Registradas en la Sesión ({enmiendasGlobales.length})
+                  </div>
+
+                  {enmiendasGlobales.length === 0 ? (
+                    <div style={{
+                      padding: '1.75rem 1rem',
+                      textAlign: 'center',
+                      backgroundColor: 'var(--panel-color)',
+                      borderRadius: '8px',
+                      border: '1px dashed var(--subborder-color)',
+                      color: 'var(--muted-text)',
+                      fontSize: '0.78rem'
+                    }}>
+                      La Mesa Directiva no ha introducido enmiendas formales en debate todavía.
+                    </div>
+                  ) : (
+                    enmiendasGlobales.map(e => (
+                      <div
+                        key={e.id}
+                        style={{
+                          backgroundColor: 'var(--panel-color)',
+                          border: `1px solid ${e.estado === 'aceptada' ? 'rgba(34, 197, 94, 0.4)' : e.estado === 'rechazada' ? 'rgba(239, 68, 68, 0.3)' : 'var(--border-color)'}`,
+                          borderRadius: '8px',
+                          padding: '0.85rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.35rem'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '0.76rem', fontWeight: '800', color: 'var(--text-color)' }}>
+                            {e.tipo?.toUpperCase()} sobre {e.articuloNumero || `Artículo`}
+                          </span>
+                          <span style={{
+                            fontSize: '0.68rem',
+                            fontWeight: '800',
+                            padding: '0.15rem 0.45rem',
+                            borderRadius: '4px',
+                            backgroundColor: e.estado === 'aceptada' ? 'rgba(34, 197, 94, 0.2)' : e.estado === 'rechazada' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(234, 179, 8, 0.2)',
+                            color: e.estado === 'aceptada' ? '#22c55e' : e.estado === 'rechazada' ? '#ef4444' : '#eab308'
+                          }}>
+                            {e.estado?.toUpperCase() || 'EN DEBATE'}
+                          </span>
+                        </div>
+
+                        <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)' }}>
+                          Proponente: <strong style={{ color: '#60a5fa' }}>{e.paisProponente || 'Delegación'}</strong>
+                        </div>
+
+                        {e.textoOriginal && (
+                          <div style={{ fontSize: '0.75rem', textDecoration: 'line-through', color: '#ef4444' }}>
+                            {e.textoOriginal}
+                          </div>
+                        )}
+
+                        {e.textoPropuesto && (
+                          <div style={{ fontSize: '0.78rem', color: '#22c55e', fontWeight: '700' }}>
+                            + {e.textoPropuesto}
+                          </div>
+                        )}
+
+                        {e.justificacion && (
+                          <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)', fontStyle: 'italic' }}>
+                            {e.justificacion}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             )}
           </div>

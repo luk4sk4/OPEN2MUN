@@ -7,42 +7,52 @@ export const SOCKET_SERVER_URL = 'https://api.openmun.app';
 
 /**
  * Sanitiza y optimiza el estado antes de enviarlo por la red:
- * 1. Elimina 'bandera' y 'flag' de los países, oradores y solicitudes (se infieren en cliente por nombre).
+ * 1. Mantiene propiedades esenciales incluyendo 'bandera' (códigos ISO ligeros o Base64).
  * 2. Omite registros históricos pesados innecesarios para clientes ('registroIntervenciones', 'historicoMociones').
- * 3. Mantiene solo las propiedades esenciales para minimizar el tamaño del JSON.
  */
 export function sanitizeStateForBroadcast(state) {
   if (!state || typeof state !== 'object') return state;
 
   const sanitized = { ...state };
 
-  // 1. Sanitizar lista de países: eliminar 'bandera' y propiedades pesadas
+  // 1. Sanitizar lista de países manteniendo bandera
   if (Array.isArray(sanitized.paises)) {
     sanitized.paises = sanitized.paises.map(p => {
       if (!p) return p;
-      if (typeof p === 'string') return p;
-      const { bandera, flag, ...rest } = p;
-      return rest;
+      if (typeof p === 'string') return { nombre: p };
+      return {
+        id: p.id,
+        nombre: p.nombre,
+        bandera: p.bandera || p.flag,
+        estatus: p.estatus,
+        veto: p.veto || p.tieneVeto
+      };
     });
   }
 
-  // 2. Sanitizar oradores en cola: omitir banderas
+  // 2. Sanitizar oradores en cola
   if (Array.isArray(sanitized.oradoresCola)) {
     sanitized.oradoresCola = sanitized.oradoresCola.map(o => {
       if (!o) return o;
-      if (typeof o === 'string') return { nombre: o };
-      const { bandera, flag, ...rest } = o;
-      return rest;
+      if (typeof o === 'string') return { id: o, nombre: o };
+      return {
+        id: o.id,
+        nombre: o.nombre,
+        bandera: o.bandera || o.flag
+      };
     });
   }
 
-  // 3. Sanitizar oradores caucus: omitir banderas
+  // 3. Sanitizar oradores caucus
   if (Array.isArray(sanitized.oradoresCaucus)) {
     sanitized.oradoresCaucus = sanitized.oradoresCaucus.map(o => {
       if (!o) return o;
-      if (typeof o === 'string') return { nombre: o };
-      const { bandera, flag, ...rest } = o;
-      return rest;
+      if (typeof o === 'string') return { id: o, nombre: o };
+      return {
+        id: o.id,
+        nombre: o.nombre,
+        bandera: o.bandera || o.flag
+      };
     });
   }
 
@@ -50,8 +60,14 @@ export function sanitizeStateForBroadcast(state) {
   if (Array.isArray(sanitized.speakingRequests)) {
     sanitized.speakingRequests = sanitized.speakingRequests.map(r => {
       if (!r) return r;
-      const { bandera, flag, ...rest } = r;
-      return rest;
+      return {
+        id: r.id,
+        country: r.country,
+        bandera: r.bandera || r.flag,
+        timestamp: r.timestamp,
+        type: r.type,
+        peerId: r.peerId
+      };
     });
   }
 
@@ -806,11 +822,7 @@ class NetworkService {
     const fullPayload = {
       ...cleanState,
       roomSettings: this.roomSettings,
-      speakingRequests: this.latestSpeakingRequests ? this.latestSpeakingRequests.map(r => {
-        if (!r) return r;
-        const { bandera, flag, ...rest } = r;
-        return rest;
-      }) : []
+      speakingRequests: this.latestSpeakingRequests || []
     };
 
     let msgToSend = null;
@@ -858,8 +870,14 @@ class NetworkService {
   broadcastSpeakingRequests(requests) {
     const sanitizedRequests = (requests || []).map(r => {
       if (!r) return r;
-      const { bandera, flag, ...rest } = r;
-      return rest;
+      return {
+        id: r.id,
+        country: r.country,
+        bandera: r.bandera || r.flag,
+        timestamp: r.timestamp,
+        type: r.type,
+        peerId: r.peerId
+      };
     });
     this.latestSpeakingRequests = sanitizedRequests;
     const msg = {
