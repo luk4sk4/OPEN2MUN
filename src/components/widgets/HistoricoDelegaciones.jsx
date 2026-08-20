@@ -191,46 +191,82 @@ const HistoricoDelegaciones = () => {
 
   // 3. Calcular métricas para cada país
   const datosPaises = useMemo(() => {
+    // 3.1 Pre-agregar datos para evitar bucles anidados costosos (O(N*M) -> O(N+M))
+    const mocionesMap = new Map();
+    for (const m of mocionesFiltradas) {
+      if (!m.proponente) continue;
+      const prop = m.proponente.toLowerCase().trim();
+      if (!mocionesMap.has(prop)) mocionesMap.set(prop, { presentadas: 0, aprobadas: 0 });
+      const stats = mocionesMap.get(prop);
+      stats.presentadas++;
+      if (m.estado === 'Aprobada' || m.estado === 'Aprobado') {
+        stats.aprobadas++;
+      }
+    }
+
+    const enmiendasMap = new Map();
+    for (const e of enmiendasFiltradas) {
+      const propRaw = e.paisProponente || e.proponente || '';
+      if (!propRaw) continue;
+      const prop = propRaw.toLowerCase().trim();
+      if (!enmiendasMap.has(prop)) enmiendasMap.set(prop, { presentadas: 0, aprobadas: 0 });
+      const stats = enmiendasMap.get(prop);
+      stats.presentadas++;
+      const st = (e.estado || '').toLowerCase().trim();
+      if (st === 'aceptada' || st === 'aceptado' || st === 'aprobada' || st === 'aprobado') {
+        stats.aprobadas++;
+      }
+    }
+
+    const intervencionesMap = new Map();
+    for (const i of intervencionesFiltradas) {
+      const pNombreRaw = i.pais || i.orador || '';
+      if (!pNombreRaw) continue;
+      const pNombre = pNombreRaw.toLowerCase().trim();
+      if (!intervencionesMap.has(pNombre)) intervencionesMap.set(pNombre, { count: 0, segBase: 0 });
+      const stats = intervencionesMap.get(pNombre);
+      stats.count++;
+      stats.segBase += (i.tiempoHabladoExacto || i.tiempoHablado || 0);
+    }
+
+    const globalIntervencionesMap = new Map();
+    for (const i of registroIntervenciones) {
+      const pNombreRaw = i.pais || i.orador || '';
+      if (!pNombreRaw) continue;
+      const pNombre = pNombreRaw.toLowerCase().trim();
+      if (!globalIntervencionesMap.has(pNombre)) globalIntervencionesMap.set(pNombre, { segGlobalBase: 0 });
+      const stats = globalIntervencionesMap.get(pNombre);
+      stats.segGlobalBase += (i.tiempoHabladoExacto || i.tiempoHablado || 0);
+    }
+
     return paises.map(p => {
       const nombreNorm = p.nombre.toLowerCase().trim();
 
       // Mociones en el filtro activo
-      const mocPresentadas = mocionesFiltradas.filter(m => m.proponente?.toLowerCase().trim() === nombreNorm).length;
-      const mocAprobadas = mocionesFiltradas.filter(m => 
-        m.proponente?.toLowerCase().trim() === nombreNorm && 
-        (m.estado === 'Aprobada' || m.estado === 'Aprobado')
-      ).length;
+      const mocStats = mocionesMap.get(nombreNorm) || { presentadas: 0, aprobadas: 0 };
+      const mocPresentadas = mocStats.presentadas;
+      const mocAprobadas = mocStats.aprobadas;
 
-      // Enmiendas en el filtro activo (propuestas y aprobadas/aceptadas)
-      const enmPresentadas = enmiendasFiltradas.filter(e => 
-        (e.paisProponente || e.proponente || '').toLowerCase().trim() === nombreNorm
-      ).length;
-      const enmAprobadas = enmiendasFiltradas.filter(e => {
-        const pProp = (e.paisProponente || e.proponente || '').toLowerCase().trim();
-        const st = (e.estado || '').toLowerCase().trim();
-        return pProp === nombreNorm && (st === 'aceptada' || st === 'aceptado' || st === 'aprobada' || st === 'aprobado');
-      }).length;
+      // Enmiendas en el filtro activo
+      const enmStats = enmiendasMap.get(nombreNorm) || { presentadas: 0, aprobadas: 0 };
+      const enmPresentadas = enmStats.presentadas;
+      const enmAprobadas = enmStats.aprobadas;
 
       // Intervenciones en el filtro activo
-      const intervencionesPais = intervencionesFiltradas.filter(i => {
-        const pNombre = (i.pais || i.orador || '').toLowerCase().trim();
-        return pNombre === nombreNorm;
-      });
+      const intStats = intervencionesMap.get(nombreNorm) || { count: 0, segBase: 0 };
+      const segBase = intStats.segBase;
+      const intervencionesCount = intStats.count;
 
-      const segBase = intervencionesPais.reduce((acc, curr) => acc + (curr.tiempoHabladoExacto || curr.tiempoHablado || 0), 0);
       const segAjuste = tiempoExtra[getAdjustmentKey(p.id)] || 0;
       const segHablados = Math.max(0, segBase + segAjuste);
 
-      // Cómputo global histórico de tiempo (para mostrar contexto cuando se filtra un día)
-      const todasIntervencionesPais = registroIntervenciones.filter(i => {
-        const pNombre = (i.pais || i.orador || '').toLowerCase().trim();
-        return pNombre === nombreNorm;
-      });
-      const segGlobalBase = todasIntervencionesPais.reduce((acc, curr) => acc + (curr.tiempoHabladoExacto || curr.tiempoHablado || 0), 0);
+      // Cómputo global histórico de tiempo
+      const globalIntStats = globalIntervencionesMap.get(nombreNorm) || { segGlobalBase: 0 };
+      const segGlobalBase = globalIntStats.segGlobalBase;
       const segGlobalHablados = Math.max(0, segGlobalBase + (tiempoExtra[`TODOS_${p.id}`] || 0));
 
       // Preguntas / POIs
-      const preguntasBase = intervencionesPais.length;
+      const preguntasBase = intervencionesCount;
       const preguntasManuales = preguntasExtras[getAdjustmentKey(p.id)] || 0;
       const totalPreguntas = preguntasBase + preguntasManuales;
 
@@ -247,7 +283,7 @@ const HistoricoDelegaciones = () => {
         segGlobalHablados,
         minutosExactos,
         totalPreguntas,
-        intervencionesCount: intervencionesPais.length
+        intervencionesCount
       };
     });
   }, [paises, intervencionesFiltradas, mocionesFiltradas, enmiendasFiltradas, registroIntervenciones, tiempoExtra, preguntasExtras, diaSeleccionado]);
