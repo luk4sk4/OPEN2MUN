@@ -16,7 +16,8 @@ import {
   ShieldAlert, 
   CheckCircle2,
   Sun,
-  Moon
+  Moon,
+  Megaphone
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useP2P } from '../../context/P2PContext';
@@ -33,7 +34,7 @@ const JoinSessionView = ({ isLight: propIsLight, onBackToChair }) => {
   const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
 
   const [roomIdInput, setRoomIdInput] = useState('');
-  const [selectedRole, setSelectedRole] = useState('delegate'); // 'delegate' | 'secretariat' | 'backroom'
+  const [selectedRole, setSelectedRole] = useState('delegate'); // 'delegate' | 'secretariat' | 'staff' | 'backroom'
   const [passwordInput, setPasswordInput] = useState('');
   const [mostrarPassword, setMostrarPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -240,7 +241,7 @@ const JoinSessionView = ({ isLight: propIsLight, onBackToChair }) => {
             <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Tipo de Acceso / Rol
             </label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.65rem', marginTop: '0.4rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', marginTop: '0.4rem' }}>
               {/* Delegado */}
               <div
                 onClick={() => setSelectedRole('delegate')}
@@ -248,7 +249,7 @@ const JoinSessionView = ({ isLight: propIsLight, onBackToChair }) => {
                   border: `1.5px solid ${selectedRole === 'delegate' ? '#22c55e' : 'var(--subborder-color)'}`,
                   backgroundColor: selectedRole === 'delegate' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(255,255,255,0.02)',
                   borderRadius: '10px',
-                  padding: '0.75rem 0.5rem',
+                  padding: '0.75rem 0.3rem',
                   cursor: 'pointer',
                   textAlign: 'center',
                   display: 'flex',
@@ -259,8 +260,8 @@ const JoinSessionView = ({ isLight: propIsLight, onBackToChair }) => {
                 }}
               >
                 <User size={18} color={selectedRole === 'delegate' ? '#22c55e' : 'var(--muted-text)'} />
-                <span style={{ fontSize: '0.78rem', fontWeight: '800', color: selectedRole === 'delegate' ? '#22c55e' : 'var(--text-color)' }}>
-                  Delegación
+                <span style={{ fontSize: '0.76rem', fontWeight: '800', color: selectedRole === 'delegate' ? '#22c55e' : 'var(--text-color)' }}>
+                  Delegado
                 </span>
               </div>
 
@@ -271,7 +272,7 @@ const JoinSessionView = ({ isLight: propIsLight, onBackToChair }) => {
                   border: `1.5px solid ${selectedRole === 'secretariat' ? '#3b82f6' : 'var(--subborder-color)'}`,
                   backgroundColor: selectedRole === 'secretariat' ? 'rgba(59, 130, 246, 0.12)' : 'rgba(255,255,255,0.02)',
                   borderRadius: '10px',
-                  padding: '0.75rem 0.5rem',
+                  padding: '0.75rem 0.3rem',
                   cursor: 'pointer',
                   textAlign: 'center',
                   display: 'flex',
@@ -282,8 +283,31 @@ const JoinSessionView = ({ isLight: propIsLight, onBackToChair }) => {
                 }}
               >
                 <Layers size={18} color={selectedRole === 'secretariat' ? '#3b82f6' : 'var(--muted-text)'} />
-                <span style={{ fontSize: '0.78rem', fontWeight: '800', color: selectedRole === 'secretariat' ? '#3b82f6' : 'var(--text-color)' }}>
+                <span style={{ fontSize: '0.76rem', fontWeight: '800', color: selectedRole === 'secretariat' ? '#3b82f6' : 'var(--text-color)' }}>
                   Secretaría
+                </span>
+              </div>
+
+              {/* Staff */}
+              <div
+                onClick={() => setSelectedRole('staff')}
+                style={{
+                  border: `1.5px solid ${selectedRole === 'staff' ? '#10b981' : 'var(--subborder-color)'}`,
+                  backgroundColor: selectedRole === 'staff' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255,255,255,0.02)',
+                  borderRadius: '10px',
+                  padding: '0.75rem 0.3rem',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <Megaphone size={18} color={selectedRole === 'staff' ? '#10b981' : 'var(--muted-text)'} />
+                <span style={{ fontSize: '0.76rem', fontWeight: '800', color: selectedRole === 'staff' ? '#10b981' : 'var(--text-color)' }}>
+                  Staff
                 </span>
               </div>
 
@@ -294,7 +318,7 @@ const JoinSessionView = ({ isLight: propIsLight, onBackToChair }) => {
                   border: `1.5px solid ${selectedRole === 'backroom' ? '#f97316' : 'var(--subborder-color)'}`,
                   backgroundColor: selectedRole === 'backroom' ? 'rgba(249, 115, 22, 0.12)' : 'rgba(255,255,255,0.02)',
                   borderRadius: '10px',
-                  padding: '0.75rem 0.5rem',
+                  padding: '0.75rem 0.3rem',
                   cursor: 'pointer',
                   textAlign: 'center',
                   display: 'flex',
@@ -305,7 +329,7 @@ const JoinSessionView = ({ isLight: propIsLight, onBackToChair }) => {
                 }}
               >
                 <ShieldAlert size={18} color={selectedRole === 'backroom' ? '#f97316' : 'var(--muted-text)'} />
-                <span style={{ fontSize: '0.78rem', fontWeight: '800', color: selectedRole === 'backroom' ? '#f97316' : 'var(--text-color)' }}>
+                <span style={{ fontSize: '0.76rem', fontWeight: '800', color: selectedRole === 'backroom' ? '#f97316' : 'var(--text-color)' }}>
                   Backroom
                 </span>
               </div>
@@ -348,7 +372,7 @@ const JoinSessionView = ({ isLight: propIsLight, onBackToChair }) => {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Contraseña de Acceso ({selectedRole === 'secretariat' ? 'Secretaría' : 'Backroom'})
+                Contraseña de Acceso ({selectedRole === 'secretariat' ? 'Secretaría' : selectedRole === 'staff' ? 'Staff' : 'Backroom'})
               </label>
               <div style={{ position: 'relative' }}>
                 <input

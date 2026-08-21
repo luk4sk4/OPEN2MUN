@@ -11,14 +11,29 @@
     <meta name="author" content="OpenMUN Team" />
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
     <link rel="canonical" href="https://openmun.app/" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#0f172a" />
+    
+    <!-- Favicons & App Icons (Optimizados para Google Search y Navegadores) -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
-    <!-- Open Graph / Facebook / WhatsApp / LinkedIn -->
+    <!-- Open Graph / Facebook / WhatsApp / LinkedIn / Google Rich Previews -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://openmun.app/" />
     <meta property="og:title" content="OpenMUN — Software Libre para Modelos de Naciones Unidas" />
     <meta property="og:description" content="Plataforma libre, gratuita y serverless para Modelos de Naciones Unidas (MUN). Gestión de oradores, cronómetros y votaciones P2P en tiempo real." />
-    <meta property="og:image" content="https://openmun.app/favicon.svg" />
+    <meta property="og:image" content="https://openmun.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:alt" content="OpenMUN — Plataforma Web de Modelo de Naciones Unidas" />
+    <meta property="og:logo" content="https://openmun.app/logo.png" />
     <meta property="og:site_name" content="OpenMUN" />
     <meta property="og:locale" content="es_ES" />
 
@@ -27,7 +42,8 @@
     <meta name="twitter:url" content="https://openmun.app/" />
     <meta name="twitter:title" content="OpenMUN — Software Libre para Modelos de Naciones Unidas" />
     <meta name="twitter:description" content="Plataforma libre, gratuita y serverless para Modelos de Naciones Unidas (MUN). Gestión de oradores, cronómetros y votaciones P2P en tiempo real." />
-    <meta name="twitter:image" content="https://openmun.app/favicon.svg" />
+    <meta name="twitter:image" content="https://openmun.app/og-image.png" />
+    <meta name="twitter:image:alt" content="OpenMUN Logo y Plataforma MUN" />
 
     <!-- Conexiones Optimizadas (DNS + TCP / TLS) -->
     <link rel="dns-prefetch" href="https://fonts.googleapis.com">
@@ -44,29 +60,60 @@
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@300;400;500;600;700;800;900&family=Lexend:wght@300;400;500;600;700;800&display=swap">
     </noscript>
 
-    <!-- Datos Estructurados JSON-LD (Schema.org) -->
+    <!-- Datos Estructurados JSON-LD (Schema.org) para Google Search y Logo Oficial -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "OpenMUN",
-      "alternateName": ["openMUN", "Open MUN", "OpenMUN App"],
-      "url": "https://openmun.app",
-      "description": "Plataforma web libre, gratuita y serverless en tiempo real para la gestión y proyección de comités de Modelos de Naciones Unidas (MUN).",
-      "applicationCategory": "EducationalApplication",
-      "operatingSystem": "All",
-      "license": "https://www.gnu.org/licenses/agpl-3.0.html",
-      "isAccessibleForFree": true,
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      },
-      "author": {
-        "@type": "Organization",
-        "name": "OpenMUN Team",
-        "url": "https://openmun.app"
-      }
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://openmun.app/#organization",
+          "name": "OpenMUN",
+          "url": "https://openmun.app",
+          "logo": {
+            "@type": "ImageObject",
+            "@id": "https://openmun.app/#logo",
+            "url": "https://openmun.app/logo.png",
+            "contentUrl": "https://openmun.app/logo.png",
+            "caption": "OpenMUN Logo",
+            "width": 512,
+            "height": 512
+          },
+          "image": "https://openmun.app/logo.png",
+          "description": "Software libre y gratuito para Modelos de Naciones Unidas (MUN)."
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://openmun.app/#website",
+          "url": "https://openmun.app",
+          "name": "OpenMUN",
+          "publisher": {
+            "@id": "https://openmun.app/#organization"
+          },
+          "image": "https://openmun.app/logo.png"
+        },
+        {
+          "@type": "WebApplication",
+          "@id": "https://openmun.app/#webapp",
+          "name": "OpenMUN",
+          "alternateName": ["openMUN", "Open MUN", "OpenMUN App"],
+          "url": "https://openmun.app",
+          "description": "Plataforma web libre, gratuita y serverless en tiempo real para la gestión y proyección de comités de Modelos de Naciones Unidas (MUN).",
+          "applicationCategory": "EducationalApplication",
+          "operatingSystem": "All",
+          "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+          "isAccessibleForFree": true,
+          "image": "https://openmun.app/logo.png",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "author": {
+            "@id": "https://openmun.app/#organization"
+          }
+        }
+      ]
     }
     </script>
   </head>

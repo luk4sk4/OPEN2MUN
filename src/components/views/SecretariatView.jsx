@@ -40,7 +40,9 @@ import {
   Sparkles,
   Sun,
   Moon,
-  SkipForward
+  SkipForward,
+  Megaphone,
+  AlertTriangle
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import CountryFlag from '../common/CountryFlag';
@@ -97,7 +99,10 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
     rejectSpeakingRequest,
     respondToPointWithNote,
     kickPeer,
-    registerSessionHandlers
+    registerSessionHandlers,
+    announcements = [],
+    broadcastAnnouncement,
+    deleteAnnouncement
   } = useP2P();
 
   const [respuestasPuntos, setRespuestasPuntos] = useState({});
@@ -110,15 +115,22 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
     });
   }, [registerSessionHandlers, aplicarEstadoExterno, ejecutarAccion]);
 
-  const [activeTab, setActiveTab] = useState('NOTAS'); // 'NOTAS' | 'SOLICITUDES' | 'DEBATE' | 'VOTACION' | 'INFO' | 'CRISIS' | 'AJUSTES' | 'CONEXIONES'
+  const [activeTab, setActiveTab] = useState('NOTAS'); // 'NOTAS' | 'AVISOS' | 'SOLICITUDES' | 'DEBATE' | 'VOTACION' | 'INFO' | 'CRISIS' | 'AJUSTES' | 'CONEXIONES'
+  const [subTabNotas, setSubTabNotas] = useState('SECRETARIA'); // 'SECRETARIA' | 'DELEGACIONES'
   const [subTabInfo, setSubTabInfo] = useState('MATRIZ'); // 'MATRIZ' | 'ANADIR' | 'HISTORICO' | 'AGENDA' | 'IMPORTAR' | 'MOCIONES' | 'RULETA'
   const [subTabVotacion, setSubTabVotacion] = useState('OFICIAL'); // 'OFICIAL' | 'MAPA'
   const [subTabDebate, setSubTabDebate] = useState('MONITOR'); // 'MONITOR' | 'ANADIR'
   const [filtroTexto, setFiltroTexto] = useState('');
-  const [filtroTipo, setFiltroTipo] = useState('TODOS'); // 'TODOS' | 'CHAIR' | 'BACKROOM' | 'DELEGADOS'
+  const [filtroSubTipo, setFiltroSubTipo] = useState('TODOS'); // 'TODOS' | 'DELEGADOS' | 'BACKROOM' | 'URGENTES'
   const [notaMesaTexto, setNotaMesaTexto] = useState('');
   const [notaMesaDestino, setNotaMesaDestino] = useState('TODOS');
   const [tipoNota, setTipoNota] = useState('general');
+
+  // Estados para Emisión de Avisos desde Secretaría
+  const [tituloAvisoSec, setTituloAvisoSec] = useState('');
+  const [textoAvisoSec, setTextoAvisoSec] = useState('');
+  const [prioridadAvisoSec, setPrioridadAvisoSec] = useState('general');
+  const [feedbackAvisoSec, setFeedbackAvisoSec] = useState(null);
 
   const state = remoteSessionState || {};
   const nombreComite = sessionNombreComite || state.comision || state.nombreComite || 'Comité en Vivo';
@@ -129,8 +141,25 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
   const oradorActual = caucusActivo.activo ? (oradoresCaucus[0]?.nombre || 'Sin orador') : (oradoresGSL[0]?.nombre || 'Sin orador');
   const paises = sessionPaises?.length > 0 ? sessionPaises : (state.paises || []);
 
-  // Filtrado de Notas
-  const notasFiltradas = notes.filter(n => {
+  // Clasificación de notas para Secretaría
+  const notasSecretaria = notes.filter(n => {
+    const toUpper = (n.to || '').toUpperCase();
+    const fromUpper = (n.from || '').toUpperCase();
+    const isToSec = toUpper === 'CHAIR' || toUpper === 'SECRETARIAT' || toUpper === 'SECRETARÍA' || toUpper === 'MESA' || toUpper === 'TODOS';
+    const isFromSec = n.fromRole === 'secretariat' || n.fromRole === 'chair' || fromUpper === 'SECRETARÍA' || fromUpper === 'CHAIR';
+    return isToSec || isFromSec;
+  });
+
+  const notasDelegaciones = notes.filter(n => {
+    const toUpper = (n.to || '').toUpperCase();
+    const fromUpper = (n.from || '').toUpperCase();
+    const isSec = toUpper === 'CHAIR' || toUpper === 'SECRETARIAT' || toUpper === 'SECRETARÍA' || toUpper === 'MESA' || toUpper === 'TODOS' || n.fromRole === 'secretariat' || n.fromRole === 'chair' || fromUpper === 'SECRETARÍA' || fromUpper === 'CHAIR';
+    const isBack = toUpper === 'BACKROOM' || n.fromRole === 'backroom' || fromUpper === 'BACKROOM' || n.type === 'crisis';
+    return !isSec && !isBack;
+  });
+
+  // Filtrado de Notas según sub-pestaña activa y búsqueda/filtro
+  const notasMostradas = (subTabNotas === 'SECRETARIA' ? notasSecretaria : notasDelegaciones).filter(n => {
     const coincideTexto = !filtroTexto || 
       n.from?.toLowerCase().includes(filtroTexto.toLowerCase()) ||
       n.to?.toLowerCase().includes(filtroTexto.toLowerCase()) ||
@@ -138,9 +167,11 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
 
     if (!coincideTexto) return false;
 
-    if (filtroTipo === 'CHAIR') return n.to === 'CHAIR';
-    if (filtroTipo === 'BACKROOM') return n.to === 'BACKROOM' || n.fromRole === 'backroom';
-    if (filtroTipo === 'DELEGADOS') return n.to !== 'CHAIR' && n.to !== 'BACKROOM';
+    if (filtroSubTipo === 'URGENTES') return n.type === 'urgente';
+    if (subTabNotas === 'SECRETARIA') {
+      if (filtroSubTipo === 'DELEGADOS') return n.fromRole === 'delegate' || (n.fromRole !== 'backroom' && n.fromRole !== 'chair' && n.fromRole !== 'secretariat');
+      if (filtroSubTipo === 'BACKROOM') return n.fromRole === 'backroom' || n.from?.toUpperCase() === 'BACKROOM' || n.to?.toUpperCase() === 'BACKROOM';
+    }
     return true;
   });
 
@@ -361,6 +392,26 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
         </button>
 
         <button
+          onClick={() => setActiveTab('AVISOS')}
+          style={{
+            padding: '0.5rem 0.95rem',
+            borderRadius: '8px',
+            border: 'none',
+            backgroundColor: activeTab === 'AVISOS' ? 'var(--btn-bg)' : 'transparent',
+            color: activeTab === 'AVISOS' ? 'var(--btn-text)' : 'var(--muted-text)',
+            fontWeight: '700',
+            fontSize: '0.82rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.45rem',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <Megaphone size={15} /> Avisos Oficiales ({announcements.length})
+        </button>
+
+        <button
           onClick={() => setActiveTab('SOLICITUDES')}
           style={{
             padding: '0.5rem 0.95rem',
@@ -532,12 +583,378 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
         )}
 
         {/* ═══════════════════════════════════════════════════════ */}
+        {/* PESTAÑA: AVISOS OFICIALES (SECRETARÍA)                 */}
+        {/* ═══════════════════════════════════════════════════════ */}
+        {activeTab === 'AVISOS' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 420px) 1fr', gap: '1.5rem', maxWidth: '1200px', margin: '0 auto' }}>
+            {/* Formulario de Emisión de Aviso */}
+            <div style={{
+              backgroundColor: 'var(--panel-color)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '16px',
+              padding: '1.4rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                <Megaphone size={20} color="#f59e0b" />
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '800' }}>
+                  {t('views.staff.emitAnnouncement', 'Emitir Aviso a Delegaciones')}
+                </h3>
+              </div>
+              <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--muted-text)', lineHeight: '1.4' }}>
+                Los comunicados emitidos desde Secretaría se proyectan inmediatamente en la cabecera y buzón de avisos de todos los delegados.
+              </p>
+
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (!tituloAvisoSec.trim() && !textoAvisoSec.trim()) return;
+                broadcastAnnouncement({
+                  title: tituloAvisoSec.trim() || 'Aviso de Secretaría',
+                  text: textoAvisoSec.trim(),
+                  priority: prioridadAvisoSec,
+                  senderRole: 'secretariat',
+                  senderName: 'Secretaría'
+                });
+                setTituloAvisoSec('');
+                setTextoAvisoSec('');
+                setFeedbackAvisoSec('Aviso emitido con éxito a toda la sala');
+                setTimeout(() => setFeedbackAvisoSec(null), 3500);
+              }} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.74rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                    {t('views.staff.announcementTitle', 'Título del Aviso')}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Inicio de Votación / Entrega de Cláusulas"
+                    value={tituloAvisoSec}
+                    onChange={e => setTituloAvisoSec(e.target.value)}
+                    style={{
+                      width: '100%',
+                      marginTop: '0.35rem',
+                      backgroundColor: 'var(--card-header-bg)',
+                      border: '1px solid var(--subborder-color)',
+                      borderRadius: '8px',
+                      padding: '0.65rem 0.85rem',
+                      color: 'var(--text-color)',
+                      fontSize: '0.88rem',
+                      fontWeight: '700'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.74rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                    {t('views.staff.announcementPriority', 'Categoría / Prioridad')}
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.45rem', marginTop: '0.35rem' }}>
+                    {[
+                      { id: 'general', label: t('views.staff.priorityGeneral', 'General'), color: '#fbbf24' },
+                      { id: 'urgente', label: t('views.staff.priorityUrgent', 'Urgente / Importante'), color: '#ef4444' },
+                      { id: 'logistica', label: t('views.staff.priorityLogistics', 'Logística de Sala'), color: '#60a5fa' },
+                      { id: 'receso', label: t('views.staff.priorityRecess', 'Receso / Coffee Break'), color: '#34d399' },
+                      { id: 'documento', label: t('views.staff.priorityDoc', 'Entrega Documentos'), color: '#c084fc' }
+                    ].map(cat => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setPrioridadAvisoSec(cat.id)}
+                        style={{
+                          backgroundColor: prioridadAvisoSec === cat.id ? 'rgba(245, 158, 11, 0.15)' : 'var(--card-header-bg)',
+                          border: `1.5px solid ${prioridadAvisoSec === cat.id ? '#f59e0b' : 'var(--subborder-color)'}`,
+                          borderRadius: '8px',
+                          padding: '0.5rem 0.4rem',
+                          fontSize: '0.76rem',
+                          fontWeight: '700',
+                          color: prioridadAvisoSec === cat.id ? 'var(--text-color)' : 'var(--muted-text)',
+                          cursor: 'pointer',
+                          textAlign: 'center',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.74rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                    {t('views.staff.announcementMsg', 'Mensaje o Instrucción')}
+                  </label>
+                  <textarea
+                    rows={4}
+                    placeholder="Instrucción oficial de la Secretaría para los delegados..."
+                    value={textoAvisoSec}
+                    onChange={e => setTextoAvisoSec(e.target.value)}
+                    style={{
+                      width: '100%',
+                      marginTop: '0.35rem',
+                      backgroundColor: 'var(--card-header-bg)',
+                      border: '1px solid var(--subborder-color)',
+                      borderRadius: '8px',
+                      padding: '0.65rem 0.85rem',
+                      color: 'var(--text-color)',
+                      fontSize: '0.84rem',
+                      resize: 'vertical'
+                    }}
+                  />
+                </div>
+
+                {feedbackAvisoSec && (
+                  <div style={{
+                    backgroundColor: 'rgba(34, 197, 94, 0.12)',
+                    border: '1px solid rgba(34, 197, 94, 0.3)',
+                    color: '#22c55e',
+                    borderRadius: '8px',
+                    padding: '0.55rem 0.75rem',
+                    fontSize: '0.78rem',
+                    fontWeight: '700',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem'
+                  }}>
+                    <Check size={14} /> {feedbackAvisoSec}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={!tituloAvisoSec.trim() && !textoAvisoSec.trim()}
+                  style={{
+                    backgroundColor: '#f59e0b',
+                    color: '#000000',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '0.75rem',
+                    fontWeight: '800',
+                    fontSize: '0.9rem',
+                    cursor: (tituloAvisoSec.trim() || textoAvisoSec.trim()) ? 'pointer' : 'not-allowed',
+                    opacity: (tituloAvisoSec.trim() || textoAvisoSec.trim()) ? 1 : 0.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    boxShadow: '0 4px 16px rgba(245, 158, 11, 0.3)',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <Send size={16} /> {t('views.staff.sendAnnouncementBtn', 'Emitir Aviso Oficial')}
+                </button>
+              </form>
+            </div>
+
+            {/* Listado de Avisos Activos */}
+            <div style={{
+              backgroundColor: 'var(--panel-color)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '16px',
+              padding: '1.4rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                  <Megaphone size={20} color="#f59e0b" />
+                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '800' }}>
+                    {t('views.staff.activeAnnouncements', 'Avisos Activos en Sala')} ({announcements.length})
+                  </h3>
+                </div>
+              </div>
+
+              {announcements.length === 0 ? (
+                <div style={{
+                  padding: '3rem 1.5rem',
+                  textAlign: 'center',
+                  color: 'var(--muted-text)',
+                  border: '1px dashed var(--subborder-color)',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.75rem'
+                }}>
+                  <Megaphone size={36} style={{ opacity: 0.3 }} />
+                  <div style={{ fontSize: '0.9rem', fontWeight: '600' }}>
+                    {t('views.staff.noAnnouncements', 'No hay avisos emitidos en este momento.')}
+                  </div>
+                  <div style={{ fontSize: '0.78rem' }}>
+                    Usa el formulario lateral para emitir un aviso prioritario a todas las delegaciones.
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                  {announcements.map((ann) => {
+                    const isUrgent = ann.priority === 'urgente';
+                    return (
+                      <div
+                        key={ann.id}
+                        style={{
+                          backgroundColor: 'var(--card-header-bg)',
+                          border: `1px solid ${isUrgent ? 'rgba(239, 68, 68, 0.4)' : 'var(--subborder-color)'}`,
+                          borderLeft: `4px solid ${isUrgent ? '#ef4444' : '#f59e0b'}`,
+                          borderRadius: '12px',
+                          padding: '1.1rem 1.25rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.55rem',
+                          position: 'relative'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <span style={{
+                              fontSize: '0.68rem',
+                              fontWeight: '800',
+                              backgroundColor: isUrgent ? 'rgba(239, 68, 68, 0.18)' : 'rgba(245, 158, 11, 0.18)',
+                              color: isUrgent ? '#ef4444' : '#f59e0b',
+                              padding: '0.15rem 0.5rem',
+                              borderRadius: '6px',
+                              letterSpacing: '0.04em'
+                            }}>
+                              {(ann.priority || 'general').toUpperCase()}
+                            </span>
+                            <span style={{ fontSize: '0.74rem', color: 'var(--muted-text)', fontWeight: '600' }}>
+                              De: <strong style={{ color: 'var(--text-color)' }}>{ann.senderName || 'Secretaría / Staff'}</strong>
+                            </span>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--muted-text)' }}>
+                              • {new Date(ann.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+
+                          <button
+                            onClick={() => deleteAnnouncement(ann.id)}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: 'var(--muted-text)',
+                              cursor: 'pointer',
+                              padding: '4px',
+                              borderRadius: '6px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                              fontSize: '0.72rem'
+                            }}
+                            title={t('views.staff.deleteAnnouncement', 'Retirar Aviso')}
+                              aria-label={t('views.staff.deleteAnnouncement', 'Retirar Aviso')}
+                          >
+                            <Trash2 size={15} color="#ef4444" />
+                          </button>
+                        </div>
+
+                        <div style={{ fontSize: '0.98rem', fontWeight: '800', color: 'var(--text-color)' }}>
+                          {ann.title}
+                        </div>
+
+                        {ann.text && (
+                          <div style={{ fontSize: '0.84rem', color: 'var(--muted-text)', lineHeight: '1.45', whiteSpace: 'pre-wrap' }}>
+                            {ann.text}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════ */}
         {/* PESTAÑA 1: BANDEJA DE NOTAS / PAJES                     */}
         {/* ═══════════════════════════════════════════════════════ */}
         {activeTab === 'NOTAS' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '1.5rem', alignItems: 'start' }}>
-            {/* Columna Izquierda: Feed de Notas y Filtros */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '1.5rem', alignItems: 'start' }}>
+            {/* Columna Izquierda: Pestañas de Mensajes, Feed de Notas y Filtros */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {/* Selector de Sub-Pestañas: Secretaría vs Delegaciones */}
+              <div style={{
+                backgroundColor: 'var(--panel-color)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '14px',
+                padding: '0.5rem',
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '0.5rem',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+              }}>
+                <button
+                  onClick={() => {
+                    setSubTabNotas('SECRETARIA');
+                    setFiltroSubTipo('TODOS');
+                  }}
+                  style={{
+                    backgroundColor: subTabNotas === 'SECRETARIA' ? 'var(--btn-bg)' : 'transparent',
+                    color: subTabNotas === 'SECRETARIA' ? 'var(--btn-text)' : 'var(--muted-text)',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '0.75rem 1rem',
+                    fontSize: '0.85rem',
+                    fontWeight: '800',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <Building2 size={16} />
+                  <span>Mensajes a Secretaría</span>
+                  <span style={{
+                    fontSize: '0.72rem',
+                    padding: '0.15rem 0.5rem',
+                    borderRadius: '20px',
+                    backgroundColor: subTabNotas === 'SECRETARIA' ? 'rgba(255, 255, 255, 0.2)' : 'var(--card-header-bg)',
+                    color: subTabNotas === 'SECRETARIA' ? '#ffffff' : 'var(--text-color)',
+                    fontWeight: '800'
+                  }}>
+                    {notasSecretaria.length}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setSubTabNotas('DELEGACIONES');
+                    setFiltroSubTipo('TODOS');
+                  }}
+                  style={{
+                    backgroundColor: subTabNotas === 'DELEGACIONES' ? 'var(--btn-bg)' : 'transparent',
+                    color: subTabNotas === 'DELEGACIONES' ? 'var(--btn-text)' : 'var(--muted-text)',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '0.75rem 1rem',
+                    fontSize: '0.85rem',
+                    fontWeight: '800',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <Users size={16} />
+                  <span>Mensajes entre Delegaciones</span>
+                  <span style={{
+                    fontSize: '0.72rem',
+                    padding: '0.15rem 0.5rem',
+                    borderRadius: '20px',
+                    backgroundColor: subTabNotas === 'DELEGACIONES' ? 'rgba(255, 255, 255, 0.2)' : 'var(--card-header-bg)',
+                    color: subTabNotas === 'DELEGACIONES' ? '#ffffff' : 'var(--text-color)',
+                    fontWeight: '800'
+                  }}>
+                    {notasDelegaciones.length}
+                  </span>
+                </button>
+              </div>
+
               {/* Barra de Filtros y Búsqueda */}
               <div style={{
                 backgroundColor: 'var(--panel-color)',
@@ -550,11 +967,11 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
                 gap: '1rem',
                 flexWrap: 'wrap'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: '220px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: '200px' }}>
                   <Search size={16} style={{ color: 'var(--muted-text)' }} />
                   <input
                     type="text"
-                    placeholder="Buscar por remitente, destinatario o mensaje..."
+                    placeholder={subTabNotas === 'SECRETARIA' ? "Buscar en mensajes a secretaría..." : "Buscar entre delegaciones..."}
                     value={filtroTexto}
                     onChange={e => setFiltroTexto(e.target.value)}
                     style={{
@@ -566,32 +983,43 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
                       width: '100%'
                     }}
                   />
+                  {filtroTexto && (
+                    <button
+                      onClick={() => setFiltroTexto('')}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--muted-text)', cursor: 'pointer' }}
+                      aria-label={t('common.clearSearch', 'Limpiar búsqueda')}
+                      title={t('common.clearSearch', 'Limpiar búsqueda')}
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.35rem' }}>
-                  {['TODOS', 'CHAIR', 'BACKROOM', 'DELEGADOS'].map(tipo => (
+                  {(subTabNotas === 'SECRETARIA' ? ['TODOS', 'DELEGADOS', 'BACKROOM', 'URGENTES'] : ['TODOS', 'URGENTES']).map(tipo => (
                     <button
                       key={tipo}
-                      onClick={() => setFiltroTipo(tipo)}
+                      onClick={() => setFiltroSubTipo(tipo)}
                       style={{
-                        backgroundColor: filtroTipo === tipo ? 'var(--btn-bg)' : 'var(--card-header-bg)',
-                        color: filtroTipo === tipo ? 'var(--btn-text)' : 'var(--muted-text)',
+                        backgroundColor: filtroSubTipo === tipo ? 'var(--btn-bg)' : 'var(--card-header-bg)',
+                        color: filtroSubTipo === tipo ? 'var(--btn-text)' : 'var(--muted-text)',
                         border: '1px solid var(--border-color)',
                         borderRadius: '6px',
                         padding: '0.35rem 0.7rem',
                         fontSize: '0.74rem',
                         fontWeight: '700',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
                       }}
                     >
-                      {tipo}
+                      {tipo === 'DELEGADOS' ? 'Delegaciones' : tipo === 'BACKROOM' ? 'Backroom / Crisis' : tipo === 'URGENTES' ? '⚡ Urgentes' : 'Todos'}
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Lista de Notas */}
-              {notasFiltradas.length === 0 ? (
+              {notasMostradas.length === 0 ? (
                 <div style={{
                   padding: '4rem 1.5rem',
                   textAlign: 'center',
@@ -600,67 +1028,132 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
                   border: '1px dashed var(--border-color)',
                   color: 'var(--muted-text)'
                 }}>
-                  <MessageSquare size={36} style={{ opacity: 0.35, marginBottom: '0.6rem' }} />
-                  <div style={{ fontWeight: '700', fontSize: '0.95rem' }}>No hay notas registradas</div>
-                  <div style={{ fontSize: '0.78rem', marginTop: '4px' }}>
-                    Las notas que envíen las delegaciones entre sí o a la Mesa aparecerán aquí en vivo.
-                  </div>
+                  {subTabNotas === 'SECRETARIA' ? (
+                    <>
+                      <Building2 size={38} style={{ opacity: 0.35, marginBottom: '0.6rem' }} />
+                      <div style={{ fontWeight: '700', fontSize: '0.95rem' }}>No hay mensajes para la Secretaría</div>
+                      <div style={{ fontSize: '0.78rem', marginTop: '4px' }}>
+                        Las dudas de procedimiento, notas a la Mesa y avisos oficiales aparecerán aquí en vivo.
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Users size={38} style={{ opacity: 0.35, marginBottom: '0.6rem' }} />
+                      <div style={{ fontWeight: '700', fontSize: '0.95rem' }}>No hay mensajes entre delegaciones</div>
+                      <div style={{ fontSize: '0.78rem', marginTop: '4px' }}>
+                        La mensajería y notas diplomáticas intercambiadas entre países se registrarán aquí en tiempo real.
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {notasFiltradas.map(nota => (
-                    <div
-                      key={nota.id}
-                      style={{
-                        backgroundColor: 'var(--panel-color)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '12px',
-                        padding: '1rem 1.25rem',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.5rem',
-                        boxShadow: '0 4px 14px rgba(0,0,0,0.15)'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span style={{ fontWeight: '800', fontSize: '0.92rem', color: '#60a5fa' }}>
-                            {nota.from}
-                          </span>
-                          <span style={{ color: 'var(--muted-text)', fontSize: '0.8rem' }}>➔</span>
-                          <span style={{ fontWeight: '800', fontSize: '0.92rem', color: '#22c55e' }}>
-                            {nota.to}
-                          </span>
-                          <span style={{
-                            fontSize: '0.68rem',
-                            fontWeight: '700',
-                            padding: '0.1rem 0.45rem',
-                            borderRadius: '4px',
-                            backgroundColor: nota.type === 'urgente' ? 'rgba(239, 68, 68, 0.15)' : 'var(--card-header-bg)',
-                            color: nota.type === 'urgente' ? '#ef4444' : 'var(--muted-text)',
-                            border: `1px solid ${nota.type === 'urgente' ? 'rgba(239, 68, 68, 0.3)' : 'var(--border-color)'}`
-                          }}>
-                            {nota.type?.toUpperCase() || 'GENERAL'}
-                          </span>
+                  {notasMostradas.map(nota => {
+                    const isFromSec = nota.fromRole === 'secretariat' || nota.fromRole === 'chair' || nota.from === 'Secretaría';
+                    const isFromBck = nota.fromRole === 'backroom' || nota.from === 'Backroom';
+                    const isToSec = nota.to === 'CHAIR' || nota.to === 'SECRETARIAT' || nota.to === 'MESA' || nota.to === 'TODOS';
+
+                    return (
+                      <div
+                        key={nota.id}
+                        style={{
+                          backgroundColor: 'var(--panel-color)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '12px',
+                          padding: '1rem 1.25rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.55rem',
+                          boxShadow: '0 4px 14px rgba(0,0,0,0.12)'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            {/* Remitente */}
+                            <span style={{
+                              fontWeight: '800',
+                              fontSize: '0.92rem',
+                              color: isFromBck ? '#f97316' : isFromSec ? '#a855f7' : '#60a5fa',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}>
+                              {isFromBck ? '🚨 Backroom' : isFromSec ? '🏛️ Secretaría' : nota.from}
+                            </span>
+
+                            <span style={{ color: 'var(--muted-text)', fontSize: '0.8rem' }}>➔</span>
+
+                            {/* Destinatario */}
+                            <span style={{
+                              fontWeight: '800',
+                              fontSize: '0.92rem',
+                              color: isToSec ? '#a855f7' : '#22c55e',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}>
+                              {nota.to === 'TODOS' ? '📢 Toda la Sala' : nota.to === 'CHAIR' ? '🏛️ Mesa / Secretaría' : nota.to === 'BACKROOM' ? '🚨 Backroom' : nota.to}
+                            </span>
+
+                            {/* Badge de tipo */}
+                            <span style={{
+                              fontSize: '0.68rem',
+                              fontWeight: '700',
+                              padding: '0.1rem 0.45rem',
+                              borderRadius: '4px',
+                              backgroundColor: nota.type === 'urgente' ? 'rgba(239, 68, 68, 0.15)' : nota.type === 'backroom' || nota.type === 'crisis' ? 'rgba(249, 115, 22, 0.15)' : 'var(--card-header-bg)',
+                              color: nota.type === 'urgente' ? '#ef4444' : nota.type === 'backroom' || nota.type === 'crisis' ? '#f97316' : 'var(--muted-text)',
+                              border: `1px solid ${nota.type === 'urgente' ? 'rgba(239, 68, 68, 0.3)' : nota.type === 'backroom' || nota.type === 'crisis' ? 'rgba(249, 115, 22, 0.3)' : 'var(--border-color)'}`
+                            }}>
+                              {nota.type?.toUpperCase() || 'GENERAL'}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ fontSize: '0.72rem', color: 'var(--muted-text)' }}>
+                              {new Date(nota.timestamp || Date.now()).toLocaleTimeString()}
+                            </span>
+                            {/* Botón rápido para responder */}
+                            {nota.from && !isFromSec && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setNotaMesaDestino(isFromBck ? 'BACKROOM' : nota.from);
+                                  const textEl = document.getElementById('secretariat-note-input');
+                                  if (textEl) textEl.focus();
+                                }}
+                                style={{
+                                  background: 'rgba(59, 130, 246, 0.12)',
+                                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                                  borderRadius: '5px',
+                                  color: '#60a5fa',
+                                  fontSize: '0.7rem',
+                                  fontWeight: '700',
+                                  padding: '0.15rem 0.45rem',
+                                  cursor: 'pointer'
+                                }}
+                                title={`Responder a ${nota.from}`}
+                              >
+                                Responder
+                              </button>
+                            )}
+                          </div>
                         </div>
 
-                        <span style={{ fontSize: '0.72rem', color: 'var(--muted-text)' }}>
-                          {new Date(nota.timestamp || Date.now()).toLocaleTimeString()}
-                        </span>
+                        <div style={{
+                          fontSize: '0.88rem',
+                          lineHeight: '1.45',
+                          backgroundColor: 'var(--card-header-bg)',
+                          padding: '0.65rem 0.85rem',
+                          borderRadius: '8px',
+                          border: '1px solid var(--border-color)',
+                          wordBreak: 'break-word'
+                        }}>
+                          {nota.text}
+                        </div>
                       </div>
-
-                      <div style={{
-                        fontSize: '0.88rem',
-                        lineHeight: '1.45',
-                        backgroundColor: 'var(--card-header-bg)',
-                        padding: '0.65rem 0.85rem',
-                        borderRadius: '8px',
-                        border: '1px solid var(--border-color)'
-                      }}>
-                        {nota.text}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -675,7 +1168,8 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
               flexDirection: 'column',
               gap: '1rem',
               position: 'sticky',
-              top: '80px'
+              top: '80px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '800', fontSize: '0.95rem' }}>
                 <Send size={16} color="#60a5fa" /> Enviar Nota Oficial
@@ -755,6 +1249,7 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
                     Mensaje
                   </label>
                   <textarea
+                    id="secretariat-note-input"
                     rows={4}
                     placeholder="Escribe el comunicado o mensaje..."
                     value={notaMesaTexto}
@@ -1988,6 +2483,7 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
                             <button
                               onClick={() => removerOrador(o.id || o.nombre)}
                               title="Remover de la lista"
+                              aria-label="Remover de la lista"
                               style={{
                                 background: 'transparent',
                                 border: 'none',
@@ -2129,6 +2625,7 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
                             <button
                               onClick={() => removerOradorCaucus(o.id || o.nombre)}
                               title="Remover del caucus"
+                              aria-label="Remover del caucus"
                               style={{
                                 background: 'transparent',
                                 border: 'none',

@@ -35,7 +35,8 @@ import {
   ChevronDown,
   ChevronUp,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Megaphone
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useTranslation } from 'react-i18next';
@@ -53,6 +54,8 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
     setSecretPassword,
     backroomPassword,
     setBackroomPassword,
+    staffPassword,
+    setStaffPassword,
     roomSettings,
     updateRoomSettings,
     connectedPeers,
@@ -67,6 +70,7 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
   const [copiado, setCopiado] = useState(false);
   const [mostrarPassSecreto, setMostrarPassSecreto] = useState(false);
   const [mostrarPassBackroom, setMostrarPassBackroom] = useState(false);
+  const [mostrarPassStaff, setMostrarPassStaff] = useState(false);
   const [tabActiva, setTabActiva] = useState('SALA'); // 'SALA' | 'AJUSTES' | 'CONEXIONES' | 'SOLICITUDES'
   const [filtroConexiones, setFiltroConexiones] = useState('');
   const [mostrarInfoDonacion, setMostrarInfoDonacion] = useState(false);
@@ -105,6 +109,12 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
     }
   };
 
+  const handleOpenLocalStaff = () => {
+    if (typeof window !== 'undefined') {
+      window.open(`${window.location.origin}${window.location.pathname}?mode=staff&local=true`, '_blank');
+    }
+  };
+
   const generarPasswordRandom = (tipo) => {
     const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
     let res = '';
@@ -113,6 +123,7 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
     }
     if (tipo === 'secret') setSecretPassword(res);
     if (tipo === 'backroom') setBackroomPassword(res);
+    if (tipo === 'staff') setStaffPassword(res);
   };
 
   const conexionesFiltradas = connectedPeers.filter(p => {
@@ -416,7 +427,7 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                   ) : (
                     <button
                       disabled={isConnecting}
-                      onClick={() => startHosting(roomId, secretPassword, backroomPassword, roomSettings)}
+                      onClick={() => startHosting(roomId, secretPassword, backroomPassword, roomSettings, staffPassword)}
                       style={{
                         backgroundColor: 'var(--btn-bg)',
                         color: 'var(--btn-text)',
@@ -703,45 +714,87 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                     </div>
                   </div>
 
-                  {/* Botón de Acceso Rápido a Secretaría Local (Doble Monitor) */}
-                  <div style={{
-                    backgroundColor: 'rgba(59, 130, 246, 0.08)',
-                    border: '1px dashed rgba(59, 130, 246, 0.35)',
-                    borderRadius: '12px',
-                    padding: '0.9rem 1.1rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '0.85rem'
-                  }}>
-                    <div>
-                      <div style={{ fontSize: '0.88rem', fontWeight: '800', color: 'var(--text-color)', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                        <Layers size={16} color="#3b82f6" /> Pantalla Secreta Local (Doble Monitor)
+                  {/* Botones de Acceso Rápido a Pantallas Locales (Doble Monitor) */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
+                    <div style={{
+                      backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                      border: '1px dashed rgba(59, 130, 246, 0.35)',
+                      borderRadius: '12px',
+                      padding: '0.85rem 1rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '0.75rem'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <Layers size={15} color="#3b82f6" /> Secretaría Local
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)', marginTop: '2px' }}>
+                          Pestaña secundaria para proyector o pajes
+                        </div>
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--muted-text)', marginTop: '3px' }}>
-                        Abre una pestaña secundaria instantánea en este navegador (cero latencia, sin contraseña).
-                      </div>
+                      <button
+                        onClick={handleOpenLocalSecretariat}
+                        style={{
+                          backgroundColor: '#3b82f6',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '0.45rem 0.8rem',
+                          fontWeight: '700',
+                          fontSize: '0.76rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          whiteSpace: 'nowrap',
+                          boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)'
+                        }}
+                      >
+                        <ExternalLink size={13} /> Abrir
+                      </button>
                     </div>
-                    <button
-                      onClick={handleOpenLocalSecretariat}
-                      style={{
-                        backgroundColor: '#3b82f6',
-                        color: '#ffffff',
-                        border: 'none',
-                        borderRadius: '8px',
-                        padding: '0.5rem 0.95rem',
-                        fontWeight: '700',
-                        fontSize: '0.8rem',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.4rem',
-                        whiteSpace: 'nowrap',
-                        boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)'
-                      }}
-                    >
-                      <ExternalLink size={14} /> Abrir Pestaña
-                    </button>
+
+                    <div style={{
+                      backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                      border: '1px dashed rgba(16, 185, 129, 0.35)',
+                      borderRadius: '12px',
+                      padding: '0.85rem 1rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '0.75rem'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <Megaphone size={15} color="#10b981" /> Staff Local
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--muted-text)', marginTop: '2px' }}>
+                          Consola de logística y avisos oficiales
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleOpenLocalStaff}
+                        style={{
+                          backgroundColor: '#10b981',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '0.45rem 0.8rem',
+                          fontWeight: '700',
+                          fontSize: '0.76rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          whiteSpace: 'nowrap',
+                          boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
+                        }}
+                      >
+                        <ExternalLink size={13} /> Abrir
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -1204,10 +1257,10 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                 gap: '1rem'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontWeight: '800', fontSize: '0.95rem' }}>
-                  <Key size={18} color="#f59e0b" /> Contraseñas de Secretaría y Backroom
+                  <Key size={18} color="#f59e0b" /> Contraseñas de Secretaría, Staff y Backroom
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
                   {/* Pass Secretaría */}
                   <div>
                     <label style={{ fontSize: '0.74rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
@@ -1251,6 +1304,64 @@ const LiveSessionModal = ({ isOpen, onClose, isLight }) => {
                       <button
                         type="button"
                         onClick={() => generarPasswordRandom('secret')}
+                        style={{
+                          backgroundColor: 'rgba(255,255,255,0.05)',
+                          border: '1px solid var(--subborder-color)',
+                          borderRadius: '8px',
+                          padding: '0 0.6rem',
+                          color: 'var(--text-color)',
+                          cursor: 'pointer'
+                        }}
+                        title="Generar contraseña aleatoria"
+                      >
+                        <RefreshCw size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Pass Staff */}
+                  <div>
+                    <label style={{ fontSize: '0.74rem', fontWeight: '700', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                      Contraseña Staff / Logística
+                    </label>
+                    <div style={{ display: 'flex', gap: '0.35rem', marginTop: '0.35rem' }}>
+                      <div style={{ position: 'relative', flex: 1 }}>
+                        <input
+                          type={mostrarPassStaff ? 'text' : 'password'}
+                          value={staffPassword}
+                          onChange={e => setStaffPassword(e.target.value)}
+                          style={{
+                            width: '100%',
+                            backgroundColor: 'rgba(255,255,255,0.04)',
+                            border: '1px solid var(--subborder-color)',
+                            borderRadius: '8px',
+                            padding: '0.55rem 2rem 0.55rem 0.75rem',
+                            color: 'var(--text-color)',
+                            fontSize: '0.85rem'
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setMostrarPassStaff(!mostrarPassStaff)}
+                          style={{
+                            position: 'absolute',
+                            right: '6px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--muted-text)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}
+                        >
+                          {mostrarPassStaff ? <EyeOff size={15} /> : <Eye size={15} />}
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => generarPasswordRandom('staff')}
                         style={{
                           backgroundColor: 'rgba(255,255,255,0.05)',
                           border: '1px solid var(--subborder-color)',

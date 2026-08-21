@@ -161,3 +161,32 @@ export function playEmergencyPulse(volume = 0.35) {
     console.debug('Audio playEmergencyPulse error:', e);
   }
 }
+
+/**
+ * Campana / Chime suave para Avisos Oficiales y Notificaciones
+ */
+export function playChimeAlert(volume = 0.35) {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const freqs = [587.33, 880.00]; // Re5, La5
+    freqs.forEach((f, idx) => {
+      const delay = idx * 0.12;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(f, ctx.currentTime + delay);
+      gain.gain.setValueAtTime(0.001, ctx.currentTime + delay);
+      gain.gain.linearRampToValueAtTime(volume * 0.3, ctx.currentTime + delay + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + delay + 0.6);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + 0.65);
+    });
+  } catch (e) {
+    console.debug('Audio playChimeAlert error:', e);
+  }
+}
+
