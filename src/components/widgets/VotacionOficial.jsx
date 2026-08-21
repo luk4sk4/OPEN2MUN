@@ -41,7 +41,7 @@ const VotacionOficial = () => {
   const [indiceRollCall, setIndiceRollCall] = useState(0);
   const [paisesPasados, setPaisesPasados] = useState([]); // IDs de países que seleccionaron 'Pasar' en Ronda 1
 
-  const { asunto, tipoVotacion, tipoMayoria, aplicarVeto, votos = {} } = votacionSesion;
+  const { asunto = 'Proyecto de Resolución / Moción', tipoVotacion = 'procedural', tipoMayoria = 'simple', aplicarVeto = true, votos = {} } = votacionSesion || {};
 
   // Conteo de Quórum y Asistencia
   const totalPaises = paises.length;

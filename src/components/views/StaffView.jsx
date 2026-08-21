@@ -33,16 +33,20 @@ import {
   Filter,
   Info,
   AlertTriangle,
-  Plus
+  Plus,
+  Globe
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useP2P } from '../../context/P2PContext';
+import { useSession } from '../../context/SessionContext';
 import { useAccessibility } from '../../context/AccessibilityContext';
 import AccessibilityModal from '../modals/AccessibilityModal';
 import OpenMunLogo from '../common/OpenMunLogo';
 import LanguageSelector from '../common/LanguageSelector';
 import CountryFlag from '../common/CountryFlag';
 import { playEmergencyPulse, playChimeAlert } from '../../utils/audioAlerts';
+import conferenceService from '../../services/conferenceService';
+import { formatearMensajeAviso, correspondeAviso } from '../../utils/announcementHelpers';
 
 const StaffView = ({ isLight: propIsLight, onExit }) => {
   const { t } = useTranslation();
@@ -50,37 +54,40 @@ const StaffView = ({ isLight: propIsLight, onExit }) => {
   const isLight = propIsLight !== undefined ? propIsLight : contextIsLight;
   const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
 
+  const { tipoSesion, cambiarTipoSesion } = useSession();
+
   const {
     roomId,
     notes,
     sendNote,
     remoteSessionState,
     leaveRoom,
-    staffPassword,
-    setStaffPassword,
     announcements,
     broadcastAnnouncement,
     deleteAnnouncement,
     connectedPeers
   } = useP2P();
 
-  const [activeTab, setActiveTab] = useState('AVISOS'); // 'AVISOS' | 'NOTAS' | 'MONITOR' | 'AJUSTES'
+  const [activeTab, setActiveTab] = useState('AVISOS_COMITE'); // 'AVISOS_COMITE' | 'MENSAJERIA_COMITE' | 'COMUNICACION_CONF' | 'MONITOR_SALA'
 
-  // Formulario de emisión de avisos
+  // Formulario de emisión de avisos de comité (WebSockets)
   const [tituloAviso, setTituloAviso] = useState('');
   const [textoAviso, setTextoAviso] = useState('');
   const [prioridadAviso, setPrioridadAviso] = useState('general'); // 'general' | 'urgente' | 'logistica' | 'receso' | 'documento'
   const [destinoAviso, setDestinoAviso] = useState('ALL');
 
-  // Formulario de mensajería (notas)
+  // Formulario de comunicación con conferencia (Base de Datos)
+  const [tituloAvisoConf, setTituloAvisoConf] = useState('');
+  const [textoAvisoConf, setTextoAvisoConf] = useState('');
+  const [prioridadAvisoConf, setPrioridadAvisoConf] = useState('info');
+  const [destinoAvisoConf, setDestinoAvisoConf] = useState('STAFF_ALL'); // 'STAFF_ALL' | 'SECRETARIA' | 'GLOBAL'
+  const [enviandoConf, setEnviandoConf] = useState(false);
+
+  // Formulario de mensajería (notas de sala)
   const [destinatarioNota, setDestinatarioNota] = useState('CHAIR');
   const [textoNota, setTextoNota] = useState('');
   const [tipoNota, setTipoNota] = useState('paje'); // 'paje' | 'logistica' | 'urgente' | 'general'
   const [filtroNotas, setFiltroNotas] = useState('TODAS'); // 'TODAS' | 'RECIBIDAS' | 'ENVIADAS'
-
-  // Ajustes de Staff
-  const [nuevaPassStaff, setNuevaPassStaff] = useState(staffPassword || 'staff123');
-  const [mostrarPass, setMostrarPass] = useState(false);
   const [feedbackToast, setFeedbackToast] = useState(null);
 
   // Checklist de operaciones de sala (inicia vacío por defecto)
@@ -103,6 +110,27 @@ const StaffView = ({ isLight: propIsLight, onExit }) => {
   useEffect(() => {
     localStorage.setItem('openmun_staff_checklist', JSON.stringify(checklist));
   }, [checklist]);
+
+  // Avisos de Conferencia (Base de Datos)
+  const [avisosDB, setAvisosDB] = useState([]);
+  const confActiva = conferenceService.obtenerSesionActiva();
+  const currentComiteId = roomId || localStorage.getItem('openmun_current_comite_id') || null;
+  const avisosDBFiltrados = avisosDB.filter(av => correspondeAviso(av, { role: 'staff', currentComiteId }));
+
+  useEffect(() => {
+    if (!confActiva?.id) return;
+    const fetchAvisos = async () => {
+      try {
+        const res = await conferenceService.obtenerAvisos(confActiva.id);
+        if (res && Array.isArray(res.avisos)) {
+          setAvisosDB(res.avisos);
+        }
+      } catch (e) {}
+    };
+    fetchAvisos();
+    const interval = setInterval(fetchAvisos, 20000);
+    return () => clearInterval(interval);
+  }, [confActiva?.id]);
 
   const showToast = (msg) => {
     setFeedbackToast(msg);
@@ -132,6 +160,14 @@ const StaffView = ({ isLight: propIsLight, onExit }) => {
     return true;
   });
 
+  const handleCambiarEstado = (nuevoTipo) => {
+    cambiarTipoSesion(nuevoTipo);
+    if (confActiva?.id && roomId) {
+      conferenceService.actualizarEstadoComite(confActiva.id, roomId, { tipo_sesion: nuevoTipo });
+    }
+    showToast(`Estado del comité cambiado a ${nuevoTipo.toUpperCase()}`);
+  };
+
   const handleEmitirAviso = (e) => {
     e.preventDefault();
     if (!tituloAviso.trim() && !textoAviso.trim()) return;
@@ -142,12 +178,45 @@ const StaffView = ({ isLight: propIsLight, onExit }) => {
       priority: prioridadAviso,
       target: destinoAviso,
       senderRole: 'staff',
-      senderName: 'Staff / Logística'
+      senderName: `Staff (${comisionNombre})`
     });
 
     setTituloAviso('');
     setTextoAviso('');
-    showToast('Aviso oficial emitido en tiempo real a las delegaciones');
+    showToast('Aviso emitido en tiempo real a las delegaciones del comité');
+  };
+
+  const handleEnviarAvisoConferencia = async (e) => {
+    e.preventDefault();
+    if (!textoAvisoConf.trim()) return;
+    if (!confActiva?.id) {
+      showToast('No hay conferencia activa vinculada');
+      return;
+    }
+    setEnviandoConf(true);
+    try {
+      const mensajeCompleto = tituloAvisoConf.trim()
+        ? `${tituloAvisoConf.trim()}: ${textoAvisoConf.trim()}`
+        : textoAvisoConf.trim();
+
+      await conferenceService.crearAviso(confActiva.id, {
+        comite_id: destinoAvisoConf === 'GLOBAL' ? '' : destinoAvisoConf,
+        emisor: `Staff (${comisionNombre})`,
+        tipo: prioridadAvisoConf === 'urgente' ? 'urgente' : 'alerta',
+        mensaje: mensajeCompleto
+      });
+
+      const res = await conferenceService.obtenerAvisos(confActiva.id);
+      if (res?.avisos) setAvisosDB(res.avisos);
+
+      setTituloAvisoConf('');
+      setTextoAvisoConf('');
+      showToast('Mensaje transmitido a la Base de Datos de la conferencia');
+    } catch (err) {
+      showToast('Error al enviar comunicado a la conferencia');
+    } finally {
+      setEnviandoConf(false);
+    }
   };
 
   const handleEnviarNota = (e) => {
@@ -157,14 +226,6 @@ const StaffView = ({ isLight: propIsLight, onExit }) => {
     sendNote(destinatarioNota, textoNota.trim(), tipoNota);
     setTextoNota('');
     showToast(`Nota enviada a ${destinatarioNota}`);
-  };
-
-  const handleGuardarPassword = (e) => {
-    e.preventDefault();
-    if (!nuevaPassStaff.trim()) return;
-    setStaffPassword(nuevaPassStaff.trim());
-    localStorage.setItem('openmun_staff_pass', nuevaPassStaff.trim());
-    showToast(t('views.staff.passUpdated', 'Contraseña de Staff actualizada correctamente'));
   };
 
   const handleAddCheckItem = (e) => {
@@ -263,7 +324,57 @@ const StaffView = ({ isLight: propIsLight, onExit }) => {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          {/* Selector de Estado de Sesión en Vivo para Staff */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            backgroundColor: isLight ? '#e2e8f0' : 'rgba(255,255,255,0.08)',
+            borderRadius: '8px',
+            padding: '2px',
+            gap: '2px'
+          }}>
+            {[
+              { id: 'formal', label: 'Formal', color: '#22c55e', bg: 'rgba(34, 197, 94, 0.18)' },
+              { id: 'informal', label: 'Informal', color: '#eab308', bg: 'rgba(234, 179, 8, 0.18)' },
+              { id: 'receso', label: 'Receso', color: '#a855f7', bg: 'rgba(168, 85, 247, 0.18)' },
+              { id: 'votacion', label: 'Votando', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.18)' }
+            ].map(s => {
+              const isActivo = (tipoSesion || state.tipoSesion || 'formal') === s.id;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => handleCambiarEstado(s.id)}
+                  style={{
+                    padding: '0.35rem 0.65rem',
+                    borderRadius: '6px',
+                    border: isActivo ? `1px solid ${s.color}` : '1px solid transparent',
+                    backgroundColor: isActivo ? (isLight ? '#ffffff' : s.bg) : 'transparent',
+                    color: isActivo ? s.color : 'var(--muted-text)',
+                    fontWeight: isActivo ? '800' : '600',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    boxShadow: isActivo ? `0 0 8px ${s.color}33` : 'none',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title={`Cambiar estado del comité a ${s.label}`}
+                >
+                  <span style={{
+                    width: '7px',
+                    height: '7px',
+                    borderRadius: '50%',
+                    backgroundColor: s.color,
+                    boxShadow: isActivo ? `0 0 6px ${s.color}` : 'none'
+                  }} />
+                  {s.label}
+                </button>
+              );
+            })}
+          </div>
+
           <button
             onClick={() => setIsAccessModalOpen(true)}
             style={{
@@ -328,7 +439,7 @@ const StaffView = ({ isLight: propIsLight, onExit }) => {
         </div>
       </header>
 
-      {/* ── Barra de Pestañas de Navegación ── */}
+      {/* ── Barra de Pestañas de Navegación (4 Secciones) ── */}
       <nav style={{
         display: 'flex',
         gap: '0.4rem',
@@ -338,10 +449,10 @@ const StaffView = ({ isLight: propIsLight, onExit }) => {
         overflowX: 'auto'
       }}>
         {[
-          { id: 'AVISOS', icon: Megaphone, label: t('views.staff.announcementsTab', 'Avisos Oficiales'), badge: announcements.length },
-          { id: 'NOTAS', icon: MessageSquare, label: t('views.staff.notesTab', 'Mensajería & Pajes'), badge: notasStaff.length },
-          { id: 'MONITOR', icon: Radio, label: t('views.staff.monitorTab', 'Monitor de Sala') },
-          { id: 'AJUSTES', icon: Sliders, label: t('views.staff.settingsTab', 'Ajustes de Staff') }
+          { id: 'AVISOS_COMITE', icon: Megaphone, label: 'Avisos Comité', badge: announcements.length },
+          { id: 'MENSAJERIA_COMITE', icon: MessageSquare, label: 'Mensajería Comité', badge: notasStaff.length },
+          { id: 'COMUNICACION_CONF', icon: Globe, label: 'Comunicación Conferencia', badge: avisosDBFiltrados.length },
+          { id: 'MONITOR_SALA', icon: Radio, label: 'Monitor Sala' }
         ].map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -411,11 +522,11 @@ const StaffView = ({ isLight: propIsLight, onExit }) => {
       <main style={{ flex: 1, padding: '1.5rem', maxWidth: '1300px', width: '100%', margin: '0 auto' }}>
 
         {/* ══════════════════════════════════════════════════════════════
-            PESTAÑA 1: AVISOS OFICIALES (EMISIÓN & GESTIÓN)
+            PESTAÑA 1: AVISOS COMITÉ (EMISIÓN & GESTIÓN WEBSOCKETS)
            ══════════════════════════════════════════════════════════════ */}
-        {activeTab === 'AVISOS' && (
+        {activeTab === 'AVISOS_COMITE' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 420px) 1fr', gap: '1.5rem' }}>
-            {/* Formulario de Emisión de Aviso */}
+            {/* Formulario de Emisión de Aviso Local a la Sala */}
             <div style={{
               backgroundColor: 'var(--panel-color)',
               border: '1px solid var(--border-color)',
@@ -433,7 +544,7 @@ const StaffView = ({ isLight: propIsLight, onExit }) => {
                 </h3>
               </div>
               <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--muted-text)', lineHeight: '1.4' }}>
-                Los avisos emitidos aparecerán de inmediato en el titular y holder prioritario de todas las delegaciones conectadas.
+                Los avisos emitidos aparecerán de inmediato en el titular y holder prioritario de todas las delegaciones conectadas a la sala.
               </p>
 
               <form onSubmit={handleEmitirAviso} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -544,7 +655,7 @@ const StaffView = ({ isLight: propIsLight, onExit }) => {
               </form>
             </div>
 
-            {/* Listado de Avisos Activos */}
+            {/* Listado de Avisos Activos en Sala (WebSockets) */}
             <div style={{
               backgroundColor: 'var(--panel-color)',
               border: '1px solid var(--border-color)',
@@ -555,13 +666,11 @@ const StaffView = ({ isLight: propIsLight, onExit }) => {
               gap: '1rem',
               boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                  <Bell size={20} color="#fbbf24" />
-                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '800' }}>
-                    {t('views.staff.activeAnnouncements', 'Avisos Activos en Sala')} ({announcements.length})
-                  </h3>
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                <Bell size={20} color="#10b981" />
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '800' }}>
+                  Avisos Activos en Sala ({announcements.length})
+                </h3>
               </div>
 
               {announcements.length === 0 ? (
@@ -581,7 +690,7 @@ const StaffView = ({ isLight: propIsLight, onExit }) => {
                     {t('views.staff.noAnnouncements', 'No hay avisos emitidos en este momento.')}
                   </div>
                   <div style={{ fontSize: '0.78rem' }}>
-                    Usa el formulario lateral para emitir un comunicado oficial a todas las delegaciones.
+                    Usa el formulario lateral para emitir un aviso en tiempo real a las delegaciones del comité.
                   </div>
                 </div>
               ) : (
@@ -590,7 +699,7 @@ const StaffView = ({ isLight: propIsLight, onExit }) => {
                     const badge = getPriorityBadge(ann.priority);
                     return (
                       <div
-                        key={ann.id}
+                        key={`ws_${ann.id}`}
                         style={{
                           backgroundColor: 'var(--card-header-bg)',
                           border: `1px solid ${badge.border}`,
@@ -605,6 +714,17 @@ const StaffView = ({ isLight: propIsLight, onExit }) => {
                       >
                         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <span style={{
+                              fontSize: '0.68rem',
+                              fontWeight: '800',
+                              backgroundColor: 'rgba(16, 185, 129, 0.18)',
+                              color: '#10b981',
+                              border: '1px solid rgba(16, 185, 129, 0.35)',
+                              padding: '0.12rem 0.45rem',
+                              borderRadius: '4px'
+                            }}>
+                              ⚡ Sala Local
+                            </span>
                             <span style={{
                               fontSize: '0.68rem',
                               fontWeight: '800',
@@ -650,7 +770,7 @@ const StaffView = ({ isLight: propIsLight, onExit }) => {
 
                         {ann.text && (
                           <div style={{ fontSize: '0.84rem', color: 'var(--muted-text)', lineHeight: '1.45', whiteSpace: 'pre-wrap' }}>
-                            {ann.text}
+                            {formatearMensajeAviso(ann.text)}
                           </div>
                         )}
                       </div>
@@ -663,9 +783,9 @@ const StaffView = ({ isLight: propIsLight, onExit }) => {
         )}
 
         {/* ══════════════════════════════════════════════════════════════
-            PESTAÑA 2: MENSAJERÍA & PAJES (NOTAS)
+            PESTAÑA 2: MENSAJERÍA COMITÉ (NOTAS & PAJES)
            ══════════════════════════════════════════════════════════════ */}
-        {activeTab === 'NOTAS' && (
+        {activeTab === 'MENSAJERIA_COMITE' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 420px) 1fr', gap: '1.5rem' }}>
             {/* Formulario Redactar Nota de Staff */}
             <div style={{
@@ -868,16 +988,29 @@ const StaffView = ({ isLight: propIsLight, onExit }) => {
                           gap: '0.35rem'
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.76rem' }}>
-                          <span style={{ fontWeight: '800', color: isOutgoing ? '#10b981' : '#3b82f6' }}>
-                            {isOutgoing ? `Para: ${nota.to}` : `De: ${nota.from}`}
-                          </span>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.76rem', flexWrap: 'wrap', gap: '0.4rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <span style={{
+                              fontSize: '0.65rem',
+                              fontWeight: '800',
+                              backgroundColor: 'rgba(59, 130, 246, 0.18)',
+                              color: '#3b82f6',
+                              border: '1px solid rgba(59, 130, 246, 0.35)',
+                              padding: '0.1rem 0.35rem',
+                              borderRadius: '4px'
+                            }}>
+                              ⚡ Sala Local
+                            </span>
+                            <span style={{ fontWeight: '800', color: isOutgoing ? '#10b981' : '#3b82f6' }}>
+                              {isOutgoing ? `Para: ${nota.to}` : `De: ${nota.from}`}
+                            </span>
+                          </div>
                           <span style={{ color: 'var(--muted-text)', fontSize: '0.7rem' }}>
                             {new Date(nota.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
                         <div style={{ fontSize: '0.84rem', color: 'var(--text-color)', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>
-                          {nota.text}
+                          {formatearMensajeAviso(nota.text)}
                         </div>
                       </div>
                     );
@@ -889,9 +1022,319 @@ const StaffView = ({ isLight: propIsLight, onExit }) => {
         )}
 
         {/* ══════════════════════════════════════════════════════════════
-            PESTAÑA 3: MONITOR DE SALA & LOGÍSTICA
+            PESTAÑA 3: COMUNICACIÓN CONFERENCIA (BASE DE DATOS)
            ══════════════════════════════════════════════════════════════ */}
-        {activeTab === 'MONITOR' && (
+        {activeTab === 'COMUNICACION_CONF' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 420px) 1fr', gap: '1.5rem' }}>
+            {/* Formulario para emitir comunicado a la Base de Datos */}
+            <div style={{
+              backgroundColor: 'var(--panel-color)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '16px',
+              padding: '1.4rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                <Globe size={20} color="#3b82f6" />
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '800' }}>
+                  Transmitir a la Conferencia (Base de Datos)
+                </h3>
+              </div>
+              <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--muted-text)', lineHeight: '1.4' }}>
+                Envía solicitudes, peticiones de material o alertas a la Secretaría General o a todo el equipo de Staff de la conferencia.
+              </p>
+
+              <form onSubmit={handleEnviarAvisoConferencia} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.74rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                    Destinatario Central
+                  </label>
+                  <select
+                    value={destinoAvisoConf}
+                    onChange={e => setDestinoAvisoConf(e.target.value)}
+                    style={{
+                      width: '100%',
+                      marginTop: '0.35rem',
+                      backgroundColor: 'var(--card-header-bg)',
+                      border: '1px solid var(--subborder-color)',
+                      borderRadius: '8px',
+                      padding: '0.65rem 0.85rem',
+                      color: 'var(--text-color)',
+                      fontSize: '0.85rem',
+                      fontWeight: '700'
+                    }}
+                  >
+                    <option value="STAFF_ALL">👥 Todo el Staff de la Conferencia</option>
+                    <option value="SECRETARIA">🛡️ Organización</option>
+                    <option value="GLOBAL">📢 Toda la Conferencia (Global)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.74rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                    Prioridad
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.45rem', marginTop: '0.35rem' }}>
+                    {[
+                      { id: 'info', label: 'Informativo', color: '#3b82f6' },
+                      { id: 'alerta', label: 'Alerta', color: '#f59e0b' },
+                      { id: 'urgente', label: 'Urgente', color: '#ef4444' }
+                    ].map(cat => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setPrioridadAvisoConf(cat.id)}
+                        style={{
+                          backgroundColor: prioridadAvisoConf === cat.id ? `${cat.color}22` : 'var(--card-header-bg)',
+                          border: `1.5px solid ${prioridadAvisoConf === cat.id ? cat.color : 'var(--subborder-color)'}`,
+                          borderRadius: '8px',
+                          padding: '0.5rem 0.4rem',
+                          fontSize: '0.76rem',
+                          fontWeight: '700',
+                          color: prioridadAvisoConf === cat.id ? cat.color : 'var(--muted-text)',
+                          cursor: 'pointer',
+                          textAlign: 'center',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.74rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                    Asunto / Referencia
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Faltan hojas de votación / Delegación indispuesta"
+                    value={tituloAvisoConf}
+                    onChange={e => setTituloAvisoConf(e.target.value)}
+                    style={{
+                      width: '100%',
+                      marginTop: '0.35rem',
+                      backgroundColor: 'var(--card-header-bg)',
+                      border: '1px solid var(--subborder-color)',
+                      borderRadius: '8px',
+                      padding: '0.65rem 0.85rem',
+                      color: 'var(--text-color)',
+                      fontSize: '0.88rem',
+                      fontWeight: '700'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.74rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
+                    Mensaje o Requerimiento
+                  </label>
+                  <textarea
+                    rows={4}
+                    placeholder="Escribe el mensaje que se registrará en la base de datos de la conferencia..."
+                    value={textoAvisoConf}
+                    onChange={e => setTextoAvisoConf(e.target.value)}
+                    style={{
+                      width: '100%',
+                      marginTop: '0.35rem',
+                      backgroundColor: 'var(--card-header-bg)',
+                      border: '1px solid var(--subborder-color)',
+                      borderRadius: '8px',
+                      padding: '0.65rem 0.85rem',
+                      color: 'var(--text-color)',
+                      fontSize: '0.84rem',
+                      resize: 'vertical'
+                    }}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={!textoAvisoConf.trim() || enviandoConf}
+                  style={{
+                    backgroundColor: '#3b82f6',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '0.75rem',
+                    fontWeight: '800',
+                    fontSize: '0.9rem',
+                    cursor: (textoAvisoConf.trim() && !enviandoConf) ? 'pointer' : 'not-allowed',
+                    opacity: (textoAvisoConf.trim() && !enviandoConf) ? 1 : 0.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    boxShadow: '0 4px 16px rgba(59, 130, 246, 0.3)',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <Send size={16} /> {enviandoConf ? 'Transmitiendo...' : 'Enviar a la Conferencia'}
+                </button>
+              </form>
+            </div>
+
+            {/* Buzón de Comunicados de Conferencia (Base de Datos) */}
+            <div style={{
+              backgroundColor: 'var(--panel-color)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '16px',
+              padding: '1.4rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                  <Globe size={20} color="#3b82f6" />
+                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '800' }}>
+                    Comunicados de Conferencia ({avisosDBFiltrados.length})
+                  </h3>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (confActiva?.id) {
+                      const res = await conferenceService.obtenerAvisos(confActiva.id);
+                      if (res?.avisos) setAvisosDB(res.avisos);
+                      showToast('Buzón de conferencia actualizado');
+                    }
+                  }}
+                  style={{
+                    padding: '0.35rem 0.65rem',
+                    borderRadius: '6px',
+                    border: '1px solid var(--subborder-color)',
+                    backgroundColor: 'var(--card-header-bg)',
+                    color: 'var(--text-color)',
+                    fontSize: '0.72rem',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem'
+                  }}
+                >
+                  <Radio size={12} /> Refrescar
+                </button>
+              </div>
+
+              {avisosDBFiltrados.length === 0 ? (
+                <div style={{
+                  padding: '3rem 1.5rem',
+                  textAlign: 'center',
+                  color: 'var(--muted-text)',
+                  border: '1px dashed var(--subborder-color)',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.75rem'
+                }}>
+                  <Globe size={36} style={{ opacity: 0.3 }} />
+                  <div style={{ fontSize: '0.9rem', fontWeight: '600' }}>
+                    No hay comunicados registrados en la base de datos central.
+                  </div>
+                  <div style={{ fontSize: '0.78rem' }}>
+                    Los avisos y solicitudes emitidos por la Organización o por el equipo de staff aparecerán aquí.
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                  {avisosDBFiltrados.map((av) => (
+                    <div
+                      key={`db_${av.id}`}
+                      style={{
+                        backgroundColor: 'var(--card-header-bg)',
+                        border: `1px solid ${av.tipo === 'urgente' ? 'rgba(239, 68, 68, 0.4)' : 'var(--subborder-color)'}`,
+                        borderLeft: `4px solid ${av.tipo === 'urgente' ? '#ef4444' : av.tipo === 'alerta' ? '#f59e0b' : '#3b82f6'}`,
+                        borderRadius: '12px',
+                        padding: '1.1rem 1.25rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.55rem',
+                        position: 'relative'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <span style={{
+                            fontSize: '0.68rem',
+                            fontWeight: '800',
+                            backgroundColor: 'rgba(59, 130, 246, 0.18)',
+                            color: '#3b82f6',
+                            border: '1px solid rgba(59, 130, 246, 0.35)',
+                            padding: '0.12rem 0.45rem',
+                            borderRadius: '4px'
+                          }}>
+                            🌐 BD Conferencia
+                          </span>
+                          <span style={{
+                            fontSize: '0.68rem',
+                            fontWeight: '800',
+                            backgroundColor: av.tipo === 'urgente' ? '#ef4444' : (av.tipo === 'alerta' ? '#f59e0b' : '#3b82f6'),
+                            color: '#ffffff',
+                            padding: '0.12rem 0.45rem',
+                            borderRadius: '4px',
+                            textTransform: 'uppercase'
+                          }}>
+                            {av.emisor}
+                          </span>
+                          <span style={{ fontSize: '0.74rem', color: 'var(--muted-text)', fontWeight: '600' }}>
+                            Destino: <strong style={{ color: 'var(--text-color)' }}>
+                              {av.comite_id === 'STAFF_ALL' ? '👥 Todo el Staff' :
+                               av.comite_id === 'SECRETARIA' ? '🛡️ Organización' :
+                               av.comite_id?.startsWith('STAFF_COMITE_') ? `👥 Staff (${av.comite_id.replace('STAFF_COMITE_', '')})` :
+                               av.comite_id ? `🏛️ Mesa (${av.comite_id})` :
+                               '📢 Toda la Conferencia (Global)'}
+                            </strong>
+                          </span>
+                          {av.creado_en && (
+                            <span style={{ fontSize: '0.7rem', color: 'var(--muted-text)' }}>
+                              • {av.creado_en}
+                            </span>
+                          )}
+                        </div>
+
+                        <button
+                          onClick={() => {
+                            conferenceService.desactivarAviso(av.id);
+                            setAvisosDB(prev => prev.filter(a => a.id !== av.id));
+                          }}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#ef4444',
+                            cursor: 'pointer',
+                            fontSize: '0.72rem',
+                            fontWeight: '700'
+                          }}
+                          title="Descartar de base de datos"
+                        >
+                          Descartar
+                        </button>
+                      </div>
+
+                      <div style={{ fontSize: '0.88rem', color: 'var(--text-color)', lineHeight: '1.4' }}>
+                        {formatearMensajeAviso(av.mensaje)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════
+            PESTAÑA 4: MONITOR DE SALA & LOGÍSTICA
+           ══════════════════════════════════════════════════════════════ */}
+        {activeTab === 'MONITOR_SALA' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 420px) 1fr', gap: '1.5rem' }}>
             {/* Monitor de Estado en Vivo */}
             <div style={{
@@ -1015,11 +1458,23 @@ const StaffView = ({ isLight: propIsLight, onExit }) => {
               boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexWrap: 'wrap' }}>
                   <CheckSquare size={20} color="#10b981" />
                   <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '800' }}>
                     {t('views.staff.checklistTitle', 'Checklist Operativo de Staff')}
                   </h3>
+                  <span style={{
+                    fontSize: '0.66rem',
+                    fontWeight: '800',
+                    backgroundColor: 'rgba(234, 179, 8, 0.18)',
+                    color: '#eab308',
+                    border: '1px solid rgba(234, 179, 8, 0.35)',
+                    padding: '0.12rem 0.45rem',
+                    borderRadius: '6px',
+                    letterSpacing: '0.04em'
+                  }}>
+                    🚧 WORK IN PROGRESS
+                  </span>
                 </div>
                 {checklist.length > 0 && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -1200,92 +1655,6 @@ const StaffView = ({ isLight: propIsLight, onExit }) => {
                   ))
                 )}
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* ══════════════════════════════════════════════════════════════
-            PESTAÑA 4: AJUSTES & SEGURIDAD DE STAFF
-           ══════════════════════════════════════════════════════════════ */}
-        {activeTab === 'AJUSTES' && (
-          <div style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div style={{
-              backgroundColor: 'var(--panel-color)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '16px',
-              padding: '1.6rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '1.25rem',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                <Key size={20} color="#fbbf24" />
-                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800' }}>
-                  {t('views.staff.settingsTitle', 'Ajustes de Staff')}
-                </h3>
-              </div>
-
-              <form onSubmit={handleGuardarPassword} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div>
-                  <label style={{ fontSize: '0.76rem', fontWeight: '800', color: 'var(--muted-text)', textTransform: 'uppercase' }}>
-                    {t('views.staff.staffPasswordLabel', 'Contraseña de Acceso de Staff')}
-                  </label>
-                  <div style={{ position: 'relative', marginTop: '0.35rem' }}>
-                    <input
-                      type={mostrarPass ? 'text' : 'password'}
-                      value={nuevaPassStaff}
-                      onChange={e => setNuevaPassStaff(e.target.value)}
-                      style={{
-                        width: '100%',
-                        backgroundColor: 'var(--card-header-bg)',
-                        border: '1px solid var(--subborder-color)',
-                        borderRadius: '8px',
-                        padding: '0.7rem 2.5rem 0.7rem 1rem',
-                        color: 'var(--text-color)',
-                        fontSize: '0.9rem',
-                        fontWeight: '700'
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setMostrarPass(!mostrarPass)}
-                      style={{
-                        position: 'absolute',
-                        right: '10px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--muted-text)',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {mostrarPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  style={{
-                    backgroundColor: '#10b981',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '0.75rem',
-                    fontWeight: '800',
-                    fontSize: '0.88rem',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.45rem'
-                  }}
-                >
-                  <Check size={16} /> {t('views.staff.savePass', 'Guardar Contraseña')}
-                </button>
-              </form>
             </div>
           </div>
         )}

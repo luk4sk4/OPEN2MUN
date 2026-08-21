@@ -274,6 +274,19 @@ class NetworkService {
           this.handleIncomingMessage(data.senderSocketId || data.senderId || 'remote', data, false);
         });
 
+        // Cargar estado inicial persistido en SQLite al reconectar o unirse
+        this.socket.on('cargar-estado-inicial', async (initialState) => {
+          if (initialState) {
+            this.emit('initial_state_loaded', initialState);
+          }
+        });
+
+        // Cierre forzado por caducidad (12h en servidor)
+        this.socket.on('cierre-forzado', (motivo) => {
+          console.warn('Cierre forzado de sala desde el servidor:', motivo);
+          this.emit('error', { error: motivo || 'La sala ha sido cerrada automáticamente por caducidad.' });
+        });
+
         this.socket.on('connect_error', (err) => {
           console.warn('Error de conexión Socket.io en Host:', err.message);
           this.emit('error', { error: `Error de conexión con el servidor: ${err.message}` });
@@ -423,6 +436,22 @@ class NetworkService {
 
           // Distribución general de mensajes
           this.emit('message', data);
+        });
+
+        // Cargar estado inicial desde SQLite si el host no está transmitiendo activamente
+        this.socket.on('cargar-estado-inicial', async (initialState) => {
+          if (initialState) {
+            this.emit('message', {
+              type: MSG_TYPES.SYNC_STATE,
+              payload: { sessionState: initialState }
+            });
+          }
+        });
+
+        // Notificación de caducidad o cierre de sala
+        this.socket.on('cierre-forzado', (motivo) => {
+          console.warn('Cierre forzado de la sala desde el servidor:', motivo);
+          this.emit('error', { error: motivo || 'La sala ha sido cerrada por el servidor.' });
         });
 
         this.socket.on('connect_error', (err) => {

@@ -274,7 +274,9 @@ const Dashboard = () => {
     driveLastSync,
     conectarGoogleDrive,
     desconectarGoogleDrive,
-    sincronizarDriveManual
+    sincronizarDriveManual,
+    tipoSesion,
+    cambiarTipoSesion
   } = useSession();
 
   const {
@@ -458,7 +460,7 @@ const Dashboard = () => {
     setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
 
-  // Escuchar eventos globales de toast para que cualquier componente pueda dispararlos
+  // Escuchar eventos globales de toast para que cualquier componente pueda dispararlos y verificar toasts/navegación pendientes
   useEffect(() => {
     const handleCustomToast = (e) => {
       if (e && e.detail) {
@@ -466,6 +468,27 @@ const Dashboard = () => {
       }
     };
     window.addEventListener('openmun_toast', handleCustomToast);
+
+    // Verificar si hay navegación pendiente (ej. entrar como Mesa)
+    try {
+      const pendingNav = localStorage.getItem('openmun_pending_nav_tab');
+      if (pendingNav) {
+        localStorage.removeItem('openmun_pending_nav_tab');
+        if (TAB_CONFIG[pendingNav]) {
+          setActiveTab(pendingNav);
+        }
+      }
+
+      const pendingToast = localStorage.getItem('openmun_pending_toast');
+      if (pendingToast) {
+        localStorage.removeItem('openmun_pending_toast');
+        const parsed = JSON.parse(pendingToast);
+        addToast(parsed);
+      }
+    } catch (e) {
+      console.error('Error procesando navegación pendiente:', e);
+    }
+
     return () => {
       window.removeEventListener('openmun_toast', handleCustomToast);
     };
@@ -1510,7 +1533,7 @@ const Dashboard = () => {
           {/* Banner Permanente de Alerta de Crisis Activa */}
           <PermanentCrisisBanner isLight={isLight} />
 
-          {/* Subheader Persistente de Comité + Agenda (Solo fuera de HOME) */}
+          {/* Subheader Persistente de Comité + Agenda + Estado de Sesión (Solo fuera de HOME) */}
           {activeTab !== 'HOME' && (
             <div style={{
               position: 'relative',
@@ -1523,7 +1546,8 @@ const Dashboard = () => {
               justifyContent: 'space-between',
               fontSize: '0.8rem',
               color: 'var(--text-color)',
-              gap: '0.75rem'
+              gap: '0.75rem',
+              flexWrap: 'wrap'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0, flex: 1, overflow: 'hidden' }}>
                 {/* Badge Comité */}
@@ -1579,6 +1603,56 @@ const Dashboard = () => {
                     {t('header.noAgenda', 'Agenda no establecida')}
                   </span>
                 )}
+              </div>
+
+              {/* Selector Rápido de Estado de Sesión (Mesa Directiva) */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: isLight ? '#e2e8f0' : 'rgba(255,255,255,0.08)',
+                borderRadius: '8px',
+                padding: '2px',
+                gap: '2px'
+              }}>
+                {[
+                  { id: 'formal', label: 'Formal', color: '#22c55e', bg: 'rgba(34, 197, 94, 0.18)' },
+                  { id: 'informal', label: 'Informal', color: '#eab308', bg: 'rgba(234, 179, 8, 0.18)' },
+                  { id: 'receso', label: 'Receso', color: '#a855f7', bg: 'rgba(168, 85, 247, 0.18)' },
+                  { id: 'votacion', label: 'Votando', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.18)' }
+                ].map(s => {
+                  const isActivo = (tipoSesion || 'formal') === s.id;
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => cambiarTipoSesion(s.id)}
+                      style={{
+                        padding: '0.25rem 0.6rem',
+                        borderRadius: '6px',
+                        border: isActivo ? `1px solid ${s.color}` : '1px solid transparent',
+                        backgroundColor: isActivo ? (isLight ? '#ffffff' : s.bg) : 'transparent',
+                        color: isActivo ? s.color : 'var(--muted-text)',
+                        fontWeight: isActivo ? '800' : '600',
+                        fontSize: '0.72rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        boxShadow: isActivo ? `0 0 8px ${s.color}33` : 'none',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title={`Cambiar estado de sesión a ${s.label}`}
+                    >
+                      <span style={{
+                        width: '7px',
+                        height: '7px',
+                        borderRadius: '50%',
+                        backgroundColor: s.color,
+                        boxShadow: isActivo ? `0 0 6px ${s.color}` : 'none'
+                      }} />
+                      {s.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}

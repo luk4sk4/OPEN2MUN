@@ -25,10 +25,15 @@ import {
   ShieldCheck,
   Coffee,
   Heart,
-  X
+  X,
+  Building2,
+  Sparkles,
+  Shield,
+  Layers
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import OpenMunLogo from '../common/OpenMunLogo';
+import CreateConferenceModal from '../modals/CreateConferenceModal';
 import KineticGrid from '../../assets/Kinetic';
 import { navigateTo } from '../../utils/router';
 
@@ -73,7 +78,13 @@ const FAQ_ITEMS = [
     id: 'modo-offline',
     categoria: 'Tecnología',
     pregunta: '¿Puedo usar OpenMUN sin conexión a internet (offline)?',
-    respuesta: 'Sí. Una vez cargada la página, las herramientas de la Mesa (cronómetros, GSL, mociones, votaciones) funcionan 100% sin conexión a internet. Para proyectar en segunda pantalla offline, puedes abrir la vista de Secretaría en una ventana adicional. Perderás la función de conectarte con Backroom y delegaciones.'
+    respuesta: 'Sí. Una vez cargada la página, las herramientas de la Mesa (cronómetros, GSL, mociones, votaciones) funcionan 100% sin conexión a internet. Para proyectar en segunda pantalla offline, puedes abrir la vista de Secretaría en una ventana adicional. Perderás la función de conectarte con Backroom y delegaciones, además de la sincronización con conferencias.'
+  },
+  {
+    id: 'como-funcionan-conferencias',
+    categoria: 'Tecnología',
+    pregunta: '¿Cómo funcionan las conferencias?',
+    respuesta: 'Cuando creas una conferencia, guardamos un archivo en nuestra base de datos. Cuando te unes a ella, modificas o lees ese archivo. La base de datos es privada y nadie más que vosotros y nosotros tenemos acceso. Como ese espacio es limitado, los avisos se borran a las 24 horas y las conferencias completas, tras un mes sin actividad en la conferencia. Si pones un correo electrónico, te mandaremos un archivo con toda la información de la conferencia para que no pierdas nada.'
   },
   {
 
@@ -86,7 +97,7 @@ const FAQ_ITEMS = [
     id: 'colaborar',
     categoria: 'Comunidad',
     pregunta: '¿Cómo puedo colaborar, proponer mejoras o reportar fallos?',
-    respuesta: 'Puedes abrir un issue o Pull Request en el repositorio de GitHub, o escribirnos directamente a sugerencias@openmun.org. Toda contribución, reporte o sugerencia es bienvenida.'
+    respuesta: 'Puedes abrir un issue o Pull Request en el repositorio de GitHub, o escribirnos directamente a contacto@openmun.app. Toda contribución, reporte o sugerencia es bienvenida.'
   }
 ];
 
@@ -125,6 +136,8 @@ const FEATURES = [
 
 const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
   const { t } = useTranslation();
+  // Estado para visibilidad del modal de Crear Conferencia
+  const [isCreateConfModalOpen, setIsCreateConfModalOpen] = useState(false);
   // Estado para visibilidad del banner de donaciones (oculto temporalmente)
   const [showDonationBanner, setShowDonationBanner] = useState(false);
 
@@ -155,7 +168,7 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
 
   // Copiar email
   const [copiado, setCopiado] = useState(false);
-  const emailPlaceholder = 'sugerencias@openmun.org';
+  const emailPlaceholder = 'contacto@openmun.app';
 
   // FAQ
   const [faqAbierto, setFaqAbierto] = useState('que-es');
@@ -424,62 +437,21 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
 
           {/* Accesos Rápidos Principales (Hub de Acción Directa) */}
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-            gap: '1rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1.25rem',
             width: '100%',
-            maxWidth: '800px',
+            maxWidth: '1000px',
             marginBottom: '1.75rem'
           }}>
-            {/* Card Mesa (Chair) */}
+            {/* Fila Superior: Mesa de Presidencia y Unirse a Sesión */}
             <div style={{
-              backgroundColor: headerBg,
-              border: `1px solid ${subBorderColor}`,
-              borderRadius: '12px',
-              padding: '1.25rem',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
               gap: '1rem',
-              textAlign: 'left'
+              width: '100%'
             }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
-                  <Play size={18} style={{ color: accentColor }} />
-                  <h3 style={{ fontSize: '1rem', fontWeight: '700', margin: 0, color: textPrimary }}>
-                    {t('home.chairCardTitle', 'Mesa de Presidencia')}
-                  </h3>
-                </div>
-                <p style={{ fontSize: '0.85rem', color: textMuted, margin: 0, lineHeight: '1.45' }}>
-                  {t('home.chairCardDesc', 'Panel de control completo para moderar debate, oradores, caucuses y votaciones.')}
-                </p>
-              </div>
-              <button
-                onClick={onNavigateToComienzo}
-                style={{
-                  padding: '0.65rem 1rem',
-                  backgroundColor: accentColor,
-                  color: '#ffffff',
-                  fontWeight: '700',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  transition: 'background-color 0.15s ease'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = accentColor}
-              >
-                <Play size={16} fill="#ffffff" /> {t('home.startModerating', 'Iniciar Moderación')}
-              </button>
-            </div>
-
-            {/* Card Unirse a Sala (Delegados) */}
-            {onNavigateToJoin && (
+              {/* Card 1: Mesa de Presidencia */}
               <div style={{
                 backgroundColor: headerBg,
                 border: `1px solid ${subBorderColor}`,
@@ -493,22 +465,151 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
               }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
-                    <Radio size={18} style={{ color: '#10b981' }} />
+                    <Play size={18} style={{ color: accentColor }} />
                     <h3 style={{ fontSize: '1rem', fontWeight: '700', margin: 0, color: textPrimary }}>
-                      {t('home.joinCardTitle', 'Unirse a Sesión')}
+                      {t('home.chairCardTitle', 'Mesa de Presidencia')}
                     </h3>
                   </div>
                   <p style={{ fontSize: '0.85rem', color: textMuted, margin: 0, lineHeight: '1.45' }}>
-                    {t('home.joinCardDesc', 'Conéctate en directo mediante código de sala o QR para seguir la sesión.')}
+                    {t('home.chairCardDesc', 'Panel de control completo para moderar debate, oradores, caucuses y votaciones.')}
                   </p>
                 </div>
                 <button
-                  onClick={onNavigateToJoin}
+                  onClick={onNavigateToComienzo}
                   style={{
                     padding: '0.65rem 1rem',
-                    backgroundColor: isLight ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.15)',
-                    border: '1px solid rgba(16, 185, 129, 0.3)',
-                    color: isLight ? '#059669' : '#34d399',
+                    backgroundColor: accentColor,
+                    color: '#ffffff',
+                    fontWeight: '700',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    transition: 'background-color 0.15s ease'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = accentColor}
+                >
+                  <Play size={16} fill="#ffffff" /> {t('home.startModerating', 'Iniciar Moderación')}
+                </button>
+              </div>
+
+              {/* Card 4: Unirse a Sala (Delegados / P2P) */}
+              {onNavigateToJoin && (
+                <div style={{
+                  backgroundColor: headerBg,
+                  border: `1px solid ${subBorderColor}`,
+                  borderRadius: '12px',
+                  padding: '1.25rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: '1rem',
+                  textAlign: 'left'
+                }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                      <Radio size={18} style={{ color: '#10b981' }} />
+                      <h3 style={{ fontSize: '1rem', fontWeight: '700', margin: 0, color: textPrimary }}>
+                        {t('home.joinCardTitle', 'Unirse a Sesión')}
+                      </h3>
+                    </div>
+                    <p style={{ fontSize: '0.85rem', color: textMuted, margin: 0, lineHeight: '1.45' }}>
+                      {t('home.joinCardDesc', 'Conéctate en directo mediante código de sala o QR para seguir la sesión.')}
+                    </p>
+                  </div>
+                  <button
+                    onClick={onNavigateToJoin}
+                    style={{
+                      padding: '0.65rem 1rem',
+                      backgroundColor: isLight ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.15)',
+                      border: '1px solid rgba(16, 185, 129, 0.3)',
+                      color: isLight ? '#059669' : '#34d399',
+                      fontWeight: '700',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem',
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isLight ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.25)'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isLight ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.15)'}
+                  >
+                    <Radio size={16} /> {t('home.joinLive', 'Unirse a Sesión en Vivo')}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Divider con texto/icono para indicar que esto es para conferencias */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              width: '100%',
+              margin: '0.5rem 0'
+            }}>
+              <div style={{ flex: 1, height: '1px', backgroundColor: borderColor, opacity: 0.6 }}></div>
+              <span style={{
+                padding: '0 1rem',
+                fontSize: '0.78rem',
+                fontWeight: '700',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                color: textMuted,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                whiteSpace: 'nowrap'
+              }}>
+                <Building2 size={14} style={{ color: '#8b5cf6' }} /> Eventos & Conferencias Online
+              </span>
+              <div style={{ flex: 1, height: '1px', backgroundColor: borderColor, opacity: 0.6 }}></div>
+            </div>
+
+            {/* Fila Inferior: Crear Conferencia y Unirse a Conferencia */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+              gap: '1rem',
+              width: '100%'
+            }}>
+              {/* Card 2: Crear Conferencia */}
+              <div style={{
+                backgroundColor: headerBg,
+                border: `1px solid ${subBorderColor}`,
+                borderRadius: '12px',
+                padding: '1.25rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                gap: '1rem',
+                textAlign: 'left'
+              }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                    <Building2 size={18} style={{ color: '#8b5cf6' }} />
+                    <h3 style={{ fontSize: '1rem', fontWeight: '700', margin: 0, color: textPrimary }}>
+                      {t('conferences.createTitle', 'Crear Conferencia')}
+                    </h3>
+                  </div>
+                  <p style={{ fontSize: '0.85rem', color: textMuted, margin: 0, lineHeight: '1.45' }}>
+                    Crea un evento central, organiza comités con PIN y sincroniza todo en vivo.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsCreateConfModalOpen(true)}
+                  style={{
+                    padding: '0.65rem 1rem',
+                    backgroundColor: isLight ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.18)',
+                    border: '1px solid rgba(139, 92, 246, 0.4)',
+                    color: isLight ? '#7c3aed' : '#a78bfa',
                     fontWeight: '700',
                     borderRadius: '8px',
                     cursor: 'pointer',
@@ -519,13 +620,64 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
                     gap: '0.5rem',
                     transition: 'all 0.15s ease'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isLight ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.25)'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isLight ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.15)'}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isLight ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.28)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isLight ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.18)'}
                 >
-                  <Radio size={16} /> {t('home.joinLive', 'Unirse a Sesión en Vivo')}
+                  <Sparkles size={16} /> {t('conferences.createBtn', 'Crear Conferencia')}
                 </button>
               </div>
-            )}
+
+              {/* Card 3: Unirse a Conferencia */}
+              <div style={{
+                backgroundColor: headerBg,
+                border: `1px solid ${subBorderColor}`,
+                borderRadius: '12px',
+                padding: '1.25rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                gap: '1rem',
+                textAlign: 'left'
+              }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                    <Layers size={18} style={{ color: '#0284c7' }} />
+                    <h3 style={{ fontSize: '1rem', fontWeight: '700', margin: 0, color: textPrimary }}>
+                      {t('conferences.joinTitle', 'Unirse a Conferencia')}
+                    </h3>
+                  </div>
+                  <p style={{ fontSize: '0.85rem', color: textMuted, margin: 0, lineHeight: '1.45' }}>
+                    Explora comités de un evento, entra como mesa directiva o abre el panel general.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('openmun_navigate_view', {
+                      detail: { view: 'conference', mode: 'explore' }
+                    }));
+                  }}
+                  style={{
+                    padding: '0.65rem 1rem',
+                    backgroundColor: isLight ? 'rgba(2, 132, 199, 0.1)' : 'rgba(2, 132, 199, 0.18)',
+                    border: '1px solid rgba(2, 132, 199, 0.4)',
+                    color: isLight ? '#0284c7' : '#38bdf8',
+                    fontWeight: '700',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isLight ? 'rgba(2, 132, 199, 0.2)' : 'rgba(2, 132, 199, 0.28)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isLight ? 'rgba(2, 132, 199, 0.1)' : 'rgba(2, 132, 199, 0.18)'}
+                >
+                  <Layers size={16} /> {t('conferences.enterConference', 'Entrar en conferencia')}
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Botones Complementarios: Donación (Café) y GitHub */}
@@ -1120,6 +1272,13 @@ const HomePage = ({ onNavigateToComienzo, onNavigateToJoin, isLight }) => {
           </div>
         </footer>
       </div>
+
+      {/* Modal Crear Conferencia */}
+      <CreateConferenceModal
+        isOpen={isCreateConfModalOpen}
+        onClose={() => setIsCreateConfModalOpen(false)}
+        isLight={isLight}
+      />
     </div>
   );
 };

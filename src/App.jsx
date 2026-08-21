@@ -11,6 +11,7 @@ const SecretariatView = lazy(() => import('./components/views/SecretariatView'))
 const StaffView = lazy(() => import('./components/views/StaffView'));
 const BackroomView = lazy(() => import('./components/views/BackroomView'));
 const JoinSessionView = lazy(() => import('./components/views/JoinSessionView'));
+const ConferenceView = lazy(() => import('./components/views/ConferenceView'));
 const PrivacyPolicyPage = lazy(() => import('./components/pages/PrivacyPolicyPage'));
 const TermsConditionsPage = lazy(() => import('./components/pages/TermsConditionsPage'));
 
@@ -52,12 +53,30 @@ function AppContent() {
   const { viewMode, setViewMode, joinRoom } = useP2P();
   const { isLight } = useAccessibility();
   const { route, navigateTo } = useRouter();
+  const [conferenceParams, setConferenceParams] = React.useState({ confId: '', mode: 'explore' });
+
+  useEffect(() => {
+    const handleNavigateView = (e) => {
+      if (e.detail?.view === 'conference') {
+        setConferenceParams({
+          confId: e.detail.confId || '',
+          mode: e.detail.mode || 'explore'
+        });
+        setViewMode('conference');
+      }
+    };
+    window.addEventListener('openmun_navigate_view', handleNavigateView);
+    return () => window.removeEventListener('openmun_navigate_view', handleNavigateView);
+  }, [setViewMode]);
 
   useEffect(() => {
     if (route === 'privacy') return;
     if (route === 'terms') return;
 
     switch (viewMode) {
+      case 'conference':
+        document.title = 'OpenMUN - Conferencia';
+        break;
       case 'backroom':
         document.title = 'OpenMUN - Backroom';
         break;
@@ -86,7 +105,13 @@ function AppContent() {
       const isLocal = params.get('local') === 'true';
       const mode = params.get('mode');
 
-      if (isLocal && mode === 'secretariat') {
+      if (mode === 'conference' || params.get('conf')) {
+        setConferenceParams({
+          confId: params.get('conf') || '',
+          mode: params.get('admin') === 'true' ? 'admin' : 'explore'
+        });
+        setViewMode('conference');
+      } else if (isLocal && mode === 'secretariat') {
         // Conexión automática por BroadcastChannel para pantalla secreta local
         joinRoom({
           targetRole: 'secretariat',
@@ -100,7 +125,7 @@ function AppContent() {
         });
       }
     }
-  }, [joinRoom]);
+  }, [joinRoom, setViewMode]);
 
   // Si la ruta solicitada es Privacidad o Términos, renderizamos su página específica
   if (route === 'privacy') {
@@ -122,7 +147,16 @@ function AppContent() {
   }
 
   let currentView;
-  if (viewMode === 'delegate') {
+  if (viewMode === 'conference') {
+    currentView = (
+      <ConferenceView
+        initialConfId={conferenceParams.confId}
+        initialMode={conferenceParams.mode}
+        isLight={isLight}
+        onExit={() => setViewMode('chair')}
+      />
+    );
+  } else if (viewMode === 'delegate') {
     currentView = <DelegateView isLight={isLight} onExit={() => setViewMode('chair')} />;
   } else if (viewMode === 'secretariat') {
     currentView = <SecretariatView isLight={isLight} onExit={() => setViewMode('chair')} />;

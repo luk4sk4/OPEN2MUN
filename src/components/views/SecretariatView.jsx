@@ -53,6 +53,8 @@ import { useAccessibility } from '../../context/AccessibilityContext';
 import AccessibilityModal from '../modals/AccessibilityModal';
 import OpenMunLogo from '../common/OpenMunLogo';
 import LanguageSelector from '../common/LanguageSelector';
+import conferenceService from '../../services/conferenceService';
+import { formatearMensajeAviso } from '../../utils/announcementHelpers';
 import MatrizPaises from '../widgets/MatrizPaises';
 import HistoricoDelegaciones from '../widgets/HistoricoDelegaciones';
 import EstablecerAgenda from '../widgets/EstablecerAgenda';
@@ -77,6 +79,8 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
     caucusActivo: sessionCaucusActivo,
     agendaSesion: sessionAgendaSesion,
     nombreComite: sessionNombreComite,
+    tipoSesion,
+    cambiarTipoSesion,
     removerOrador,
     removerOradorCaucus,
     avanzarOradorCaucus,
@@ -116,7 +120,7 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
   }, [registerSessionHandlers, aplicarEstadoExterno, ejecutarAccion]);
 
   const [activeTab, setActiveTab] = useState('NOTAS'); // 'NOTAS' | 'AVISOS' | 'SOLICITUDES' | 'DEBATE' | 'VOTACION' | 'INFO' | 'CRISIS' | 'AJUSTES' | 'CONEXIONES'
-  const [subTabNotas, setSubTabNotas] = useState('SECRETARIA'); // 'SECRETARIA' | 'DELEGACIONES'
+  const [subTabNotas, setSubTabNotas] = useState('CONFERENCIA_DB'); // 'CONFERENCIA_DB' | 'SECRETARIA' | 'DELEGACIONES'
   const [subTabInfo, setSubTabInfo] = useState('MATRIZ'); // 'MATRIZ' | 'ANADIR' | 'HISTORICO' | 'AGENDA' | 'IMPORTAR' | 'MOCIONES' | 'RULETA'
   const [subTabVotacion, setSubTabVotacion] = useState('OFICIAL'); // 'OFICIAL' | 'MAPA'
   const [subTabDebate, setSubTabDebate] = useState('MONITOR'); // 'MONITOR' | 'ANADIR'
@@ -131,6 +135,25 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
   const [textoAvisoSec, setTextoAvisoSec] = useState('');
   const [prioridadAvisoSec, setPrioridadAvisoSec] = useState('general');
   const [feedbackAvisoSec, setFeedbackAvisoSec] = useState(null);
+
+  // Avisos de Conferencia (Base de Datos)
+  const [avisosDB, setAvisosDB] = useState([]);
+  const confActiva = conferenceService.obtenerSesionActiva();
+
+  useEffect(() => {
+    if (!confActiva?.id) return;
+    const fetchAvisos = async () => {
+      try {
+        const res = await conferenceService.obtenerAvisos(confActiva.id);
+        if (res && Array.isArray(res.avisos)) {
+          setAvisosDB(res.avisos);
+        }
+      } catch (e) {}
+    };
+    fetchAvisos();
+    const interval = setInterval(fetchAvisos, 20000);
+    return () => clearInterval(interval);
+  }, [confActiva?.id]);
 
   const state = remoteSessionState || {};
   const nombreComite = sessionNombreComite || state.comision || state.nombreComite || 'Comité en Vivo';
@@ -158,6 +181,13 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
     return !isSec && !isBack;
   });
 
+  // Avisos BD filtrados
+  const avisosDBFiltrados = avisosDB.filter(a => {
+    if (!filtroTexto) return true;
+    return a.mensaje?.toLowerCase().includes(filtroTexto.toLowerCase()) ||
+           a.emisor?.toLowerCase().includes(filtroTexto.toLowerCase());
+  });
+
   // Filtrado de Notas según sub-pestaña activa y búsqueda/filtro
   const notasMostradas = (subTabNotas === 'SECRETARIA' ? notasSecretaria : notasDelegaciones).filter(n => {
     const coincideTexto = !filtroTexto || 
@@ -175,10 +205,26 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
     return true;
   });
 
-  const handleEnviarNotaSecretaria = (e) => {
+  const handleEnviarNotaSecretaria = async (e) => {
     e.preventDefault();
     if (!notaMesaTexto.trim()) return;
-    sendNote(notaMesaDestino, notaMesaTexto.trim(), tipoNota);
+
+    if (notaMesaDestino === 'GLOBAL' || notaMesaDestino === 'STAFF_ALL') {
+      if (confActiva?.id) {
+        try {
+          await conferenceService.crearAviso(confActiva.id, {
+            comite_id: notaMesaDestino === 'STAFF_ALL' ? 'STAFF_ALL' : '',
+            emisor: 'Secretaría General',
+            tipo: tipoNota === 'urgente' ? 'urgente' : 'info',
+            mensaje: notaMesaTexto.trim()
+          });
+          const res = await conferenceService.obtenerAvisos(confActiva.id);
+          if (res?.avisos) setAvisosDB(res.avisos);
+        } catch (err) {}
+      }
+    } else {
+      sendNote(notaMesaDestino, notaMesaTexto.trim(), tipoNota);
+    }
     setNotaMesaTexto('');
   };
 
@@ -253,19 +299,54 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-          {/* Card de Orador en Curso */}
+          {/* Selector de Estado de Sesión en Vivo */}
           <div style={{
-            backgroundColor: 'var(--card-header-bg)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '8px',
-            padding: '0.4rem 0.85rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
-            fontSize: '0.75rem'
+            backgroundColor: isLight ? '#e2e8f0' : 'rgba(255,255,255,0.08)',
+            borderRadius: '8px',
+            padding: '2px',
+            gap: '2px'
           }}>
-            <span style={{ color: 'var(--muted-text)' }}>{t('timers.currentSpeaker', 'Orador Actual')}:</span>
-            <span style={{ fontWeight: '800', color: '#22c55e' }}>{oradorActual}</span>
+            {[
+              { id: 'formal', label: 'Formal', color: '#22c55e', bg: 'rgba(34, 197, 94, 0.18)' },
+              { id: 'informal', label: 'Informal', color: '#eab308', bg: 'rgba(234, 179, 8, 0.18)' },
+              { id: 'receso', label: 'Receso', color: '#a855f7', bg: 'rgba(168, 85, 247, 0.18)' },
+              { id: 'votacion', label: 'Votando', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.18)' }
+            ].map(s => {
+              const isActivo = (tipoSesion || state.tipoSesion || 'formal') === s.id;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => cambiarTipoSesion(s.id)}
+                  style={{
+                    padding: '0.35rem 0.65rem',
+                    borderRadius: '6px',
+                    border: isActivo ? `1px solid ${s.color}` : '1px solid transparent',
+                    backgroundColor: isActivo ? (isLight ? '#ffffff' : s.bg) : 'transparent',
+                    color: isActivo ? s.color : 'var(--muted-text)',
+                    fontWeight: isActivo ? '800' : '600',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    boxShadow: isActivo ? `0 0 8px ${s.color}33` : 'none',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title={`Cambiar estado del comité a ${s.label}`}
+                >
+                  <span style={{
+                    width: '7px',
+                    height: '7px',
+                    borderRadius: '50%',
+                    backgroundColor: s.color,
+                    boxShadow: isActivo ? `0 0 6px ${s.color}` : 'none'
+                  }} />
+                  {s.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* Botón Accesibilidad y Tema */}
@@ -873,16 +954,52 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
             {/* Columna Izquierda: Pestañas de Mensajes, Feed de Notas y Filtros */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {/* Selector de Sub-Pestañas: Secretaría vs Delegaciones */}
+              {/* Selector de Sub-Pestañas: BD Conferencia vs Secretaría vs Delegaciones */}
               <div style={{
                 backgroundColor: 'var(--panel-color)',
                 border: '1px solid var(--border-color)',
                 borderRadius: '14px',
                 padding: '0.5rem',
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
+                gridTemplateColumns: '1.2fr 1fr 1fr',
                 gap: '0.5rem',
                 boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
               }}>
+                <button
+                  onClick={() => {
+                    setSubTabNotas('CONFERENCIA_DB');
+                    setFiltroSubTipo('TODOS');
+                  }}
+                  style={{
+                    backgroundColor: subTabNotas === 'CONFERENCIA_DB' ? '#3b82f6' : 'transparent',
+                    color: subTabNotas === 'CONFERENCIA_DB' ? '#ffffff' : 'var(--muted-text)',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '0.75rem 0.6rem',
+                    fontSize: '0.82rem',
+                    fontWeight: '800',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.4rem',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <Globe size={15} />
+                  <span>Avisos Conferencia (BD)</span>
+                  <span style={{
+                    fontSize: '0.72rem',
+                    padding: '0.15rem 0.5rem',
+                    borderRadius: '20px',
+                    backgroundColor: subTabNotas === 'CONFERENCIA_DB' ? 'rgba(255, 255, 255, 0.25)' : 'var(--card-header-bg)',
+                    color: subTabNotas === 'CONFERENCIA_DB' ? '#ffffff' : 'var(--text-color)',
+                    fontWeight: '800'
+                  }}>
+                    {avisosDB.length}
+                  </span>
+                </button>
+
                 <button
                   onClick={() => {
                     setSubTabNotas('SECRETARIA');
@@ -893,19 +1010,19 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
                     color: subTabNotas === 'SECRETARIA' ? 'var(--btn-text)' : 'var(--muted-text)',
                     border: 'none',
                     borderRadius: '10px',
-                    padding: '0.75rem 1rem',
-                    fontSize: '0.85rem',
+                    padding: '0.75rem 0.6rem',
+                    fontSize: '0.82rem',
                     fontWeight: '800',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '0.5rem',
+                    gap: '0.4rem',
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  <Building2 size={16} />
-                  <span>Mensajes a Secretaría</span>
+                  <Building2 size={15} />
+                  <span>Notas a Secretaría (WS)</span>
                   <span style={{
                     fontSize: '0.72rem',
                     padding: '0.15rem 0.5rem',
@@ -928,19 +1045,19 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
                     color: subTabNotas === 'DELEGACIONES' ? 'var(--btn-text)' : 'var(--muted-text)',
                     border: 'none',
                     borderRadius: '10px',
-                    padding: '0.75rem 1rem',
-                    fontSize: '0.85rem',
+                    padding: '0.75rem 0.6rem',
+                    fontSize: '0.82rem',
                     fontWeight: '800',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '0.5rem',
+                    gap: '0.4rem',
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  <Users size={16} />
-                  <span>Mensajes entre Delegaciones</span>
+                  <Users size={15} />
+                  <span>Delegaciones (WS)</span>
                   <span style={{
                     fontSize: '0.72rem',
                     padding: '0.15rem 0.5rem',
@@ -970,7 +1087,7 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
                   <Search size={16} style={{ color: 'var(--muted-text)' }} />
                   <input
                     type="text"
-                    placeholder={subTabNotas === 'SECRETARIA' ? "Buscar en mensajes a secretaría..." : "Buscar entre delegaciones..."}
+                    placeholder={subTabNotas === 'CONFERENCIA_DB' ? "Buscar en avisos de base de datos..." : subTabNotas === 'SECRETARIA' ? "Buscar en notas a secretaría..." : "Buscar entre delegaciones..."}
                     value={filtroTexto}
                     onChange={e => setFiltroTexto(e.target.value)}
                     style={{
@@ -992,31 +1109,129 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
                   )}
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.35rem' }}>
-                  {(subTabNotas === 'SECRETARIA' ? ['TODOS', 'DELEGADOS', 'BACKROOM', 'URGENTES'] : ['TODOS', 'URGENTES']).map(tipo => (
-                    <button
-                      key={tipo}
-                      onClick={() => setFiltroSubTipo(tipo)}
-                      style={{
-                        backgroundColor: filtroSubTipo === tipo ? 'var(--btn-bg)' : 'var(--card-header-bg)',
-                        color: filtroSubTipo === tipo ? 'var(--btn-text)' : 'var(--muted-text)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '6px',
-                        padding: '0.35rem 0.7rem',
-                        fontSize: '0.74rem',
-                        fontWeight: '700',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      {tipo === 'DELEGADOS' ? 'Delegaciones' : tipo === 'BACKROOM' ? 'Backroom / Crisis' : tipo === 'URGENTES' ? '⚡ Urgentes' : 'Todos'}
-                    </button>
-                  ))}
-                </div>
+                {subTabNotas !== 'CONFERENCIA_DB' && (
+                  <div style={{ display: 'flex', gap: '0.35rem' }}>
+                    {(subTabNotas === 'SECRETARIA' ? ['TODOS', 'DELEGADOS', 'BACKROOM', 'URGENTES'] : ['TODOS', 'URGENTES']).map(tipo => (
+                      <button
+                        key={tipo}
+                        onClick={() => setFiltroSubTipo(tipo)}
+                        style={{
+                          backgroundColor: filtroSubTipo === tipo ? 'var(--btn-bg)' : 'var(--card-header-bg)',
+                          color: filtroSubTipo === tipo ? 'var(--btn-text)' : 'var(--muted-text)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '6px',
+                          padding: '0.35rem 0.7rem',
+                          fontSize: '0.74rem',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        {tipo === 'DELEGADOS' ? 'Delegaciones' : tipo === 'BACKROOM' ? 'Backroom / Crisis' : tipo === 'URGENTES' ? '⚡ Urgentes' : 'Todos'}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Lista de Notas */}
-              {notasMostradas.length === 0 ? (
+              {/* Lista de Avisos BD o Notas WebSockets */}
+              {subTabNotas === 'CONFERENCIA_DB' ? (
+                avisosDBFiltrados.length === 0 ? (
+                  <div style={{
+                    padding: '4rem 1.5rem',
+                    textAlign: 'center',
+                    backgroundColor: 'var(--panel-color)',
+                    borderRadius: '14px',
+                    border: '1px dashed var(--border-color)',
+                    color: 'var(--muted-text)'
+                  }}>
+                    <Globe size={38} style={{ opacity: 0.35, marginBottom: '0.6rem' }} />
+                    <div style={{ fontWeight: '700', fontSize: '0.95rem' }}>No hay avisos de conferencia en base de datos</div>
+                    <div style={{ fontSize: '0.78rem', marginTop: '4px' }}>
+                      Los comunicados oficiales y avisos de staff persistidos en base de datos aparecerán aquí.
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {avisosDBFiltrados.map((av) => (
+                      <div
+                        key={av.id}
+                        style={{
+                          backgroundColor: 'var(--panel-color)',
+                          border: '1px solid var(--border-color)',
+                          borderLeft: `4px solid ${av.tipo === 'urgente' ? '#ef4444' : av.tipo === 'alerta' ? '#f59e0b' : '#3b82f6'}`,
+                          borderRadius: '12px',
+                          padding: '1rem 1.25rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.55rem',
+                          boxShadow: '0 4px 14px rgba(0,0,0,0.12)'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <span style={{
+                              fontSize: '0.68rem',
+                              fontWeight: '800',
+                              backgroundColor: 'rgba(59, 130, 246, 0.18)',
+                              color: '#3b82f6',
+                              border: '1px solid rgba(59, 130, 246, 0.35)',
+                              padding: '0.12rem 0.45rem',
+                              borderRadius: '4px'
+                            }}>
+                              🌐 BD Conferencia
+                            </span>
+
+                            <span style={{
+                              fontSize: '0.68rem',
+                              fontWeight: '800',
+                              backgroundColor: av.tipo === 'urgente' ? '#ef4444' : (av.tipo === 'alerta' ? '#f59e0b' : '#3b82f6'),
+                              color: '#ffffff',
+                              padding: '0.12rem 0.45rem',
+                              borderRadius: '4px',
+                              textTransform: 'uppercase'
+                            }}>
+                              {av.emisor}
+                            </span>
+
+                            {av.comite_id && (
+                              <span style={{ fontSize: '0.75rem', color: 'var(--muted-text)', fontWeight: '600' }}>
+                                Para Comité: <code>{av.comite_id}</code>
+                              </span>
+                            )}
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ fontSize: '0.72rem', color: 'var(--muted-text)' }}>
+                              {av.creado_en || ''}
+                            </span>
+                            <button
+                              onClick={() => {
+                                conferenceService.desactivarAviso(av.id);
+                                setAvisosDB(prev => prev.filter(a => a.id !== av.id));
+                              }}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#ef4444',
+                                fontSize: '0.72rem',
+                                fontWeight: '700',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Descartar
+                            </button>
+                          </div>
+                        </div>
+
+                        <div style={{ fontSize: '0.88rem', color: 'var(--text-color)', lineHeight: '1.4' }}>
+                          {formatearMensajeAviso(av.mensaje)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              ) : notasMostradas.length === 0 ? (
                 <div style={{
                   padding: '4rem 1.5rem',
                   textAlign: 'center',
@@ -1194,15 +1409,25 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
                       outline: 'none'
                     }}
                   >
-                    <option value="TODOS" style={{ backgroundColor: 'var(--panel-color)', color: 'var(--text-color)' }}>
-                      📢 TODA LA SALA (General)
-                    </option>
-                    <option value="CHAIR" style={{ backgroundColor: 'var(--panel-color)', color: 'var(--text-color)' }}>
-                      🏛️ Mesa Directiva (Chair)
-                    </option>
-                    <option value="BACKROOM" style={{ backgroundColor: 'var(--panel-color)', color: 'var(--text-color)' }}>
-                      🚨 Consola de Crisis (Backroom)
-                    </option>
+                    <optgroup label="── 🌐 Conferencia Central (Base de Datos) ──" style={{ backgroundColor: 'var(--panel-color)', color: '#3b82f6', fontWeight: 'bold' }}>
+                      <option value="GLOBAL" style={{ backgroundColor: 'var(--panel-color)', color: 'var(--text-color)' }}>
+                        📢 Toda la Conferencia (Aviso Global)
+                      </option>
+                      <option value="STAFF_ALL" style={{ backgroundColor: 'var(--panel-color)', color: 'var(--text-color)' }}>
+                        👥 Todo el Staff de la Conferencia
+                      </option>
+                    </optgroup>
+                    <optgroup label="── ⚡ Sala Local (WebSockets) ──" style={{ backgroundColor: 'var(--panel-color)', color: '#f59e0b', fontWeight: 'bold' }}>
+                      <option value="TODOS" style={{ backgroundColor: 'var(--panel-color)', color: 'var(--text-color)' }}>
+                        📢 Toda la Sala Local (General)
+                      </option>
+                      <option value="CHAIR" style={{ backgroundColor: 'var(--panel-color)', color: 'var(--text-color)' }}>
+                        🏛️ Mesa Directiva Local (Chair)
+                      </option>
+                      <option value="BACKROOM" style={{ backgroundColor: 'var(--panel-color)', color: 'var(--text-color)' }}>
+                        🚨 Consola de Crisis (Backroom)
+                      </option>
+                    </optgroup>
                     <optgroup label="── Delegaciones ──" style={{ backgroundColor: 'var(--panel-color)', color: 'var(--text-color)', fontWeight: 'bold' }}>
                       {paises.map(p => (
                         <option 

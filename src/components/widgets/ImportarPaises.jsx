@@ -19,7 +19,8 @@ import {
   Search,
   Download,
   ArrowUpDown,
-  Check
+  Check,
+  RotateCcw
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '../../context/SessionContext';
@@ -206,9 +207,46 @@ const ImportarPaises = () => {
   const [busquedaPreset, setBusquedaPreset] = useState('');
   const [confirmandoVaciar, setConfirmandoVaciar] = useState(false);
 
+  const [urlInputIndividual, setUrlInputIndividual] = useState('');
+  const [filtroIsoIndividual, setFiltroIsoIndividual] = useState('');
+  const [mostrarBuscadorIsoIndividual, setMostrarBuscadorIsoIndividual] = useState(false);
+  const [isDraggingIndividual, setIsDraggingIndividual] = useState(false);
+  const [mensajeFeedbackIndividual, setMensajeFeedbackIndividual] = useState('');
+
   const fileInputRef = useRef(null);
   const rowFileInputRef = useRef(null);
   const individualFileInputRef = useRef(null);
+
+  // Listener para pegar imagen (Ctrl+V) en modo 1 País
+  useEffect(() => {
+    if (tab !== 'individual') return;
+
+    const handlePasteIndividual = async (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const file = items[i].getAsFile();
+          if (file) {
+            try {
+              const base64 = await procesarImagenBandera(file);
+              setNuevaBandera(base64);
+              setMensajeFeedbackIndividual('¡Imagen pegada del portapapeles con éxito!');
+              setTimeout(() => setMensajeFeedbackIndividual(''), 3000);
+            } catch (err) {
+              console.error('Error al procesar imagen del portapapeles:', err);
+              setMensajeFeedbackIndividual('Error al procesar imagen');
+            }
+          }
+          break;
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePasteIndividual);
+    return () => window.removeEventListener('paste', handlePasteIndividual);
+  }, [tab]);
 
   // Sugerencias de autocompletado para el formulario individual
   const sugerenciasNombres = useMemo(() => {
@@ -492,11 +530,35 @@ const ImportarPaises = () => {
     try {
       const base64 = await procesarImagenBandera(file);
       setNuevaBandera(base64);
-      setExito('Imagen de bandera cargada');
-      setTimeout(() => setExito(''), 3000);
+      setMensajeFeedbackIndividual('Imagen cargada correctamente');
+      setTimeout(() => setMensajeFeedbackIndividual(''), 3000);
     } catch (err) {
       console.error(err);
       setError('Error al procesar la imagen.');
+    }
+  };
+
+  const handleDropIndividual = async (e) => {
+    e.preventDefault();
+    setIsDraggingIndividual(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      try {
+        const base64 = await procesarImagenBandera(file);
+        setNuevaBandera(base64);
+        setMensajeFeedbackIndividual('Imagen arrastrada y procesada');
+        setTimeout(() => setMensajeFeedbackIndividual(''), 3000);
+      } catch (err) {
+        console.error('Error al procesar drop:', err);
+      }
+    }
+  };
+
+  const handleAplicarUrlIndividual = () => {
+    if (urlInputIndividual.trim()) {
+      setNuevaBandera(urlInputIndividual.trim());
+      setMensajeFeedbackIndividual('URL de imagen aplicada');
+      setTimeout(() => setMensajeFeedbackIndividual(''), 3000);
     }
   };
 
@@ -1254,96 +1316,272 @@ const ImportarPaises = () => {
             )}
           </div>
 
-          {/* Opciones de Bandera / Imagen y Veto */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '0.5rem', alignItems: 'center' }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '0.4rem',
-              padding: '0.45rem 0.6rem',
-              backgroundColor: 'var(--card-header-bg)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '6px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <ImageIcon size={13} color="#3b82f6" />
-                <span style={{ fontSize: '0.7rem', fontWeight: '600' }}>
-                  {nuevaBandera ? 'Imagen lista' : 'Bandera ISO'}
+          {/* Sección de Bandera e Imagen (mismo objeto y funciones completas que Editar Delegación) */}
+          <div style={{
+            backgroundColor: 'var(--card-header-bg)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '8px',
+            padding: '0.85rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--text-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <ImageIcon size={14} color="#3b82f6" />
+                {t('editCountry.flag', 'Bandera')}
+              </label>
+              {mensajeFeedbackIndividual && (
+                <span style={{ fontSize: '0.72rem', color: '#22c55e', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <CheckCircle2 size={13} />
+                  {mensajeFeedbackIndividual}
                 </span>
+              )}
+            </div>
+
+            {/* Vista previa y zona interactiva Drop / Paste */}
+            <div
+              onDragOver={(e) => { e.preventDefault(); setIsDraggingIndividual(true); }}
+              onDragLeave={() => setIsDraggingIndividual(false)}
+              onDrop={handleDropIndividual}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.85rem',
+                padding: '0.75rem',
+                backgroundColor: isDraggingIndividual ? 'rgba(59, 130, 246, 0.12)' : 'rgba(0,0,0,0.2)',
+                border: isDraggingIndividual ? '2px dashed #3b82f6' : '1px dashed var(--border-color)',
+                borderRadius: '6px',
+                marginBottom: '0.75rem'
+              }}
+            >
+              <CountryFlag bandera={banderaDetectadaIndividual} nombre={nuevoNombre || 'Delegación'} size="xl" style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.4)' }} />
+              
+              <div style={{ flex: 1, fontSize: '0.74rem', color: 'var(--muted-text)' }}>
+                <div style={{ fontWeight: '600', color: 'var(--text-color)', marginBottom: '0.2rem' }}>
+                  {t('editCountry.uploadOrPaste', 'Sube un archivo o haz')} <strong style={{ color: '#3b82f6' }}>Ctrl + V</strong>
+                </div>
+                <div>{t('editCountry.dragDropHint', 'Arrastra cualquier imagen PNG, JPG o SVG aquí, o copia y pega directamente de internet.')}</div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                {nuevaBandera && (
-                  <button
-                    type="button"
-                    onClick={() => setNuevaBandera('')}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#ef4444',
-                      fontSize: '0.66rem',
-                      cursor: 'pointer',
-                      textDecoration: 'underline'
-                    }}
-                  >
-                    Limpiar
-                  </button>
-                )}
+              <button
+                type="button"
+                onClick={() => individualFileInputRef.current?.click()}
+                style={{
+                  padding: '0.45rem 0.7rem',
+                  backgroundColor: '#3b82f6',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  fontSize: '0.75rem',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem'
+                }}
+              >
+                <Upload size={13} />
+                {t('common.search', 'Examinar')}
+              </button>
+              <input
+                ref={individualFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleSubirImagenIndividual}
+                style={{ display: 'none' }}
+              />
+            </div>
 
+            {/* Opciones adicionales: Pegar URL o buscar predefinida */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+              {/* Pegar URL */}
+              <div style={{ display: 'flex', gap: '0.35rem' }}>
+                <input
+                  type="text"
+                  value={urlInputIndividual}
+                  onChange={(e) => setUrlInputIndividual(e.target.value)}
+                  placeholder={t('editCountry.urlPlaceholder', 'O pega una URL de imagen (https://...)')}
+                  style={{
+                    flex: 1,
+                    padding: '0.4rem 0.6rem',
+                    backgroundColor: 'var(--input-bg, rgba(255,255,255,0.05))',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '5px',
+                    color: 'var(--text-color)',
+                    fontSize: '0.76rem'
+                  }}
+                />
                 <button
                   type="button"
-                  onClick={() => individualFileInputRef.current?.click()}
+                  onClick={handleAplicarUrlIndividual}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.2rem',
-                    padding: '0.2rem 0.45rem',
-                    backgroundColor: 'rgba(255,255,255,0.06)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '4px',
+                    padding: '0.4rem 0.65rem',
+                    backgroundColor: 'var(--border-color)',
                     color: 'var(--text-color)',
-                    fontSize: '0.68rem',
+                    border: 'none',
+                    borderRadius: '5px',
                     cursor: 'pointer',
+                    fontSize: '0.74rem',
                     fontWeight: '600'
                   }}
                 >
-                  <Upload size={11} /> Subir
+                  {t('common.apply', 'Aplicar')}
                 </button>
-                <input
-                  ref={individualFileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleSubirImagenIndividual}
-                  style={{ display: 'none' }}
-                />
+              </div>
+
+              {/* Botones de acción secundaria */}
+              <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.2rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setMostrarBuscadorIsoIndividual(!mostrarBuscadorIsoIndividual)}
+                  style={{
+                    flex: 1,
+                    padding: '0.35rem 0.5rem',
+                    backgroundColor: 'transparent',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '5px',
+                    color: 'var(--muted-text)',
+                    cursor: 'pointer',
+                    fontSize: '0.72rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.3rem'
+                  }}
+                >
+                  <Globe2 size={13} />
+                  {mostrarBuscadorIsoIndividual ? t('editCountry.hideCatalog', 'Ocultar catálogo oficial') : t('editCountry.showCatalog', 'Elegir del catálogo oficial')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setNuevaBandera('un'); setUrlInputIndividual(''); }}
+                  title="Restablecer a bandera de ONU"
+                  style={{
+                    padding: '0.35rem 0.5rem',
+                    backgroundColor: 'transparent',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '5px',
+                    color: 'var(--muted-text)',
+                    cursor: 'pointer',
+                    fontSize: '0.72rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem'
+                  }}
+                >
+                  <RotateCcw size={12} />
+                  ONU
+                </button>
+              </div>
+
+              {/* Catálogo rápido de banderas */}
+              {mostrarBuscadorIsoIndividual && (
+                <div style={{
+                  marginTop: '0.4rem',
+                  padding: '0.5rem',
+                  backgroundColor: 'rgba(0,0,0,0.25)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.4rem'
+                }}>
+                  <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center' }}>
+                    <Search size={12} style={{ color: 'var(--muted-text)' }} />
+                    <input
+                      type="text"
+                      value={filtroIsoIndividual}
+                      onChange={(e) => setFiltroIsoIndividual(e.target.value)}
+                      placeholder="Filtrar por país o código ISO..."
+                      style={{
+                        flex: 1,
+                        background: 'transparent',
+                        border: 'none',
+                        borderBottom: '1px solid var(--border-color)',
+                        color: 'var(--text-color)',
+                        fontSize: '0.72rem',
+                        padding: '2px 4px',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(105px, 1fr))',
+                    gap: '0.3rem',
+                    maxHeight: '120px',
+                    overflowY: 'auto',
+                    paddingRight: '2px'
+                  }}>
+                    {PAISES_POPULARES_ISO.filter(p =>
+                      p.nombre.toLowerCase().includes(filtroIsoIndividual.toLowerCase()) ||
+                      p.iso.toLowerCase().includes(filtroIsoIndividual.toLowerCase())
+                    ).map(item => (
+                      <button
+                        key={item.iso}
+                        type="button"
+                        onClick={() => {
+                          setNuevaBandera(item.iso);
+                          setUrlInputIndividual('');
+                          setMensajeFeedbackIndividual(`Bandera: ${item.nombre}`);
+                          setTimeout(() => setMensajeFeedbackIndividual(''), 3000);
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          padding: '0.3rem 0.4rem',
+                          backgroundColor: banderaDetectadaIndividual === item.iso ? 'rgba(59, 130, 246, 0.25)' : 'rgba(255,255,255,0.04)',
+                          border: banderaDetectadaIndividual === item.iso ? '1px solid #3b82f6' : '1px solid var(--border-color)',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          color: 'var(--text-color)'
+                        }}
+                      >
+                        <CountryFlag bandera={item.iso} nombre={item.nombre} size="xs" />
+                        <span style={{ fontSize: '0.68rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {item.nombre}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Toggle de Veto P5 */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0.75rem',
+            backgroundColor: 'var(--card-header-bg)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '8px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Crown size={16} color={nuevoVeto ? '#eab308' : '#71717a'} />
+              <div>
+                <div style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-color)' }}>
+                  {t('editCountry.vetoPower', 'Derecho a Veto (P5 / Permanente)')}
+                </div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--muted-text)' }}>
+                  {t('editCountry.vetoPowerDesc', 'Habilita el poder de veto en votaciones sustantivas')}
+                </div>
               </div>
             </div>
-
-            {/* Toggle de Veto P5 */}
-            <label style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              padding: '0.45rem 0.6rem',
-              backgroundColor: nuevoVeto ? 'rgba(59, 130, 246, 0.15)' : 'var(--card-header-bg)',
-              border: nuevoVeto ? '1px solid #3b82f6' : '1px solid var(--border-color)',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '0.73rem',
-              fontWeight: '700',
-              color: nuevoVeto ? '#60a5fa' : 'var(--text-color)',
-              transition: 'all 0.15s ease'
-            }}>
-              <input
-                type="checkbox"
-                checked={nuevoVeto}
-                onChange={(e) => setNuevoVeto(e.target.checked)}
-                style={{ accentColor: '#3b82f6' }}
-              />
-              <Crown size={13} color={nuevoVeto ? '#3b82f6' : 'var(--muted-text)'} />
-              <span>Veto / P5</span>
-            </label>
+            <input
+              type="checkbox"
+              checked={nuevoVeto}
+              onChange={(e) => setNuevoVeto(e.target.checked)}
+              style={{
+                width: '18px',
+                height: '18px',
+                cursor: 'pointer',
+                accentColor: '#eab308'
+              }}
+            />
           </div>
 
           {/* Botón Submit Verde */}

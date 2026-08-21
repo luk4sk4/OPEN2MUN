@@ -186,7 +186,7 @@ const MapaVotacion = ({ isLight: propIsLight }) => {
   } = useSession();
 
   const outerContainerRef = useRef(null);
-  const { asunto, tipoVotacion, tipoMayoria, aplicarVeto, votos = {} } = votacionSesion;
+  const { asunto = 'Votación', tipoVotacion = 'procedural', tipoMayoria = 'simple', aplicarVeto = true, votos = {} } = votacionSesion || {};
 
   // Detección reactiva de Modo Claro / Modo Oscuro
   const [internalIsLight, setInternalIsLight] = useState(() => {
