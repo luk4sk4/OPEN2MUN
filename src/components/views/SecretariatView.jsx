@@ -842,6 +842,7 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
                               fontSize: '0.72rem'
                             }}
                             title={t('views.staff.deleteAnnouncement', 'Retirar Aviso')}
+                              aria-label={t('views.staff.deleteAnnouncement', 'Retirar Aviso')}
                           >
                             <Trash2 size={15} color="#ef4444" />
                           </button>
@@ -986,6 +987,8 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
                     <button
                       onClick={() => setFiltroTexto('')}
                       style={{ background: 'transparent', border: 'none', color: 'var(--muted-text)', cursor: 'pointer' }}
+                      aria-label={t('common.clearSearch', 'Limpiar búsqueda')}
+                      title={t('common.clearSearch', 'Limpiar búsqueda')}
                     >
                       <X size={14} />
                     </button>
@@ -2480,6 +2483,7 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
                             <button
                               onClick={() => removerOrador(o.id || o.nombre)}
                               title="Remover de la lista"
+                              aria-label="Remover de la lista"
                               style={{
                                 background: 'transparent',
                                 border: 'none',
@@ -2621,6 +2625,7 @@ const SecretariatView = ({ isLight: propIsLight, onExit }) => {
                             <button
                               onClick={() => removerOradorCaucus(o.id || o.nombre)}
                               title="Remover del caucus"
+                              aria-label="Remover del caucus"
                               style={{
                                 background: 'transparent',
                                 border: 'none',
