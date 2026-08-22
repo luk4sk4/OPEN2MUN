@@ -1479,6 +1479,7 @@ const Dashboard = () => {
                   padding: '6px'
                 }}
                 title={isLight ? t('header.darkMode', "Cambiar a Modo Oscuro") : t('header.lightMode', "Cambiar a Modo Claro")}
+                aria-label={isLight ? t('header.darkMode', "Cambiar a Modo Oscuro") : t('header.lightMode', "Cambiar a Modo Claro")}
               >
                 {isLight ? <Moon size={16} /> : <Sun size={16} />}
               </button>
@@ -1495,11 +1496,12 @@ const Dashboard = () => {
                   padding: '6px'
                 }}
                 title={t('header.fullscreen', "Maximizar / Pantalla Completa (F11)")}
+                aria-label={t('header.fullscreen', "Maximizar / Pantalla Completa (F11)")}
               >
                 <Maximize2 size={16} />
               </button>
 
-              <button onClick={() => setIsAccessOpen(true)} style={{ background: 'transparent', border: 'none', color: 'var(--text-color)', cursor: 'pointer', display: 'flex', padding: '4px', borderRadius: '4px' }} title={t('accessibility.title', "Accesibilidad y Tema")}>
+              <button onClick={() => setIsAccessOpen(true)} style={{ background: 'transparent', border: 'none', color: 'var(--text-color)', cursor: 'pointer', display: 'flex', padding: '4px', borderRadius: '4px' }} title={t('accessibility.title', "Accesibilidad y Tema")} aria-label={t('accessibility.title', "Accesibilidad y Tema")}>
                 <Eye size={20} />
               </button>
 
